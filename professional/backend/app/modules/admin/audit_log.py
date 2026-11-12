@@ -35,6 +35,10 @@ ACTION_REPORT_REJECTED = "report.rejected"
 ACTION_REPORT_REVIEWING = "report.under_review"
 ACTION_ANNOUNCEMENT_SENT = "announcement.sent"
 ACTION_ADMIN_PHONE_CHANGED = "admin.phone_changed"
+# Admin > Master Catalog (modules/catalog/admin_service.py).
+ACTION_CATALOG_PRODUCT_CREATED = "catalog.product_created"
+ACTION_CATALOG_PRODUCT_UPDATED = "catalog.product_updated"
+ACTION_CATALOG_IMAGE_ADDED = "catalog.image_added"
 
 
 def record(

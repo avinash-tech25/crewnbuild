@@ -42,7 +42,7 @@ def call(client: TestClient, method: str, path: str, headers: dict[str, str]) ->
 
 def test_every_admin_route_states_who_may_use_it(client: TestClient) -> None:
     routes = admin_routes(client)
-    assert len(routes) == 35
+    assert len(routes) == 61  # 35 admin console + 26 Admin > Master Catalog
     for method, path, permission in routes:
         if permission is None:
             assert any(path == role_only for role_only in ROLE_ONLY), f"{method} {path} has no permission"
