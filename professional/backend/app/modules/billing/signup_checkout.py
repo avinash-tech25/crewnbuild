@@ -34,6 +34,9 @@ SIGNUP_OFFERS = {(PROFESSIONAL_PLAN, MONTHLY), (BUSINESS_PLAN, MONTHLY), (BUSINE
 # routes.
 ALLOWED_PREFIXES = ("/auth/", "/locations/pincode/", "/subscriptions/")
 REFUSED_PATHS = ("/auth/partner-handoff",)
+# Deleting the account never waits on a payment (the old deletion routes skipped this
+# rule altogether).
+ALWAYS_ALLOWED_PATHS = ("/account/deletion-form", "/account/delete")
 
 
 def valid_signup_offer(plan_code: str | None, duration_code: str | None) -> tuple[str, str] | None:
@@ -80,6 +83,8 @@ def enforce(database: Session, user: User, path: str) -> None:
     """Refuse everything but the onboarding routes while a paid sign-up is unpaid.
     `path` is relative to /api/v1."""
     if (user.role or "").upper() != ROLE_BUILDER:
+        return
+    if path in ALWAYS_ALLOWED_PATHS:
         return
     if path.startswith(ALLOWED_PREFIXES) and not path.startswith(REFUSED_PATHS):
         return

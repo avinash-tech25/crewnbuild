@@ -1,0 +1,169 @@
+"""Delete Account: soft delete with anonymisation, refused while a Partner booking is
+open, history kept with original_user_id."""
+
+from typing import Any
+
+import pytest
+from fastapi.testclient import TestClient
+from identity.helpers import create_user, sign_in
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
+from app.modules.accounts.models import AccountDeletionRequest, BuilderProfile
+from app.modules.accounts.repository import AccountRepository
+from app.modules.identity.models import (
+    ROLE_BUILDER,
+    ROLE_ENGINEER,
+    ROLE_MANAGER,
+    User,
+    UserOAuthIdentity,
+    UserSession,
+)
+
+FORM = {
+    "full_name": "Asha Rao",
+    "role": "OWNER",
+    "email": "asha@example.in",
+    "phone": "+91 98765 43210",
+    "reason_code": "NO_LONGER_NEEDED",
+    "confirm_deletion": True,
+    "confirmation_text": "DELETE",
+}
+
+
+def signed_in(client: TestClient, database: Session, **user: Any) -> tuple[User, dict[str, str]]:
+    account = create_user(database, **{"phone": "9876543210", **user})
+    csrf = sign_in(client, identifier=user.get("email", "asha@example.in"))
+    return account, {"X-CSRF-Token": csrf}
+
+
+def test_public_config_and_retired_endpoints(client: TestClient, database: Session) -> None:
+    config = client.get("/api/v1/account-deletion-requests/config")
+    assert config.status_code == 200
+    assert {role["value"] for role in config.json()["roles"]} >= {"OWNER", "BUILDER", "STORE_MANAGER"}
+    assert client.post("/api/v1/account-deletion-requests").status_code == 410
+    _, headers = signed_in(client, database)
+    assert client.delete("/api/v1/account", headers=headers).status_code == 410
+
+
+def test_the_form_is_filled_from_the_account(client: TestClient, database: Session) -> None:
+    signed_in(client, database, role=ROLE_ENGINEER, specialization="Store Manager")
+    form = client.get("/api/v1/account/deletion-form").json()
+    assert form["account"] == {
+        "name": "Asha Rao",
+        "role": "STORE_MANAGER",
+        "email": "asha@example.in",
+        "phone": "9876543210",
+        "email_verified": True,
+    }
+
+
+def test_deletion_anonymises_the_account_and_ends_every_session(client: TestClient, database: Session) -> None:
+    user, headers = signed_in(client, database)
+    database.add(UserOAuthIdentity(user_id=user.id, provider="google", subject="g-1", email="asha@example.in"))
+    database.commit()
+    other_device = TestClient(client.app, headers={"Origin": "http://localhost:5173"})
+    sign_in(other_device)
+
+    response = client.post("/api/v1/account/delete", json=FORM, headers=headers)
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["deleted"] is True and body["reference"].startswith("DEL-")
+    assert body["deleted_at"].endswith("+05:30")
+
+    database.expire_all()
+    stored = database.get(User, user.id)
+    assert stored is not None  # kept, not removed
+    assert stored.status == "DELETED" and stored.deleted_at is not None
+    assert (stored.name, stored.email, stored.phone, stored.address, stored.pincode) == (
+        "Deleted account",
+        None,
+        "",
+        "",
+        "",
+    )
+    assert database.scalars(select(UserOAuthIdentity)).first() is None
+    assert all(row.revoked_at is not None for row in database.scalars(select(UserSession)))
+    assert client.get("/api/v1/auth/session").status_code == 401
+    assert other_device.get("/api/v1/auth/session").status_code == 401
+
+    history = database.scalars(select(AccountDeletionRequest)).one()
+    assert history.status == "DELETED" and history.original_user_id == user.id
+    assert history.account_email == "asha@example.in"
+    assert history.deletion_summary["method"] == "SOFT_DELETE_ANONYMISED"
+
+    # The address and the number are free for a new account.
+    create_user(database, email="asha@example.in", phone="9876543210", name="New Asha")
+
+
+def test_original_user_id_has_no_foreign_key(database: Session) -> None:
+    table = AccountDeletionRequest.__table__
+    assert not table.c.original_user_id.foreign_keys
+    assert table.c.user_id.foreign_keys
+
+
+def test_an_open_partner_booking_blocks_deletion(
+    client: TestClient, database: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user, headers = signed_in(client, database)
+    monkeypatch.setattr(AccountRepository, "count_open_partner_bookings", lambda self, user_id: 1)
+    response = client.post("/api/v1/account/delete", json=FORM, headers=headers)
+    assert response.status_code == 409
+    assert response.json()["detail"]["code"] == "PARTNER_OPEN_BOOKINGS"
+    database.expire_all()
+    assert database.get(User, user.id).status == "ACTIVE"  # type: ignore[union-attr]
+    assert database.scalars(select(AccountDeletionRequest)).first() is None
+
+
+def test_no_partner_view_means_no_open_bookings(database: Session) -> None:
+    user = create_user(database)
+    assert AccountRepository(database).count_open_partner_bookings(user.id) == 0
+
+
+@pytest.mark.parametrize(
+    ("change", "status", "field"),
+    [
+        ({"full_name": "Someone Else"}, 422, "full_name"),
+        ({"role": "SUPPLIER"}, 422, "role"),
+        ({"email": "other@example.in"}, 422, "email"),
+        ({"phone": "9000000000"}, 422, "phone"),
+        ({"confirmation_text": "delete"}, 422, "confirmation_text"),
+        ({"reason_code": "OTHER"}, 422, None),
+    ],
+)
+def test_the_form_must_match_the_account(
+    client: TestClient, database: Session, change: dict[str, Any], status: int, field: str | None
+) -> None:
+    _, headers = signed_in(client, database)
+    response = client.post("/api/v1/account/delete", json={**FORM, **change}, headers=headers)
+    assert response.status_code == status
+    if field:
+        assert response.json()["detail"]["field"] == field
+
+
+def test_an_unverified_email_and_administrators_are_refused(client: TestClient, database: Session) -> None:
+    user, headers = signed_in(client, database)
+    user.email_verified_at = None
+    database.commit()
+    assert client.post("/api/v1/account/delete", json=FORM, headers=headers).status_code == 403
+    client.post("/api/v1/auth/logout")
+    _, admin_headers = signed_in(
+        client, database, role=ROLE_MANAGER, email="manager@example.in", name="Manager", phone="9876500111"
+    )
+    refused = client.post(
+        "/api/v1/account/delete",
+        json={**FORM, "full_name": "Manager", "email": "manager@example.in"},
+        headers=admin_headers,
+    )
+    assert refused.status_code == 403
+
+
+def test_a_builder_with_an_unpaid_plan_can_still_delete(client: TestClient, database: Session) -> None:
+    builder, headers = signed_in(client, database, role=ROLE_BUILDER)
+    profile = database.scalars(select(BuilderProfile).where(BuilderProfile.user_id == builder.id)).one()
+    profile.signup_plan_code, profile.signup_duration_code = "BUSINESS", "ANNUAL"
+    database.commit()
+    assert client.get("/api/v1/account/deletion-form").status_code == 200
+    # The old role name is still accepted in the form.
+    response = client.post("/api/v1/account/delete", json={**FORM, "role": "CONTRACTOR"}, headers=headers)
+    assert response.status_code == 200, response.text

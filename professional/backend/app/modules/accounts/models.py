@@ -1,27 +1,29 @@
 """Account profile tables (technical-architecture.md section 10, domain Accounts).
 
-Ported in R4b only as far as identity needs them: sign-up writes the role's profile,
-the session answer reads them, WhatsApp sign-in finds administrators by
-admin_profiles.phone, and the Book Technician and Store Manager rules read the engineer
-category. The screens that edit profiles (complete-profile, logos, location, phone
-change) come with the accounts module.
+Sign-up writes the role's profile, the session answer reads them, WhatsApp sign-in
+finds administrators by admin_profiles.phone, the Book Technician and Store Manager
+rules read the engineer category, and the accounts endpoints edit them.
 
     owner_profiles      integer key -> UUID; FK user_id CASCADE
     builder_profiles    integer key -> UUID; FK user_id CASCADE
     engineer_profiles   integer key -> UUID; FK user_id CASCADE; + category
     supplier_profiles   integer key -> UUID; FK user_id CASCADE
     admin_profiles      integer key -> UUID; FK user_id CASCADE, created_by_id SET NULL
+    account_deletion_requests  integer key -> UUID; original_user_id without a foreign key
 
 owner_profiles.budget is stored as budget_amount (money naming, section 9.1); the API
 field stays `budget`.
 """
 
 import uuid
+from datetime import datetime
 from decimal import Decimal
+from typing import Any
 
 from sqlalchemy import (
     Boolean,
     CheckConstraint,
+    DateTime,
     Float,
     ForeignKey,
     Index,
@@ -29,8 +31,10 @@ from sqlalchemy import (
     Numeric,
     String,
     Text,
+    Uuid,
     text,
 )
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 
 from app.database.base import Base, TimestampMixin, UuidPrimaryKeyMixin
@@ -213,3 +217,82 @@ class AdminProfile(UuidPrimaryKeyMixin, TimestampMixin, Base):
     phone: Mapped[str] = mapped_column(String(30), nullable=False, default="", server_default="")
 
     user = relationship("User", foreign_keys=[user_id])
+
+
+# ---- Account deletion ----
+DELETION_STATUS_PENDING = "PENDING"
+DELETION_STATUS_VERIFICATION = "VERIFICATION"
+DELETION_STATUS_APPROVED = "APPROVED"
+DELETION_STATUS_REJECTED = "REJECTED"
+DELETION_STATUS_DELETED = "DELETED"
+DELETION_SOURCE_PUBLIC = "PUBLIC"
+DELETION_SOURCE_IN_APP = "IN_APP"
+
+
+class AccountDeletionRequest(UuidPrimaryKeyMixin, TimestampMixin, Base):
+    """The record of an account deletion, written in the same transaction as the
+    deletion. Rows of the earlier request-and-approval workflow (PENDING, VERIFICATION,
+    APPROVED, REJECTED; sources PUBLIC and IN_APP) keep their values.
+
+    original_user_id holds the account's id as a plain value, deliberately without a
+    foreign key: it is the record of who the account was, whatever happens to the row
+    in users."""
+
+    __tablename__ = "account_deletion_requests"
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('PENDING', 'VERIFICATION', 'APPROVED', 'REJECTED', 'DELETED')",
+            name="status",
+        ),
+        CheckConstraint("source IN ('PUBLIC', 'IN_APP')", name="source"),
+        # One open request per account.
+        Index(
+            "uq_account_deletion_requests__user_id_active",
+            "user_id",
+            unique=True,
+            postgresql_where=text("status IN ('PENDING', 'VERIFICATION', 'APPROVED')"),
+        ),
+    )
+
+    reference: Mapped[str] = mapped_column(String(20), nullable=False, unique=True)
+    original_user_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, nullable=True, index=True)
+    account_created_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    reason_code: Mapped[str | None] = mapped_column(String(40))
+    source: Mapped[str] = mapped_column(
+        String(10), nullable=False, default=DELETION_SOURCE_PUBLIC, server_default=DELETION_SOURCE_PUBLIC
+    )
+    user_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    account_name: Mapped[str | None] = mapped_column(String(255))
+    account_email: Mapped[str | None] = mapped_column(String(255))
+    submitted_name: Mapped[str | None] = mapped_column(String(255))
+    policy_accepted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    submitted_email: Mapped[str] = mapped_column(String(255), nullable=False)
+    submitted_phone: Mapped[str] = mapped_column(String(30), nullable=False)
+    submitted_role: Mapped[str] = mapped_column(String(30), nullable=False)
+    account_role: Mapped[str] = mapped_column(String(30), nullable=False)
+    email_matches_account: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    reason: Mapped[str | None] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default=DELETION_STATUS_PENDING, index=True)
+    # SHA-256 of the client address, for abuse limits; never the address itself.
+    client_hash: Mapped[str | None] = mapped_column(String(64), index=True)
+    decision_note: Mapped[str | None] = mapped_column(Text)
+    decided_by_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    approved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    rejected_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    deleted_by_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    retained_records: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    deletion_summary: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    last_failure: Mapped[str | None] = mapped_column(Text)
+    last_failure_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    company_notified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    requester_notified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    notification_attempts: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+    notification_error: Mapped[str | None] = mapped_column(Text)

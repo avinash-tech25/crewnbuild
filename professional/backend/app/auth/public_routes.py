@@ -29,6 +29,11 @@ PUBLIC_ROUTES: frozenset[tuple[str, str]] = frozenset(
         ("GET", "/auth/oauth/google/callback"),
         ("GET", "/auth/oauth/microsoft/start"),
         ("GET", "/auth/oauth/microsoft/callback"),
+        # India Post pincode lookup (the sign-up and estimate screens use it signed out)
+        ("GET", "/locations/pincode/{pincode}"),
+        # The public Delete Account page: its settings, and the retired request form (410)
+        ("GET", "/account-deletion-requests/config"),
+        ("POST", "/account-deletion-requests"),
     }
 )
 
