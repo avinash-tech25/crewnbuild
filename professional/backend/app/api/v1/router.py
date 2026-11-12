@@ -13,6 +13,7 @@ from fastapi import APIRouter, Depends
 
 from app.auth.dependencies import enforce_route_access
 from app.modules.accounts.router import router as accounts_router
+from app.modules.files.router import router as files_router
 from app.modules.identity.router import router as identity_router
 
 api_router = APIRouter()
@@ -27,6 +28,8 @@ def health_check() -> dict[str, str]:
 MODULE_ROUTERS: list[APIRouter] = [
     identity_router,
     accounts_router,
+    # The old order put the file routes after property and estimates.
+    files_router,
 ]
 
 for module_router in MODULE_ROUTERS:

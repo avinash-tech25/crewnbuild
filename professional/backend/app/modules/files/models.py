@@ -1,10 +1,8 @@
 """The files table (technical-architecture.md section 10: uploaded_files -> files).
 
-Created in the accounts step only as far as accounts needs it: a profile photo or a
-business logo must be one of the caller's own uploads, and the account deletion unlinks
-an account's own files. Uploading, serving and storage (S3) come with the files module,
-which also fixes the public address of a file; until then it is /files/<uuid>
-(file_ownership.FILE_ADDRESS).
+One row per upload: where its object is stored (bucket and storage key; old files kept
+their bytes in `content`), its name, type and size, and who uploaded it. Its address is
+/files/<id>.
 """
 
 import uuid
