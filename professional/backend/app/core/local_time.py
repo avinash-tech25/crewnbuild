@@ -17,3 +17,10 @@ def to_local_iso(value: datetime | None, settings: Settings) -> str | None:
 
 def utc_now() -> datetime:
     return datetime.now(UTC)
+
+
+def local_iso(value: datetime | None) -> str | None:
+    """to_local_iso with the running settings (for code that has no settings at hand)."""
+    from app.core.config import get_settings
+
+    return to_local_iso(value, get_settings())

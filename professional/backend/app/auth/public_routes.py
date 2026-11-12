@@ -47,6 +47,10 @@ PUBLIC_ROUTES: frozenset[tuple[str, str]] = frozenset(
         ("GET", "/ads/{advert_id}/image"),
         ("GET", "/ad-placements"),
         ("POST", "/vastu/plan-analysis"),
+        # General weather for the public pages: coordinates in, nothing stored
+        ("GET", "/weather/public"),
+        ("GET", "/weather/public/places"),
+        ("GET", "/weather/public/describe"),
     }
 )
 

@@ -18,6 +18,7 @@ from app.modules.content.vastu.router import router as vastu_router
 from app.modules.files.router import router as files_router
 from app.modules.identity.router import router as identity_router
 from app.modules.support.router import router as support_router
+from app.modules.weather.router import router as weather_router
 
 api_router = APIRouter()
 
@@ -38,6 +39,8 @@ MODULE_ROUTERS: list[APIRouter] = [
     # Estimates, ads and translation; then Vastu.
     content_router,
     vastu_router,
+    # Every /weather path is new, so it shadows nothing registered above.
+    weather_router,
 ]
 
 for module_router in MODULE_ROUTERS:

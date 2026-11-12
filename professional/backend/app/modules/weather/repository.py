@@ -1,0 +1,270 @@
+"""Database queries of the weather module (ported from the old weather_repository.py).
+
+The project-side queries (which projects an account may read, who is told about a
+project's alert, which projects are monitored) read tables of modules not ported yet;
+they are stubs below, which find nothing until the projects, store, marketplace,
+labour and equipment modules replace them (docs/porting-todo.md).
+"""
+
+import uuid
+from datetime import datetime
+from typing import Any
+
+from sqlalchemy import desc, inspect, or_
+from sqlalchemy.orm import Session
+
+from app.core.config import PROFESSIONAL_SCHEMA
+from app.modules.accounts.models import ADMIN_SCOPES, CATEGORY_STORE_MANAGER, AdminProfile, EngineerProfile
+from app.modules.identity.models import ADMIN_ROLES, User
+from app.modules.weather.models import (
+    WeatherAlert,
+    WeatherAlertAcknowledgement,
+    WeatherGeocodeCache,
+    WeatherSiteLocation,
+    WeatherSnapshot,
+)
+from app.modules.weather.project_links import Project
+
+# How many in-scope projects an administrator's weather list offers at most.
+ADMIN_PROJECT_LIMIT = 100
+
+
+def site_filter(model, site):
+    """The rows of a per-site weather table (locations, snapshots, alerts) that
+    belong to one site: a project's, or an account's own."""
+    if site.project is not None:
+        return model.project_id == site.project.id
+    return model.user_id == site.user.id
+
+
+_installed = {"value": False}
+
+
+def weather_installed(database: Session) -> bool:
+    """Whether migration 0045 has been applied to this database. Remembered once true."""
+    if _installed["value"]:
+        return True
+    present = inspect(database.get_bind()).has_table(WeatherAlert.__tablename__, schema=PROFESSIONAL_SCHEMA)
+    _installed["value"] = bool(present)
+    return _installed["value"]
+
+
+class WeatherRepository:
+    def __init__(self, database: Session):
+        self.database = database
+
+    # ---- projects (stubs) ----
+    def project(self, project_id: Any) -> Project | None:
+        """STUB (projects): the project with this id."""
+        return None
+
+    def accessible_projects(self, user: User) -> list[Project]:
+        """STUB (projects): the owner's own, the builder's awarded and the Site Engineer's
+        actively assigned projects."""
+        return []
+
+    def is_store_manager(self, user: User) -> bool:
+        if user.role != "ENGINEER":
+            return False
+        category = self.database.query(EngineerProfile.category).filter(EngineerProfile.user_id == user.id).scalar()
+        return category == CATEGORY_STORE_MANAGER
+
+    def store_request_project_ids(self, store_manager_id: uuid.UUID) -> set[Any]:
+        """STUB (store): projects this Store Manager has open site requests for."""
+        return set()
+
+    def supplier_order_project_ids(self, supplier_id: uuid.UUID) -> set[Any]:
+        """STUB (marketplace, equipment_supply, labour_supply): projects with open orders."""
+        return set()
+
+    def admin_profile(self, user: User) -> AdminProfile | None:
+        """The administrator profile behind an active admin account."""
+        if user.role not in ADMIN_ROLES or (user.status or "ACTIVE").upper() != "ACTIVE":
+            return None
+        profile = self.database.query(AdminProfile).filter(AdminProfile.user_id == user.id).first()
+        return profile if profile is not None and profile.scope in ADMIN_SCOPES else None
+
+    def admin_projects(self, admin: Any) -> list[Project]:
+        """STUB (projects): the open projects in an administrator's scope."""
+        return []
+
+    def projects_by_id(self, project_ids: Any) -> list[Project]:
+        """STUB (projects)."""
+        return []
+
+    def active_admins(self) -> list[tuple[User, AdminProfile]]:
+        return [
+            (row[0], row[1])
+            for row in self.database.query(User, AdminProfile)
+            .join(AdminProfile, AdminProfile.user_id == User.id)
+            .filter(User.role.in_(ADMIN_ROLES), User.status == "ACTIVE", AdminProfile.scope.in_(ADMIN_SCOPES))
+            .all()
+        ]
+
+    def users_by_id(self, user_ids: Any) -> list[User]:
+        if not user_ids:
+            return []
+        return self.database.query(User).filter(User.id.in_(list(user_ids)), User.status == "ACTIVE").all()
+
+    def store_request_recipient_ids(self, project_id: Any) -> set[uuid.UUID]:
+        """STUB (store)."""
+        return set()
+
+    def supplier_order_recipient_ids(self, project_id: Any) -> set[uuid.UUID]:
+        """STUB (marketplace, equipment_supply, labour_supply)."""
+        return set()
+
+    def monitored_personal_user_ids(self) -> list[uuid.UUID]:
+        """Accounts with a personal weather site, still active."""
+        return [
+            row[0]
+            for row in self.database.query(WeatherSiteLocation.user_id)
+            .join(User, User.id == WeatherSiteLocation.user_id)
+            .filter(WeatherSiteLocation.user_id.isnot(None), User.status == "ACTIVE")
+            .all()
+        ]
+
+    def user(self, user_id: Any) -> User | None:
+        return self.database.get(User, user_id)
+
+    def monitored_project_ids(self) -> list[Any]:
+        """STUB (projects): every open project, for the monitor."""
+        return []
+
+    def project_recipients(self, project: Project) -> list[User]:
+        """STUB (projects): the owner, awarded builder and active Site Engineers."""
+        return []
+
+    # ------------------------------------------------------------- one site
+    def location_of(self, site) -> WeatherSiteLocation | None:
+        return self.database.query(WeatherSiteLocation).filter(site_filter(WeatherSiteLocation, site)).first()
+
+    def snapshot_of(self, site) -> WeatherSnapshot | None:
+        return self.database.query(WeatherSnapshot).filter(site_filter(WeatherSnapshot, site)).first()
+
+    def active_alerts_of(self, site) -> list[WeatherAlert]:
+        return (
+            self.database.query(WeatherAlert)
+            .filter(site_filter(WeatherAlert, site), WeatherAlert.status == "ACTIVE")
+            .all()
+        )
+
+    def recently_resolved_of(self, site, event_key: str, since: datetime) -> WeatherAlert | None:
+        return (
+            self.database.query(WeatherAlert)
+            .filter(
+                site_filter(WeatherAlert, site),
+                WeatherAlert.event_key == event_key,
+                WeatherAlert.status == "RESOLVED",
+                WeatherAlert.resolved_at >= since,
+            )
+            .order_by(desc(WeatherAlert.resolved_at))
+            .first()
+        )
+
+    def personal_snapshot(self, user_id: uuid.UUID) -> WeatherSnapshot | None:
+        return self.database.query(WeatherSnapshot).filter(WeatherSnapshot.user_id == user_id).first()
+
+    # ------------------------------------------------------------- locations
+    def location(self, project_id: int) -> WeatherSiteLocation | None:
+        return self.database.query(WeatherSiteLocation).filter(WeatherSiteLocation.project_id == project_id).first()
+
+    def locations(self, project_ids: list[int]) -> dict[int, WeatherSiteLocation]:
+        if not project_ids:
+            return {}
+        rows = self.database.query(WeatherSiteLocation).filter(WeatherSiteLocation.project_id.in_(project_ids)).all()
+        return {row.project_id: row for row in rows}
+
+    def geocode(self, query_key: str) -> WeatherGeocodeCache | None:
+        return self.database.query(WeatherGeocodeCache).filter(WeatherGeocodeCache.query_key == query_key).first()
+
+    # ------------------------------------------------------------- snapshots
+    def snapshot(self, project_id: int) -> WeatherSnapshot | None:
+        return self.database.query(WeatherSnapshot).filter(WeatherSnapshot.project_id == project_id).first()
+
+    # ------------------------------------------------------------- alerts
+    def alert(self, alert_id: int) -> WeatherAlert | None:
+        return self.database.get(WeatherAlert, alert_id)
+
+    def active_alerts(self, project_id: int) -> list[WeatherAlert]:
+        return (
+            self.database.query(WeatherAlert)
+            .filter(
+                WeatherAlert.project_id == project_id,
+                WeatherAlert.status == "ACTIVE",
+            )
+            .all()
+        )
+
+    def active_alerts_for(self, project_ids: list[int]) -> list[WeatherAlert]:
+        if not project_ids:
+            return []
+        return (
+            self.database.query(WeatherAlert)
+            .filter(
+                WeatherAlert.project_id.in_(project_ids),
+                WeatherAlert.status == "ACTIVE",
+            )
+            .all()
+        )
+
+    def history(
+        self,
+        project_ids: list[int],
+        *,
+        personal_user_id: uuid.UUID | None = None,
+        alert_type=None,
+        severity=None,
+        status=None,
+        date_from: datetime | None = None,
+        date_to: datetime | None = None,
+        offset=0,
+        limit=50,
+    ):
+        """Alerts of these projects, and of this account's own site when personal_user_id is given."""
+        scopes = []
+        if project_ids:
+            scopes.append(WeatherAlert.project_id.in_(project_ids))
+        if personal_user_id is not None:
+            scopes.append(WeatherAlert.user_id == personal_user_id)
+        if not scopes:
+            return [], 0
+        query = self.database.query(WeatherAlert).filter(or_(*scopes))
+        if alert_type:
+            query = query.filter(WeatherAlert.alert_type == alert_type)
+        if severity:
+            query = query.filter(WeatherAlert.severity == severity)
+        if status:
+            query = query.filter(WeatherAlert.status == status)
+        if date_from:
+            query = query.filter(WeatherAlert.created_at >= date_from)
+        if date_to:
+            query = query.filter(WeatherAlert.created_at < date_to)
+        total = query.count()
+        rows = query.order_by(desc(WeatherAlert.created_at), desc(WeatherAlert.id)).offset(offset).limit(limit).all()
+        return rows, total
+
+    def acknowledgements(self, alert_ids: list[int]) -> dict[int, list[tuple[WeatherAlertAcknowledgement, str | None]]]:
+        if not alert_ids:
+            return {}
+        rows = (
+            self.database.query(WeatherAlertAcknowledgement, User.name)
+            .outerjoin(User, User.id == WeatherAlertAcknowledgement.user_id)
+            .filter(WeatherAlertAcknowledgement.alert_id.in_(alert_ids))
+            .order_by(WeatherAlertAcknowledgement.acknowledged_at)
+            .all()
+        )
+        grouped: dict[int, list] = {}
+        for acknowledgement, name in rows:
+            grouped.setdefault(acknowledgement.alert_id, []).append((acknowledgement, name))
+        return grouped
+
+    def acknowledgement(self, alert_id: int, user_id: uuid.UUID) -> WeatherAlertAcknowledgement | None:
+        return (
+            self.database.query(WeatherAlertAcknowledgement)
+            .filter(
+                WeatherAlertAcknowledgement.alert_id == alert_id,
+                WeatherAlertAcknowledgement.user_id == user_id,
+            )
+            .first()
+        )
