@@ -76,6 +76,7 @@ def test_the_ad_console(desk: Any, database: Session) -> None:
     listing = admin.get("/api/v1/admin/ads").json()
     assert listing["total"] == 1 and listing["revenue"] == [{"currency": "INR", "earned": "200.00", "adverts": 1}]
     assert admin.get(f"/api/v1/admin/ads/{uuid.uuid4()}/stats").status_code == 404
+    assert admin.get("/api/v1/admin/ads", params={"limit": -1}).status_code == 422  # crash fixed (was 500)
 
     actions = database.scalars(select(AdminAuditLog.action).order_by(AdminAuditLog.created_at)).all()
     assert actions == ["advert.created", "advert.updated", "advert.status"]

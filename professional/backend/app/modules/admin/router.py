@@ -360,7 +360,8 @@ def list_adverts(
     admin: AdminIdentity = Depends(require_admin("ads.view")),
     database: Session = Depends(get_db),
     status: str | None = Query(default=None),
-    limit: int = Query(default=50, le=200),
+    # Crash fixed: the old route had no lower bound, and a negative limit failed in PostgreSQL (500).
+    limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
     country: str | None = Query(default=None),
 ) -> dict[str, Any]:
