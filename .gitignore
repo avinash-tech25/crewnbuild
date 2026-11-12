@@ -1,0 +1,39 @@
+# ---- Secrets (technical-architecture.md 5.3, CF-01) ----
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+.certs/
+
+# ---- Python ----
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# ---- Node / web builds ----
+node_modules/
+dist/
+coverage/
+playwright-report/
+test-results/
+
+# ---- Runtime files (files go to S3; never committed) ----
+uploads/
+logs/
+*.log
+translation_cache/
+
+# ---- Tools and editors ----
+.claude/
+.idea/
+.vscode/*
+!.vscode/extensions.json
+.DS_Store
+Thumbs.db
