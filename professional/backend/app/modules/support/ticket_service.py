@@ -1,5 +1,5 @@
 """Support tickets: creation and the person's own tickets (ported from the old
-support_service.py, same rules). The staff side comes with the admin module.
+support_service.py, same rules). The staff side is modules/admin/support_desk_service.py.
 
 * A ticket exists only once committed; the reference (CNB-000123) is issued here.
 * A signed-in person's name, e-mail and phone come from the account; the form only

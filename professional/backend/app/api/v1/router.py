@@ -13,6 +13,8 @@ from fastapi import APIRouter, Depends
 
 from app.auth.dependencies import enforce_route_access
 from app.modules.accounts.router import router as accounts_router
+from app.modules.admin.router import router as admin_router
+from app.modules.admin.router import staff_router as admin_staff_router
 from app.modules.content.router import router as content_router
 from app.modules.content.vastu.router import router as vastu_router
 from app.modules.files.router import router as files_router
@@ -30,12 +32,16 @@ def health_check() -> dict[str, str]:
 
 
 MODULE_ROUTERS: list[APIRouter] = [
+    # The old app registered the admin console first; every /admin path is its own.
+    admin_router,
     identity_router,
     accounts_router,
     # The old order put the file routes after property and estimates.
     files_router,
-    # Reports, contact and support, in the old order.
+    # Reports, contact and support, in the old order, with the admin deleted-accounts
+    # and support-ticket screens where the old app registered them.
     support_router,
+    admin_staff_router,
     # Estimates, ads and translation; then Vastu.
     content_router,
     vastu_router,

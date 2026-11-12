@@ -1,5 +1,5 @@
 """Who an administrator is and what it may do (ported from the old
-app/admin/services/permissions.py; the admin screens come with the admin module).
+app/admin/services/permissions.py).
 
 Access is decided by role, scope (GLOBAL or IN) and named permission. A Global or
 Location Super Admin holds every permission; a Manager only those granted on its
@@ -38,6 +38,19 @@ PERMISSIONS = {
     "deletions.manage": "Not used (the account deletion approval workflow was retired)",
     "support.view": "See support tickets and their conversations",
     "support.manage": "Reply to support tickets and change their status",
+}
+
+# Ready-made permission sets for the manager kinds a Location Super Admin can create;
+# offered from a list so a manager gets the right narrow slice.
+MANAGER_PRESETS = {
+    "VERIFICATION": ("users.view", "verification.view", "verification.decide"),
+    "OPERATIONS": ("users.view", "projects.view", "reports.view", "reports.resolve"),
+    "ADVERTS": ("ads.view", "ads.manage"),
+}
+MANAGER_PRESET_LABELS = {
+    "VERIFICATION": "Verification manager",
+    "OPERATIONS": "Operations manager",
+    "ADVERTS": "Ads manager",
 }
 
 

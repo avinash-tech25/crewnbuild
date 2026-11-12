@@ -1,5 +1,6 @@
 """Reporting an account or a project (ported from the old reports module and
-admin report_service.raise_report / describe). Resolving reports is the admin module's.
+admin report_service.raise_report / describe). Resolving reports is the admin module's
+(modules/admin/report_service.py).
 
 The administrative scope is fixed from the subject when the report is raised, never
 from the person complaining.

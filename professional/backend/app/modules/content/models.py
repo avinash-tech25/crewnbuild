@@ -6,7 +6,8 @@
                      data copy (R8); nothing writes it since POST /estimates was retired
 
 The public side of ads (what a screen shows, views and clicks, the picture) is served
-here; creating and editing ads is the admin module's.
+here; creating and editing ads is the admin module's
+(modules/admin/advert_service.py).
 """
 
 import uuid

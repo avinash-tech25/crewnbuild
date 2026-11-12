@@ -5,7 +5,8 @@ touch is the module's policies.py (ownership). Modules add their permissions to 
 as they are ported; identity needs only `handoff:create`.
 
 Administrator permissions are not in this map: they are the named grants on the
-administrator's own profile (admin_profiles.permissions), checked with the admin module.
+administrator's own profile (admin_profiles.permissions), checked by modules/admin/dependencies.py
+(require_admin).
 """
 
 from app.modules.identity.models import (

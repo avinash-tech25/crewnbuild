@@ -8,7 +8,7 @@ Signed in (the account's own tickets and reports only):
     POST /support/tickets/{reference}/messages, GET /support/tickets/{reference}/attachment,
     POST /reports, GET /reports/mine
 
-Staff ticket and report handling comes with the admin module.
+Staff ticket and report handling: /admin/support/tickets and /admin/reports (modules/admin).
 """
 
 import logging

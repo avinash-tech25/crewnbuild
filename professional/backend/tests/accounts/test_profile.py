@@ -16,6 +16,7 @@ from sqlalchemy.orm import Session
 from app.modules.accounts import router as accounts_router_module
 from app.modules.accounts import service as accounts_service_module
 from app.modules.accounts.models import BuilderProfile, EngineerProfile, OwnerProfile, SupplierProfile
+from app.modules.admin.models import AdminAuditLog
 from app.modules.files.models import File
 from app.modules.identity.models import ROLE_BUILDER, ROLE_ENGINEER, ROLE_MANAGER, ROLE_SUPPLIER, User, UserSession
 
@@ -291,3 +292,5 @@ def test_an_administrator_phone_change_ends_its_other_sessions(
         row.revoke_reason for row in database.scalars(select(UserSession).where(UserSession.user_id == admin.id))
     }
     assert "admin_phone_changed" in reasons
+    entry = database.scalars(select(AdminAuditLog)).one()  # wired back by the admin module
+    assert (entry.action, entry.actor_id, entry.target_id) == ("admin.phone_changed", admin.id, str(admin.id))
