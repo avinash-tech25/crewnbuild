@@ -26,7 +26,7 @@ from app.core.security.session_cookies import API_PREFIX, access_token_from
 from app.database.session import get_db
 from app.modules.billing.signup_checkout import enforce as enforce_signup_checkout
 from app.modules.identity.models import User, UserSession
-from app.modules.identity.policies import SUSPENDED_MESSAGE, session_role
+from app.modules.identity.policies import session_role, suspended_message
 from app.modules.identity.repository import SessionRepository
 from app.modules.identity.session_service import SESSION_EXPIRED_MESSAGE, SessionService
 
@@ -62,7 +62,7 @@ def authenticate_access_token(token: str | None, database: Session, settings: Se
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
     # A suspension ends the sessions that already exist, on the very next request.
     if not user.is_active:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=SUSPENDED_MESSAGE)
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=suspended_message(user))
     return user, session
 
 

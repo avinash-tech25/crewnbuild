@@ -18,6 +18,7 @@ from app.database.session import get_db
 from app.modules.accounts.models import ADMIN_SCOPES, AdminProfile
 from app.modules.admin.admin_identity import PERMISSIONS, AdminIdentity
 from app.modules.identity.models import ADMIN_ROLES, User
+from app.modules.identity.policies import ADMIN_SUSPENDED_MESSAGE
 
 
 def current_admin(user: User = Depends(current_user), database: Session = Depends(get_db)) -> AdminIdentity:
@@ -31,7 +32,7 @@ def current_admin(user: User = Depends(current_user), database: Session = Depend
     if profile.scope not in ADMIN_SCOPES:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Administrator scope is not recognised")
     if not user.is_active:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="This administrator account is suspended")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=ADMIN_SUSPENDED_MESSAGE)
     return AdminIdentity(user, profile)
 
 
