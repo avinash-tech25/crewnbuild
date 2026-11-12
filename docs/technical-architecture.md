@@ -67,7 +67,7 @@ The stack stays as it is today; this design adds a few standard libraries for se
 | Database | PostgreSQL 16 or later, database `crewnbuild`, schemas `professional` and `partner` | PostgreSQL 18 adds a built-in `uuidv7()`; on older versions the app generates UUIDv7 |
 | DB driver | psycopg 3 (`postgresql+psycopg://`) | Replaces `psycopg2-binary`, which is not meant for production |
 | Password hashing | Argon2id (`argon2-cffi`), bcrypt still verified for existing hashes | Re-hash to Argon2id at next sign-in |
-| Tokens | PyJWT; HS256 for each service's own access tokens, EdDSA (Ed25519) for the cross-service hand-off | Replaces unmaintained `python-jose` |
+| Tokens | PyJWT; HS256 for each service's own access tokens, ES256 (ECDSA P-256) for the cross-service hand-off | Replaces unmaintained `python-jose` |
 | Encryption at rest | `cryptography` (Fernet / AES-GCM) with key versioning | Aadhaar, face captures, bank numbers, camera credentials |
 | Rate limiting | Database-backed limiter (or Redis if added) | Shared across all API processes |
 | HTTP client | httpx with timeouts and retries | All outside services |
@@ -290,7 +290,7 @@ Both `.env.example` files currently expose real values, so every secret in them 
 | --- | --- | --- |
 | Both | Database passwords (one role per service) | Update `DATABASE_URL` |
 | Both | `JWT_SECRET_KEY` (each service its own, at least 64 random bytes) | All sessions end |
-| Professional / Partner | Hand-off key pair (`PARTNER_HANDOFF_PRIVATE_KEY` / `PROFESSIONAL_HANDOFF_PUBLIC_KEY (was OCTABUILD_HANDOFF_PUBLIC_KEY)`) | New Ed25519 pair; public key to Partner |
+| Professional / Partner | Hand-off key pair (`PARTNER_HANDOFF_PRIVATE_KEY` / `PROFESSIONAL_HANDOFF_PUBLIC_KEY (was OCTABUILD_HANDOFF_PUBLIC_KEY)`) | New ES256 (ECDSA P-256) pair; public key to Partner |
 | Professional | `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET` | Update webhook in Razorpay dashboard |
 | Professional | `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` | Prefer an IAM role in production instead of keys |
 | Professional | `GOOGLE_CLIENT_SECRET`, `MICROSOFT_CLIENT_SECRET` | Regenerate in each provider console |
@@ -340,7 +340,7 @@ REFRESH_TOKEN_DAYS=30
 AUTH_COOKIE_SECURE=false
 FRONTEND_ORIGIN=http://localhost:5173
 
-# ---- Partner hand-off (Ed25519 private key, PEM, one line with \n) ----
+# ---- Partner hand-off (ES256 (ECDSA P-256) private key, PEM, one line with \n) ----
 PARTNER_HANDOFF_PRIVATE_KEY=change-me
 PARTNER_HANDOFF_SECONDS=60
 
@@ -420,7 +420,7 @@ Access tokens drop from 30 to 15 minutes; refresh is silent, so users see no dif
 3. **OAuth:** state and PKCE verifier in a signed, short-lived cookie; state single use; account linked through `user_oauth_identities`.
 4. **Refresh:** one refresh in flight per tab (single-flight in the web client); on failure the app signs out cleanly.
 5. **Sign-out:** revokes the session row and clears cookies; "sign out everywhere" revokes all the user's sessions; a password change revokes all other sessions.
-6. **Partner hand-off:** Professional signs an EdDSA token (`sub`, `role`, `jti`, `aud=partner`, `exp` ≤ 60 s) → Professional web sends it by `postMessage` to the exact Partner origin → Partner checks the sender origin, signature, audience, expiry and that `jti` is unused → creates a 60-minute requester session.
+6. **Partner hand-off:** Professional signs an ES256 (ECDSA P-256) token (`sub`, `jti`, `aud=partner`, `exp` ≤ 60 s) → Professional web sends it by `postMessage` to the exact Partner origin → Partner checks the sender origin, signature, audience, expiry and that `jti` is unused → creates a 60-minute requester session.
 
 ### 6.4 Protection against abuse
 
@@ -1005,7 +1005,7 @@ A release goes to production only when every item below is ticked. The list foll
 - [ ] CSRF token and `Origin` check on every cookie-authenticated write.
 - [ ] Sign-in, OTP and password-reset rate limits shared across processes.
 - [ ] Sign-in and OTP answers do not reveal whether an account exists.
-- [ ] Hand-off token single use, 60 s, audience-bound, EdDSA-signed; `postMessage` origin checked both ways.
+- [ ] Hand-off token single use, 60 s, audience-bound, ES256 (ECDSA P-256)-signed; `postMessage` origin checked both ways.
 
 ### 14.2 Data protection
 
