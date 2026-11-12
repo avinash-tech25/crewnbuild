@@ -41,7 +41,7 @@ from app.integrations.oauth_providers.openid_connect import (
 )
 from app.modules.accounts.models import BuilderProfile, EngineerProfile, OwnerProfile, SupplierProfile
 from app.modules.identity.models import (
-    COUNTRY_INDIA,
+    DEFAULT_COUNTRY,
     MARKETPLACE_ROLES,
     ROLE_BUILDER,
     ROLE_ENGINEER,
@@ -110,7 +110,7 @@ def create_oauth_user(database: Session, email: str, name: str, role: str) -> Us
         role=role,
         address="",
         pincode="",
-        country_code=COUNTRY_INDIA,
+        country_code=DEFAULT_COUNTRY,
     )
     database.add(user)
     database.flush()

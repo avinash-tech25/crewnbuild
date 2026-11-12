@@ -40,7 +40,7 @@ from app.integrations.whatsapp.dovesoft_client import (
     WhatsAppNotReadyError,
     mask_phone,
 )
-from app.modules.identity.models import PhoneVerificationCode, User
+from app.modules.identity.models import DEFAULT_COUNTRY, PhoneVerificationCode, User
 from app.modules.identity.otp_test_accounts import (
     OTP_TEST_CODE_TTL_MINUTES,
     TEST_ACCOUNT_ROLE_MISMATCH,
@@ -154,13 +154,26 @@ def window_wait(send_times: list[datetime], limit: int, window: timedelta, now: 
     return (leaves_at - now).total_seconds()
 
 
-def phone_in_use(database: Session, phone: str, exclude_user_id: uuid.UUID | None = None) -> bool:
-    """Whether another account already holds this number: marketplace accounts in
-    users.phone, administrators in admin_profiles.phone."""
+def effective_country(*candidates: str | None) -> str:
+    """The first non-blank country given, else India (the old rule)."""
+    for value in candidates:
+        if value and value.strip():
+            return value.strip()
+    return DEFAULT_COUNTRY
+
+
+def phone_in_use(
+    database: Session, phone: str, country: str = DEFAULT_COUNTRY, exclude_user_id: uuid.UUID | None = None
+) -> bool:
+    """Whether another account already holds this number in this country: marketplace
+    accounts in users.phone; administrators in admin_profiles.phone (Indian numbers)."""
     if not phone:
         return False
+    country = effective_country(country)
     users = UserRepository(database)
-    return users.phone_exists(phone, exclude_user_id) or users.admin_phone_exists(phone, exclude_user_id)
+    if users.phone_exists(phone, country, exclude_user_id):
+        return True
+    return country.upper() == DEFAULT_COUNTRY.upper() and users.admin_phone_exists(phone, exclude_user_id)
 
 
 @dataclass(frozen=True)

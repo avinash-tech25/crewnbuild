@@ -14,7 +14,8 @@ service.user_response):
 
     hashed_password        -> password_hash
     email_verified (bool)  -> email_verified_at (timestamptz; "email_verified" = is set)
-    country_of_residence   -> country_code char(2), always 'IN' (India only, section 4.7)
+    country_of_residence   -> country_code (same values as before: the country the account
+                              holder gave, "India" when none; see country_key)
     + updated_at, deleted_at
 
 `rating` and `profile_image_url` are kept as they are: the marketplace search reads the
@@ -24,6 +25,7 @@ ported yet.
 
 import uuid
 from datetime import date, datetime
+from typing import Any
 
 from sqlalchemy import (
     Boolean,
@@ -68,7 +70,8 @@ STATUS_SUSPENDED = "SUSPENDED"
 STATUS_DELETED = "DELETED"
 ACCOUNT_STATUSES = (STATUS_ACTIVE, STATUS_SUSPENDED, STATUS_DELETED)
 
-COUNTRY_INDIA = "IN"
+# What users.country_code holds when sign-up gives no country (the old default).
+DEFAULT_COUNTRY = "India"
 
 # user_sessions.revoke_reason
 REVOKED_ROTATED = "rotated"
@@ -104,9 +107,9 @@ class User(UuidPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin, Base):
     pincode: Mapped[str] = mapped_column(String(10), nullable=False, server_default="", index=True)
     # Area / district / state resolved from the pincode; the street address is `address`.
     location: Mapped[str | None] = mapped_column(String(180))
-    country_code: Mapped[str] = mapped_column(
-        String(2), nullable=False, default=COUNTRY_INDIA, server_default=COUNTRY_INDIA
-    )
+    # The account holder's country as given at sign-up, stored exactly as the old
+    # country_of_residence column stored it (free text, "India" by default).
+    country_code: Mapped[str | None] = mapped_column(String(60), default=DEFAULT_COUNTRY)
     rating: Mapped[float] = mapped_column(Float, nullable=False, default=0, server_default="0")
     profile_image_url: Mapped[str | None] = mapped_column(String(500))
 
@@ -137,11 +140,19 @@ Index(
     unique=True,
     postgresql_where=text("email IS NOT NULL AND deleted_at IS NULL"),
 )
+
+
+def country_key(column: Any) -> Any:
+    """The country a phone number is unique within: the first non-blank value, else
+    India, compared in upper case. Identical to the old uq_users_country_phone key."""
+    return func.upper(func.coalesce(func.nullif(func.btrim(column), ""), DEFAULT_COUNTRY))
+
+
 # One number per country per live account. An empty number (no number yet) is left out,
 # as the old uq_users_country_phone did.
 Index(
     "uq_users__country_code_phone",
-    User.country_code,
+    country_key(User.country_code),
     User.phone,
     unique=True,
     postgresql_where=text("phone <> '' AND deleted_at IS NULL"),

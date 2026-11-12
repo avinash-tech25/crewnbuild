@@ -39,7 +39,7 @@ crewnbuild/
 
 ## Running locally
 
-**You need:** Git, Python 3.12, Node.js 20 LTS or later, and PostgreSQL 16 or later. The full steps are in `docs/technical-architecture.md` section 18. Always migrate Professional before Partner.
+**You need:** Git, Python 3.12, Node.js 20 LTS or later, and PostgreSQL 18 or later. The full steps are in `docs/technical-architecture.md` section 18. Always migrate Professional before Partner.
 
 1. **Create the database, roles and schemas** (once per machine). First replace the `change-me` passwords in the script, then run:
 

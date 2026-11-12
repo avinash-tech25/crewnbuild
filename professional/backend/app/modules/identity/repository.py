@@ -9,13 +9,14 @@ from sqlalchemy.orm import Session
 
 from app.modules.accounts.models import AdminProfile
 from app.modules.identity.models import (
-    COUNTRY_INDIA,
+    DEFAULT_COUNTRY,
     EmailVerificationCode,
     OtpSendEvent,
     PhoneVerificationCode,
     User,
     UserOAuthIdentity,
     UserSession,
+    country_key,
 )
 
 
@@ -39,15 +40,19 @@ class UserRepository:
             select(User).where(or_(func.lower(User.email) == normalized, func.lower(User.name) == normalized))
         ).first()
 
-    def get_by_phone(self, phone: str) -> User | None:
+    def get_by_phone(self, phone: str, country: str = DEFAULT_COUNTRY) -> User | None:
+        """The account holding this number in this country, keyed as the unique index
+        keys it, so there is at most one."""
         if not phone:
             return None
         return self.database.scalars(
-            select(User).where(User.phone == phone, User.country_code == COUNTRY_INDIA)
+            select(User).where(User.phone == phone, country_key(User.country_code) == country.strip().upper())
         ).first()
 
-    def phone_exists(self, phone: str, exclude_user_id: uuid.UUID | None = None) -> bool:
-        query = select(User.id).where(User.phone == phone, User.country_code == COUNTRY_INDIA)
+    def phone_exists(
+        self, phone: str, country: str = DEFAULT_COUNTRY, exclude_user_id: uuid.UUID | None = None
+    ) -> bool:
+        query = select(User.id).where(User.phone == phone, country_key(User.country_code) == country.strip().upper())
         if exclude_user_id is not None:
             query = query.where(User.id != exclude_user_id)
         return self.database.scalars(query).first() is not None

@@ -156,3 +156,61 @@ def test_profile_email_is_saved_verified(mail_client: TestClient, mailbox: FakeE
     assert saved.status_code == 200
     assert saved.json()["user"]["email"] == "phone.only@example.in"
     assert saved.json()["user"]["email_verified"] is True
+
+
+def verified_signup(client: TestClient, mailbox: FakeEmailSender, email: str, **fields: object) -> "object":
+    client.post("/api/v1/auth/email/send-code", json={"email": email})
+    client.post("/api/v1/auth/email/verify-code", json={"email": email, "code": mailbox.last_code()})
+    body = {"name": "Farah", "email": email, "password": STRONG_PASSWORD, "role": "OWNER", **fields}
+    return client.post("/api/v1/auth/signup", json=body)
+
+
+def test_a_non_india_sign_up_keeps_its_country(
+    mail_client: TestClient, mailbox: FakeEmailSender, database: Session
+) -> None:
+    response = verified_signup(
+        mail_client,
+        mailbox,
+        "farah@example.ae",
+        country_of_residence="United Arab Emirates",
+        phone="501234567",
+        pincode="12345",
+    )
+    assert response.status_code == 200, response.text
+    assert response.json()["user"]["country_of_residence"] == "United Arab Emirates"
+    stored = database.scalars(select(User)).one()
+    assert stored.country_code == "United Arab Emirates"
+    # The same session answer after a reload.
+    assert mail_client.get("/api/v1/auth/session").json()["user"]["country_of_residence"] == "United Arab Emirates"
+
+
+def test_the_country_specific_rules_are_unchanged(
+    mail_client: TestClient, mailbox: FakeEmailSender, database: Session
+) -> None:
+    short = verified_signup(
+        mail_client, mailbox, "a@example.ae", country_of_residence="United Arab Emirates", phone="1234567"
+    )
+    assert short.status_code == 422
+    assert short.json() == {"detail": "Enter a valid phone number for your country."}
+    india = verified_signup(mail_client, mailbox, "b@example.in", country_of_residence="India", phone="98765")
+    assert india.json() == {"detail": "Enter a valid 10 digit phone number."}
+
+
+def test_no_country_means_india(mail_client: TestClient, mailbox: FakeEmailSender, database: Session) -> None:
+    response = verified_signup(mail_client, mailbox, "c@example.in", phone="9876500001")
+    assert response.json()["user"]["country_of_residence"] == "India"
+    assert database.scalars(select(User)).one().country_code == "India"
+
+
+def test_a_number_is_unique_within_its_country_only(
+    mail_client: TestClient, mailbox: FakeEmailSender, database: Session
+) -> None:
+    create_user(database, email="india@example.in", phone="9876500002")
+    same_country = verified_signup(
+        mail_client, mailbox, "d@example.in", phone="9876500002", country_of_residence=" india "
+    )
+    assert same_country.status_code == 409
+    abroad = verified_signup(
+        mail_client, mailbox, "e@example.ae", phone="9876500002", country_of_residence="United Arab Emirates"
+    )
+    assert abroad.status_code == 200, abroad.text

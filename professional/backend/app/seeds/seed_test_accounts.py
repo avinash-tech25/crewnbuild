@@ -25,7 +25,7 @@ from sqlalchemy.orm import Session
 from app.core.config import Settings, get_settings
 from app.core.security.password_hashing import hash_secret
 from app.modules.accounts.models import BuilderProfile, OwnerProfile
-from app.modules.identity.models import COUNTRY_INDIA, ROLE_OWNER, User
+from app.modules.identity.models import DEFAULT_COUNTRY, ROLE_OWNER, User
 from app.modules.identity.otp_test_accounts import OTP_TEST_ACCOUNTS, OTP_TEST_SEEDED_ROLES, otp_test_login_on
 from app.modules.identity.phone_verification_service import phone_in_use
 from app.modules.identity.repository import UserRepository
@@ -80,7 +80,7 @@ def provision(database: Session, settings: Settings) -> dict[str, tuple[str, str
             role=account.role,
             address="",
             pincode="",
-            country_code=COUNTRY_INDIA,
+            country_code=DEFAULT_COUNTRY,
         )
         database.add(user)
         database.flush()

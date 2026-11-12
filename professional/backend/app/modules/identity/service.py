@@ -8,7 +8,7 @@ Changes against the old code:
 * An unknown sign-in identifier spends the time of one password check, so the answer
   time does not reveal which identifiers exist.
 * The Builder role is stored as BUILDER; sign-up still accepts CONTRACTOR for it.
-* Every account is an India account (country_code IN).
+* The country is stored in users.country_code, with the old values and rules.
 """
 
 import logging
@@ -37,7 +37,7 @@ from app.modules.billing.signup_checkout import pending_checkout, remember_signu
 from app.modules.identity.email_verification_service import EmailVerificationService
 from app.modules.identity.models import (
     ADMIN_ROLES,
-    COUNTRY_INDIA,
+    DEFAULT_COUNTRY,
     MARKETPLACE_ROLES,
     ROLE_BUILDER,
     ROLE_ENGINEER,
@@ -50,6 +50,7 @@ from app.modules.identity.phone_verification_service import (
     NOT_REGISTERED_MESSAGE,
     PHONE_IN_USE_MESSAGE,
     PhoneVerificationService,
+    effective_country,
     phone_in_use,
 )
 from app.modules.identity.policies import GLOBAL_ADMIN_USE_WHATSAPP, ensure_may_sign_in
@@ -108,7 +109,7 @@ def user_response(user: User, database: Session, include_created_at: bool = Fals
         "address": user.address,
         "pincode": user.pincode,
         "location": user.location,
-        "country_of_residence": "India",
+        "country_of_residence": user.country_code or DEFAULT_COUNTRY,
         "rating": user.rating,
         "profile_image_url": user.profile_image_url,
         "profile_complete": profile_complete(user),
@@ -234,7 +235,7 @@ class AuthService:
             if pincode and (len(pincode) < 3 or len(pincode) > 10):
                 raise HTTPException(status_code=422, detail="Enter a valid postal code for your country.")
 
-        if phone and phone_in_use(self.database, phone):
+        if phone and phone_in_use(self.database, phone, effective_country(residence_country)):
             raise HTTPException(status_code=409, detail=PHONE_IN_USE_MESSAGE)
 
         user = User(
@@ -247,7 +248,8 @@ class AuthService:
             role=role,
             address=payload.address,
             pincode=pincode,
-            country_code=COUNTRY_INDIA,
+            # Left at the default (India) when sign-up sends none, as before.
+            country_code=residence_country or DEFAULT_COUNTRY,
         )
         try:
             self.database.add(user)

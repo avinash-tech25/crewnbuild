@@ -64,7 +64,7 @@ The stack stays as it is today; this design adds a few standard libraries for se
 | Web framework | FastAPI 0.115 on Starlette, Pydantic v2 | `extra="forbid"` on every request model |
 | ASGI server | Uvicorn workers under Gunicorn (production), Uvicorn alone (development) | One process per CPU core |
 | ORM and migrations | SQLAlchemy 2 (typed `Mapped[...]` models), Alembic | One Alembic chain per service, version table in its own schema |
-| Database | PostgreSQL 16 or later, database `crewnbuild`, schemas `professional` and `partner` | PostgreSQL 18 adds a built-in `uuidv7()`; on older versions the app generates UUIDv7 |
+| Database | PostgreSQL 18 or later, database `crewnbuild`, schemas `professional` and `partner` | The app generates UUIDv7 keys; the built-in `uuidv7()` of PostgreSQL 18 is the database default for rows inserted outside the app |
 | DB driver | psycopg 3 (`postgresql+psycopg://`) | Replaces `psycopg2-binary`, which is not meant for production |
 | Password hashing | Argon2id (`argon2-cffi`), bcrypt still verified for existing hashes | Re-hash to Argon2id at next sign-in |
 | Tokens | PyJWT; HS256 for each service's own access tokens, ES256 (ECDSA P-256) for the cross-service hand-off | Replaces unmaintained `python-jose` |
@@ -1206,7 +1206,7 @@ The old, scattered test files are deleted in the clean-up (4.7). This section is
 
 A colleague goes from `git clone` to both apps running with the commands below, on Windows PowerShell. Professional is always migrated before Partner.
 
-**Needs:** Git, Python 3.12, Node.js 20 LTS or later, PostgreSQL 16 or later.
+**Needs:** Git, Python 3.12, Node.js 20 LTS or later, PostgreSQL 18 or later.
 
 1. **Clone**
 
