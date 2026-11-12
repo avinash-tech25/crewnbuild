@@ -19,6 +19,7 @@ from sqlalchemy.orm import Session
 from app.modules.accounts.profile_completion import is_store_manager
 from app.modules.accounts.repository import AccountRepository
 from app.modules.identity.models import ROLE_BUILDER, ROLE_ENGINEER, ROLE_SUPPLIER, User
+from app.modules.marketplace import account_links as marketplace_links
 from app.modules.projects import deletion_history
 from app.modules.site_operations import project_links as site_links
 
@@ -31,9 +32,9 @@ def pending_builder_history_project_ids(database: Session, user_id: uuid.UUID) -
     return []
 
 
-def pending_supplier_transaction_history_count(database: Session, user_id: uuid.UUID) -> int:
-    """STUB (marketplace, store): this supplier's order lines (material_order_items ->
-    purchase_order_items) and Store Manager payment records."""
+def pending_supplier_store_payment_count(database: Session, user_id: uuid.UUID) -> int:
+    """STUB (store): Store Manager payment records with this supplier or naming one of its
+    listings."""
     return 0
 
 
@@ -43,16 +44,15 @@ def pending_supplier_history_project_ids(database: Session, user_id: uuid.UUID) 
     return []
 
 
-def pending_store_manager_shared_history_count(database: Session, user_id: uuid.UUID) -> int:
-    """STUB (store, marketplace): store site requests, order lines, store payments and
-    goods receipts of this Store Manager's store."""
+def pending_store_manager_store_history_count(database: Session, user_id: uuid.UUID) -> int:
+    """STUB (store): store site requests, store payments and goods receipts of this Store
+    Manager's store."""
     return 0
 
 
 def pending_engineer_history_project_ids(database: Session, user_id: uuid.UUID) -> list[uuid.UUID]:
-    """STUB (labour_supply, equipment_supply, marketplace, store): projects holding this
-    engineer's labour or equipment requests and logs, material requests and store
-    requests."""
+    """STUB (labour_supply, equipment_supply, store): projects holding this engineer's
+    labour or equipment requests and logs and store requests."""
     return []
 
 
@@ -80,7 +80,24 @@ def engineer_history_project_titles(database: Session, user_id: uuid.UUID) -> li
         database,
         user_id,
         deletion_history.engineer_history_project_ids(user_id),
-        pending_engineer_history_project_ids(database, user_id),
+        marketplace_links.buyer_order_project_ids(database, user_id)
+        + pending_engineer_history_project_ids(database, user_id),
+    )
+
+
+def supplier_transaction_history_count(database: Session, user_id: uuid.UUID) -> int:
+    """Order lines of this supplier (or naming one of its listings) and Store Manager
+    payment records."""
+    return marketplace_links.supplier_order_line_count(database, user_id) + pending_supplier_store_payment_count(
+        database, user_id
+    )
+
+
+def store_manager_shared_history_count(database: Session, user_id: uuid.UUID) -> int:
+    """A Store Manager's records others rely on: the order lines they placed, and the
+    store's requests, payments and receipts."""
+    return marketplace_links.buyer_order_line_count(database, user_id) + pending_store_manager_store_history_count(
+        database, user_id
     )
 
 
@@ -116,7 +133,7 @@ def account_deletion_blockers(database: Session, user: User) -> dict[str, Any] |
                 "message": f"Your account holds project history for house owners ({', '.join(titles)}). "
                 "Deleting it would remove their records, so contact support to delete your account.",
             }
-    if user.role == ROLE_SUPPLIER and pending_supplier_transaction_history_count(database, user.id):
+    if user.role == ROLE_SUPPLIER and supplier_transaction_history_count(database, user.id):
         return {
             "code": "SUPPLIER_TRANSACTION_HISTORY",
             "message": "Your account has transaction history (orders, payments or deliveries) that buyers rely on. "
@@ -131,11 +148,7 @@ def account_deletion_blockers(database: Session, user: User) -> dict[str, Any] |
                 f"({', '.join(titles)}). Deleting it would remove their history, so contact support to delete "
                 "your account.",
             }
-    if (
-        user.role == ROLE_ENGINEER
-        and is_store_manager(user)
-        and pending_store_manager_shared_history_count(database, user.id)
-    ):
+    if user.role == ROLE_ENGINEER and is_store_manager(user) and store_manager_shared_history_count(database, user.id):
         return {
             "code": "STORE_MANAGER_HISTORY",
             "message": "Your store holds requests, purchases, payments or deliveries that site engineers, builders "

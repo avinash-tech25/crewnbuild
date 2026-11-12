@@ -327,7 +327,7 @@ class AdminCatalogService:
             for image in sorted(product_images(product), key=lambda item: (item.sort_order, item.id))
         ]
         # How many suppliers already sell it: whether deactivating is harmless.
-        payload["listing_count"] = supplier_links.pending_listing_count(self.database, product_id)
+        payload["listing_count"] = supplier_links.listing_count(self.database, product_id)
         return payload
 
     def create_product(self, payload: ProductWrite, admin: AdminIdentity) -> dict[str, Any]:

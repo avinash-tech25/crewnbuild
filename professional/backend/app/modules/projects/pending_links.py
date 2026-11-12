@@ -7,7 +7,6 @@ answers "nothing found" (or "allowed" for a plan check) until that module replac
     messaging       conversations and their messages (request, quotation, assignment and
                     negotiation lines in the chat) are not written; notifications are
     billing         a builder's plan never gates the calendar or the site photos
-    marketplace     an assigned supplier has no published products to show
     labour_supply   a Labour Supplier shows no active trades to a builder
     property        property enquiries are not in the request list
 """
@@ -57,13 +56,7 @@ def pending_require_project_feature(database: Session, user: User, project: Any,
     return None
 
 
-# ---- marketplace and labour_supply ----
-
-
-def pending_published_products(database: Session, supplier_ids: list[uuid.UUID]) -> list[dict[str, Any]]:
-    """STUB (marketplace): the suppliers' published catalog listings as the old
-    supplier_product_payload, each with its "supplier_id" and "category"."""
-    return []
+# ---- labour_supply ----
 
 
 def pending_active_labour_trades(database: Session, supplier_ids: list[uuid.UUID]) -> dict[uuid.UUID, list[str]]:

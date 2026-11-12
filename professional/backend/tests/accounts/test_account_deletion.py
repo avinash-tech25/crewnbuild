@@ -174,9 +174,9 @@ def test_a_builder_with_an_unpaid_plan_can_still_delete(client: TestClient, data
     [
         ("OWNER", None, "deletion_history.shared_project_titles", ["Villa"], "SHARED_PROJECTS"),
         (ROLE_BUILDER, None, "builder_history_project_titles", ["Villa"], "BUILDER_PROJECT_HISTORY"),
-        ("SUPPLIER", None, "pending_supplier_transaction_history_count", 2, "SUPPLIER_TRANSACTION_HISTORY"),
+        ("SUPPLIER", None, "supplier_transaction_history_count", 2, "SUPPLIER_TRANSACTION_HISTORY"),
         ("SUPPLIER", None, "supplier_project_history_titles", ["Villa"], "SUPPLIER_PROJECT_HISTORY"),
-        (ROLE_ENGINEER, "Store Manager", "pending_store_manager_shared_history_count", 1, "STORE_MANAGER_HISTORY"),
+        (ROLE_ENGINEER, "Store Manager", "store_manager_shared_history_count", 1, "STORE_MANAGER_HISTORY"),
         (
             ROLE_ENGINEER,
             "Site Engineer",

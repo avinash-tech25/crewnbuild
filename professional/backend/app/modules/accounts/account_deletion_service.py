@@ -8,7 +8,8 @@ now a soft delete with anonymisation (DB-07) instead of the old purge:
   original_user_id kept without a foreign key) and anonymises the account: name, e-mail,
   mobile, address, pincode, location and photo cleared, an unusable password, status
   DELETED and deleted_at set; profile logos, documents, gallery, GSTIN and PAN cleared;
-  every session ended and every Google/Microsoft link removed.
+  every session ended and every Google/Microsoft link removed; a supplier's listings
+  are deleted, as the old purge deleted them.
 
 Every old refusal is kept, in the old order and with the old answers
 (deletion_blockers.py): shared projects, then an open Book Technician booking, builder,
@@ -45,6 +46,7 @@ from app.modules.identity.models import (
     UserOAuthIdentity,
 )
 from app.modules.identity.repository import SessionRepository
+from app.modules.marketplace.account_links import remove_supplier_listings
 
 logger = logging.getLogger(__name__)
 
@@ -279,6 +281,9 @@ class AccountDeletionService:
             )
             self.database.add(history)
             anonymise(user)
+            # The old purge deleted a supplier's listings; deletion is refused while any
+            # of them has order history (deletion_blockers).
+            remove_supplier_listings(self.database, user.id)
             user.status = STATUS_DELETED
             user.deleted_at = now
             SessionRepository(self.database).revoke_all_for_user(user.id, REVOKED_ACCOUNT_DELETED, now)

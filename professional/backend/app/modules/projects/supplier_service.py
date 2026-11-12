@@ -9,6 +9,7 @@ from fastapi import HTTPException
 from app.database.types import naive_utc_now
 from app.modules.accounts.profile_lists import split_profile_list
 from app.modules.identity.models import ROLE_BUILDER, ROLE_ENGINEER, ROLE_OWNER, ROLE_SUPPLIER, User
+from app.modules.marketplace.project_links import published_products_by_supplier
 from app.modules.messaging.live_events import queue_live_hint
 from app.modules.projects.access import (
     engineer_has_project_access,
@@ -18,7 +19,7 @@ from app.modules.projects.access import (
 )
 from app.modules.projects.models import ProjectSupplier
 from app.modules.projects.notices import create_request_notification
-from app.modules.projects.pending_links import pending_active_labour_trades, pending_published_products
+from app.modules.projects.pending_links import pending_active_labour_trades
 from app.modules.projects.schemas import SupplierAssignRequest
 from app.modules.projects.supplier_repository import ProjectSupplierRepository
 
@@ -215,10 +216,7 @@ class ProjectSupplierService:
 
         # Collect assigned supplier ids and fetch their published products in one batch.
         assigned_supplier_ids = list({row.supplier_id for row in assignments})
-        published_products = pending_published_products(self.database, assigned_supplier_ids)
-        products_by_supplier: dict[int, list[dict]] = {}
-        for product in published_products:
-            products_by_supplier.setdefault(product["supplier_id"], []).append(product)
+        products_by_supplier = published_products_by_supplier(self.database, assigned_supplier_ids)
 
         result = []
         for row in assignments:
@@ -281,9 +279,7 @@ class ProjectSupplierService:
         if not supplier_ids:
             return []
 
-        products_by_supplier: dict = {}
-        for product in pending_published_products(self.database, supplier_ids):
-            products_by_supplier.setdefault(product["supplier_id"], []).append(product)
+        products_by_supplier = published_products_by_supplier(self.database, supplier_ids)
 
         result = []
         for supplier_id in supplier_ids:

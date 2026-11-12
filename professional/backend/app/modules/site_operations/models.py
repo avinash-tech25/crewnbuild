@@ -23,15 +23,15 @@ Delete rules (9.3): a day's entries go with the day (CASCADE); a daily record is
 history and keeps its project (RESTRICT, which the project delete already refuses);
 stock and the legacy logs go with their project (CASCADE), as the old project delete
 removed them; a builder's own worker and supplier lists go with the builder; a link to a
-listed worker, supplier or engineer is SET NULL. product_id names a supplier listing,
-which comes with the marketplace module (no foreign key yet, porting-todo).
+listed worker, supplier or engineer is SET NULL, as is the link to a supplier listing
+(product_id, column listing_id), which the old listing delete unlinked.
 """
 
 import uuid
 from datetime import date, datetime
 from decimal import Decimal
 
-from sqlalchemy import CheckConstraint, Date, Float, ForeignKey, Index, Integer, Numeric, String, Text, Uuid, text
+from sqlalchemy import CheckConstraint, Date, Float, ForeignKey, Index, Integer, Numeric, String, Text, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database.base import Base, UuidPrimaryKeyMixin
@@ -48,6 +48,11 @@ def created_at_column() -> Mapped[datetime]:
 
 def money(column: str, *, nullable: bool = False, default: object = None) -> Mapped[Decimal]:
     return mapped_column(column, Numeric(14, 2), nullable=nullable, default=default)
+
+
+def listing_fk() -> Mapped[uuid.UUID | None]:
+    """A supplier listing; the row stays when the listing is deleted (SET NULL)."""
+    return mapped_column("listing_id", ForeignKey("supplier_listings.id", ondelete="SET NULL"), index=True)
 
 
 def record_fk() -> Mapped[uuid.UUID]:
@@ -141,8 +146,8 @@ class CostMaterialInventory(UuidPrimaryKeyMixin, Base):
     contractor_id: Mapped[uuid.UUID] = mapped_column(
         "builder_id", ForeignKey("users.id", ondelete="RESTRICT"), nullable=False, index=True
     )
-    # A supplier listing (marketplace module; no foreign key until it is ported).
-    product_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, index=True)
+    # The supplier listing the last fulfilled order came from.
+    product_id: Mapped[uuid.UUID | None] = listing_fk()
     material: Mapped[str] = mapped_column(String(120), nullable=False)
     unit: Mapped[str] = mapped_column(String(40), nullable=False)
     current_stock: Mapped[float] = mapped_column(Float, nullable=False, default=0)
@@ -184,7 +189,7 @@ class CostMaterialUsage(UuidPrimaryKeyMixin, Base):
     )
 
     register_id: Mapped[uuid.UUID] = record_fk()
-    product_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, index=True)
+    product_id: Mapped[uuid.UUID | None] = listing_fk()
     project_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("projects.id", ondelete="CASCADE"), index=True)
     engineer_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), index=True)
     material: Mapped[str] = mapped_column(String(120), nullable=False)

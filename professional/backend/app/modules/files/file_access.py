@@ -3,10 +3,11 @@ rules and order).
 
 The uploader always (except a Site Engineer's paused past-day site photo). Anyone else
 only through what the uploader actually used the file for, looked up in the uploader's
-own records: published marketplace pictures and Master Catalog pictures for any signed-in
-user; listed documents under the document rule; listing media to whoever may see the
-listing; site media to whoever has project access; chat attachments to the conversation;
-administrators under the admin document rule.
+own records: published marketplace pictures (a supplier's listing pictures among them)
+and Master Catalog pictures for any signed-in user; listed documents under the document
+rule; listing media to whoever may see the listing; site media to whoever has project
+access; chat attachments to the conversation; administrators under the admin document
+rule.
 
 The lookups into modules not ported yet are the `pending_*` functions: each finds nothing
 until its module replaces it (docs/porting-todo.md). Until then those files are private
@@ -22,6 +23,7 @@ from app.modules.admin.admin_identity import account_locality, active_admin_iden
 from app.modules.files.file_ownership import file_ids_in
 from app.modules.files.models import File
 from app.modules.identity.models import ROLE_BUILDER, ROLE_ENGINEER, ROLE_SUPPLIER, User
+from app.modules.marketplace.account_links import is_supplier_listing_image
 from app.modules.projects import file_links
 from app.modules.projects.people import can_view_private_contact
 
@@ -37,11 +39,6 @@ def file_module(stored: File) -> str:
 
 
 # ---- lookups into modules not ported yet (stubs) ----
-
-
-def pending_is_supplier_product_image(database: Session, supplier_id: uuid.UUID, file_id: uuid.UUID) -> bool:
-    """STUB (marketplace): a photo on one of the supplier's listings."""
-    return False
 
 
 def pending_is_equipment_listing_image(database: Session, supplier_id: uuid.UUID, file_id: uuid.UUID) -> bool:
@@ -108,7 +105,7 @@ def file_view_allowed(database: Session, user: User, stored: File) -> bool:
                     return can_view_account_documents(database, user, owner)
                 if file_id in file_ids_in(supplier.gallery, supplier.store_logo_url):
                     return True
-            if pending_is_supplier_product_image(database, owner.id, file_id):
+            if is_supplier_listing_image(database, owner.id, file_id):
                 return True
             if pending_is_equipment_listing_image(database, owner.id, file_id):
                 return True

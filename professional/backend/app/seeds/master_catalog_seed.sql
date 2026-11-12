@@ -17,8 +17,8 @@
 --      app/seeds/seed_master_catalog.py can run it as it is. The run's own result
 --      tables are temporary and private to the run. The old read-only
 --      verification queries are in master_catalog_checks.sql.
---    * Supplier listings are not ported yet: CHECK 10 and 12 compare counts only
---      when their tables exist.
+--    * CHECK 10 and 12 count the marketplace's supplier_listings and
+--      supplier_listing_price_tiers before and after the run.
 --
 --  NO "ON CONFLICT" ANYWHERE: every row is looked up by its natural key first and
 --  inserted only when missing (catalog_categories and catalog_products are unique
@@ -411,15 +411,9 @@ BEGIN
     DELETE FROM catalog_seed_checks;
 
     -- What this run must NOT change, counted before it writes anything (CHECK 10-12).
-    v_supplier_before := 0;
-    IF to_regclass('professional.supplier_listings') IS NOT NULL THEN
-        SELECT count(*) INTO v_supplier_before FROM professional.supplier_listings;
-    END IF;
+    SELECT count(*) INTO v_supplier_before FROM professional.supplier_listings;
     SELECT count(*) INTO v_images_before   FROM professional.catalog_product_media;
-    v_bulk_before := 0;
-    IF to_regclass('professional.supplier_listing_price_tiers') IS NOT NULL THEN
-        SELECT count(*) INTO v_bulk_before FROM professional.supplier_listing_price_tiers;
-    END IF;
+    SELECT count(*) INTO v_bulk_before    FROM professional.supplier_listing_price_tiers;
 
     -- =========================================================================
     -- UNITS -- one per code
@@ -738,10 +732,7 @@ BEGIN
     -- CHECKS that need the counts from before the run. Any failure raises,
     -- which rolls the whole run back.
     -- =========================================================================
-    v_count := 0;
-    IF to_regclass('professional.supplier_listings') IS NOT NULL THEN
-        SELECT count(*) INTO v_count FROM professional.supplier_listings;
-    END IF;
+    SELECT count(*) INTO v_count FROM professional.supplier_listings;
     INSERT INTO catalog_seed_checks VALUES ('10', 'No supplier_listings created or changed', v_count = v_supplier_before,
         format('%s before, %s after', v_supplier_before, v_count));
     IF v_count <> v_supplier_before THEN
@@ -755,10 +746,7 @@ BEGIN
         RAISE EXCEPTION 'CHECK 11 failed: catalog_product_media changed (% -> %).', v_images_before, v_count;
     END IF;
 
-    v_count := 0;
-    IF to_regclass('professional.supplier_listing_price_tiers') IS NOT NULL THEN
-        SELECT count(*) INTO v_count FROM professional.supplier_listing_price_tiers;
-    END IF;
+    SELECT count(*) INTO v_count FROM professional.supplier_listing_price_tiers;
     INSERT INTO catalog_seed_checks VALUES ('12', 'No supplier_listing_price_tiers created or changed', v_count = v_bulk_before,
         format('%s before, %s after', v_bulk_before, v_count));
     IF v_count <> v_bulk_before THEN

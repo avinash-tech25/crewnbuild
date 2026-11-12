@@ -23,6 +23,7 @@ from app.core.local_time import local_workflow_now
 from app.database.types import naive_utc_now
 from app.modules.files.upload_service import SITE_IMAGE, SITE_VIDEO, UploadService
 from app.modules.identity.models import User
+from app.modules.marketplace.site_links import fulfilled_orders, supplier_listings
 from app.modules.projects.access import (
     ensure_contractor_project_access,
     ensure_engineer_project_write_access,
@@ -53,9 +54,7 @@ from app.modules.site_operations.models import (
 )
 from app.modules.site_operations.pending_links import (
     BUILDER_BILLING,
-    pending_fulfilled_orders,
     pending_require_builder_feature,
-    pending_supplier_products,
 )
 from app.modules.site_operations.repository import DailyCostRepository
 from app.modules.site_operations.schemas import (
@@ -157,7 +156,7 @@ def received_orders(database: Session, project_id: uuid.UUID, work_date: str) ->
     day = datetime.fromisoformat(work_date).date()
     offset = timedelta(minutes=get_settings().local_utc_offset_minutes)
     start = datetime.combine(day, time.min) - offset
-    rows = pending_fulfilled_orders(database, project_id, start, start + timedelta(days=1))
+    rows = fulfilled_orders(database, project_id, start, start + timedelta(days=1))
     suppliers = supplier_names(database, [row.supplier_id for row in rows])
     return [
         {
@@ -301,7 +300,7 @@ def cost_summary_payload(database: Session, project: Project, work_date: str | N
     materials = project_material_stock(database, project.id)
     product_ids = [item.get("product_id") for item in materials if item.get("product_id")]
     product_rates = {}
-    products = pending_supplier_products(database, product_ids) if product_ids else []
+    products = supplier_listings(database, product_ids) if product_ids else []
     for product in products:
         product_rates[product.id] = money(product.price)
     # Who supplies a stock material, and what exactly it is. The only link from
@@ -575,13 +574,14 @@ def apply_daily_material_usage(
         if new_used < 0:
             raise HTTPException(status_code=400, detail=f"Used quantity cannot be negative for {material_name}.")
         unit = str(entry.get("unit") or "").strip()
-        product_id = entry.get("product_id")
+        product_id = entry.get("product_id") or None
         product_rate = 0
         if product_id:
-            product = next(iter(pending_supplier_products(database, [product_id])), None)
+            product = next(iter(supplier_listings(database, [product_id])), None)
             if not product:
                 # Crash fixed: an unknown product used to fail on its foreign key (500).
                 raise HTTPException(status_code=400, detail=f"Unknown product for {material_name}.")
+            product_id = product.id
             product_rate = money(product.price)
         inventory = DailyCostRepository(database).find_inventory(project.id, material_name)
         if not inventory:

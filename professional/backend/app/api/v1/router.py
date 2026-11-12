@@ -21,6 +21,7 @@ from app.modules.content.router import router as content_router
 from app.modules.content.vastu.router import router as vastu_router
 from app.modules.files.router import router as files_router
 from app.modules.identity.router import router as identity_router
+from app.modules.marketplace.router import router as marketplace_router
 from app.modules.projects.router import router as projects_router
 from app.modules.site_operations.router import router as site_operations_router
 from app.modules.support.router import router as support_router
@@ -48,6 +49,9 @@ MODULE_ROUTERS: list[APIRouter] = [
     projects_router,
     # The daily record, the cost tool and the owner's analysis (old daily_cost_routes).
     site_operations_router,
+    # Discovery, a supplier's listings, purchase orders, the cart and the shop (old
+    # marketplace, supplier_product, material_request and shop routes, in that order).
+    marketplace_router,
     # The old order put the file routes after property and estimates.
     files_router,
     # Reports, contact and support, in the old order, with the admin deleted-accounts

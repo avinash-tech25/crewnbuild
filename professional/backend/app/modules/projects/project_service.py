@@ -135,12 +135,17 @@ def serialize_project_media(database: Session, images: list[Any]) -> list[dict[s
 
 def purge_project(database: Session, project: Project) -> None:
     """Remove a project with everything scoped to it (the old purge_project_records): its
-    photos, timeline, requests, awards, assignments, reviews and escrow go with it
-    (ON DELETE CASCADE), and the files rows of its photos and cover are removed."""
+    photos, timeline, requests, awards, assignments, reviews, escrow and cart lines go
+    with it (ON DELETE CASCADE), its purchase orders are deleted first, and the files rows
+    of its photos and cover are removed."""
     image_urls = list(database.scalars(select(ProjectImage.image_url).where(ProjectImage.project_id == project.id)))
     if project.cover_image_url:
         image_urls.append(project.cover_image_url)
     file_ids = [file_id for file_id in (file_id_of(url) for url in image_urls) if file_id]
+    # Imported here: the marketplace reads the projects module.
+    from app.modules.marketplace.project_links import delete_project_orders
+
+    delete_project_orders(database, project.id)
     database.delete(project)
     database.flush()
     if file_ids:

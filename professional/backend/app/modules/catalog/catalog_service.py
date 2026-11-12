@@ -280,7 +280,7 @@ def media_for_viewer(
 ) -> dict[str, Any]:
     """A product payload with only the media this viewer may see.
 
-    `listed` is supplier_links.pending_supplier_listed_variants(): None (not a supplier)
+    `listed` is supplier_links.supplier_listed_variants(): None (not a supplier)
     leaves the payload as it was. A supplier gets the images and video only of a product
     it has added; an image tied to one variant only when it lists that variant.
     `show_primary`: in the lists a supplier picks a product from, every product shows
@@ -530,11 +530,11 @@ class CatalogService:
         if search and search.strip():
             statement = statement.where(func.lower(CatalogProduct.name).like(f"%{search.strip().lower()}%"))
         rows = products(self.database, statement.order_by(CatalogProduct.name).limit(limit))
-        listed = supplier_links.pending_supplier_listed_variants(self.database, user)
+        listed = supplier_links.supplier_listed_variants(self.database, user)
         return [media_for_viewer(product_payload(row), listed, show_primary=True) for row in rows]
 
     def search_products(self, q: str, limit: int, user: User) -> list[dict[str, Any]]:
-        listed = supplier_links.pending_supplier_listed_variants(self.database, user)
+        listed = supplier_links.supplier_listed_variants(self.database, user)
         return [
             media_for_viewer(result, listed, show_primary=True)
             for result in search_catalog(self.database, q, viewer_catalog_country(user), limit=limit)
@@ -548,7 +548,7 @@ class CatalogService:
 
     def fetch_product(self, product_id: uuid.UUID, user: User) -> dict[str, Any]:
         product = self.product_or_404(product_id, user)
-        listed = supplier_links.pending_supplier_listed_variants(self.database, user)
+        listed = supplier_links.supplier_listed_variants(self.database, user)
         return media_for_viewer(product_payload(product), listed)
 
     def list_variants(self, product_id: uuid.UUID, user: User) -> list[dict[str, Any]]:
@@ -558,8 +558,8 @@ class CatalogService:
     def list_offers(self, product_id: uuid.UUID, user: User) -> dict[str, Any]:
         """One canonical product, and every supplier selling it."""
         product = self.product_or_404(product_id, user)
-        listed = supplier_links.pending_supplier_listed_variants(self.database, user)
+        listed = supplier_links.supplier_listed_variants(self.database, user)
         return {
             "product": media_for_viewer(product_payload(product), listed),
-            "offers": supplier_links.pending_offers(self.database, product_id),
+            "offers": supplier_links.offers(self.database, product_id),
         }

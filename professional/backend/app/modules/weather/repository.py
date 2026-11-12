@@ -89,8 +89,12 @@ class WeatherRepository:
         return set()
 
     def supplier_order_project_ids(self, supplier_id: uuid.UUID) -> set[Any]:
-        """STUB (marketplace, equipment_supply, labour_supply): projects with open orders."""
-        return set()
+        """Delivery destinations: projects this Supplier has open material orders for.
+        STUB (equipment_supply, labour_supply): open equipment and labour orders are not
+        read yet."""
+        from app.modules.marketplace.site_links import open_order_project_ids
+
+        return open_order_project_ids(self.database, supplier_id)
 
     def admin_profile(self, user: User) -> AdminProfile | None:
         """The administrator profile behind an active admin account."""
@@ -135,8 +139,11 @@ class WeatherRepository:
         return set()
 
     def supplier_order_recipient_ids(self, project_id: Any) -> set[uuid.UUID]:
-        """STUB (marketplace, equipment_supply, labour_supply)."""
-        return set()
+        """Suppliers with open material orders for the project. STUB (equipment_supply,
+        labour_supply): open equipment and labour orders are not read yet."""
+        from app.modules.marketplace.site_links import open_order_supplier_ids
+
+        return open_order_supplier_ids(self.database, project_id)
 
     def monitored_personal_user_ids(self) -> list[uuid.UUID]:
         """Accounts with a personal weather site, still active."""
