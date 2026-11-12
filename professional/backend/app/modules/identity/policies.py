@@ -4,7 +4,6 @@ from fastapi import HTTPException
 
 from app.modules.accounts.models import CATEGORY_SITE_ENGINEER, CATEGORY_STORE_MANAGER
 from app.modules.identity.models import (
-    ADMIN_ROLES,
     ROLE_ENGINEER,
     ROLE_GLOBAL_SUPER_ADMIN,
     ROLE_OWNER,
@@ -15,17 +14,11 @@ from app.modules.identity.models import (
 )
 
 SUSPENDED_MESSAGE = "This account has been suspended. Contact CREWNBUILD support."
-# A suspended administrator's session is refused with the admin console's own text.
-ADMIN_SUSPENDED_MESSAGE = "This administrator account is suspended"
 PARTNER_ACCOUNT_MESSAGE = (
     "This account belongs to CREWNBUILD Partner. Please use the CREWNBUILD Partner application to continue."
 )
 GLOBAL_ADMIN_USE_WHATSAPP = "The Global Super Admin signs in with its mobile number and the WhatsApp code."
 HANDOFF_NOT_ALLOWED = "Book Technician is available to House Owners and Site Engineers."
-
-
-def suspended_message(user: User) -> str:
-    return ADMIN_SUSPENDED_MESSAGE if user.role in ADMIN_ROLES else SUSPENDED_MESSAGE
 
 
 def session_role(user: User) -> str:

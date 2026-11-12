@@ -118,7 +118,9 @@ def test_a_verification_manager_sees_only_its_screens(client: TestClient, databa
     assert set(overview["attention"]) == {"pending_verifications", "suspended_accounts"}
 
 
-def test_a_suspended_administrator_gets_the_admin_message(client: TestClient, database: Session) -> None:
+def test_a_suspended_administrator_gets_the_general_suspended_message(client: TestClient, database: Session) -> None:
+    """As in the old app: the session check refuses a suspended account before the admin
+    check runs, so an administrator gets the same text as everyone else."""
     create_admin(database)
     manager_user = create_manager(database, "users.view")
     admin, headers = signed_in(client, "india.admin@example.in")
@@ -128,10 +130,4 @@ def test_a_suspended_administrator_gets_the_admin_message(client: TestClient, da
     for path in ("/api/v1/admin/users", "/api/v1/admin/me", "/api/v1/auth/session"):
         answer = manager.get(path)
         assert answer.status_code == 403, path
-        assert detail(answer) == "This administrator account is suspended", path
-    # An ordinary suspended account keeps the general text.
-    member = create_user(database, email="member@example.in")
-    browser, _ = signed_in(client, "member@example.in")
-    member.status = "SUSPENDED"
-    database.commit()
-    assert detail(browser.get("/api/v1/auth/session")) == "This account has been suspended. Contact CREWNBUILD support."
+        assert detail(answer) == "This account has been suspended. Contact CREWNBUILD support.", path
