@@ -2,7 +2,7 @@
 
     projects                      integer key -> UUID; contractor_id -> builder_id; budget ->
                                   budget_amount (and the estimate money columns -> *_amount);
-                                  start_date / end_date -> starts_on / ends_on; add deleted_at
+                                  start_date / end_date -> starts_on / ends_on
     project_photos                was project_media; timeline_id -> timeline_entry_id (SET NULL)
     project_timeline_entries      was project_timelines; created_by_id -> created_by_user_id
     project_requests              was requests, project rows only (property enquiries move to
@@ -20,6 +20,8 @@ Python attribute names stay the old ones (contractor_id, budget, start_date, tim
 ...) so the ported services and the API keys are unchanged; the column names follow
 section 9. Times are timestamptz read as naive UTC (NaiveUtcTimestamp), as the ported
 code expects. Status values are stored exactly as before ("active", "pending", "ACTIVE").
+
+Deleting a project is a hard delete, as before (decided: no soft-delete column).
 
 Delete rules (9.3): a project's own rows (photos, timeline, requests, awards and offers,
 assignments, reviews, escrow) go with it (CASCADE), which is how deleting an unstarted
@@ -129,9 +131,6 @@ class Project(UuidPrimaryKeyMixin, Base):
     end_date: Mapped[date | None] = mapped_column("ends_on", Date)
     created_at: Mapped[datetime] = created_at_column()
     updated_at: Mapped[datetime] = updated_at_column()
-    # Reserved for soft deletion (9.4). Deleting an unstarted project still removes it,
-    # as before; nothing sets this yet.
-    deleted_at: Mapped[datetime | None] = mapped_column(NaiveUtcTimestamp)
 
     owner = relationship("User", foreign_keys=[owner_id])
     contractor = relationship("User", foreign_keys=[contractor_id])

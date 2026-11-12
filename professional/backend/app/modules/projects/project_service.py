@@ -156,9 +156,8 @@ def project_json(project: Project) -> dict:
     # created_at is a naive UTC instant (datetime.utcnow); send it with its offset.
     # start_date / end_date are calendar dates and stay exactly as stored.
     payload["created_at"] = local_iso(project.created_at)
-    # Not in the old answer: updated_at and deleted_at are new columns.
+    # Not in the old answer: updated_at is a new column.
     payload.pop("updated_at", None)
-    payload.pop("deleted_at", None)
     return payload
 
 
