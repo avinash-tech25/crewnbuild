@@ -39,7 +39,6 @@ from app.modules.projects.notices import create_notification
 from app.modules.projects.pending_links import (
     BUILDER_CALENDAR,
     BUILDER_PHOTOS,
-    pending_daily_register_status,
     pending_project_feature_allowed,
     pending_require_project_feature,
 )
@@ -82,12 +81,13 @@ def save_upload_files(
     module: str = "general",
     locality: str | None = None,
     category: str = SITE_IMAGE,
+    commit: bool = True,
 ) -> list[str]:
     """Store site media for a project, filed under the project's country."""
     image_urls = []
     for image in images:
         image_url = save_database_upload_file(
-            image, uploads, owner_id=owner_id, module=module, category=category, locality=locality
+            image, uploads, owner_id=owner_id, module=module, category=category, locality=locality, commit=commit
         )
         if image_url:
             database.add(ProjectImage(project_id=project_id, timeline_id=timeline_id, image_url=image_url))
@@ -544,7 +544,9 @@ class ProjectService:
         selected_date = timeline.date.date() if timeline.date else None
         if not selected_date:
             raise HTTPException(status_code=400, detail="Photo has no valid activity date")
-        register_status = pending_daily_register_status(self.database, photo.project_id, user.id, selected_date)
+        from app.modules.site_operations.project_links import daily_register_status
+
+        register_status = daily_register_status(self.database, photo.project_id, user.id, selected_date)
         if not register_status or register_status in {"COMPLETED", "CLOSED"}:
             raise HTTPException(status_code=409, detail="This day is completed and cannot be edited")
         ensure_daily_record_open(selected_date)

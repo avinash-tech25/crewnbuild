@@ -18,7 +18,6 @@ from app.modules.projects.models import (
     ProjectRequest,
     ProjectTimeline,
 )
-from app.modules.projects.pending_links import pending_has_cost_register
 
 
 class ProjectRepository(BaseRepository[Project]):
@@ -150,7 +149,9 @@ class ProjectRepository(BaseRepository[Project]):
         return None
 
     def find_cost_register_id(self, project_id: uuid.UUID):
-        return pending_has_cost_register(self.database, project_id) or None
+        from app.modules.site_operations.project_links import has_cost_register
+
+        return has_cost_register(self.database, project_id) or None
 
     # ------------------------------------------------------- photos / timeline
     def list_project_images(self, project_id: uuid.UUID) -> list[ProjectImage]:

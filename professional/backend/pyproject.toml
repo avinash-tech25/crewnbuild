@@ -39,6 +39,8 @@ ignore = [
 # Ported from the old project services unchanged (long lines, the old error handling).
 "app/modules/projects/*_service.py" = ["E501", "RUF001", "RUF005", "B904", "B905", "SIM105", "S110", "S311"]
 "app/modules/projects/*_repository.py" = ["E501"]
+"app/modules/site_operations/service.py" = ["E501", "RUF005", "RUF046", "B904", "B905", "SIM105", "S110"]
+"app/modules/site_operations/repository.py" = ["E501"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["app"]

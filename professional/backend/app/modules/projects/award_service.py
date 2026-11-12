@@ -39,7 +39,6 @@ from app.modules.projects.pending_links import (
     pending_create_conversation_for_users,
     pending_create_conversation_message,
     pending_update_assignment_message_status,
-    pending_work_record_label,
 )
 from app.modules.projects.request_types import (
     OWNER_BUILDER_REQUEST_TYPES,
@@ -212,7 +211,9 @@ def project_work_record_reason(database: Session, project_id: uuid.UUID) -> str 
     An assignment that has work behind it is not released by a decline or a
     cancellation, and a project with work behind it counts as started.
     """
-    label = pending_work_record_label(database, project_id)
+    from app.modules.site_operations.project_links import work_record_label
+
+    label = work_record_label(database, project_id)
     if label:
         return label
     if AwardRepository(database).find_project_record_id(ProjectImage, project_id):

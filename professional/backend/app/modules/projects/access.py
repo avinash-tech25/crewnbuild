@@ -120,6 +120,39 @@ def ensure_engineer_project_write_access(database: Session, project_id: uuid.UUI
     return project
 
 
+def ensure_project_cost_read_access(database: Session, project_id: uuid.UUID, user: User) -> Project:
+    """The project's cost records and financial summary: the awarded builder and the
+    actively assigned Site Engineer only; the House Owner is refused on every project."""
+    project = ensure_project_activity_read_access(database, project_id, user)
+    if user.role == ROLE_OWNER:
+        raise HTTPException(
+            status_code=403,
+            detail="Project cost records are available to the builder and the assigned Site Engineer only",
+        )
+    return project
+
+
+def ensure_project_owner_analysis_access(database: Session, project_id: uuid.UUID, user: User) -> Project:
+    """The House Owner's restricted Project Analysis: the owner of this project only."""
+    ensure_role(user, "OWNER")
+    project = get_project(database, project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    if project.owner_id != user.id:
+        raise HTTPException(status_code=403, detail="You can only view the analysis of your own project")
+    return project
+
+
+def resolve_project_contractor(database: Session, project: Project, engineer_id: uuid.UUID) -> uuid.UUID | None:
+    """The party an engineer's project records belong to: the awarded builder, or the
+    owner of a self-construction project (which has no builder)."""
+    if project.contractor_id:
+        return project.contractor_id
+    if project.construction_type == "SELF_CONSTRUCTION" and project.owner_id:
+        return project.owner_id
+    return None
+
+
 def is_project_member(database: Session, project: Project, user: User) -> bool:
     """The House Owner, the awarded builder or an actively assigned engineer."""
     if user.id in (project.owner_id, project.contractor_id):

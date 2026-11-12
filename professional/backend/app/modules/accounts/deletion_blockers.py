@@ -20,13 +20,14 @@ from app.modules.accounts.profile_completion import is_store_manager
 from app.modules.accounts.repository import AccountRepository
 from app.modules.identity.models import ROLE_BUILDER, ROLE_ENGINEER, ROLE_SUPPLIER, User
 from app.modules.projects import deletion_history
+from app.modules.site_operations import project_links as site_links
 
 # ---- reads of modules not ported yet (stubs) ----
 
 
 def pending_builder_history_project_ids(database: Session, user_id: uuid.UUID) -> list[uuid.UUID]:
-    """STUB (site_operations, labour_supply, equipment_supply): projects holding this
-    builder's daily registers, material inventory, and labour or equipment requests."""
+    """STUB (labour_supply, equipment_supply): projects holding this builder's labour or
+    equipment requests."""
     return []
 
 
@@ -60,7 +61,8 @@ def builder_history_project_titles(database: Session, user_id: uuid.UUID) -> lis
         database,
         user_id,
         deletion_history.builder_history_project_ids(user_id),
-        pending_builder_history_project_ids(database, user_id),
+        site_links.builder_history_project_ids(database, user_id)
+        + pending_builder_history_project_ids(database, user_id),
     )
 
 
