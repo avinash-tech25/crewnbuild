@@ -1,0 +1,30 @@
+# Professional API runtime packages, pinned to exact versions (technical-architecture.md 3, NFR-19).
+# Install: pip install -r requirements.txt -r requirements-dev.txt
+
+# Web framework and servers
+fastapi==0.115.6
+uvicorn[standard]==0.32.1
+# Production process manager (Linux containers); not used for local development on Windows.
+gunicorn==27.0.0
+pydantic==2.14.3
+pydantic-settings==2.6.1
+python-multipart==0.0.19
+email-validator==2.2.0
+
+# Database
+SQLAlchemy==2.1.8
+alembic==1.14.0
+psycopg[binary]==3.3.9
+
+# Security: Argon2id for new hashes, bcrypt to verify existing ones, PyJWT for tokens
+argon2-cffi==25.1.0
+bcrypt==4.0.1
+PyJWT[crypto]==2.15.1
+cryptography==50.0.2
+
+# Outside services, logging, files
+httpx==0.28.1
+structlog==26.1.0
+boto3==1.44.1
+Pillow==12.3.0
+pypdfium2==5.13.0

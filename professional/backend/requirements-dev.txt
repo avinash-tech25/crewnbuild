@@ -1,0 +1,6 @@
+# Professional API test and lint tools, pinned to exact versions (technical-architecture.md 3).
+pytest==9.2.0
+pytest-cov==7.1.0
+ruff==0.17.4
+mypy==2.4.1
+pip-audit==2.10.1
