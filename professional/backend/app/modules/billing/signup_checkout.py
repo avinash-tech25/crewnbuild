@@ -90,6 +90,9 @@ def enforce(database: Session, user: User, path: str) -> None:
     # this rule); uploading does.
     if path.startswith("/files/") and path != "/files/upload":
         return
+    # Support stays reachable: an unpaid builder is exactly who may need payment help.
+    if path.startswith("/support/"):
+        return
     if path.startswith(ALLOWED_PREFIXES) and not path.startswith(REFUSED_PATHS):
         return
     pending = pending_checkout(user, database)

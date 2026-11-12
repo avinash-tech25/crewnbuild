@@ -15,6 +15,7 @@ from app.auth.dependencies import enforce_route_access
 from app.modules.accounts.router import router as accounts_router
 from app.modules.files.router import router as files_router
 from app.modules.identity.router import router as identity_router
+from app.modules.support.router import router as support_router
 
 api_router = APIRouter()
 
@@ -30,6 +31,8 @@ MODULE_ROUTERS: list[APIRouter] = [
     accounts_router,
     # The old order put the file routes after property and estimates.
     files_router,
+    # Reports, contact and support, in the old order.
+    support_router,
 ]
 
 for module_router in MODULE_ROUTERS:

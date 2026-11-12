@@ -110,6 +110,21 @@ def current_user(principal: Principal = Depends(current_principal)) -> User:
     return principal.user
 
 
+def optional_user(
+    request: Request, database: Session = Depends(get_db), settings: Settings = Depends(app_settings)
+) -> User | None:
+    """For public routes that also serve signed-in people: the account behind a valid
+    session, else None. An expired or foreign cookie counts as signed out, not refused."""
+    token = access_token_from(request, settings)
+    if not token:
+        return None
+    try:
+        user, _session = authenticate_access_token(token, database, settings)
+    except HTTPException:
+        return None
+    return user
+
+
 def require_roles(*roles: str) -> Callable[..., Principal]:
     """Dependency factory: the caller's session role must be one of `roles`."""
     allowed = frozenset(roles)

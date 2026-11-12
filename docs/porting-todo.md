@@ -30,3 +30,6 @@ Every stub or temporary behaviour the restructure has left in place, one line ea
 | 25 | files | `modules/files/file_access.py` → `pending_site_media_project_id`, `pending_project_media_visible` | Site photos and videos open only to the uploader and are cached for an hour, not revalidated | projects module |
 | 26 | files | `modules/files/file_access.py` → `pending_engineer_site_photo_paused` | A Site Engineer's past-day site photo is never paused by the builder's plan | projects, site_operations and billing modules |
 | 27 | files | `modules/files/file_access.py` → `pending_has_active_team_link` | A builder cannot open files of the Site Engineers in its team | projects module (team memberships) |
+| 28 | support | `modules/support/report_service.py` → `pending_find_project` | A report about a project answers 404 "Project not found"; reports about accounts work | projects module |
+| 29 | support | `modules/support/ticket_service.py` → `within_rate_limit`; `modules/support/router.py` → `contact_within_rate_limit` | Support-ticket and contact-form limits count in each process, as before, not shared | R6 (security layer) |
+| 30 | support | `modules/support/router.py` | Staff ticket handling (list, reply, status) and report resolution are not served yet | admin module |

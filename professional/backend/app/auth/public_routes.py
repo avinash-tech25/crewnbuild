@@ -34,6 +34,11 @@ PUBLIC_ROUTES: frozenset[tuple[str, str]] = frozenset(
         # The public Delete Account page: its settings, and the retired request form (410)
         ("GET", "/account-deletion-requests/config"),
         ("POST", "/account-deletion-requests"),
+        # Contact & Support: open to visitors; a signed-in person is recognised
+        ("GET", "/support/config"),
+        ("POST", "/support/tickets"),
+        ("GET", "/report-categories"),
+        ("POST", "/contact"),
     }
 )
 
