@@ -85,12 +85,23 @@ def route_path(request: Request) -> str:
     return path.removeprefix(API_PREFIX)
 
 
+# Routes whose old answer to a request with no session cookie at all was a different
+# 401 message; kept so the web app sees the same text.
+NO_SESSION_MESSAGES: dict[tuple[str, str], str] = {
+    ("GET", "/files/{file_id}"): "Authentication required",
+}
+
+
 def enforce_route_access(
     request: Request, database: Session = Depends(get_db), settings: Settings = Depends(app_settings)
 ) -> None:
     """Every module route needs a live session unless it is in PUBLIC_ROUTES (AZ-01)."""
-    if is_public(request.method, route_path(request)):
+    path = route_path(request)
+    if is_public(request.method, path):
         return
+    message = NO_SESSION_MESSAGES.get((request.method.upper(), path))
+    if message and not access_token_from(request, settings):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=message)
     principal = authenticate_request(request, database, settings)
     request.state.principal = principal
     enforce_signup_checkout(database, principal.user, request.url.path.removeprefix(API_PREFIX))

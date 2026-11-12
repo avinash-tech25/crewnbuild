@@ -151,7 +151,8 @@ def test_unknown_file_and_no_session(files_client: TestClient, database: Session
     sign_in(files_client)
     assert files_client.get("/api/v1/files/00000000-0000-7000-8000-000000000000").status_code == 404
     stranger = TestClient(files_client.app)
-    assert stranger.get("/api/v1/files/00000000-0000-7000-8000-000000000000").status_code == 401
+    refused = stranger.get("/api/v1/files/00000000-0000-7000-8000-000000000000")
+    assert refused.status_code == 401 and refused.json() == {"detail": "Authentication required"}
 
 
 def test_videos_answer_byte_ranges(files_client: TestClient, database: Session, storage: FakeStorage) -> None:

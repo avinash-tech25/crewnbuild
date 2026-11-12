@@ -7,7 +7,6 @@ from datetime import date, timedelta
 from typing import Any
 
 import pytest
-from conftest import ClientFactory
 from fastapi.testclient import TestClient
 from identity.helpers import create_user, sign_in
 from PIL import Image
@@ -16,14 +15,11 @@ from sqlalchemy.orm import Session
 
 from app.modules.content import estimate_location_check, translation_service
 from app.modules.content import router as content_router
-from app.modules.content.estimate_service import estimate_calculation, store_estimate
-from app.modules.content.models import Ad, AdDailyStat, CostEstimate
-from app.modules.content.schemas import EstimateCreate
+from app.modules.content.models import Ad, AdDailyStat
 from app.modules.content.vastu import router as vastu_router
 from app.modules.content.vastu.geometry import classify
 from app.modules.content.vastu.labels import normalise_label
 from app.modules.files.models import File
-from app.modules.identity.models import ROLE_BUILDER
 
 ESTIMATE = {
     "location": "Hyderabad",
@@ -67,25 +63,10 @@ def test_the_verified_public_calculation(client: TestClient, monkeypatch: pytest
     assert wrong_state.status_code == 400 and wrong_state.json()["detail"]["code"] == "state_mismatch"
 
 
-def test_saving_an_estimate_keeps_the_old_failure(make_client: ClientFactory, database: Session) -> None:
-    client = make_client()
-    loose = TestClient(client.app, raise_server_exceptions=False, headers={"Origin": "http://localhost:5173"})
-    create_user(database, role=ROLE_BUILDER, email="builder@example.in", phone="9876500001")
-    csrf = sign_in(loose, identifier="builder@example.in")
-    assert loose.post("/api/v1/estimates", json=ESTIMATE, headers={"X-CSRF-Token": csrf}).status_code == 403
-    loose.post("/api/v1/auth/logout")
-    create_user(database, email="owner@example.in", phone="9876500002")
-    csrf = sign_in(loose, identifier="owner@example.in")
-    assert loose.post("/api/v1/estimates", json=ESTIMATE, headers={"X-CSRF-Token": csrf}).status_code == 500
-    assert database.scalars(select(CostEstimate)).first() is None
-
-
-def test_the_working_save_is_ready(database: Session) -> None:
-    owner = create_user(database)
-    saved = store_estimate(database, EstimateCreate(**ESTIMATE), owner)
-    assert saved["floors"] == 2 and saved["estimated_cost"] == pytest.approx(
-        estimate_calculation(EstimateCreate(**ESTIMATE))["estimated_cost"], abs=0.01
-    )
+def test_saving_an_estimate_is_retired(client: TestClient, database: Session) -> None:
+    create_user(database)
+    csrf = sign_in(client)
+    assert client.post("/api/v1/estimates", json=ESTIMATE, headers={"X-CSRF-Token": csrf}).status_code == 404
 
 
 # ---- ads ----
@@ -130,6 +111,8 @@ def test_views_and_clicks_are_counted(client: TestClient, database: Session) -> 
         )
     stat = database.scalars(select(AdDailyStat)).one()
     assert (stat.views, stat.clicks, stat.placement) == (2, 1, "home")
+    missing = client.post(f"/api/v1/ads/{uuid.uuid4()}/event", json={"placement": "home", "event": "VIEW"})
+    assert missing.status_code == 404 and missing.json() == {"detail": "No such advert."}
 
 
 class SigningStorage:

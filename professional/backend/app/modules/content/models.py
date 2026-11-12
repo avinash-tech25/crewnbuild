@@ -2,7 +2,8 @@
 
     ads              was advertisements; integer key -> UUID
     ad_daily_stats   was advertisement_daily_stats; integer key -> UUID; FK ad_id CASCADE
-    cost_estimates   was estimates; integer key -> UUID; FK owner_id CASCADE
+    cost_estimates   was estimates; integer key -> UUID; FK owner_id CASCADE. Kept for the
+                     data copy (R8); nothing writes it since POST /estimates was retired
 
 The public side of ads (what a screen shows, views and clicks, the picture) is served
 here; creating and editing ads is the admin module's.

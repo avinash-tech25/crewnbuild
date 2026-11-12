@@ -1,15 +1,12 @@
 """Construction cost estimates (ported from the old house_owner estimate_service.py; the
-calculation is unchanged). Saving one is for House Owners; calculating is public."""
+calculation is unchanged). Both calculators are public; the old POST /estimates (save) was
+retired: it never worked and nothing called it."""
 
-from decimal import Decimal
 from typing import Any
 
 from fastapi import HTTPException
-from sqlalchemy.orm import Session
 
-from app.modules.content.models import CostEstimate
 from app.modules.content.schemas import EstimateCreate
-from app.modules.identity.models import ROLE_OWNER, User
 
 # The stages a project's escrow milestones are opened with (projects module); an
 # estimate shows its total split the same way.
@@ -264,70 +261,3 @@ def estimate_calculation(payload: EstimateCreate) -> dict[str, Any]:
         "pincode": payload.pincode,
         "disclaimer": disclaimer,
     }
-
-
-def ensure_owner(user: User) -> None:
-    if user.role != ROLE_OWNER:
-        raise HTTPException(status_code=403, detail=f"{ROLE_OWNER} role required")
-
-
-def estimate_answer(estimate: CostEstimate) -> dict[str, Any]:
-    """The saved estimate with the old field names."""
-    return {
-        "id": estimate.id,
-        "owner_id": estimate.owner_id,
-        "location": estimate.location,
-        "pincode": estimate.pincode,
-        "plot_area": estimate.plot_area,
-        "floors": estimate.floors,
-        "floor_type": estimate.floor_type,
-        "construction_type": estimate.construction_type,
-        "building_type": estimate.building_type,
-        "finishing_type": estimate.finishing_type,
-        "budget": float(estimate.budget_amount),
-        "estimated_cost": float(estimate.estimated_cost_amount),
-        "estimated_duration_days": estimate.estimated_duration_days,
-        "material_estimate": float(estimate.material_estimate_amount),
-        "labour_estimate": float(estimate.labour_estimate_amount),
-        "created_at": estimate.created_at,
-    }
-
-
-class EstimateSaveBrokenError(RuntimeError):
-    """OLD BUG KEPT (docs/porting-todo.md): the old POST /estimates built its row with the
-    request's `country`, which the table has no column for, so every save ended in a
-    500 after the role and calculation checks. Nothing in either web app calls it."""
-
-
-def save_estimate(database: Session, payload: EstimateCreate, user: User) -> dict[str, Any]:
-    """POST /estimates, as it behaved: 403 for anyone but a House Owner, the calculation's
-    400s, then the 500 of the old bug. store_estimate is the working save, ready to be
-    switched on once that is decided."""
-    ensure_owner(user)
-    estimate_calculation(payload)
-    raise EstimateSaveBrokenError("Saving an estimate is not available (old defect kept).")
-
-
-def store_estimate(database: Session, payload: EstimateCreate, user: User) -> dict[str, Any]:
-    ensure_owner(user)
-    calculation = estimate_calculation(payload)
-    estimate = CostEstimate(
-        owner_id=user.id,
-        location=payload.location,
-        pincode=payload.pincode,
-        plot_area=payload.plot_area,
-        floors=calculation["floors"],
-        floor_type=calculation["floor_type"],
-        construction_type=payload.construction_type,
-        building_type=payload.building_type,
-        finishing_type=payload.finishing_type,
-        budget_amount=Decimal(str(payload.budget or 0)),
-        estimated_cost_amount=Decimal(str(calculation["estimated_cost"])).quantize(Decimal("0.01")),
-        estimated_duration_days=calculation["estimated_duration_days"],
-        material_estimate_amount=Decimal(str(calculation["material_estimate"])).quantize(Decimal("0.01")),
-        labour_estimate_amount=Decimal(str(calculation["labour_estimate"])).quantize(Decimal("0.01")),
-    )
-    database.add(estimate)
-    database.commit()
-    database.refresh(estimate)
-    return estimate_answer(estimate)

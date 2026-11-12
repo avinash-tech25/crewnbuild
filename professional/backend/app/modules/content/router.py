@@ -2,8 +2,7 @@
 advertisement_routes.py and translation_routes.py; paths and answers unchanged).
 
 Public: the ads a screen shows, their pictures, view/click counts, the placement list,
-and the two estimate calculators. Signed in: saving an estimate (House Owner) and
-translating display text (each miss is a billed provider call).
+and the two estimate calculators. Signed in: translating display text (each miss is a billed provider call).
 """
 
 import uuid
@@ -48,13 +47,6 @@ router = APIRouter()
 
 
 # ---- estimates ----
-
-
-@router.post("/estimates", tags=["Owners"])
-def save_estimate(
-    payload: EstimateCreate, user: User = Depends(current_user), database: Session = Depends(get_db)
-) -> dict[str, Any]:
-    return estimate_service.save_estimate(database, payload, user)
 
 
 @router.post("/estimates/calculate", tags=["Owners"])

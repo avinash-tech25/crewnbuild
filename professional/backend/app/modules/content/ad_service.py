@@ -168,6 +168,9 @@ def record_event(database: Session, advert_id: uuid.UUID, placement: str, event:
     known = known_placement(placement) or ""
     if event not in (EVENT_VIEW, EVENT_CLICK) or not known:
         return
+    # Crash fixed: an unknown advert id used to fail the upsert's foreign key (500).
+    if database.get(Ad, advert_id) is None:
+        raise HTTPException(status_code=404, detail="No such advert.")
     column = "views" if event == EVENT_VIEW else "clicks"
     statement = insert(AdDailyStat.__table__).values(
         ad_id=advert_id,
