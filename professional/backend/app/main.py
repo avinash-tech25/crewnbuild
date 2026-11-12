@@ -12,6 +12,7 @@ from app.core.config import Settings, get_settings
 from app.core.errors import register_error_handlers
 from app.core.logging import configure_logging
 from app.core.middleware import add_middleware
+from app.core.security.csrf_protection import CsrfProtectionMiddleware
 
 API_PREFIX = "/api/v1"
 
@@ -30,7 +31,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         else {"docs_url": None, "redoc_url": None, "openapi_url": None}
     )
     app = FastAPI(title=settings.app_name, **docs)  # type: ignore[arg-type]
+    # Routes read the settings of the app they belong to (app.auth.dependencies.app_settings).
+    app.state.settings = settings
 
+    # Added first, so it runs inside CORS and the request ID (add_middleware): a CSRF
+    # refusal still carries both.
+    app.add_middleware(CsrfProtectionMiddleware, settings=settings)
     add_middleware(app, settings)
     register_error_handlers(app)
     app.include_router(api_router, prefix=API_PREFIX)

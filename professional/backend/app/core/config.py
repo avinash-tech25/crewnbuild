@@ -92,6 +92,9 @@ class Settings(BaseSettings):
     # Open chat and dashboard websockets re-check their session this often.
     websocket_session_recheck_seconds: float = 30.0
     frontend_origin: str = "http://localhost:5173"
+    # Section 6.5: the account's own list of sign-ins in Profile Settings, with "end
+    # this session". Off by default, so behaviour is unchanged until it is switched on.
+    session_list_enabled: bool = False
     # Reverse proxies (comma-separated IPs or CIDRs) whose forwarded-for headers the
     # per-address limits believe. Empty ignores forwarded headers entirely.
     trusted_proxy_ips: str = "127.0.0.1,::1"
@@ -119,10 +122,11 @@ class Settings(BaseSettings):
     # ---- Google and Microsoft sign-in ----
     google_client_id: str = ""
     google_client_secret: SecretStr = Field(default=SecretStr(""), repr=False)
-    google_redirect_uri: str = "http://localhost:8000/auth/oauth/google/callback"
+    # Under /api/v1 since R4b; the provider consoles must list the new address.
+    google_redirect_uri: str = "http://localhost:8000/api/v1/auth/oauth/google/callback"
     microsoft_client_id: str = ""
     microsoft_client_secret: SecretStr = Field(default=SecretStr(""), repr=False)
-    microsoft_redirect_uri: str = "http://localhost:8000/auth/oauth/microsoft/callback"
+    microsoft_redirect_uri: str = "http://localhost:8000/api/v1/auth/oauth/microsoft/callback"
 
     # ---- E-mail ----
     smtp_host: str = ""
