@@ -172,15 +172,15 @@ def test_a_builder_with_an_unpaid_plan_can_still_delete(client: TestClient, data
 @pytest.mark.parametrize(
     ("role", "specialization", "stub", "value", "code"),
     [
-        ("OWNER", None, "pending_shared_project_titles", ["Villa"], "SHARED_PROJECTS"),
-        (ROLE_BUILDER, None, "pending_builder_history_project_titles", ["Villa"], "BUILDER_PROJECT_HISTORY"),
+        ("OWNER", None, "deletion_history.shared_project_titles", ["Villa"], "SHARED_PROJECTS"),
+        (ROLE_BUILDER, None, "builder_history_project_titles", ["Villa"], "BUILDER_PROJECT_HISTORY"),
         ("SUPPLIER", None, "pending_supplier_transaction_history_count", 2, "SUPPLIER_TRANSACTION_HISTORY"),
-        ("SUPPLIER", None, "pending_supplier_project_history_titles", ["Villa"], "SUPPLIER_PROJECT_HISTORY"),
+        ("SUPPLIER", None, "supplier_project_history_titles", ["Villa"], "SUPPLIER_PROJECT_HISTORY"),
         (ROLE_ENGINEER, "Store Manager", "pending_store_manager_shared_history_count", 1, "STORE_MANAGER_HISTORY"),
         (
             ROLE_ENGINEER,
             "Site Engineer",
-            "pending_engineer_history_project_titles",
+            "engineer_history_project_titles",
             ["Villa"],
             "ENGINEER_PROJECT_HISTORY",
         ),
@@ -200,7 +200,11 @@ def test_every_old_refusal_is_kept(
     from app.modules.accounts.account_deletion_service import account_role_code
 
     user, headers = signed_in(client, database, role=role, specialization=specialization)
-    monkeypatch.setattr(deletion_blockers, stub, lambda database, user_id: value)
+    target, name = deletion_blockers, stub
+    if "." in stub:  # a function of another module the rule calls
+        module, name = stub.split(".")
+        target = getattr(deletion_blockers, module)
+    monkeypatch.setattr(target, name, lambda database, user_id: value)
     form = {**FORM, "role": account_role_code(user)}
     response = client.post("/api/v1/account/delete", json=form, headers=headers)
     assert response.status_code == 409
@@ -218,7 +222,8 @@ def test_shared_projects_are_checked_before_open_bookings(
     from app.modules.accounts import deletion_blockers
 
     _, headers = signed_in(client, database)
-    monkeypatch.setattr(deletion_blockers, "pending_shared_project_titles", lambda database, user_id: ["Villa"])
+    history = deletion_blockers.deletion_history
+    monkeypatch.setattr(history, "shared_project_titles", lambda database, user_id: ["Villa"])
     monkeypatch.setattr(AccountRepository, "count_open_partner_bookings", lambda self, user_id: 1)
     response = client.post("/api/v1/account/delete", json=FORM, headers=headers)
     assert response.json()["detail"]["code"] == "SHARED_PROJECTS"

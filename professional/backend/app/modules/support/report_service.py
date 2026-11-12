@@ -18,10 +18,14 @@ from app.modules.identity.models import User
 from app.modules.support.models import REPORT_CATEGORIES, REPORT_STATUS_NEW, UserReport
 
 
-def pending_find_project(database: Session, subject_id: str) -> tuple[str, str] | None:
-    """STUB (projects): (title, locality) of the project a report names, or None. Until
-    the projects module replaces it, every project report answers 404."""
-    return None
+def find_project(database: Session, subject_id: str) -> tuple[str, str] | None:
+    """(title, locality) of the project a report names, or None. A project belongs to the
+    country it is built in; India is the only one."""
+    from app.modules.projects.models import Project
+
+    key = account_key(subject_id)
+    project = database.get(Project, key) if key else None
+    return (project.title, "IN") if project else None
 
 
 def account_key(subject_id: str) -> uuid.UUID | None:
@@ -50,7 +54,7 @@ def raise_report(
         raise HTTPException(status_code=400, detail=f"Choose one of: {', '.join(REPORT_CATEGORIES)}")
 
     if subject_type == "project":
-        project = pending_find_project(database, subject_id)
+        project = find_project(database, subject_id)
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
         scope = project[1]
@@ -79,7 +83,7 @@ def raise_report(
 def describe(database: Session, report: UserReport) -> dict[str, Any]:
     reporter = database.get(User, report.reporter_id)
     if report.subject_type == "project":
-        project = pending_find_project(database, report.subject_id)
+        project = find_project(database, report.subject_id)
         subject_name = project[0] if project else None
     else:
         subject = find_account(database, report.subject_id)

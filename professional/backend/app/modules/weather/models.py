@@ -12,15 +12,14 @@ per-site row carries exactly one of project_id and user_id.
     weather_alert_acknowledgements   who acknowledged which alert
 
 Times are timestamptz; the ported code reads them as naive UTC (NaiveUtcTimestamp).
-project_id has no foreign key yet: the projects table comes with the projects module,
-which adds it (ON DELETE CASCADE, as before) - docs/porting-todo.md.
+project_id references projects (ON DELETE CASCADE, as before).
 """
 
 import uuid
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import CheckConstraint, Float, ForeignKey, Index, String, Text, UniqueConstraint, Uuid, text
+from sqlalchemy import CheckConstraint, Float, ForeignKey, Index, String, Text, UniqueConstraint, text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -39,7 +38,7 @@ class WeatherSiteLocation(UuidPrimaryKeyMixin, Base):
     __tablename__ = "weather_site_locations"
     __table_args__ = (CheckConstraint(ONE_SITE, name="one_site"),)
 
-    project_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, unique=True)
+    project_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("projects.id", ondelete="CASCADE"), unique=True)
     user_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), unique=True)
     latitude: Mapped[float] = mapped_column(Float, nullable=False)
     longitude: Mapped[float] = mapped_column(Float, nullable=False)
@@ -75,7 +74,7 @@ class WeatherSnapshot(UuidPrimaryKeyMixin, Base):
     __tablename__ = "weather_snapshots"
     __table_args__ = (CheckConstraint(ONE_SITE, name="one_site"),)
 
-    project_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, unique=True)
+    project_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("projects.id", ondelete="CASCADE"), unique=True)
     user_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), unique=True)
     provider: Mapped[str | None] = mapped_column(String(40))
     latitude: Mapped[float | None] = mapped_column(Float)
@@ -113,7 +112,7 @@ class WeatherAlert(UuidPrimaryKeyMixin, Base):
         CheckConstraint(ONE_SITE, name="one_site"),
     )
 
-    project_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, index=True)
+    project_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("projects.id", ondelete="CASCADE"), index=True)
     user_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
     # The rule and the window it is about, e.g. "RAIN" or "HEAT:2026-11-10".
     event_key: Mapped[str] = mapped_column(String(120), nullable=False)

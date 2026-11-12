@@ -1,21 +1,21 @@
 """Database queries of the weather module (ported from the old weather_repository.py).
 
-The project-side queries (which projects an account may read, who is told about a
-project's alert, which projects are monitored) read tables of modules not ported yet;
-they are stubs below, which find nothing until the projects, store, marketplace,
-labour and equipment modules replace them (docs/porting-todo.md).
+The project queries read the projects module's tables. The store, marketplace, labour
+and equipment queries (which projects a Store Manager or a Supplier delivers to) are
+stubs below, which find nothing until those modules replace them (docs/porting-todo.md).
 """
 
 import uuid
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import desc, inspect, or_
+from sqlalchemy import desc, func, inspect, or_
 from sqlalchemy.orm import Session
 
 from app.core.config import PROFESSIONAL_SCHEMA
 from app.modules.accounts.models import ADMIN_SCOPES, CATEGORY_STORE_MANAGER, AdminProfile, EngineerProfile
-from app.modules.identity.models import ADMIN_ROLES, User
+from app.modules.identity.models import ADMIN_ROLES, ROLE_BUILDER, ROLE_OWNER, User
+from app.modules.projects.models import Project, ProjectEngineer
 from app.modules.weather.models import (
     WeatherAlert,
     WeatherAlertAcknowledgement,
@@ -23,10 +23,11 @@ from app.modules.weather.models import (
     WeatherSiteLocation,
     WeatherSnapshot,
 )
-from app.modules.weather.project_links import Project
 
 # How many in-scope projects an administrator's weather list offers at most.
 ADMIN_PROJECT_LIMIT = 100
+# A project in one of these statuses is not monitored or offered.
+CLOSED_PROJECT_STATUSES = ("completed", "cancelled", "canceled", "closed", "archived", "deleted", "rejected")
 
 
 def site_filter(model, site):
@@ -53,15 +54,29 @@ class WeatherRepository:
     def __init__(self, database: Session):
         self.database = database
 
-    # ---- projects (stubs) ----
+    # ---- projects ----
     def project(self, project_id: Any) -> Project | None:
-        """STUB (projects): the project with this id."""
-        return None
+        return self.database.get(Project, project_id)
 
     def accessible_projects(self, user: User) -> list[Project]:
-        """STUB (projects): the owner's own, the builder's awarded and the Site Engineer's
-        actively assigned projects."""
-        return []
+        """The owner's own, the builder's awarded and the Site Engineer's actively
+        assigned projects (the ensure_project_activity_read_access rule)."""
+        query = self.database.query(Project)
+        if user.role == ROLE_OWNER:
+            query = query.filter(Project.owner_id == user.id)
+        elif user.role == ROLE_BUILDER:
+            query = query.filter(Project.contractor_id == user.id)
+        elif user.role == "ENGINEER":
+            assigned = self.database.query(ProjectEngineer.project_id).filter(
+                ProjectEngineer.engineer_id == user.id, ProjectEngineer.status == "ACTIVE"
+            )
+            query = query.filter(Project.id.in_(assigned))
+        else:
+            return []
+        return query.order_by(desc(Project.created_at)).all()
+
+    def open_project_filter(self):
+        return or_(Project.status.is_(None), func.lower(Project.status).notin_(CLOSED_PROJECT_STATUSES))
 
     def is_store_manager(self, user: User) -> bool:
         if user.role != "ENGINEER":
@@ -85,12 +100,21 @@ class WeatherRepository:
         return profile if profile is not None and profile.scope in ADMIN_SCOPES else None
 
     def admin_projects(self, admin: Any) -> list[Project]:
-        """STUB (projects): the open projects in an administrator's scope."""
-        return []
+        """The open projects in an administrator's country scope, newest first."""
+        from app.modules.admin.project_links import scope_projects
+
+        query = scope_projects(self.database.query(Project).filter(self.open_project_filter()), admin)
+        return query.order_by(desc(Project.created_at)).limit(ADMIN_PROJECT_LIMIT).all()
 
     def projects_by_id(self, project_ids: Any) -> list[Project]:
-        """STUB (projects)."""
-        return []
+        if not project_ids:
+            return []
+        return (
+            self.database.query(Project)
+            .filter(Project.id.in_(list(project_ids)))
+            .order_by(desc(Project.created_at))
+            .all()
+        )
 
     def active_admins(self) -> list[tuple[User, AdminProfile]]:
         return [
@@ -128,12 +152,29 @@ class WeatherRepository:
         return self.database.get(User, user_id)
 
     def monitored_project_ids(self) -> list[Any]:
-        """STUB (projects): every open project, for the monitor."""
-        return []
+        """Every open project, for the monitor (oldest first)."""
+        return [
+            row[0]
+            for row in self.database.query(Project.id)
+            .filter(self.open_project_filter())
+            .order_by(Project.created_at, Project.id)
+            .all()
+        ]
 
     def project_recipients(self, project: Project) -> list[User]:
-        """STUB (projects): the owner, awarded builder and active Site Engineers."""
-        return []
+        """Who is told about a project's weather: its owner, awarded builder and actively
+        assigned Site Engineers -- the accounts that can read it."""
+        ids: list[uuid.UUID] = [value for value in (project.owner_id, project.contractor_id) if value]
+        ids += [
+            row[0]
+            for row in self.database.query(ProjectEngineer.engineer_id)
+            .filter(ProjectEngineer.project_id == project.id, ProjectEngineer.status == "ACTIVE")
+            .all()
+        ]
+        unique = list(dict.fromkeys(ids))
+        if not unique:
+            return []
+        return self.database.query(User).filter(User.id.in_(unique), User.status == "ACTIVE").all()
 
     # ------------------------------------------------------------- one site
     def location_of(self, site) -> WeatherSiteLocation | None:

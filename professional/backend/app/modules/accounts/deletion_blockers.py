@@ -3,10 +3,11 @@ messages and status 409) although the deletion itself is now a soft delete. Port
 from the old self_deletion_service.shared_projects and
 purge_service.account_deletion_blockers.
 
-Every rule reads tables of modules that are not ported yet. Those reads are the
-`pending_*` functions below: each returns "nothing found" until its module is ported
-and replaces it with the real query (see docs/porting-todo.md). The open-booking check
-reads Partner's view and is live already (it finds nothing until the view exists).
+The project rows are read through the projects module (projects/deletion_history.py).
+The rows of modules not ported yet are the `pending_*` functions below: each returns
+"nothing found" until its module is ported and replaces it with the real query (see
+docs/porting-todo.md). The open-booking check reads Partner's view and is live already
+(it finds nothing until the view exists).
 """
 
 import uuid
@@ -18,22 +19,14 @@ from sqlalchemy.orm import Session
 from app.modules.accounts.profile_completion import is_store_manager
 from app.modules.accounts.repository import AccountRepository
 from app.modules.identity.models import ROLE_BUILDER, ROLE_ENGINEER, ROLE_SUPPLIER, User
+from app.modules.projects import deletion_history
 
 # ---- reads of modules not ported yet (stubs) ----
 
 
-def pending_shared_project_titles(database: Session, user_id: uuid.UUID) -> list[str]:
-    """STUB (projects): titles of projects this account owns that another user (a
-    builder) is working on. Old query: projects.owner_id = user AND contractor_id is
-    another account."""
-    return []
-
-
-def pending_builder_history_project_titles(database: Session, user_id: uuid.UUID) -> list[str]:
-    """STUB (projects, site_operations, labour_supply, equipment_supply): other owners'
-    projects holding this builder's history (projects.contractor_id, awards, award
-    offers, requests, daily registers, material inventory, labour and equipment requests,
-    supplier assignments). At most 5 titles."""
+def pending_builder_history_project_ids(database: Session, user_id: uuid.UUID) -> list[uuid.UUID]:
+    """STUB (site_operations, labour_supply, equipment_supply): projects holding this
+    builder's daily registers, material inventory, and labour or equipment requests."""
     return []
 
 
@@ -43,9 +36,9 @@ def pending_supplier_transaction_history_count(database: Session, user_id: uuid.
     return 0
 
 
-def pending_supplier_project_history_titles(database: Session, user_id: uuid.UUID) -> list[str]:
-    """STUB (labour_supply, equipment_supply, projects): other users' projects holding
-    this supplier's labour or equipment requests or ACTIVE supplier assignments."""
+def pending_supplier_history_project_ids(database: Session, user_id: uuid.UUID) -> list[uuid.UUID]:
+    """STUB (labour_supply, equipment_supply): projects holding labour or equipment
+    requests addressed to this supplier."""
     return []
 
 
@@ -55,18 +48,45 @@ def pending_store_manager_shared_history_count(database: Session, user_id: uuid.
     return 0
 
 
-def pending_engineer_history_project_titles(database: Session, user_id: uuid.UUID) -> list[str]:
-    """STUB (labour_supply, equipment_supply, marketplace, store, projects): other users'
-    projects holding this engineer's labour/equipment requests and logs, ACTIVE supplier
-    or project assignments, material requests and store requests."""
+def pending_engineer_history_project_ids(database: Session, user_id: uuid.UUID) -> list[uuid.UUID]:
+    """STUB (labour_supply, equipment_supply, marketplace, store): projects holding this
+    engineer's labour or equipment requests and logs, material requests and store
+    requests."""
     return []
+
+
+def builder_history_project_titles(database: Session, user_id: uuid.UUID) -> list[str]:
+    return deletion_history.other_owners_project_titles(
+        database,
+        user_id,
+        deletion_history.builder_history_project_ids(user_id),
+        pending_builder_history_project_ids(database, user_id),
+    )
+
+
+def supplier_project_history_titles(database: Session, user_id: uuid.UUID) -> list[str]:
+    return deletion_history.other_owners_project_titles(
+        database,
+        user_id,
+        deletion_history.supplier_history_project_ids(user_id),
+        pending_supplier_history_project_ids(database, user_id),
+    )
+
+
+def engineer_history_project_titles(database: Session, user_id: uuid.UUID) -> list[str]:
+    return deletion_history.other_owners_project_titles(
+        database,
+        user_id,
+        deletion_history.engineer_history_project_ids(user_id),
+        pending_engineer_history_project_ids(database, user_id),
+    )
 
 
 # ---- the rules ----
 
 
 def ensure_no_shared_projects(database: Session, user: User) -> None:
-    titles = pending_shared_project_titles(database, user.id)
+    titles = deletion_history.shared_project_titles(database, user.id)
     if titles:
         raise HTTPException(
             status_code=409,
@@ -87,7 +107,7 @@ def account_deletion_blockers(database: Session, user: User) -> dict[str, Any] |
             "Cancel it or let it finish before deleting your account.",
         }
     if user.role == ROLE_BUILDER:
-        titles = pending_builder_history_project_titles(database, user.id)
+        titles = builder_history_project_titles(database, user.id)
         if titles:
             return {
                 "code": "BUILDER_PROJECT_HISTORY",
@@ -101,7 +121,7 @@ def account_deletion_blockers(database: Session, user: User) -> dict[str, Any] |
             "Contact support to delete your account; your past orders are kept.",
         }
     if user.role == ROLE_SUPPLIER:
-        titles = pending_supplier_project_history_titles(database, user.id)
+        titles = supplier_project_history_titles(database, user.id)
         if titles:
             return {
                 "code": "SUPPLIER_PROJECT_HISTORY",
@@ -120,7 +140,7 @@ def account_deletion_blockers(database: Session, user: User) -> dict[str, Any] |
             "and suppliers rely on. Contact support to delete your account; these records are kept.",
         }
     if user.role == ROLE_ENGINEER and not is_store_manager(user):
-        titles = pending_engineer_history_project_titles(database, user.id)
+        titles = engineer_history_project_titles(database, user.id)
         if titles:
             return {
                 "code": "ENGINEER_PROJECT_HISTORY",

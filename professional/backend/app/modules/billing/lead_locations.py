@@ -146,3 +146,75 @@ def require_account_pincode(
         "pincode",
         f"Your plan allows up to {cap} service locations. Choose the pincode of one of your service locations.",
     )
+
+
+# ---- open leads (a builder's CONTRACTOR_TO_OWNER requests), counted per location ----
+
+LEAD_LIMIT_REACHED = "LEAD_LIMIT_REACHED"
+BUILDER_TO_OWNER = "CONTRACTOR_TO_OWNER"
+MAX_LEADS_PER_LOCATION = {FREE: 5, PROFESSIONAL: 10, BUSINESS: None}
+
+
+def lead_cap(plan_code: str | None) -> int | None:
+    return MAX_LEADS_PER_LOCATION.get(plan_code or FREE, MAX_LEADS_PER_LOCATION[FREE]) if plan_code else None
+
+
+def lead_pincodes(database: Session, user: User) -> list[str]:
+    """The account's pincode first (when allowed), then each matched service location's."""
+    plan_code = limited_plan(database, user)
+    if plan_code is None:
+        return [user.pincode] if user.pincode else []
+    cap = location_cap(plan_code)
+    registered = registered_pincodes(saved_locations(database, user), cap)
+    if not account_pincode_allowed(user.pincode, registered, cap):
+        return registered
+    return [user.pincode, *[pincode for pincode in registered if pincode != user.pincode]]
+
+
+def open_lead_counts(database: Session, builder_id: Any, pincodes: list[str]) -> dict[str, int]:
+    """Open leads per pincode: pending, or accepted on a project not yet awarded."""
+    from sqlalchemy import and_, func, or_
+    from sqlalchemy.orm import aliased
+
+    from app.modules.projects.models import Project, ProjectRequest
+
+    if not pincodes:
+        return {}
+    receiver = aliased(User)
+    location = func.coalesce(Project.pincode, receiver.pincode)
+    rows = database.execute(
+        select(location, func.count(ProjectRequest.id))
+        .select_from(ProjectRequest)
+        .outerjoin(Project, Project.id == ProjectRequest.project_id)
+        .join(receiver, receiver.id == ProjectRequest.receiver_id)
+        .where(
+            ProjectRequest.sender_id == builder_id,
+            ProjectRequest.request_type == BUILDER_TO_OWNER,
+            or_(
+                ProjectRequest.status == "pending",
+                and_(ProjectRequest.status == "accepted", Project.id.isnot(None), Project.contractor_id.is_(None)),
+            ),
+            location.in_(pincodes),
+        )
+        .group_by(location)
+    ).all()
+    counts = dict.fromkeys(pincodes, 0)
+    counts.update({pincode: int(count) for pincode, count in rows})
+    return counts
+
+
+def require_lead_slot(database: Session, user: User, pincode: str | None) -> None:
+    """Refuse a new builder request when its location already holds the plan's open leads."""
+    cap = lead_cap(limited_plan(database, user))
+    if cap is None or not pincode:
+        return
+    if open_lead_counts(database, user.id, [pincode]).get(pincode, 0) >= cap:
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "code": LEAD_LIMIT_REACHED,
+                "limit": cap,
+                "pincode": pincode,
+                "message": f"You've reached the {cap}-lead limit for this location.",
+            },
+        )

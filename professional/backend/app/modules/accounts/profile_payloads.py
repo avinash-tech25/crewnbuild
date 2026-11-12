@@ -31,11 +31,31 @@ def is_verified(database: Session, user: User) -> bool:
     return not (record.expires_on and record.expires_on < date.today())
 
 
-def builder_reviews(database: Session, builder: User) -> tuple[int, list[dict[str, Any]]]:
-    """The builder's reviews (count and latest few). NOT PORTED YET: the reviews table
-    (project_reviews) comes with the projects module, which replaces this function;
-    until then a builder has none."""
-    return 0, []
+def builder_reviews(database: Session, builder: User, limit: int = 10) -> tuple[int, list[dict[str, Any]]]:
+    """The builder's real reviews (project_reviews): the count and the latest few."""
+    from sqlalchemy import desc, func, select
+
+    from app.modules.projects.models import Review
+
+    count = database.scalar(select(func.count(Review.id)).where(Review.reviewee_id == builder.id)) or 0
+    if not count:
+        return 0, []
+    rows = database.execute(
+        select(Review, User.name)
+        .outerjoin(User, User.id == Review.reviewer_id)
+        .where(Review.reviewee_id == builder.id)
+        .order_by(desc(Review.created_at))
+        .limit(limit)
+    ).all()
+    return count, [
+        {
+            "rating": review.rating,
+            "comment": review.comment,
+            "reviewer_name": reviewer_name or "",
+            "created_at": review.created_at,
+        }
+        for review, reviewer_name in rows
+    ]
 
 
 def builder_profile_payload(

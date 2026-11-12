@@ -21,9 +21,10 @@ from app.core.config import Settings
 from app.database.session import get_db
 from app.integrations.s3_storage.object_storage import shared_object_storage
 from app.modules.admin.admin_identity import account_locality
-from app.modules.files.file_access import file_view_allowed, pending_site_media_project_id
+from app.modules.files.file_access import file_view_allowed
 from app.modules.files.upload_service import PROFILE_IMAGE, SITE_VIDEO, SUPPLIER_IMAGE, UploadService
 from app.modules.identity.models import ROLE_SUPPLIER, User
+from app.modules.projects.file_links import site_media_project_id
 
 router = APIRouter(tags=["Documents"])
 
@@ -93,7 +94,7 @@ def fetch_file(
     # display, because the builder's photo access can end at any moment.
     digest = hashlib.sha256(f"{stored.id}:{stored.storage_key}:{stored.size_bytes}".encode()).hexdigest()[:20]
     entity_tag = f'"file-{stored.id}-{digest}"'
-    site_media = pending_site_media_project_id(database, stored.id) is not None
+    site_media = site_media_project_id(database, stored.id) is not None
     cache_headers = {
         "Cache-Control": "private, no-cache" if site_media else "private, max-age=3600",
         "ETag": entity_tag,

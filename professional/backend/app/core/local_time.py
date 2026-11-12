@@ -24,3 +24,11 @@ def local_iso(value: datetime | None) -> str | None:
     from app.core.config import get_settings
 
     return to_local_iso(value, get_settings())
+
+
+def local_workflow_now() -> datetime:
+    """Now in the configured local zone (the day the site workflow runs on)."""
+    from app.core.config import get_settings
+
+    settings = get_settings()
+    return datetime.now(timezone(timedelta(minutes=settings.local_utc_offset_minutes), name=settings.local_timezone))

@@ -295,8 +295,8 @@ class AdminAccountService:
                 "notes": decision.notes if decision else None,
                 "expires_on": decision.expires_on if decision else None,
             },
-            "projects_owned": project_links.pending_projects_owned_by(self.database, target.id),
-            "projects_building": project_links.pending_projects_built_by(self.database, target.id),
+            "projects_owned": project_links.projects_owned_by(self.database, target.id),
+            "projects_building": project_links.projects_built_by(self.database, target.id),
         }
 
     def suspend_user(self, user_id: uuid.UUID, payload: StatusChange, admin: AdminIdentity) -> dict[str, Any]:

@@ -21,6 +21,7 @@ from app.modules.content.router import router as content_router
 from app.modules.content.vastu.router import router as vastu_router
 from app.modules.files.router import router as files_router
 from app.modules.identity.router import router as identity_router
+from app.modules.projects.router import router as projects_router
 from app.modules.support.router import router as support_router
 from app.modules.weather.router import router as weather_router
 
@@ -41,6 +42,9 @@ MODULE_ROUTERS: list[APIRouter] = [
     catalog_router,
     identity_router,
     accounts_router,
+    # Projects, requests, awards, teams and supplier assignments, where the old app
+    # registered them (after notifications and messages, which are not ported yet).
+    projects_router,
     # The old order put the file routes after property and estimates.
     files_router,
     # Reports, contact and support, in the old order, with the admin deleted-accounts

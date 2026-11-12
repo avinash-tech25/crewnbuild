@@ -1,16 +1,7 @@
-"""A House Owner's first project, made from the project details on their profile.
+"""A House Owner's first project, made from the project details on their profile (the
+old create_owner_profile_project_if_missing, called by the complete-profile save, which
+commits). The function itself lives with the other project writes."""
 
-The old complete-profile save called create_owner_profile_project_if_missing: when a
-House Owner's profile carries a project title and description, and the account has an
-address and pincode, and the owner has no project yet, a project is created from those
-details. NOT PORTED YET: the projects table comes with the projects module, which
-replaces this function with the real one. Until then no project is created here.
-"""
+from app.modules.projects.project_service import create_owner_profile_project_if_missing
 
-from sqlalchemy.orm import Session
-
-from app.modules.identity.models import User
-
-
-def create_owner_profile_project_if_missing(database: Session, user: User) -> None:
-    return None
+__all__ = ["create_owner_profile_project_if_missing"]

@@ -4,8 +4,8 @@ unchanged, ids are UUIDs).
 
 Every route needs an administrator role AND its named permission (require_admin).
 GET /admin/me and GET /admin/overview need the administrator role only, as before.
-The projects screens (/admin/projects, /admin/leads) answer empty until the projects
-module is ported (project_links.py). Admin > Master Catalog is the catalog module's
+The projects screens (/admin/projects, /admin/leads) read the projects module through
+project_links.py. Admin > Master Catalog is the catalog module's
 (/admin/catalog); the coupon and payment-history screens come with billing.
 """
 
@@ -103,7 +103,7 @@ def fetch_admin_projects(
     offset: int = Query(default=0, ge=0),
     country: str | None = Query(default=None),
 ) -> dict[str, Any]:
-    return project_links.pending_admin_projects(database, viewing(admin, country), limit=limit, offset=offset)
+    return project_links.admin_projects(database, viewing(admin, country), limit=limit, offset=offset)
 
 
 @router.get("/manager-presets")
@@ -276,7 +276,7 @@ def fetch_project_detail(
     admin: AdminIdentity = Depends(require_admin("projects.view")),
     database: Session = Depends(get_db),
 ) -> dict[str, Any]:
-    detail = project_links.pending_project_detail(database, admin, project_id)
+    detail = project_links.project_detail(database, admin, project_id)
     if detail is None:
         raise HTTPException(status_code=404, detail="Project not found")
     return detail
@@ -292,7 +292,7 @@ def fetch_marketplace_activity(
     offset: int = Query(default=0, ge=0),
     country: str | None = Query(default=None),
 ) -> dict[str, Any]:
-    return project_links.pending_marketplace_activity(
+    return project_links.marketplace_activity(
         database, viewing(admin, country), status=status_filter, kind=kind, limit=limit, offset=offset
     )
 

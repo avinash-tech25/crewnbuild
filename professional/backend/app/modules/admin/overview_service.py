@@ -50,7 +50,7 @@ def country_slice(database: Session, country: str) -> dict[str, Any]:
         "country": country,
         "scope": locality,
         "accounts": accounts or 0,
-        "projects": project_links.pending_project_count(database, country),
+        "projects": project_links.project_count(database, country),
         "open_reports": open_reports or 0,
         "administrators": administrators or 0,
     }
@@ -67,9 +67,7 @@ def attention_for(database: Session, viewer: Any, permissions: set[str]) -> dict
         suspended = scope_users(select(func.count(User.id)), viewer).where(User.status == STATUS_SUSPENDED)
         attention["suspended_accounts"] = database.scalar(suspended) or 0
     if "projects.view" in permissions:
-        attention["stalled_requests"] = project_links.pending_stalled_request_count(
-            database, viewer, STALLED_AFTER_DAYS
-        )
+        attention["stalled_requests"] = project_links.stalled_request_count(database, viewer, STALLED_AFTER_DAYS)
     return attention
 
 
