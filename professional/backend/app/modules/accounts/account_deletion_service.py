@@ -4,17 +4,16 @@ The form is checked exactly as before (verified e-mail on the account, the word 
 name, role, e-mail and mobile matching the account, a reason). The deletion itself is
 now a soft delete with anonymisation (DB-07) instead of the old purge:
 
-* refused while the account has an open Book Technician booking (Partner);
 * one transaction writes the history row (account_deletion_requests, status DELETED,
   original_user_id kept without a foreign key) and anonymises the account: name, e-mail,
   mobile, address, pincode, location and photo cleared, an unusable password, status
   DELETED and deleted_at set; profile logos, documents, gallery, GSTIN and PAN cleared;
   every session ended and every Google/Microsoft link removed.
 
-Nothing that belongs to other people is touched, so the old refusals that protected
-their records from the purge (shared projects, builder/supplier/engineer history) are
-no longer needed. The e-mail address and number are free for a new account afterwards.
-No e-mail is sent.
+Every old refusal is kept, in the old order and with the old answers
+(deletion_blockers.py): shared projects, then an open Book Technician booking, builder,
+supplier, store and engineer history. The e-mail address and number are free for a new
+account afterwards. No e-mail is sent.
 """
 
 import logging
@@ -28,6 +27,7 @@ from sqlalchemy.orm import Session
 from app.core.config import Settings
 from app.core.local_time import to_local_iso, utc_now
 from app.core.security.password_hashing import hash_secret
+from app.modules.accounts.deletion_blockers import ensure_account_deletable
 from app.modules.accounts.models import (
     DELETION_SOURCE_IN_APP,
     DELETION_STATUS_DELETED,
@@ -77,10 +77,6 @@ REVOKED_ACCOUNT_DELETED = "account_deleted"
 EMAIL_NOT_VERIFIED = {
     "code": "EMAIL_NOT_VERIFIED",
     "message": "Please verify your registered email address before deleting your account.",
-}
-OPEN_BOOKINGS = {
-    "code": "PARTNER_OPEN_BOOKINGS",
-    "message": "You have an open Book Technician booking. Cancel it or let it finish before deleting your account.",
 }
 DELETE_FAILED = {
     "code": "ACCOUNT_DELETION_FAILED",
@@ -250,8 +246,7 @@ class AccountDeletionService:
     def delete_own_account(self, user: User, payload: AccountDeletionCreate) -> dict[str, Any]:
         """Record the deletion and anonymise the account, in one transaction."""
         reason_code, details = self.validate(user, payload)
-        if self.repository.count_open_partner_bookings(user.id):
-            raise HTTPException(status_code=409, detail=OPEN_BOOKINGS)
+        ensure_account_deletable(self.database, user)
 
         now = utc_now()
         role_code = account_role_code(user)

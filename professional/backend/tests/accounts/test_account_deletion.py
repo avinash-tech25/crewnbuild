@@ -167,3 +167,62 @@ def test_a_builder_with_an_unpaid_plan_can_still_delete(client: TestClient, data
     # The old role name is still accepted in the form.
     response = client.post("/api/v1/account/delete", json={**FORM, "role": "CONTRACTOR"}, headers=headers)
     assert response.status_code == 200, response.text
+
+
+@pytest.mark.parametrize(
+    ("role", "specialization", "stub", "value", "code"),
+    [
+        ("OWNER", None, "pending_shared_project_titles", ["Villa"], "SHARED_PROJECTS"),
+        (ROLE_BUILDER, None, "pending_builder_history_project_titles", ["Villa"], "BUILDER_PROJECT_HISTORY"),
+        ("SUPPLIER", None, "pending_supplier_transaction_history_count", 2, "SUPPLIER_TRANSACTION_HISTORY"),
+        ("SUPPLIER", None, "pending_supplier_project_history_titles", ["Villa"], "SUPPLIER_PROJECT_HISTORY"),
+        (ROLE_ENGINEER, "Store Manager", "pending_store_manager_shared_history_count", 1, "STORE_MANAGER_HISTORY"),
+        (
+            ROLE_ENGINEER,
+            "Site Engineer",
+            "pending_engineer_history_project_titles",
+            ["Villa"],
+            "ENGINEER_PROJECT_HISTORY",
+        ),
+    ],
+)
+def test_every_old_refusal_is_kept(
+    client: TestClient,
+    database: Session,
+    monkeypatch: pytest.MonkeyPatch,
+    role: str,
+    specialization: str | None,
+    stub: str,
+    value: Any,
+    code: str,
+) -> None:
+    from app.modules.accounts import deletion_blockers
+    from app.modules.accounts.account_deletion_service import account_role_code
+
+    user, headers = signed_in(client, database, role=role, specialization=specialization)
+    monkeypatch.setattr(deletion_blockers, stub, lambda database, user_id: value)
+    form = {**FORM, "role": account_role_code(user)}
+    response = client.post("/api/v1/account/delete", json=form, headers=headers)
+    assert response.status_code == 409
+    detail = response.json()["detail"]
+    assert detail["code"] == code
+    if isinstance(value, list):
+        assert "Villa" in detail["message"]
+    database.expire_all()
+    assert database.get(User, user.id).status == "ACTIVE"  # type: ignore[union-attr]
+
+
+def test_shared_projects_are_checked_before_open_bookings(
+    client: TestClient, database: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from app.modules.accounts import deletion_blockers
+
+    _, headers = signed_in(client, database)
+    monkeypatch.setattr(deletion_blockers, "pending_shared_project_titles", lambda database, user_id: ["Villa"])
+    monkeypatch.setattr(AccountRepository, "count_open_partner_bookings", lambda self, user_id: 1)
+    response = client.post("/api/v1/account/delete", json=FORM, headers=headers)
+    assert response.json()["detail"]["code"] == "SHARED_PROJECTS"
+    assert response.json()["detail"]["message"] == (
+        "You own projects other users are working on (Villa). Contact us to resolve them before deleting your "
+        "account, so that their records are protected."
+    )
