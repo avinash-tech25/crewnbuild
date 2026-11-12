@@ -39,6 +39,14 @@ PUBLIC_ROUTES: frozenset[tuple[str, str]] = frozenset(
         ("POST", "/support/tickets"),
         ("GET", "/report-categories"),
         ("POST", "/contact"),
+        # Content shown before sign-in: estimate calculators, ads, the Vastu tool
+        ("POST", "/estimates/calculate"),
+        ("POST", "/estimates/public-calculate"),
+        ("GET", "/ads"),
+        ("POST", "/ads/{advert_id}/event"),
+        ("GET", "/ads/{advert_id}/image"),
+        ("GET", "/ad-placements"),
+        ("POST", "/vastu/plan-analysis"),
     }
 )
 

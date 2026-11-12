@@ -22,6 +22,10 @@ class StoredObjectMissingError(Exception):
     """The object is not in its bucket."""
 
 
+class StorageUnavailableError(Exception):
+    """The storage service could not answer (signing a link, for example)."""
+
+
 def storage_error_detail(error: Exception) -> str:
     if isinstance(error, ClientError):
         return str(error.response.get("Error", {}).get("Message") or error)
@@ -79,6 +83,25 @@ class ObjectStorage:
             raise storage_unavailable(error) from error
         except BotoCoreError as error:
             raise storage_unavailable(error) from error
+
+    def presigned_get_url(
+        self, bucket: str, key: str, *, content_type: str, cache_control: str, expires_in: int
+    ) -> str | None:
+        """A signed, expiring address the browser can fetch the object from directly."""
+        try:
+            address: str = self.client.generate_presigned_url(
+                "get_object",
+                Params={
+                    "Bucket": bucket,
+                    "Key": key,
+                    "ResponseContentType": content_type,
+                    "ResponseCacheControl": cache_control,
+                },
+                ExpiresIn=expires_in,
+            )
+            return address
+        except (ClientError, BotoCoreError) as error:
+            raise StorageUnavailableError from error
 
     def delete(self, bucket: str, key: str) -> None:
         try:
