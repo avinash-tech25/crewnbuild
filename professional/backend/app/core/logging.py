@@ -2,13 +2,16 @@
 
 Application code logs through the standard `logging` module or structlog; both end up
 as one JSON object per line on stdout. Never log passwords, tokens, OTP codes, Aadhaar
-or bank numbers, or full phone numbers (14.2).
+or bank numbers, or full phone numbers (14.2); app/core/log_redaction.py removes any that
+slip through, on every line.
 """
 
 import logging
 import sys
 
 import structlog
+
+from app.core.log_redaction import redact_event
 
 SHARED_PROCESSORS: list[structlog.typing.Processor] = [
     structlog.contextvars.merge_contextvars,
@@ -17,6 +20,8 @@ SHARED_PROCESSORS: list[structlog.typing.Processor] = [
     structlog.processors.TimeStamper(fmt="iso", utc=True),
     structlog.processors.StackInfoRenderer(),
     structlog.processors.format_exc_info,
+    # Last, so it also cleans the formatted message and the exception text (14.2, R6).
+    redact_event,
 ]
 
 
