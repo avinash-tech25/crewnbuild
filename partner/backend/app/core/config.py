@@ -11,8 +11,8 @@ app/core/config.py, with the old names and defaults. Changes:
 - JWT_SECRET_KEY needs at least 64 characters (section 5.2, was 32), and the
   .env.example placeholder is refused.
 - DATABASE_URL has no built-in default and uses psycopg 3 (postgresql+psycopg://).
-- PROFESSIONAL_HANDOFF_PUBLIC_KEY replaces OCTABUILD_HANDOFF_PUBLIC_KEY; the old name
-  is still read when the new one is not set, for one release.
+- PROFESSIONAL_HANDOFF_PUBLIC_KEY replaces OCTABUILD_HANDOFF_PUBLIC_KEY (the old name is
+  not read: no deployment of this repository ever set it).
 - New: DATABASE_SCHEMA and PROFESSIONAL_SCHEMA (where Professional's requester view
   lives).
 The settings of bookings, dispatch, tracking, media and weather come with part 2.
@@ -95,8 +95,6 @@ class Settings(BaseSettings):
     # single line is accepted. Empty means hand-offs are refused; production refuses to
     # start without it.
     professional_handoff_public_key: str = ""
-    # The old name, read only when the new one is not set (for one release).
-    octabuild_handoff_public_key: str = ""
     # A hand-off must not live longer than this (Professional issues 60-second tokens).
     handoff_max_seconds: int = 60
 
@@ -126,7 +124,7 @@ class Settings(BaseSettings):
             return ENVIRONMENT_ALIASES.get(name, name)
         return value
 
-    @field_validator("professional_handoff_public_key", "octabuild_handoff_public_key", mode="before")
+    @field_validator("professional_handoff_public_key", mode="before")
     @classmethod
     def normalize_handoff_public_key(cls, value: object) -> object:
         # A PEM is several lines; one escaped line ("\n") is easier to put in .env.
@@ -237,9 +235,6 @@ def load_handoff_public_key(pem: str) -> object:
 
 
 def validate_handoff_public_key(configured: Settings) -> None:
-    if not configured.professional_handoff_public_key and configured.octabuild_handoff_public_key:
-        configured.professional_handoff_public_key = configured.octabuild_handoff_public_key
-    configured.octabuild_handoff_public_key = ""
     pem = configured.professional_handoff_public_key
     if not pem or is_placeholder(pem):
         if configured.is_production():

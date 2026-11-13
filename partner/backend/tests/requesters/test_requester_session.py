@@ -7,7 +7,7 @@ from typing import Any
 import pytest
 from conftest import FRONTEND_ORIGIN, ClientFactory
 from fastapi.testclient import TestClient
-from helpers import add_requester, csrf, key_pair, professional_handoff, set_requester, sign_handoff
+from helpers import add_requester, browser_with, csrf, key_pair, professional_handoff, set_requester, sign_handoff
 from sqlalchemy.orm import Session
 
 from app.modules.requesters.service import HANDOFF_FAILED_MESSAGE
@@ -109,4 +109,4 @@ def test_the_two_principals_never_mix(client: TestClient, database: Session, key
     # A requester session is not a technician session.
     assert client.get("/api/v1/auth/me").status_code == 401
     requester_access = client.cookies.get("par_req_at")
-    assert client.get("/api/v1/auth/me", cookies={"par_at": requester_access}).status_code == 401
+    assert browser_with(client, par_at=requester_access).get("/api/v1/auth/me").status_code == 401

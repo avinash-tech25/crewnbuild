@@ -166,3 +166,11 @@ def csrf(answer: Any) -> dict[str, str]:
 
 def sign_in(client: TestClient, email: str = "ravi@example.in", password: str = STRONG_PASSWORD) -> Any:
     return client.post("/api/v1/auth/login", json={"email": email, "password": password})
+
+
+def browser_with(client: TestClient, **cookies: str) -> TestClient:
+    """Another browser on the same app holding only these cookies (per-request cookies
+    are deprecated in the test client)."""
+    from conftest import FRONTEND_ORIGIN
+
+    return TestClient(client.app, headers={"Origin": FRONTEND_ORIGIN}, cookies=cookies)

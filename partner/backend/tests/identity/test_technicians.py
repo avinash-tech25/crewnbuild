@@ -6,7 +6,7 @@ from typing import Any
 import pytest
 from conftest import ClientFactory
 from fastapi.testclient import TestClient
-from helpers import STRONG_PASSWORD, FakeEmail, csrf, finished_technician, sign_in
+from helpers import STRONG_PASSWORD, FakeEmail, browser_with, csrf, finished_technician, sign_in
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -102,13 +102,13 @@ def test_refresh_rotation_and_reuse(client: TestClient, database: Session) -> No
     rotated = client.post("/api/v1/auth/refresh")
     assert rotated.status_code == 200 and client.cookies.get("par_rt") != first_refresh
     # The just-rotated token again, within the grace period: superseded, not theft.
-    stale = client.post("/api/v1/auth/refresh", cookies={"par_rt": first_refresh})
+    stale = browser_with(client, par_rt=first_refresh).post("/api/v1/auth/refresh")
     assert (stale.status_code, detail(stale)) == (401, "REFRESH_SUPERSEDED")
     # After the grace period the same replay ends the whole family.
     old = database.scalars(select(AuthSession).where(AuthSession.revoke_reason == "rotated")).one()
     old.revoked_at = naive_utc_now() - timedelta(minutes=5)
     database.commit()
-    reuse = client.post("/api/v1/auth/refresh", cookies={"par_rt": first_refresh})
+    reuse = browser_with(client, par_rt=first_refresh).post("/api/v1/auth/refresh")
     assert reuse.status_code == 401
     database.expire_all()
     assert all(row.revoked_at is not None for row in database.scalars(select(AuthSession)))
@@ -122,7 +122,7 @@ def test_logout_ends_the_session(client: TestClient, database: Session) -> None:
     assert client.get("/api/v1/auth/me").status_code == 200
     access = client.cookies.get("par_at")
     assert client.post("/api/v1/auth/logout").json() == {"message": "Signed out."}
-    assert client.get("/api/v1/auth/me", cookies={"par_at": access}).status_code == 401
+    assert browser_with(client, par_at=access).get("/api/v1/auth/me").status_code == 401
 
 
 def test_csrf_on_cookie_writes(client: TestClient, database: Session) -> None:

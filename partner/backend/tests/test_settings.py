@@ -63,10 +63,10 @@ def test_production_refusals() -> None:
     )
 
 
-def test_the_old_public_key_name_is_still_read(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_the_old_public_key_name_is_not_read(monkeypatch: pytest.MonkeyPatch) -> None:
     from app.core.config import Settings, check_settings
 
     _, public_pem = key_pair()
     monkeypatch.delenv("PROFESSIONAL_HANDOFF_PUBLIC_KEY", raising=False)
     monkeypatch.setenv("OCTABUILD_HANDOFF_PUBLIC_KEY", one_line(public_pem))
-    assert check_settings(Settings(_env_file=None)).professional_handoff_public_key.startswith("-----BEGIN PUBLIC KEY")
+    assert check_settings(Settings(_env_file=None)).professional_handoff_public_key == ""
