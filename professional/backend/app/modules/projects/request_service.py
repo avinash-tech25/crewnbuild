@@ -2,9 +2,9 @@
 builder (award) or a Site Engineer (ported from the old project_request_service.py, same
 rules and answers).
 
-The chat lines of a request are not written until the messaging module is ported, and
-property enquiries are not in the request list until the property module is
-(pending_links).
+The chat lines of a request are not written until the messaging module is ported
+(pending_links). Property enquiries (property_enquiries, once rows of the requests
+table) are in the incoming list and answered by accept and reject, as before.
 """
 
 import json
@@ -55,13 +55,13 @@ from app.modules.projects.notices import create_request_notification
 from app.modules.projects.pending_links import (
     pending_create_conversation_for_users,
     pending_create_conversation_message,
-    pending_property_request_payload,
 )
 from app.modules.projects.people import can_view_private_contact, request_counterparty_profile_payload
 from app.modules.projects.request_repository import ProjectRequestRepository
 from app.modules.projects.request_types import (
     OWNER_BUILDER_REQUEST_TYPES,
     OWNER_ENGINEER_REQUEST_TYPE,
+    PROPERTY_REQUEST_TYPE,
     SEND_REQUEST_TYPES,
     SPECIALIST_REQUEST_TYPE,
     builder_id_on_request,
@@ -74,6 +74,7 @@ from app.modules.projects.team_service import (
     engineer_category_of,
     specialist_requests_for_project,
 )
+from app.modules.property import links as property_links
 
 
 def dumps_with_ids(value: dict[str, Any]) -> str:
@@ -435,7 +436,12 @@ class ProjectRequestService:
                         ProjectRequest.project_id.notin_(self_construction_project_ids),
                     ),
                 )
-        requests = self.repository.list_requests(base_filter)
+        requests: list[Any] = self.repository.list_requests(base_filter)
+        # Property enquiries (property_enquiries, once rows of this list), newest first
+        # with the rest, as when they were requests.
+        enquiries = property_links.enquiries_of(self.database, user.id)
+        if enquiries:
+            requests = sorted([*requests, *enquiries], key=lambda item: item.created_at, reverse=True)
         # Property enquiries name their listing. Loaded in one query so the seller's
         # request list can say which property each request is about without a query
         # per row. Requests that are not property enquiries carry NULL here and are
@@ -501,7 +507,9 @@ class ProjectRequestService:
                     "status": item.status,
                     # Present only on a property enquiry; None on every existing request,
                     # so nothing that reads this payload today sees any change.
-                    **pending_property_request_payload(None),
+                    **property_links.property_request_payload(
+                        item.listing if item.request_type == PROPERTY_REQUEST_TYPE else None
+                    ),
                     "quotation_amount": float(item.quotation_amount or 0),
                     # Stored naive UTC (datetime.utcnow). Sent as ISO 8601 with the
                     # offset: the "%d %b %Y, %I:%M %p" text had no zone, so browsers
@@ -517,7 +525,9 @@ class ProjectRequestService:
     def accept_project_request(self, payload: RequestDecision, user: User):
         # Locked so two answers to one request cannot both see it pending.
         request = self.repository.lock_request(payload.request_id)
-        if not request or request.receiver_id != user.id:
+        if request is None:
+            return self.answer_property_enquiry(payload, user, accepted=True)
+        if request.receiver_id != user.id:
             raise HTTPException(status_code=404, detail="Request not found")
         require_complete_profile(user)
         # Only pending -> accepted. Accepting again used to repeat the quotation,
@@ -872,9 +882,56 @@ class ProjectRequestService:
         commit_award_change(self.database)
         return {**result, "status": "assigned"}
 
+    def answer_property_enquiry(self, payload: RequestDecision, user: User, accepted: bool):
+        """A property enquiry answered through these endpoints, as when it was a request
+        without a project: its seller only, once, with the generic notifications."""
+        enquiry = property_links.lock_enquiry(self.database, payload.request_id)
+        if not enquiry or enquiry.receiver_id != user.id:
+            raise HTTPException(status_code=404, detail="Request not found")
+        category = request_notification_category(enquiry.request_type)
+        if not accepted:
+            property_links.ensure_pending(enquiry)
+            enquiry.status = "rejected"
+            create_request_notification(
+                self.database,
+                enquiry.sender_id,
+                "Request rejected",
+                f"{user.name} rejected your {enquiry.request_type} request.",
+                category=category,
+            )
+            self.repository.commit()
+            return {"status": "rejected"}
+        require_complete_profile(user)
+        property_links.ensure_pending(enquiry)
+        enquiry.status = "accepted"
+        # The old request without a project opened this conversation.
+        conversation = pending_create_conversation_for_users(
+            self.database, "Material request", [enquiry.sender_id, enquiry.receiver_id]
+        )
+        if enquiry.quotation_amount:
+            quote_body = (
+                f"QUOTATION: {user.name} accepted your request with a quotation of "
+                f"₹{float(enquiry.quotation_amount):,.0f}."
+            )
+            pending_create_conversation_message(self.database, conversation, user.id, quote_body, "QUOTATION")
+            create_request_notification(
+                self.database, enquiry.sender_id, "Quotation received", quote_body, category=category
+            )
+        else:
+            pending_create_conversation_message(
+                self.database, conversation, user.id, f"REQUEST ACCEPTED: {user.name} accepted your request.", "REQUEST"
+            )
+            create_request_notification(
+                self.database, enquiry.sender_id, "Request accepted", "Your request is accepted.", category=category
+            )
+        self.repository.commit()
+        return {"status": "accepted"}
+
     def reject_project_request(self, payload: RequestDecision, user: User):
         request = self.repository.lock_request(payload.request_id)
-        if not request or request.receiver_id != user.id:
+        if request is None:
+            return self.answer_property_enquiry(payload, user, accepted=False)
+        if request.receiver_id != user.id:
             raise HTTPException(status_code=404, detail="Request not found")
         # Only pending -> rejected. An accepted request (a shortlisted quotation,
         # possibly already awarded) is not withdrawn through this endpoint.

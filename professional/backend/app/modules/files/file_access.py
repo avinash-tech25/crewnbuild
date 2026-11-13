@@ -42,11 +42,6 @@ def file_module(stored: File) -> str:
 # ---- lookups into modules not ported yet (stubs) ----
 
 
-def pending_listing_shows_file_to(database: Session, seller_id: uuid.UUID, file_id: uuid.UUID, viewer: User) -> bool:
-    """STUB (property): a photo or video of the seller's property listing the viewer may see."""
-    return False
-
-
 def pending_is_attachment_sent_to(
     database: Session, sender_id: uuid.UUID, viewer_id: uuid.UUID, file_id: uuid.UUID
 ) -> bool:
@@ -110,7 +105,10 @@ def file_view_allowed(database: Session, user: User, stored: File) -> bool:
             return True
         if file_links.is_project_cover_image(database, owner.id, file_id):
             return True
-        if pending_listing_shows_file_to(database, owner.id, file_id, user):
+        # Imported here: the property module reads the files module.
+        from app.modules.property.links import listing_shows_file_to
+
+        if listing_shows_file_to(database, owner.id, file_id, user):
             return True
         if pending_is_attachment_sent_to(database, owner.id, user.id, file_id):
             return True

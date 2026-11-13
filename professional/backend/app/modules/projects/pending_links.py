@@ -7,7 +7,6 @@ answers "nothing found" (or "allowed" for a plan check) until that module replac
     messaging       conversations and their messages (request, quotation, assignment and
                     negotiation lines in the chat) are not written; notifications are
     billing         a builder's plan never gates the calendar or the site photos
-    property        property enquiries are not in the request list
 """
 
 import uuid
@@ -53,12 +52,3 @@ def pending_project_feature_allowed(database: Session, user: User, project: Any,
 def pending_require_project_feature(database: Session, user: User, project: Any, feature: str) -> None:
     """STUB (billing): pending_project_feature_allowed as a guard (403 when paused)."""
     return None
-
-
-# ---- property ----
-
-
-def pending_property_request_payload(listing: Any) -> dict[str, Any]:
-    """STUB (property): which property a request is about; the same keys, None, on every
-    request that is not a property enquiry (all of them, until property is ported)."""
-    return {"property_listing_id": None, "property_title": None, "property_image_url": None, "property_price": None}

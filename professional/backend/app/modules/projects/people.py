@@ -19,6 +19,7 @@ from app.modules.accounts.profile_completion import profile_complete
 from app.modules.accounts.profile_lists import read_completed_project_details, split_profile_list
 from app.modules.identity.models import ROLE_BUILDER, ROLE_SUPPLIER, User
 from app.modules.projects.models import ProjectRequest
+from app.modules.projects.request_types import PROPERTY_REQUEST_TYPE
 
 
 def accepted_request_between(
@@ -29,7 +30,8 @@ def accepted_request_between(
     project_id: uuid.UUID | None = None,
 ) -> bool:
     """Whether an accepted request links these two accounts, in either direction; with
-    `project_id`, only a request on that project counts."""
+    `project_id`, only a request on that project counts. Without one, an accepted
+    property enquiry counts too, as it did when enquiries were requests rows."""
     statement = select(ProjectRequest.id).where(
         ProjectRequest.status == "accepted",
         or_(
@@ -41,7 +43,14 @@ def accepted_request_between(
         statement = statement.where(ProjectRequest.request_type.in_(request_types))
     if project_id is not None:
         statement = statement.where(ProjectRequest.project_id == project_id)
-    return database.scalars(statement.limit(1)).first() is not None
+    if database.scalars(statement.limit(1)).first() is not None:
+        return True
+    # An accepted property enquiry (once a requests row without a project) counts too.
+    if project_id is None and (request_types is None or PROPERTY_REQUEST_TYPE in request_types):
+        from app.modules.property.links import accepted_enquiry_between  # property reads this module
+
+        return accepted_enquiry_between(database, first_user_id, second_user_id)
+    return False
 
 
 def can_view_private_contact(

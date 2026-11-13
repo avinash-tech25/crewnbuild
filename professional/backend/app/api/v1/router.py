@@ -25,6 +25,7 @@ from app.modules.identity.router import router as identity_router
 from app.modules.labour_supply.router import router as labour_supply_router
 from app.modules.marketplace.router import router as marketplace_router
 from app.modules.projects.router import router as projects_router
+from app.modules.property.router import router as property_router
 from app.modules.site_operations.router import router as site_operations_router
 from app.modules.store.router import router as store_router
 from app.modules.support.router import router as support_router
@@ -55,6 +56,8 @@ MODULE_ROUTERS: list[APIRouter] = [
     # Discovery, a supplier's listings, purchase orders, the cart and the shop (old
     # marketplace, supplier_product, material_request and shop routes, in that order).
     marketplace_router,
+    # Property listings and enquiries (old property_routes, after the shop routes).
+    property_router,
     # The old order put the file routes after property and estimates.
     files_router,
     # Reports, contact and support, in the old order, with the admin deleted-accounts
