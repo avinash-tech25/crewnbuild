@@ -4,12 +4,9 @@ NOT PORTED YET: each `pending_*` function stands in for one call into another mo
 answers "nothing found" (or "allowed" for a plan check) until that module replaces it
 (docs/porting-todo.md).
 
-    messaging       conversations and their messages (request, quotation, assignment and
-                    negotiation lines in the chat) are not written; notifications are
     billing         a builder's plan never gates the calendar or the site photos
 """
 
-import uuid
 from typing import Any
 
 from sqlalchemy.orm import Session
@@ -18,26 +15,6 @@ from app.modules.identity.models import User
 
 BUILDER_CALENDAR = "builder_calendar"
 BUILDER_PHOTOS = "builder_photos"
-
-
-# ---- messaging ----
-
-
-def pending_create_conversation_for_users(database: Session, title: str, user_ids: list[uuid.UUID]) -> None:
-    """STUB (messaging): the conversation between these accounts, created if missing."""
-    return None
-
-
-def pending_create_conversation_message(
-    database: Session, conversation: Any, sender_id: uuid.UUID, body: str, kind: str
-) -> None:
-    """STUB (messaging): one message (REQUEST, QUOTATION, ASSIGNMENT, TEXT) in it."""
-    return None
-
-
-def pending_update_assignment_message_status(database: Session, request_id: uuid.UUID, status: str) -> None:
-    """STUB (messaging): the status shown on the request's ASSIGNMENT chat card."""
-    return None
 
 
 # ---- billing ----

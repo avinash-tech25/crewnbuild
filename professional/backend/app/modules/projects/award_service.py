@@ -15,6 +15,11 @@ from sqlalchemy.orm import Session
 from app.core.local_time import local_workflow_now
 from app.database.types import naive_utc_now
 from app.modules.identity.models import ROLE_BUILDER, ROLE_OWNER, User
+from app.modules.messaging.service import (
+    create_conversation_for_users,
+    create_conversation_message,
+    update_assignment_message_status,
+)
 from app.modules.projects.award_repository import AwardRepository
 from app.modules.projects.models import (
     AWARD_AWAITING_BUILDER,
@@ -35,11 +40,6 @@ from app.modules.projects.models import (
     ProjectRequest,
 )
 from app.modules.projects.notices import create_request_notification
-from app.modules.projects.pending_links import (
-    pending_create_conversation_for_users,
-    pending_create_conversation_message,
-    pending_update_assignment_message_status,
-)
 from app.modules.projects.request_types import (
     OWNER_BUILDER_REQUEST_TYPES,
     OWNER_ENGINEER_REQUEST_TYPE,
@@ -330,8 +330,8 @@ def award_message(
     title: str,
 ) -> None:
     """A line in the existing owner-builder conversation, and a notification."""
-    conversation = pending_create_conversation_for_users(database, project.title, [project.owner_id, award.builder_id])
-    pending_create_conversation_message(database, conversation, sender_id, body, "TEXT")
+    conversation = create_conversation_for_users(database, project.title, [project.owner_id, award.builder_id])
+    create_conversation_message(database, conversation, sender_id, body, "TEXT")
     create_request_notification(database, recipient_id, title, body, category="NEGOTIATION")
 
 
@@ -544,12 +544,12 @@ def confirm_award(database: Session, award: ProjectAward, project: Project, user
             "escrow_note": None,
         }
     # The chat card shows the same state.
-    pending_update_assignment_message_status(database, award.request_id, "accepted")
+    update_assignment_message_status(database, award.request_id, "accepted")
     AwardRepository(database).flush()
     contract = get_awarded_contract(database, project)
     escrow_resized = bool(contract) and resize_escrow_to_contract(database, project, contract["contract_amount"])
-    conversation = pending_create_conversation_for_users(database, project.title, [project.owner_id, user.id])
-    pending_create_conversation_message(
+    conversation = create_conversation_for_users(database, project.title, [project.owner_id, user.id])
+    create_conversation_message(
         database,
         conversation,
         user.id,
@@ -645,7 +645,7 @@ def release_award(database: Session, award: ProjectAward, project: Project, user
     # has none, and the newest card for this request may belong to an earlier,
     # already-ended assignment that must keep its own status.
     if was_assigned:
-        pending_update_assignment_message_status(database, award.request_id, outcome)
+        update_assignment_message_status(database, award.request_id, outcome)
     # The contract's escrow split goes back to the owner's budget, under the
     # same rule that resized it: only an untouched, all-pending standard set.
     if was_contract:

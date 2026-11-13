@@ -20,6 +20,7 @@ from app.modules.accounts.profile_completion import is_store_manager
 from app.modules.billing import lead_locations
 from app.modules.identity.models import ROLE_BUILDER, ROLE_ENGINEER, ROLE_OWNER, ROLE_SUPPLIER, User
 from app.modules.messaging.live_events import queue_live_hint
+from app.modules.messaging.service import create_conversation_for_users, create_conversation_message
 from app.modules.projects.access import (
     ENGINEER_ALREADY_WORKING_DETAIL,
     ensure_engineer_can_take_project,
@@ -52,10 +53,6 @@ from app.modules.projects.models import (
     ProjectRequest,
 )
 from app.modules.projects.notices import create_request_notification
-from app.modules.projects.pending_links import (
-    pending_create_conversation_for_users,
-    pending_create_conversation_message,
-)
 from app.modules.projects.people import can_view_private_contact, request_counterparty_profile_payload
 from app.modules.projects.request_repository import ProjectRequestRepository
 from app.modules.projects.request_types import (
@@ -398,11 +395,9 @@ class ProjectRequestService:
         self.repository.add(request)
         self.repository.flush()
         conversation_title = project.title if project else f"{user.name} and {receiver.name}"
-        conversation = pending_create_conversation_for_users(
-            self.database, conversation_title, [user.id, payload.receiver_id]
-        )
+        conversation = create_conversation_for_users(self.database, conversation_title, [user.id, payload.receiver_id])
         request_context = f" for {project.title}" if project else ""
-        pending_create_conversation_message(
+        create_conversation_message(
             self.database,
             conversation,
             user.id,
@@ -560,7 +555,7 @@ class ProjectRequestService:
             # assign the project. The owner picks one accepted engineer afterwards,
             # exactly as they pick between accepted builder quotations.
             project = self.repository.get_project(request.project_id)
-            conversation = pending_create_conversation_for_users(
+            conversation = create_conversation_for_users(
                 self.database,
                 project.title if project else "Site engineer request",
                 [request.sender_id, request.receiver_id],
@@ -581,20 +576,20 @@ class ProjectRequestService:
             project = self.repository.get_project(request.project_id)
             if project:
                 contractor_id = request.sender_id if user.role == ROLE_OWNER else user.id
-                conversation = pending_create_conversation_for_users(
+                conversation = create_conversation_for_users(
                     self.database, project.title, [project.owner_id, contractor_id]
                 )
         else:
-            conversation = pending_create_conversation_for_users(
+            conversation = create_conversation_for_users(
                 self.database, "Material request", [request.sender_id, request.receiver_id]
             )
         if not conversation:
-            conversation = pending_create_conversation_for_users(
+            conversation = create_conversation_for_users(
                 self.database, "Request", [request.sender_id, request.receiver_id]
             )
         if request.quotation_amount:
             quote_body = f"QUOTATION: {user.name} accepted your request with a quotation of ₹{float(request.quotation_amount):,.0f}."
-            pending_create_conversation_message(self.database, conversation, user.id, quote_body, "QUOTATION")
+            create_conversation_message(self.database, conversation, user.id, quote_body, "QUOTATION")
             create_request_notification(
                 self.database,
                 request.sender_id,
@@ -603,7 +598,7 @@ class ProjectRequestService:
                 category=request_notification_category(request.request_type),
             )
         else:
-            pending_create_conversation_message(
+            create_conversation_message(
                 self.database, conversation, user.id, f"REQUEST ACCEPTED: {user.name} accepted your request.", "REQUEST"
             )
             create_request_notification(
@@ -755,8 +750,8 @@ class ProjectRequestService:
         # chosen keep their accepted request untouched but gain nothing on this
         # project. The award is already confirmed, so this makes the contract.
         project.contractor_id = contractor.id
-        conversation = pending_create_conversation_for_users(self.database, project.title, [user.id, contractor.id])
-        pending_create_conversation_message(
+        conversation = create_conversation_for_users(self.database, project.title, [user.id, contractor.id])
+        create_conversation_message(
             self.database,
             conversation,
             user.id,
@@ -905,7 +900,7 @@ class ProjectRequestService:
         property_links.ensure_pending(enquiry)
         enquiry.status = "accepted"
         # The old request without a project opened this conversation.
-        conversation = pending_create_conversation_for_users(
+        conversation = create_conversation_for_users(
             self.database, "Material request", [enquiry.sender_id, enquiry.receiver_id]
         )
         if enquiry.quotation_amount:
@@ -913,12 +908,12 @@ class ProjectRequestService:
                 f"QUOTATION: {user.name} accepted your request with a quotation of "
                 f"₹{float(enquiry.quotation_amount):,.0f}."
             )
-            pending_create_conversation_message(self.database, conversation, user.id, quote_body, "QUOTATION")
+            create_conversation_message(self.database, conversation, user.id, quote_body, "QUOTATION")
             create_request_notification(
                 self.database, enquiry.sender_id, "Quotation received", quote_body, category=category
             )
         else:
-            pending_create_conversation_message(
+            create_conversation_message(
                 self.database, conversation, user.id, f"REQUEST ACCEPTED: {user.name} accepted your request.", "REQUEST"
             )
             create_request_notification(

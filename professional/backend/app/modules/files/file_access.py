@@ -14,8 +14,6 @@ until its module replaces it (docs/porting-todo.md). Until then those files are 
 to their uploader.
 """
 
-import uuid
-
 from sqlalchemy.orm import Session
 
 from app.modules.accounts.profile_lists import read_completed_project_details
@@ -25,6 +23,7 @@ from app.modules.files.file_ownership import file_ids_in
 from app.modules.files.models import File
 from app.modules.identity.models import ROLE_BUILDER, ROLE_ENGINEER, ROLE_SUPPLIER, User
 from app.modules.marketplace.account_links import is_supplier_listing_image
+from app.modules.messaging.links import is_attachment_sent_to
 from app.modules.projects import file_links
 from app.modules.projects.people import can_view_private_contact
 
@@ -40,13 +39,6 @@ def file_module(stored: File) -> str:
 
 
 # ---- lookups into modules not ported yet (stubs) ----
-
-
-def pending_is_attachment_sent_to(
-    database: Session, sender_id: uuid.UUID, viewer_id: uuid.UUID, file_id: uuid.UUID
-) -> bool:
-    """STUB (messaging): an attachment the sender sent in a conversation the viewer is in."""
-    return False
 
 
 # ---- the rule ----
@@ -110,7 +102,7 @@ def file_view_allowed(database: Session, user: User, stored: File) -> bool:
 
         if listing_shows_file_to(database, owner.id, file_id, user):
             return True
-        if pending_is_attachment_sent_to(database, owner.id, user.id, file_id):
+        if is_attachment_sent_to(database, owner.id, user.id, file_id):
             return True
         if admin_may_view_account_documents(database, user, owner):
             return True

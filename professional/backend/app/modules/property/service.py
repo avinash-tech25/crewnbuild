@@ -23,13 +23,10 @@ from sqlalchemy.orm import Session, selectinload
 from app.core.local_time import local_iso
 from app.database.types import naive_utc_now
 from app.modules.identity.models import ROLE_BUILDER, ROLE_OWNER, User
+from app.modules.messaging.service import create_conversation_for_users, create_conversation_message
 from app.modules.projects.access import require_complete_profile
 from app.modules.projects.models import Project
 from app.modules.projects.notices import create_request_notification
-from app.modules.projects.pending_links import (
-    pending_create_conversation_for_users,
-    pending_create_conversation_message,
-)
 from app.modules.projects.people import can_view_private_contact
 from app.modules.property.models import (
     PROPERTY_PUBLIC_STATUSES,
@@ -434,8 +431,8 @@ class PropertyListingService:
         )
         self.database.add(enquiry)
         self.database.flush()
-        conversation = pending_create_conversation_for_users(self.database, listing.title, [user.id, seller.id])
-        pending_create_conversation_message(
+        conversation = create_conversation_for_users(self.database, listing.title, [user.id, seller.id])
+        create_conversation_message(
             self.database, conversation, user.id, f"REQUEST: {user.name} is interested in {listing.title}.", "REQUEST"
         )
         create_request_notification(

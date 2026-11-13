@@ -24,6 +24,8 @@ from app.modules.files.router import router as files_router
 from app.modules.identity.router import router as identity_router
 from app.modules.labour_supply.router import router as labour_supply_router
 from app.modules.marketplace.router import router as marketplace_router
+from app.modules.messaging.router import router as messaging_router
+from app.modules.messaging.router import websocket_router as messaging_websocket_router
 from app.modules.projects.router import router as projects_router
 from app.modules.property.router import router as property_router
 from app.modules.site_operations.router import router as site_operations_router
@@ -48,6 +50,8 @@ MODULE_ROUTERS: list[APIRouter] = [
     catalog_router,
     identity_router,
     accounts_router,
+    # Notifications and messages, where the old app registered them (before projects).
+    messaging_router,
     # Projects, requests, awards, teams and supplier assignments, where the old app
     # registered them (after notifications and messages, which are not ported yet).
     projects_router,
@@ -80,3 +84,8 @@ MODULE_ROUTERS: list[APIRouter] = [
 
 for module_router in MODULE_ROUTERS:
     api_router.include_router(module_router, dependencies=[Depends(enforce_route_access)])
+
+# The chat and live-events sockets sign in at their own handshake (session cookie and
+# an allowed Origin, messaging/websocket_service.py): a route dependency reads an HTTP
+# request, which a websocket is not.
+api_router.include_router(messaging_websocket_router)
