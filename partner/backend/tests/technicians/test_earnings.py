@@ -13,6 +13,7 @@ from decimal import Decimal
 from types import SimpleNamespace
 
 import pytest
+from conftest import REQUESTERS_STAND_IN
 from fastapi import HTTPException
 from legacy import bearer
 from legacy_dispatch import AT_HOME, HOME, act, arrive, working
@@ -286,7 +287,7 @@ def test_the_database_refuses_figures_that_do_not_add_up(job_at, connection, gro
     os.environ.get("PARTNER_TEST_COMMITTED_CONCURRENCY") != "1",
     reason="needs committed rows on a disposable test database (PARTNER_TEST_COMMITTED_CONCURRENCY=1)",
 )
-def test_concurrent_completions_record_at_most_one_earning():
+def test_concurrent_completions_record_at_most_one_earning(database_tables):
     from app.database.session import engine
 
     marker = uuid.uuid4().hex[:10]
@@ -294,9 +295,9 @@ def test_concurrent_completions_record_at_most_one_earning():
     with engine.begin() as c:
         ids["owner"] = c.execute(
             text(
-                "INSERT INTO partner.v_partner_requesters (name, email, phone, password_hash, role, status, address, pincode, location, "
-                "country_of_residence, rating, created_at) VALUES ('Race Owner', :e, :p, 'x', 'OWNER', 'ACTIVE', '1 Road', '000405', "
-                "'Alpha Main', 'India', 0, now()) RETURNING id"
+                f"INSERT INTO {REQUESTERS_STAND_IN} (id, name, email, phone, status, address, pincode, location, requester_role) "
+                "VALUES (gen_random_uuid(), 'Race Owner', :e, :p, 'ACTIVE', '1 Road', '000405', "
+                "'Alpha Main', 'OWNER') RETURNING id"
             ),
             {"e": f"race-{marker}@example.com", "p": "7" + marker[:9].translate(str.maketrans("abcdef", "123456"))},
         ).scalar_one()
@@ -348,7 +349,7 @@ def test_concurrent_completions_record_at_most_one_earning():
             c.execute(text("DELETE FROM partner.technician_earnings WHERE booking_id = :b"), {"b": ids["booking"]})
             c.execute(text("DELETE FROM partner.bookings WHERE id = :b"), {"b": ids["booking"]})
             c.execute(text("DELETE FROM partner.technicians WHERE id = :t"), {"t": ids["technician"]})
-            c.execute(text("DELETE FROM partner.v_partner_requesters WHERE id = :o"), {"o": ids["owner"]})
+            c.execute(text(f"DELETE FROM {REQUESTERS_STAND_IN} WHERE id = :o"), {"o": ids["owner"]})
 
 
 # =============================================================== what never earns

@@ -14,6 +14,7 @@ import uuid
 from datetime import datetime, time
 
 import pytest
+from conftest import REQUESTERS_STAND_IN
 from legacy import AREA_OF, bearer, new_password
 from legacy_dispatch import AT_HOME, FAR, HOME, MID, NEAR, act, book, offer_ids, working
 from sqlalchemy import text
@@ -744,7 +745,7 @@ def test_losing_the_race_is_still_reported_as_taken(client, onboard, requester_s
     os.environ.get("PARTNER_TEST_COMMITTED_CONCURRENCY") != "1",
     reason="needs committed rows on a disposable test database (PARTNER_TEST_COMMITTED_CONCURRENCY=1)",
 )
-def test_an_availability_change_racing_an_acceptance_is_never_bypassed():
+def test_an_availability_change_racing_an_acceptance_is_never_bypassed(database_tables):
     """Real transactions on separate connections. One connection turns the
     technician unavailable and holds that change uncommitted; the acceptance,
     which takes the booking lock and then the profile lock, must wait for it and
@@ -780,9 +781,9 @@ def test_an_availability_change_racing_an_acceptance_is_never_bypassed():
     with engine.begin() as c:
         ids["owner"] = c.execute(
             text(
-                "INSERT INTO partner.v_partner_requesters (name, email, phone, password_hash, role, status, address, pincode, location, "
-                "country_of_residence, rating, created_at) VALUES ('WP Race Owner', :e, :p, 'x', 'OWNER', 'ACTIVE', '1 Road', '000405', "
-                "'Alpha Main', 'India', 0, now()) RETURNING id"
+                f"INSERT INTO {REQUESTERS_STAND_IN} (id, name, email, phone, status, address, pincode, location, requester_role) "
+                "VALUES (gen_random_uuid(), 'WP Race Owner', :e, :p, 'ACTIVE', '1 Road', '000405', "
+                "'Alpha Main', 'OWNER') RETURNING id"
             ),
             {"e": f"wp-race-{marker}@example.com", "p": "6" + marker[:9].translate(str.maketrans("abcdef", "123456"))},
         ).scalar_one()
@@ -884,4 +885,4 @@ def test_an_availability_change_racing_an_acceptance_is_never_bypassed():
                 c.execute(text("DELETE FROM partner.technician_profiles WHERE technician_id = :u"), {"u": technician})
                 c.execute(text("DELETE FROM partner.technicians WHERE id = :u"), {"u": technician})
             if ids.get("owner"):
-                c.execute(text("DELETE FROM partner.v_partner_requesters WHERE id = :o"), {"o": ids["owner"]})
+                c.execute(text(f"DELETE FROM {REQUESTERS_STAND_IN} WHERE id = :o"), {"o": ids["owner"]})

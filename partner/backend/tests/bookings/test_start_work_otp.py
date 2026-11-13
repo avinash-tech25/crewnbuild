@@ -406,11 +406,11 @@ def test_no_code_ever_reaches_the_logs(client, job, caplog):
     os.environ.get("PARTNER_TEST_COMMITTED_CONCURRENCY") != "1",
     reason="needs committed rows on a disposable test database (PARTNER_TEST_COMMITTED_CONCURRENCY=1)",
 )
-def test_two_correct_submissions_at_once_start_the_job_exactly_once():
+def test_two_correct_submissions_at_once_start_the_job_exactly_once(database_tables):
     from app.database.session import engine
     from app.modules.bookings.repository import StartOtpRepository
     from app.modules.bookings.start_otp_service import StartOtpService
-    from app.modules.requesters.repository import Requester
+    from app.modules.requesters.repository import RequesterRepository
 
     marker = uuid.uuid4().hex[:10]
     ids = {}
@@ -454,7 +454,9 @@ def test_two_correct_submissions_at_once_start_the_job_exactly_once():
         with Session(engine) as session:
             code = (
                 StartOtpService(StartOtpRepository(session), ServiceRequestRepository(session))
-                .requester_view(session.get(Requester, ids["owner"]), ids["booking"])
+                .requester_view(
+                    RequesterRepository(session, settings.professional_schema).get(ids["owner"]), ids["booking"]
+                )
                 .code
             )
         barrier = threading.Barrier(2)

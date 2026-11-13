@@ -328,12 +328,13 @@ def test_there_is_no_text_anywhere(client, job):
     os.environ.get("PARTNER_TEST_COMMITTED_CONCURRENCY") != "1",
     reason="needs committed rows on a disposable test database (PARTNER_TEST_COMMITTED_CONCURRENCY=1)",
 )
-def test_two_submissions_at_once_make_exactly_one_rating():
+def test_two_submissions_at_once_make_exactly_one_rating(database_tables):
+    from app.core.runtime import settings
     from app.database.session import engine
     from app.modules.bookings.rating_service import RatingService
     from app.modules.bookings.repository import RatingRepository, ServiceRequestRepository
     from app.modules.bookings.schemas import RatingSubmitRequest
-    from app.modules.requesters.repository import Requester
+    from app.modules.requesters.repository import RequesterRepository
 
     marker = uuid.uuid4().hex[:10]
     ids = {}
@@ -371,7 +372,7 @@ def test_two_submissions_at_once_make_exactly_one_rating():
         def submit(stars):
             with Session(engine) as session:
                 service = RatingService(RatingRepository(session), ServiceRequestRepository(session))
-                requester = session.get(Requester, ids["owner"])
+                requester = RequesterRepository(session, settings.professional_schema).get(ids["owner"])
                 barrier.wait()
                 try:
                     service.submit(requester, ids["booking"], RatingSubmitRequest(stars=stars, tags=[]))

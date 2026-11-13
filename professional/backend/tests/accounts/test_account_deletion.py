@@ -6,7 +6,8 @@ from typing import Any
 import pytest
 from fastapi.testclient import TestClient
 from identity.helpers import create_user, sign_in
-from sqlalchemy import select
+from sqlalchemy import select, text
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.modules.accounts.models import AccountDeletionRequest, BuilderProfile
@@ -231,3 +232,82 @@ def test_shared_projects_are_checked_before_open_bookings(
         "You own projects other users are working on (Villa). Contact us to resolve them before deleting your "
         "account, so that their records are protected."
     )
+
+
+# ---- finished bookings and the RESTRICT key from Partner (R4c decision) ----
+
+
+@pytest.fixture
+def partner_bookings(database: Session, monkeypatch: pytest.MonkeyPatch) -> Any:
+    """Partner's bookings as Professional sees them: a table whose requester key references
+    professional.users with ON DELETE RESTRICT (as partner.bookings does), and a view with
+    the columns of partner.v_professional_bookings that the repository is pointed at. The
+    Professional test role may not create objects in schema partner, so both live in
+    professional for this test and are dropped afterwards."""
+    from app.modules.accounts import repository
+
+    database.execute(
+        text(
+            "CREATE TABLE professional.test_partner_bookings ("
+            " id uuid PRIMARY KEY DEFAULT gen_random_uuid(),"
+            " requested_by_user_id uuid NOT NULL REFERENCES professional.users (id) ON DELETE RESTRICT,"
+            " requested_by_role varchar(20) NOT NULL DEFAULT 'OWNER', status varchar(20) NOT NULL)"
+        )
+    )
+    database.execute(
+        text(
+            "CREATE VIEW professional.test_v_professional_bookings AS SELECT id, requested_by_user_id,"
+            " requested_by_role, status FROM professional.test_partner_bookings"
+        )
+    )
+    database.commit()
+    monkeypatch.setattr(repository, "PARTNER_BOOKINGS_VIEW_SCHEMA", "professional")
+    monkeypatch.setattr(repository, "PARTNER_BOOKINGS_VIEW_NAME", "test_v_professional_bookings")
+
+    def add(user_id: Any, status: str) -> None:
+        database.execute(
+            text("INSERT INTO professional.test_partner_bookings (requested_by_user_id, status) VALUES (:u, :s)"),
+            {"u": user_id, "s": status},
+        )
+        database.commit()
+
+    yield add
+    database.rollback()
+    database.execute(text("DROP VIEW IF EXISTS professional.test_v_professional_bookings"))
+    database.execute(text("DROP TABLE IF EXISTS professional.test_partner_bookings"))
+    database.commit()
+
+
+def test_finished_bookings_do_not_block_deletion_and_the_restrict_key_holds(
+    client: TestClient, database: Session, partner_bookings: Any
+) -> None:
+    user, headers = signed_in(client, database)
+    partner_bookings(user.id, "COMPLETED")
+    partner_bookings(user.id, "CANCELLED")
+
+    response = client.post("/api/v1/account/delete", json=FORM, headers=headers)
+    assert response.status_code == 200, response.text
+
+    database.expire_all()
+    stored = database.get(User, user.id)
+    assert stored is not None and stored.status == "DELETED" and stored.deleted_at is not None
+    # Soft delete: the users row stays, so the bookings keep their requester.
+    kept = database.execute(
+        text("SELECT count(*) FROM professional.test_partner_bookings WHERE requested_by_user_id = :u"), {"u": user.id}
+    ).scalar()
+    assert kept == 2
+    # And the key really is RESTRICT: removing the row outright is refused.
+    with pytest.raises(IntegrityError):
+        database.execute(text("DELETE FROM professional.users WHERE id = :u"), {"u": user.id})
+    database.rollback()
+
+
+def test_an_open_booking_in_the_view_blocks_deletion(
+    client: TestClient, database: Session, partner_bookings: Any
+) -> None:
+    user, headers = signed_in(client, database)
+    partner_bookings(user.id, "COMPLETED")
+    partner_bookings(user.id, "IN_PROGRESS")
+    response = client.post("/api/v1/account/delete", json=FORM, headers=headers)
+    assert response.status_code == 409
+    assert response.json()["detail"]["code"] == "PARTNER_OPEN_BOOKINGS"

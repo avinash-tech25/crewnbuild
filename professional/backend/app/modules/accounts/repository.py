@@ -10,7 +10,8 @@ from app.modules.identity.models import UserSession
 
 # Statuses of a Partner booking that is still open (CONNECTIONS.md 2.4).
 OPEN_BOOKING_STATUSES = ("SEARCHING", "OFFERED", "ACCEPTED", "EN_ROUTE", "ARRIVED", "IN_PROGRESS")
-PARTNER_BOOKINGS_VIEW = "partner.v_professional_bookings"
+PARTNER_BOOKINGS_VIEW_SCHEMA = "partner"
+PARTNER_BOOKINGS_VIEW_NAME = "v_professional_bookings"
 
 
 class AccountRepository:
@@ -61,16 +62,14 @@ class AccountRepository:
         publishes for Professional (section 11.2). Before Partner's baseline creates the
         view (or grants it), there are none to count."""
         visible = self.database.execute(
-            text(
-                "SELECT 1 FROM information_schema.views "
-                "WHERE table_schema = 'partner' AND table_name = 'v_professional_bookings'"
-            )
+            text("SELECT 1 FROM information_schema.views WHERE table_schema = :schema AND table_name = :name"),
+            {"schema": PARTNER_BOOKINGS_VIEW_SCHEMA, "name": PARTNER_BOOKINGS_VIEW_NAME},
         ).first()
         if visible is None:
             return 0
         count = self.database.execute(
             text(
-                f"SELECT count(*) FROM {PARTNER_BOOKINGS_VIEW} "  # noqa: S608 constant view name
+                f"SELECT count(*) FROM {PARTNER_BOOKINGS_VIEW_SCHEMA}.{PARTNER_BOOKINGS_VIEW_NAME} "  # noqa: S608 constant view name
                 "WHERE requested_by_user_id = :user_id AND status = ANY(:statuses)"
             ),
             {"user_id": user_id, "statuses": list(OPEN_BOOKING_STATUSES)},

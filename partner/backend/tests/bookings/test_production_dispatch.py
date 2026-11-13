@@ -747,7 +747,7 @@ def test_an_oversized_message_becomes_a_resync(monkeypatch):
     os.environ.get("PARTNER_TEST_COMMITTED_CONCURRENCY") != "1",
     reason="needs committed rows on a disposable test database (PARTNER_TEST_COMMITTED_CONCURRENCY=1)",
 )
-def test_five_technicians_accepting_at_the_same_instant_on_separate_connections():
+def test_five_technicians_accepting_at_the_same_instant_on_separate_connections(database_tables):
     """Real transactions, real threads, one barrier: exactly one acceptance commits."""
     from fastapi import HTTPException
 
