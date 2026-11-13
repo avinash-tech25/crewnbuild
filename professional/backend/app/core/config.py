@@ -98,6 +98,10 @@ class Settings(BaseSettings):
     # Reverse proxies (comma-separated IPs or CIDRs) whose forwarded-for headers the
     # per-address limits believe. Empty ignores forwarded headers entirely.
     trusted_proxy_ips: str = "127.0.0.1,::1"
+    # Development only (refused in every other environment): an e-mail code that cannot be
+    # sent is returned to the request that asked for it, when that request comes from this
+    # machine, instead of 502/503. Never logged.
+    email_dev_otp_preview: bool = False
     # Largest request body accepted (R6, 14.3): JSON and forms, and multipart uploads.
     max_json_body_bytes: int = Field(default=1024 * 1024, ge=1024)
     max_upload_body_bytes: int = Field(default=12 * 1024 * 1024, ge=1024)
@@ -405,6 +409,8 @@ def validate_development_flags(configured: Settings) -> None:
     """Development switches (CF-04). The on-screen OTP preview and the account recovery
     page stay development-only, as before; the test sign-in is allowed in development,
     test and staging; nothing of the kind is allowed in production."""
+    if configured.email_dev_otp_preview and not configured.is_development():
+        raise InsecureConfigurationError("EMAIL_DEV_OTP_PREVIEW=true is only allowed with ENVIRONMENT=development.")
     if configured.whatsapp_dev_otp_preview and not configured.is_development():
         raise InsecureConfigurationError("WHATSAPP_DEV_OTP_PREVIEW=true is only allowed with ENVIRONMENT=development.")
     if configured.dev_account_recovery_enabled and not configured.is_development():

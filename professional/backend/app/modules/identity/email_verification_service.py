@@ -20,6 +20,7 @@ from app.core.config import Settings
 from app.core.security.password_hashing import hash_secret, password_is_strong, verify_secret
 from app.integrations.email.email_sender import EmailSender
 from app.modules.identity.models import EmailVerificationCode, User
+from app.modules.identity.phone_verification_service import is_loopback
 from app.modules.identity.repository import EmailCodeRepository, SessionRepository, UserRepository
 from app.modules.identity.session_service import revoke_user_sessions_after_password_reset, utc_now
 
@@ -84,7 +85,27 @@ class EmailVerificationService:
 
     # ---- sign-up ----
 
-    def send_code(self, raw_email: str) -> dict[str, Any]:
+    # ---- the development preview (EMAIL_DEV_OTP_PREVIEW) ----
+
+    def dev_preview_allowed(self, client_address: str | None) -> bool:
+        """Development, the setting on, and a request from this machine (loopback)."""
+        return bool(
+            self.settings.email_dev_otp_preview and self.settings.is_development() and is_loopback(client_address)
+        )
+
+    def undeliverable(self, code: str, client_address: str | None, detail: str) -> dict[str, Any]:
+        """A code that could not be e-mailed: in the development preview it goes back to the
+        request that asked; anywhere else the request fails (502 if mail is set up and the
+        send failed, 503 if mail is not set up). The code is never logged."""
+        if self.dev_preview_allowed(client_address):
+            logger.info("E-mail code: development preview, not sent")
+            return {"dev_preview": True, "dev_otp": code}
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY if self.email.configured else status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=detail,
+        )
+
+    def send_code(self, raw_email: str, client_address: str | None = None) -> dict[str, Any]:
         email = normalize_email(raw_email)
         if self.users.find_id_by_email(email):
             raise HTTPException(status_code=409, detail="Email already registered")
@@ -92,14 +113,11 @@ class EmailVerificationService:
 
         code = generate_code()
         delivered = self.email.configured and self.send_code_email(email, code)
+        preview: dict[str, Any] = {}
         if not delivered:
-            # R6: refused in every environment. Before, away from production an undeliverable
-            # code was written to the server's log; codes are never logged now (section 14.2).
-            raise HTTPException(
-                status_code=status.HTTP_502_BAD_GATEWAY
-                if self.email.configured
-                else status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail="We could not send the verification email. Try again in a moment.",
+            # Never logged (R6); the development preview, or a refusal.
+            preview = self.undeliverable(
+                code, client_address, "We could not send the verification email. Try again in a moment."
             )
         self.store_code(email, code, SIGNUP)
         return {
@@ -107,6 +125,7 @@ class EmailVerificationService:
             "delivered": delivered,
             "expires_in_minutes": CODE_TTL_MINUTES,
             "resend_after_seconds": RESEND_COOLDOWN_SECONDS,
+            **preview,
         }
 
     def store_code(self, email: str, code: str, purpose: str) -> None:
@@ -168,7 +187,7 @@ class EmailVerificationService:
 
     # ---- Profile Settings ----
 
-    def send_profile_code(self, user: User, raw_email: str) -> dict[str, Any]:
+    def send_profile_code(self, user: User, raw_email: str, client_address: str | None = None) -> dict[str, Any]:
         email = normalize_email(raw_email)
         owner_id = self.users.find_id_by_email(email)
         if owner_id and owner_id != user.id:
@@ -178,15 +197,18 @@ class EmailVerificationService:
         self.ensure_cooldown_passed(self.get_record(email))
 
         code = generate_code()
+        preview: dict[str, Any] = {}
         if not (self.email.configured and self.send_profile_email(email, code)):
-            raise HTTPException(
-                status_code=status.HTTP_502_BAD_GATEWAY
-                if self.email.configured
-                else status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail="We could not send the verification email. Try again in a moment.",
+            preview = self.undeliverable(
+                code, client_address, "We could not send the verification email. Try again in a moment."
             )
         self.store_code(email, code, profile_purpose(user.id))
-        return {"sent": True, "expires_in_minutes": CODE_TTL_MINUTES, "resend_after_seconds": RESEND_COOLDOWN_SECONDS}
+        return {
+            "sent": True,
+            "expires_in_minutes": CODE_TTL_MINUTES,
+            "resend_after_seconds": RESEND_COOLDOWN_SECONDS,
+            **preview,
+        }
 
     def verify_profile_code(self, user: User, raw_email: str, raw_code: str) -> User:
         email = normalize_email(raw_email)
@@ -222,7 +244,7 @@ class EmailVerificationService:
 
     # ---- password reset ----
 
-    def send_reset_code(self, raw_email: str) -> dict[str, Any]:
+    def send_reset_code(self, raw_email: str, client_address: str | None = None) -> dict[str, Any]:
         """The reply is the same whether or not the address has an account; only a real
         account is actually sent a code."""
         email = normalize_email(raw_email)
@@ -234,19 +256,18 @@ class EmailVerificationService:
         if not self.users.find_id_by_email(email):
             return quiet_reply
         self.ensure_cooldown_passed(self.get_record(email))
-        if not self.email.configured:
-            raise HTTPException(
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail="Email delivery is not configured, so a reset code cannot be sent.",
-            )
         code = generate_code()
-        if not self.send_reset_email(email, code):
-            raise HTTPException(
-                status_code=status.HTTP_502_BAD_GATEWAY,
-                detail="We could not send the reset email. Try again in a moment.",
+        preview: dict[str, Any] = {}
+        if not self.email.configured:
+            preview = self.undeliverable(
+                code, client_address, "Email delivery is not configured, so a reset code cannot be sent."
+            )
+        elif not self.send_reset_email(email, code):
+            preview = self.undeliverable(
+                code, client_address, "We could not send the reset email. Try again in a moment."
             )
         self.store_code(email, code, PASSWORD_RESET)
-        return quiet_reply
+        return {**quiet_reply, **preview}
 
     def verify_reset_code(self, raw_email: str, raw_code: str) -> dict[str, Any]:
         email = normalize_email(raw_email)

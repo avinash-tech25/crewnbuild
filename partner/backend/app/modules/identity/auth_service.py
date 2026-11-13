@@ -177,12 +177,12 @@ class AuthService:
 
     # ---- sign-up ----
 
-    def send_signup_code(self, raw_email: str) -> CodeSentResponse:
+    def send_signup_code(self, raw_email: str, client_address: str | None = None) -> CodeSentResponse:
         email = clean_email(raw_email)
         existing = self.technicians.get_by_email(email)
         if existing and existing.status != ACCOUNT_STATUS_ONBOARDING:
             raise HTTPException(status_code=409, detail=ALREADY_REGISTERED)
-        result = self.otps.send(email, PURPOSE_SIGNUP)
+        result = self.otps.send(email, PURPOSE_SIGNUP, client_address=client_address)
         self.database.commit()
         return CodeSentResponse(**result)
 

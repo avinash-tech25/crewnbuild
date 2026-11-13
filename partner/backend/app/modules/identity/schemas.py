@@ -24,9 +24,11 @@ class CodeSentResponse(BaseModel):
     sent: bool
     expires_in_minutes: int
     resend_after_seconds: int
-    # Sign-up only: False when this development machine could not send mail and
-    # wrote the code to the server console instead.
+    # False when the code could not be e-mailed and the development preview answered
+    # instead (EMAIL_DEV_OTP_PREVIEW, this machine only); then dev_otp is the code.
     delivered: bool | None = None
+    dev_preview: bool | None = None
+    dev_otp: str | None = None
 
 
 class OnboardingState(BaseModel):
@@ -130,6 +132,9 @@ class PasswordResetCodeResponse(BaseModel):
     message: str
     expires_in_minutes: int
     resend_after_seconds: int
+    # The development preview only (EMAIL_DEV_OTP_PREVIEW, this machine only).
+    dev_preview: bool | None = None
+    dev_otp: str | None = None
 
 
 class MessageResponse(BaseModel):

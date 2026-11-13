@@ -142,9 +142,11 @@ def refused(status_code: int, detail: Any, settings: Settings, clear_cookies: bo
 
 @router.post("/email/send-code")
 def send_email_verification_code(
-    payload: EmailCodeRequest, verifications: EmailVerificationService = Depends(get_email_verification_service)
+    payload: EmailCodeRequest,
+    request: Request,
+    verifications: EmailVerificationService = Depends(get_email_verification_service),
 ) -> dict[str, Any]:
-    return verifications.send_code(payload.email)
+    return verifications.send_code(payload.email, visitor_address(request, app_settings(request).trusted_proxy_ips))
 
 
 @router.post("/email/verify-code")
@@ -157,11 +159,14 @@ def verify_email_verification_code(
 @router.post("/email/profile/send-code")
 def send_profile_email_code(
     payload: EmailCodeRequest,
+    request: Request,
     user: User = Depends(current_user),
     verifications: EmailVerificationService = Depends(get_email_verification_service),
 ) -> dict[str, Any]:
     """Profile Settings: e-mail a code to the address the signed-in account wants."""
-    return verifications.send_profile_code(user, payload.email)
+    return verifications.send_profile_code(
+        user, payload.email, visitor_address(request, app_settings(request).trusted_proxy_ips)
+    )
 
 
 @router.post("/email/profile/verify-code")
@@ -265,9 +270,12 @@ def signup_user(
 @router.post("/password/forgot")
 def start_password_reset(
     payload: PasswordResetRequest,
+    request: Request,
     verifications: EmailVerificationService = Depends(get_email_verification_service),
 ) -> dict[str, Any]:
-    return verifications.send_reset_code(payload.email)
+    return verifications.send_reset_code(
+        payload.email, visitor_address(request, app_settings(request).trusted_proxy_ips)
+    )
 
 
 @router.post("/password/verify-code")

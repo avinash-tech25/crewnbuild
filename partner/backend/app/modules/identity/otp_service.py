@@ -11,6 +11,7 @@ When e-mail cannot be sent, outside production the code is written to the server
 (as before); production answers 503.
 """
 
+import ipaddress
 import logging
 import secrets
 from collections.abc import Callable
@@ -49,7 +50,17 @@ class OtpService:
         self.settings = settings
         self.email = email
 
-    def send(self, email: str, purpose: str, defer: Callable[..., Any] | None = None) -> dict[str, Any]:
+    def dev_preview_allowed(self, client_address: str | None) -> bool:
+        """EMAIL_DEV_OTP_PREVIEW: development, the setting on, a request from this machine."""
+        try:
+            loopback = ipaddress.ip_address((client_address or "").strip()).is_loopback
+        except ValueError:
+            loopback = False
+        return bool(self.settings.email_dev_otp_preview and self.settings.is_development() and loopback)
+
+    def send(
+        self, email: str, purpose: str, defer: Callable[..., Any] | None = None, client_address: str | None = None
+    ) -> dict[str, Any]:
         """Generate, store and e-mail a new code. Returns what the client may know.
         `defer`, when given, runs the delivery after the reply (BackgroundTasks), so the
         reply's timing says nothing about the address."""
@@ -73,22 +84,25 @@ class OtpService:
 
         code = generate_code()
         delivered: bool | None
-        if defer is not None:
+        if not self.email.configured:
+            delivered = False
+        elif defer is not None:
             defer(self._deliver_later, email, code, purpose)
             delivered = None
         else:
-            delivered = self.email.configured and self._deliver(email, code, purpose)
+            delivered = self._deliver(email, code, purpose)
+        preview: dict[str, Any] = {}
         if delivered is False:
-            if settings.is_production():
+            # R6: never logged. The development preview answers this request with the code;
+            # anywhere else the request fails (it used to be written to the log away from
+            # production).
+            if not self.dev_preview_allowed(client_address):
                 raise HTTPException(
                     status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                     detail="We could not send the code. Try again in a moment.",
                 )
-            logger.warning(
-                "Email delivery unavailable; the %s code is %s (written here only because this is not production).",
-                purpose.lower(),
-                code,
-            )
+            logger.info("A %s code: development preview, not sent.", purpose.lower())
+            preview = {"dev_preview": True, "dev_otp": code}
 
         values = {
             "code_hash": hash_secret(code),
@@ -113,6 +127,7 @@ class OtpService:
             "delivered": delivered,
             "expires_in_minutes": settings.otp_ttl_minutes,
             "resend_after_seconds": settings.otp_resend_cooldown_seconds,
+            **preview,
         }
 
     def consume(self, email: str, purpose: str, raw_code: str | None) -> None:
@@ -135,14 +150,8 @@ class OtpService:
     def _deliver_later(self, email: str, code: str, purpose: str) -> None:
         if self.email.configured and self._deliver(email, code, purpose):
             return
-        if self.settings.is_production():
-            logger.error("A %s code could not be emailed.", purpose.lower())
-        else:
-            logger.warning(
-                "Email delivery unavailable; the %s code is %s (written here only because this is not production).",
-                purpose.lower(),
-                code,
-            )
+        # Never the code itself (R6; it used to be logged away from production).
+        logger.error("A %s code could not be emailed.", purpose.lower())
 
     def _deliver(self, email: str, code: str, purpose: str) -> bool:
         minutes = self.settings.otp_ttl_minutes

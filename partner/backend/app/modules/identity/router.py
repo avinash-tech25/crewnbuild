@@ -69,8 +69,10 @@ def refused(settings: Settings, status_code: int, detail: Any, clear_cookies: bo
 
 
 @router.post("/signup/send-code", response_model=CodeSentResponse)
-def send_signup_code(payload: EmailCodeRequest, auth: AuthService = Depends(get_auth_service)) -> CodeSentResponse:
-    return auth.send_signup_code(payload.email)
+def send_signup_code(
+    payload: EmailCodeRequest, request: Request, auth: AuthService = Depends(get_auth_service)
+) -> CodeSentResponse:
+    return auth.send_signup_code(payload.email, client_info(request).ip_address)
 
 
 @router.post("/signup/verify-code", response_model=AuthResponse)
@@ -148,9 +150,14 @@ def logout(
 # Forgot password: e-mail code -> short-lived reset token -> new password.
 @router.post("/password-reset/send-code", response_model=PasswordResetCodeResponse)
 def send_password_reset_code(
-    payload: EmailCodeRequest, background: BackgroundTasks, passwords: PasswordService = Depends(get_password_service)
+    payload: EmailCodeRequest,
+    request: Request,
+    background: BackgroundTasks,
+    passwords: PasswordService = Depends(get_password_service),
 ) -> PasswordResetCodeResponse:
-    return passwords.send_reset_code(payload.email, defer=background.add_task)
+    return passwords.send_reset_code(
+        payload.email, defer=background.add_task, client_address=client_info(request).ip_address
+    )
 
 
 @router.post("/password-reset/verify-code", response_model=PasswordResetVerifiedResponse)

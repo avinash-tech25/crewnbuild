@@ -96,12 +96,16 @@ class PasswordService:
 
     # ---- forgot password ----
 
-    def send_reset_code(self, raw_email: str, defer: Callable[..., Any]) -> PasswordResetCodeResponse:
+    def send_reset_code(
+        self, raw_email: str, defer: Callable[..., Any], client_address: str | None = None
+    ) -> PasswordResetCodeResponse:
         email = normalize_email(raw_email)
         technician = self.technicians.get_by_email(email) if email else None
+        preview: dict[str, Any] = {}
         if _may_reset(technician):
             try:
-                self.otps.send(email, PURPOSE_PASSWORD_RESET, defer=defer)
+                sent = self.otps.send(email, PURPOSE_PASSWORD_RESET, defer=defer, client_address=client_address)
+                preview = {key: sent[key] for key in ("dev_preview", "dev_otp") if key in sent}
                 self.database.commit()
             except HTTPException as error:
                 self.database.rollback()
@@ -115,6 +119,7 @@ class PasswordService:
             message=RESET_SENT,
             expires_in_minutes=self.settings.otp_ttl_minutes,
             resend_after_seconds=self.settings.otp_resend_cooldown_seconds,
+            **preview,
         )
 
     def verify_reset_code(self, raw_email: str, code: str) -> PasswordResetVerifiedResponse:

@@ -108,6 +108,10 @@ class Settings(BaseSettings):
     login_max_failures_per_client: int = 20
     # Proxies whose X-Forwarded-For / X-Real-IP name the visitor (IPs or CIDRs).
     trusted_proxy_ips: str = "127.0.0.1,::1"
+    # Development only (refused in every other environment): an e-mail code that cannot be
+    # sent is returned to the request that asked for it, when that request comes from this
+    # machine, instead of 502/503. Never logged.
+    email_dev_otp_preview: bool = False
     # Largest request body accepted (R6, 14.3): JSON and forms, and multipart uploads.
     max_json_body_bytes: int = Field(default=1024 * 1024, ge=1024)
     max_upload_body_bytes: int = Field(default=8 * 1024 * 1024, ge=1024)
@@ -508,6 +512,11 @@ def validate_no_placeholders(configured: Settings) -> None:
         raise InsecureConfigurationError("Production requires a real database password in DATABASE_URL.")
 
 
+def validate_development_flags(configured: Settings) -> None:
+    if configured.email_dev_otp_preview and not configured.is_development():
+        raise InsecureConfigurationError("EMAIL_DEV_OTP_PREVIEW=true is only allowed with ENVIRONMENT=development.")
+
+
 def validate_production(configured: Settings) -> None:
     if not configured.is_production():
         return
@@ -596,6 +605,7 @@ def validate_dispatch_settings(configured: Settings) -> None:
 def check_settings(configured: Settings) -> Settings:
     """Every startup check, in order. Raises InsecureConfigurationError on the first problem."""
     validate_environment(configured)
+    validate_development_flags(configured)
     validate_database(configured)
     validate_jwt_secret(configured)
     validate_session_cookies(configured)
