@@ -9,6 +9,8 @@ gone). Every request re-checks its server-side session, and the account behind i
               and still a House Owner or a Site Engineer (re-read on every request).
 """
 
+from typing import TYPE_CHECKING
+
 from fastapi import Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
@@ -26,6 +28,9 @@ from app.modules.identity.session_service import SESSION_EXPIRED_MESSAGE, Sessio
 from app.modules.requesters.repository import Requester, RequesterRepository
 from app.modules.requesters.service import SESSION_EXPIRED_MESSAGE as REQUESTER_SESSION_EXPIRED
 from app.modules.requesters.service import RequesterIdentityService
+
+if TYPE_CHECKING:
+    from app.modules.catalog.service import CatalogService
 
 
 def app_settings(request: Request) -> Settings:
@@ -99,6 +104,11 @@ def get_technician_session(
     return technician, claims.scope or ""
 
 
+def get_current_technician(session: tuple[Technician, str] = Depends(get_technician_session)) -> Technician:
+    """Any signed-in technician account, including one still onboarding."""
+    return session[0]
+
+
 def get_active_technician(session: tuple[Technician, str] = Depends(get_technician_session)) -> Technician:
     """A technician who has finished registration and signed in with e-mail and password.
     A registration session never reaches these routes."""
@@ -141,3 +151,9 @@ def get_current_requester(
     if SessionService(database, settings).validate(claims, PRINCIPAL_REQUESTER) is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=REQUESTER_SESSION_EXPIRED)
     return identity.resolve_account(claims.user_id)
+
+
+def get_catalog_service(database: Session = Depends(get_db)) -> "CatalogService":
+    from app.modules.catalog.service import CatalogService
+
+    return CatalogService(database)

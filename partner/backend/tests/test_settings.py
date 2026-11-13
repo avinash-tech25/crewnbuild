@@ -20,6 +20,7 @@ PRODUCTION = {
     "frontend_origin": "https://partner.example.in",
     "database_url": "postgresql+psycopg://crewnbuild_partner:a-real-password@db:5432/crewnbuild",
     "professional_schema": "professional",
+    "data_encryption_key": "kQJ3n3QqKq9vV4hYb8bS1oY3m3h3o9Jf0Jz0X8m6m1Y=",
 }
 
 
@@ -58,6 +59,8 @@ def test_production_refusals() -> None:
     assert "AUTH_COOKIE_SECURE" in refused(**{**production, "auth_cookie_secure": False})
     assert "FRONTEND_ORIGIN" in refused(**{**production, "frontend_origin": "http://localhost:5373"})
     assert "PROFESSIONAL_SCHEMA" in refused(**{**production, "professional_schema": "partner"})
+    assert "DATA_ENCRYPTION_KEY" in refused(**{**production, "data_encryption_key": ""})
+    assert "Fernet" in refused(data_encryption_key="not-a-key")
     assert "real credentials" in refused(
         **{**production, "database_url": "postgresql+psycopg://crewnbuild_partner:change-me@db/crewnbuild"}
     )

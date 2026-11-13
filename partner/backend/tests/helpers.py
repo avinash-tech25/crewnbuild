@@ -19,6 +19,7 @@ from sqlalchemy.orm import Session
 from app.core.security.password_hashing import hash_secret
 from app.database.types import naive_utc_now
 from app.modules.identity.models import ACCOUNT_STATUS_ACTIVE, Technician
+from app.modules.technicians.models import IdentityVerification, TechnicianProfile
 
 STRONG_PASSWORD = "Strong#Pass123"
 PROFESSIONAL_BACKEND = Path(__file__).resolve().parents[3] / "professional" / "backend"
@@ -142,7 +143,7 @@ def set_requester(database: Session, account_id: uuid.UUID, **values: Any) -> No
 def finished_technician(
     database: Session, email: str = "ravi@example.in", password: str = STRONG_PASSWORD, *, legacy_bcrypt: bool = False
 ) -> Technician:
-    """A technician who finished registration (the profile step comes with part 2)."""
+    """A technician who finished registration: face and Aadhaar submitted, profile done."""
     password_hash = (
         bcrypt.hashpw(password.encode(), bcrypt.gensalt(rounds=4)).decode() if legacy_bcrypt else hash_secret(password)
     )
@@ -156,6 +157,11 @@ def finished_technician(
         name="Ravi Kumar",
     )
     database.add(technician)
+    database.flush()
+    database.add(TechnicianProfile(user_id=technician.id, technician_type="PLUMBER", work_status="OFFLINE"))
+    database.add(
+        IdentityVerification(user_id=technician.id, face_status="PENDING", aadhaar_status="PENDING_VERIFICATION")
+    )
     database.commit()
     return technician
 

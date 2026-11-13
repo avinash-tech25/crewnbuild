@@ -19,6 +19,7 @@ The settings of bookings, dispatch, tracking, media and weather come with part 2
 """
 
 import re
+from decimal import Decimal
 from functools import lru_cache
 from pathlib import Path
 from secrets import compare_digest
@@ -115,6 +116,210 @@ class Settings(BaseSettings):
     otp_resend_cooldown_seconds: int = 30
     otp_max_sends_per_hour: int = 5
     password_reset_token_minutes: int = 10
+
+    # ---- Part 2: onboarding, bookings, dispatch, tracking (the old Partner settings) ----
+    upload_directory: str = "uploads"
+    pincode_directory_url: str = "https://api.postalpincode.in/pincode"
+
+    # --- Start Work OTP (0012) -------------------------------------------------------
+    # The code the customer gives the technician on site; the job can start only with it.
+    start_otp_ttl_minutes: int = 30
+    start_otp_max_attempts: int = 5
+    start_otp_regenerate_cooldown_seconds: int = 30
+    start_otp_max_codes_per_hour: int = 10
+
+    # --- Identity data (face capture, Aadhaar) ---------------------------------
+    # A Fernet key (urlsafe base64, 32 bytes). Encrypts the temporary face capture
+    # and the Aadhaar number at rest. Generate one with:
+    #   python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+    data_encryption_key: SecretStr = Field(default=SecretStr(""), repr=False)
+    # The version stored beside every ciphertext written with DATA_ENCRYPTION_KEY (DB-11).
+    data_encryption_key_version: int = 1
+    # Earlier keys, still able to decrypt what they wrote: "version:key,version:key".
+    data_encryption_previous_keys: SecretStr = Field(default=SecretStr(""), repr=False)
+    # Face captures are kept only for review and removed after a decision or
+    # after this many days, whichever comes first.
+    face_capture_directory: str = "private/face_captures"
+    face_capture_retention_days: int = 7
+    # Whether a technician's face and Aadhaar must be VERIFIED (by a reviewer or
+    # a provider) before jobs are offered. With no verification provider
+    # configured, submitted-and-pending is the most that can be true, so the
+    # default accepts PENDING; set true once verification is in place.
+    require_verified_identity_for_jobs: bool = False
+
+    # --- Earnings ------------------------------------------------------------------
+    # Platform commission, in percent of a completed job's quoted price (0-100,
+    # at most two decimals). Snapshotted onto each earning when it is recorded,
+    # so changing it only affects jobs completed afterwards. Development default:
+    # 0 -- no commission is assumed until the business sets one.
+    partner_commission_rate_percent: Decimal = Decimal("0")
+
+    # --- Job photos (customer problem photos, before/after work) -----------------
+    # Private: encrypted with DATA_ENCRYPTION_KEY and written here, never under the
+    # public upload directory. Read back only through authorised API endpoints.
+    job_media_directory: str = "private/job_media"
+    # What an upload may be before processing, and what a stored image may be.
+    job_media_max_input_bytes: int = 5 * 1024 * 1024
+    # Longest side after processing; larger photos are scaled down.
+    job_media_max_dimension: int = 2560
+    # Decompression-bomb guard: an image claiming more pixels than this is refused
+    # before it is decoded.
+    job_media_max_pixels: int = 40_000_000
+    job_media_max_customer_photos: int = 5
+    job_media_max_before_photos: int = 6
+    job_media_max_after_photos: int = 6
+    # Work bill: lines on one bill, photos per material line, bill attachments.
+    # The photos use the private job-photo storage above.
+    work_bill_max_items: int = 50
+    work_bill_max_material_photos: int = 3
+    work_bill_max_attachments: int = 6
+
+    # --- Dispatch: who is searched ----------------------------------------------------
+    # Rings searched for eligible technicians: the initial radius, then +step, up to
+    # the maximum (km). The search widens only while fewer than a batch have been
+    # found, so a job is not handed across the city while somebody nearby is free.
+    technician_search_radius_km: float = 5.0
+    technician_search_radius_step_km: float = 5.0
+    technician_max_search_radius_km: float = 15.0
+    # Eligible technicians scored per search (nearest first, then re-ranked).
+    dispatch_candidate_pool_size: int = 20
+
+    # --- Dispatch: how offers go out ---------------------------------------------------
+    # Best-ranked technicians offered one booking at the same time. Small on purpose:
+    # everyone who loses the race was interrupted for nothing.
+    dispatch_batch_size: int = 3
+    # Seconds a technician has to answer before the offer lapses and the next batch goes.
+    dispatch_offer_timeout_seconds: int = 30
+    # Batches per dispatch round before a booking stops as EXPIRED (the requester may retry).
+    max_dispatch_attempts: int = 3
+    # Background sweeper (modules/bookings/dispatch_worker.py): expires unanswered offers,
+    # re-dispatches stuck bookings and purges abandoned positions. One per process;
+    # SKIP LOCKED keeps several processes from handling the same booking.
+    dispatch_worker_enabled: bool = True
+    dispatch_sweep_interval_seconds: float = 3.0
+    # A SEARCHING booking with no outstanding offer for this long is picked up by
+    # the sweeper (e.g. the process died between committing it and dispatching).
+    dispatch_stuck_search_seconds: int = 10
+    # Travel-time estimates for ranking: "none" ranks on straight-line distance and
+    # says so; "osrm" asks OSRM's table service once per batch (OSRM_BASE_URL).
+    dispatch_eta_provider: str = "none"
+    dispatch_eta_timeout_seconds: float = 2.0
+
+    # --- Dispatch: ranking (modules/bookings/dispatch_ranking.py) ---------------------------
+    # Weights are normalised by their sum, so they need not add up to exactly 1.
+    dispatch_weight_distance: float = 0.30
+    dispatch_weight_rating: float = 0.20
+    dispatch_weight_availability: float = 0.15
+    dispatch_weight_acceptance: float = 0.10
+    dispatch_weight_completion: float = 0.10
+    dispatch_weight_cancellation: float = 0.05
+    dispatch_weight_experience: float = 0.05
+    dispatch_weight_fairness: float = 0.05
+    # Years of experience at which the experience score is full.
+    dispatch_experience_cap_years: int = 15
+    # Jobs accepted today (India time) at which the fairness score reaches zero.
+    dispatch_fairness_daily_cap: int = 8
+    # How far back acceptance, completion and cancellation rates are measured.
+    dispatch_stats_lookback_days: int = 90
+    # Bayesian smoothing: a newcomer is treated as if they had this many past
+    # events at the prior rate, so one bad (or good) job does not decide a ranking.
+    dispatch_prior_weight: float = 5.0
+    dispatch_rating_prior: float = 4.0
+
+    # --- Technician live location ---------------------------------------------------------
+    # How often the technician's app reports while available or on a job (the app
+    # reads it from every location answer, so it is changed here only).
+    location_update_interval_seconds: float = 3.0
+    # Older than this, a position is stale: no location-sensitive job is offered and
+    # the customer's map says "Location updating..." instead of showing it as live.
+    location_stale_threshold_seconds: int = 15
+    # A stationary technician's row is rewritten at most this often (must be below the
+    # stale threshold); a move of at least LOCATION_PERSIST_MIN_MOVE_METERS is written at
+    # once. Every fix is still delivered live; this only limits database writes.
+    location_persist_heartbeat_seconds: int = 9
+    location_persist_min_move_meters: float = 25.0
+    # A fix implying faster travel than this since the previous one is rejected as a
+    # jump, checked only against a fix younger than the window (0 disables the check).
+    location_max_speed_kmph: float = 180.0
+    location_jump_check_window_seconds: int = 300
+    # A device timestamp further than this from server time is refused.
+    location_max_clock_skew_seconds: int = 120
+    # A position nobody has refreshed for this long is deleted by the sweeper: the
+    # app was closed without signing out, and Partner keeps no note of where
+    # somebody who is not working is.
+    location_purge_after_seconds: int = 3600
+
+    # --- Realtime across worker processes ----------------------------------------------
+    # Websocket messages are relayed between uvicorn workers with PostgreSQL
+    # LISTEN/NOTIFY (modules/realtime/hub.py). Needed whenever more than one
+    # worker runs; harmless with one.
+    realtime_cross_process: bool = True
+    realtime_channel: str = "partner_realtime"
+
+    @property
+    def search_radii_meters(self) -> list[float]:
+        """The rings searched, nearest first, in metres."""
+        first = max(self.technician_search_radius_km, 0.1)
+        last = max(self.technician_max_search_radius_km, first)
+        step = max(self.technician_search_radius_step_km, 0.1)
+        radii, radius = [], first
+        while radius < last:
+            radii.append(radius * 1000.0)
+            radius += step
+        radii.append(last * 1000.0)
+        return radii
+
+    # --- What counts as a position at all ------------------------------------------
+    # A browser with no satellite or Wi-Fi fix falls back to looking up the IP
+    # address, and returns the middle of whatever city the ISP sits in with an
+    # accuracy of tens of kilometres. That is not where anybody is -- it is a guess
+    # dressed as a coordinate, and accepting one put a Karimnagar booking in
+    # Hyderabad and left the technician standing exactly on top of the customer.
+    # A fix less precise than this is refused, everywhere a position is taken.
+    max_location_accuracy_meters: float = 1000.0
+
+    # --- Location search on the booking map ----------------------------------------
+    # Nominatim, OpenStreetMap's own geocoder -- the same project as the map tiles,
+    # free and keyless. Its usage policy asks for an identifying User-Agent and at
+    # most one request a second, which is why the browser never calls it directly:
+    # every lookup goes through Partner, which throttles and caches them. Point this
+    # at your own Nominatim (or a hosted one) before any real traffic.
+    geocoder_base_url: str = "https://nominatim.openstreetmap.org"
+    geocoder_user_agent: str = "CREWNBUILD-Partner/1.0"
+    geocoder_timeout_seconds: float = 8.0
+    # Results are restricted to these ISO country codes; empty means worldwide.
+    geocoder_country_codes: str = "in"
+    geocoder_max_results: int = 20
+
+    # --- Live tracking (after a technician accepts) --------------------------------
+    # OSRM gives the road route, its length and its driving time. The public demo
+    # server is rate limited and carries no uptime promise: point this at your own
+    # OSRM instance for production. Nothing breaks when it is unreachable -- the
+    # distance falls back to a straight-line estimate, marked as approximate.
+    osrm_base_url: str = "https://router.project-osrm.org"
+    osrm_timeout_seconds: float = 12.0
+    # A route is replanned only when the technician is at least this far off it,
+    # and never more often than the interval below, so a position every few
+    # seconds does not become an OSRM request every few seconds.
+    route_refresh_deviation_meters: float = 200.0
+    route_refresh_min_interval_seconds: float = 20.0
+    # Speed assumed when no road route is available, to still show a rough ETA.
+    tracking_fallback_speed_kmph: float = 22.0
+
+    # --- Arriving ------------------------------------------------------------------
+    # A journey becomes ARRIVED when the technician is actually this close to the
+    # address, measured between real coordinates. Nothing else sets it: a button
+    # that says "arrived" tells the customer somebody is outside when they may be
+    # half a kilometre away, which is what used to happen.
+    arrival_threshold_meters: float = 40.0
+    # ...and only on a fix precise enough to believe. A single wide-accuracy sample
+    # (indoors, a cold GPS start) can land anywhere inside its error circle, so it
+    # never flips the status; the journey simply stays ON THE WAY a little longer.
+    arrival_max_accuracy_meters: float = 50.0
+    # The furthest a technician may be when marking arrival by hand, for a booking
+    # where that is still possible at all. Generous enough for a large site, far
+    # too small to cover "I am nearly there".
+    arrival_manual_threshold_meters: float = 150.0
 
     @field_validator("environment", mode="before")
     @classmethod
@@ -280,6 +485,80 @@ def validate_production(configured: Settings) -> None:
         raise InsecureConfigurationError("Production requires FRONTEND_ORIGIN to be the deployed https:// address.")
 
 
+def validate_commission_rate(configured: Settings) -> None:
+    # Money never goes through binary floating point: the value is a Decimal.
+    rate = configured.partner_commission_rate_percent
+    if not rate.is_finite() or rate < 0 or rate > 100 or int(rate.as_tuple().exponent) < -2:
+        raise InsecureConfigurationError(
+            "PARTNER_COMMISSION_RATE_PERCENT must be between 0 and 100 with at most two decimals."
+        )
+
+
+def data_encryption_keys(configured: Settings) -> dict[int, str]:
+    """Every configured Fernet key by version: the current one and the earlier ones. Empty
+    when no key is set (identity, bank and job-photo features then answer 503)."""
+    keys: dict[int, str] = {}
+    for entry in configured.data_encryption_previous_keys.get_secret_value().split(","):
+        version, _, key = entry.strip().partition(":")
+        if key.strip():
+            keys[int(version)] = key.strip()
+    current = configured.data_encryption_key.get_secret_value().strip()
+    if current:
+        keys[configured.data_encryption_key_version] = current
+    return keys
+
+
+def validate_data_encryption(configured: Settings) -> None:
+    from cryptography.fernet import Fernet
+
+    if is_placeholder(configured.data_encryption_key.get_secret_value()):
+        configured.data_encryption_key = SecretStr("")
+    if configured.data_encryption_key_version < 1:
+        raise InsecureConfigurationError("DATA_ENCRYPTION_KEY_VERSION must be 1 or more.")
+    try:
+        keys = data_encryption_keys(configured)
+        for key in keys.values():
+            Fernet(key.encode("utf-8"))
+    except (ValueError, TypeError):
+        raise InsecureConfigurationError(
+            "DATA_ENCRYPTION_KEY (or DATA_ENCRYPTION_PREVIOUS_KEYS) is not a valid Fernet key."
+        ) from None
+    if configured.is_production() and not configured.data_encryption_key.get_secret_value():
+        raise InsecureConfigurationError("Production requires DATA_ENCRYPTION_KEY for identity data.")
+
+
+def validate_dispatch_settings(configured: Settings) -> None:
+    """Combinations that would silently break dispatch or tracking (the old checks)."""
+    if configured.location_persist_heartbeat_seconds >= configured.location_stale_threshold_seconds:
+        raise InsecureConfigurationError(
+            "LOCATION_PERSIST_HEARTBEAT_SECONDS must be below LOCATION_STALE_THRESHOLD_SECONDS."
+        )
+    if configured.location_update_interval_seconds * 2 > configured.location_stale_threshold_seconds:
+        raise InsecureConfigurationError(
+            "LOCATION_STALE_THRESHOLD_SECONDS must allow at least two missed LOCATION_UPDATE_INTERVAL_SECONDS."
+        )
+    if configured.dispatch_batch_size < 1 or configured.max_dispatch_attempts < 1:
+        raise InsecureConfigurationError("DISPATCH_BATCH_SIZE and MAX_DISPATCH_ATTEMPTS must be at least 1.")
+    if configured.dispatch_candidate_pool_size < configured.dispatch_batch_size:
+        raise InsecureConfigurationError("DISPATCH_CANDIDATE_POOL_SIZE must be at least DISPATCH_BATCH_SIZE.")
+    if configured.dispatch_offer_timeout_seconds < 5:
+        raise InsecureConfigurationError("DISPATCH_OFFER_TIMEOUT_SECONDS must be at least 5.")
+    if configured.dispatch_eta_provider not in ("none", "osrm"):
+        raise InsecureConfigurationError("DISPATCH_ETA_PROVIDER must be 'none' or 'osrm'.")
+    weights = (
+        configured.dispatch_weight_distance,
+        configured.dispatch_weight_rating,
+        configured.dispatch_weight_availability,
+        configured.dispatch_weight_acceptance,
+        configured.dispatch_weight_completion,
+        configured.dispatch_weight_cancellation,
+        configured.dispatch_weight_experience,
+        configured.dispatch_weight_fairness,
+    )
+    if any(weight < 0 for weight in weights) or sum(weights) <= 0:
+        raise InsecureConfigurationError("Dispatch ranking weights must be non-negative and not all zero.")
+
+
 def check_settings(configured: Settings) -> Settings:
     """Every startup check, in order. Raises InsecureConfigurationError on the first problem."""
     validate_environment(configured)
@@ -288,6 +567,9 @@ def check_settings(configured: Settings) -> Settings:
     validate_session_cookies(configured)
     validate_handoff_public_key(configured)
     validate_optional_secrets(configured)
+    validate_commission_rate(configured)
+    validate_data_encryption(configured)
+    validate_dispatch_settings(configured)
     validate_production(configured)
     return configured
 

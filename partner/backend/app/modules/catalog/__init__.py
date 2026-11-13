@@ -1,0 +1,1 @@
+"""The Partner service catalog."""

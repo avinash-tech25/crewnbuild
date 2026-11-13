@@ -29,7 +29,6 @@ from app.core.security.password_hashing import (
     verify_secret,
 )
 from app.database.types import naive_utc_now
-from app.modules.identity import pending_links
 from app.modules.identity.models import ACCOUNT_STATUS_ONBOARDING, PURPOSE_SIGNUP, STEP_COMPLETE, Technician
 from app.modules.identity.otp_service import OtpService, normalize_email
 from app.modules.identity.repository import TechnicianRepository
@@ -120,8 +119,36 @@ def clean_new_password(value: str | None) -> str:
     return password
 
 
+def clean_name(value: str | None) -> str:
+    name = " ".join((value or "").split())
+    if len(name) < 2 or len(name) > 120:
+        raise HTTPException(status_code=422, detail="Enter a name between 2 and 120 characters.")
+    return name
+
+
+def clean_address(value: str | None) -> str:
+    address = (value or "").strip()
+    if len(address) < 5 or len(address) > 500:
+        raise HTTPException(status_code=422, detail="Enter a complete address (5 to 500 characters).")
+    return address
+
+
+def clean_technician_type(value: str | None) -> str:
+    from app.modules.technicians.models import TECHNICIAN_TYPES
+
+    technician_type = (value or "").strip().upper()
+    if technician_type not in TECHNICIAN_TYPES:
+        raise HTTPException(status_code=422, detail="Choose Painter, Plumber, Electrician or Carpenter.")
+    return technician_type
+
+
 def technician_response(technician: Technician, settings: Settings) -> TechnicianResponse:
-    eligible, reasons = pending_links.job_eligibility(technician)
+    from app.modules.technicians.eligibility import job_eligibility
+    from app.modules.technicians.models import AADHAAR_NOT_SUBMITTED, FACE_NOT_STARTED, WORK_STATUS_OFFLINE
+
+    profile = technician.technician_profile  # type: ignore[attr-defined]
+    identity = technician.identity  # type: ignore[attr-defined]
+    eligible, reasons = job_eligibility(technician)
     return TechnicianResponse(
         id=technician.id,
         email=technician.email,
@@ -135,11 +162,17 @@ def technician_response(technician: Technician, settings: Settings) -> Technicia
         district=technician.district,
         state=technician.state,
         location=technician.location_display,
-        **pending_links.profile_summary(technician),
+        technician_type=profile.technician_type if profile else None,
+        experience_years=profile.experience_years if profile else 0,
+        is_available=profile.is_available if profile else False,
+        work_status=profile.work_status if profile else WORK_STATUS_OFFLINE,
+        profile_image_url=profile.profile_image_url if profile else None,
         created_at=to_local_iso(technician.created_at, settings) or "",
         onboarding=OnboardingState(
             step=technician.onboarding_step,
-            **pending_links.identity_summary(technician),
+            face_status=identity.face_status if identity else FACE_NOT_STARTED,
+            aadhaar_status=identity.aadhaar_status if identity else AADHAAR_NOT_SUBMITTED,
+            aadhaar_masked=identity.aadhaar_masked if identity else None,
             can_receive_jobs=eligible,
             pending_requirements=reasons,
         ),
@@ -183,7 +216,14 @@ class AuthService:
         if not existing:
             self.technicians.add(technician)
             self.database.flush()
-        pending_links.create_onboarding_rows(self.database, technician)
+        from app.modules.technicians.models import WORK_STATUS_OFFLINE, IdentityVerification, TechnicianProfile
+
+        if technician.technician_profile is None:  # type: ignore[attr-defined]
+            technician.technician_profile = TechnicianProfile(  # type: ignore[attr-defined]
+                user_id=technician.id, work_status=WORK_STATUS_OFFLINE
+            )
+        if technician.identity is None:  # type: ignore[attr-defined]
+            technician.identity = IdentityVerification(user_id=technician.id)  # type: ignore[attr-defined]
         try:
             self.database.commit()
         except IntegrityError:

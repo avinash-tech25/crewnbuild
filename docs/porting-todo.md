@@ -8,7 +8,6 @@ Every stub or temporary behaviour the restructure has left in place and that is 
 | --- | --- | --- | --- | --- |
 | 2 | accounts | `modules/accounts/repository.py` → `count_open_partner_bookings` | Reads `partner.v_professional_bookings` only when the view exists; until Partner's baseline creates and grants it, no booking counts as open | R4c (Partner baseline with the view) |
 | 63 | billing | `modules/billing/booking_payment_repository.py` → `booking_source` | Booking payments read `partner.v_professional_bookings` only when the view exists; until Partner's baseline creates and grants it, the House Owner has no booking to pay | R4c (Partner baseline with the view) |
-| 66 | partner identity | `partner/backend/app/modules/identity/pending_links.py` | Technician profiles, identity verification and job eligibility come with R4c part 2: sign-up creates no profile or identity rows, the profile and onboarding statuses are the empty ones, nobody is eligible for jobs, and the face and Aadhaar steps count as done exactly when registration is complete (so finished accounts can sign in) | R4c part 2 |
 
 ## R5: baseline migrations and seeds
 
@@ -53,3 +52,4 @@ Every stub or temporary behaviour the restructure has left in place and that is 
 | 14 | identity | `core/config.py` → `google_redirect_uri`, `microsoft_redirect_uri` | Callbacks moved to `/api/v1/auth/oauth/<provider>/callback`; the Google and Microsoft consoles still list the old address | Deployment (update both provider consoles) |
 | 32 | content | `modules/content/translation_service.py` → `_cache_directory` | Translations are cached on the API server's disk (`TRANSLATION_CACHE_DIRECTORY`), per process host, not shared | Deployment step (shared volume or a cache table) |
 | 61 | cctv | `modules/cctv/services/media_gateway.py` → `GATEWAY_API_USER` | The media gateway login name is now `crewnbuild-backend` (was the old name); update the real gateway settings at deployment | Deployment (gateway settings) |
+| 69 | partner onboarding | `partner/backend/app/modules/technicians/identity_service.py` → `face_capture_root` | Face captures awaiting review are written, encrypted, to FACE_CAPTURE_DIRECTORY on the API server's disk (as before), so every API process must share that directory; they are never served | Deployment (a shared volume, or move them to S3) |

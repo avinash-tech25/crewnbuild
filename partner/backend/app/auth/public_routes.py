@@ -21,6 +21,8 @@ PUBLIC_ROUTES: frozenset[tuple[str, str]] = frozenset(
         ("POST", "/requester/session"),
         ("POST", "/requester/refresh"),
         ("POST", "/requester/logout"),
+        # India Post pincode lookup for the registration and profile forms (as before)
+        ("GET", "/locations/pincode/{pincode}"),
     }
 )
 

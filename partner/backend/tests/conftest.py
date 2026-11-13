@@ -65,7 +65,9 @@ from app.database.base import Base  # noqa: E402
 from app.database.session import SessionLocal, engine  # noqa: E402
 from app.main import create_app  # noqa: E402
 from app.modules.identity.auth_service import login_throttle  # noqa: E402
+from app.modules.registry import import_all_models  # noqa: E402
 
+import_all_models()
 FRONTEND_ORIGIN = "http://localhost:5373"
 REQUESTERS_STAND_IN = f"{TEST_SCHEMA}.v_partner_requesters"
 

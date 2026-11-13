@@ -6,8 +6,8 @@
     email_otp_codes   was email_otps
 
 Keys are UUIDv7 and times timestamptz, read as naive UTC (NaiveUtcTimestamp) so the
-ported rules keep their arithmetic. technician_profiles and
-technician_identity_verifications come with part 2 (pending_links.py).
+ported rules keep their arithmetic. The technician's profile and identity record are
+modules/technicians/models.py (Technician.technician_profile, Technician.identity).
 
 sessions.user_id has no foreign key: a session belongs either to a technician
 (partner.technicians) or to a requester (a Professional account, read through
@@ -107,14 +107,12 @@ class Technician(UuidPrimaryKeyMixin, Base):
 
     @property
     def onboarding_step(self) -> str:
-        from app.modules.identity.pending_links import identity_steps_submitted
-
         if not self.email_verified_at:
             return STEP_EMAIL
-        face_submitted, aadhaar_submitted = identity_steps_submitted(self)
-        if not face_submitted:
+        identity = self.identity  # type: ignore[attr-defined]
+        if not identity or not identity.face_submitted:
             return STEP_FACE
-        if not aadhaar_submitted:
+        if not identity.aadhaar_submitted:
             return STEP_AADHAAR
         if not self.onboarding_completed_at:
             return STEP_PROFILE

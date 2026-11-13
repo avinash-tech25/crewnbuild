@@ -12,9 +12,12 @@ own principal (technician or requester) through app/auth/dependencies.py.
 from fastapi import APIRouter
 
 from app.api.v1.health import database_health
+from app.modules.catalog.router import router as catalog_router
 from app.modules.identity.router import router as identity_router
 from app.modules.identity.router import technician_router
+from app.modules.locations.router import router as locations_router
 from app.modules.requesters.router import router as requester_router
+from app.modules.technicians.onboarding_router import router as onboarding_router
 
 api_router = APIRouter()
 
@@ -30,9 +33,12 @@ api_router.add_api_route("/health/db", database_health, methods=["GET"], tags=["
 
 MODULE_ROUTERS: list[APIRouter] = [
     identity_router,
-    # PUT /technicians/me/password (old technician_routes, after the onboarding routes).
+    onboarding_router,
+    locations_router,
+    # PUT /technicians/me/password (old technician_routes, after the location routes).
     technician_router,
     requester_router,
+    catalog_router,
 ]
 
 for module_router in MODULE_ROUTERS:
