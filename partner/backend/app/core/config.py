@@ -108,6 +108,9 @@ class Settings(BaseSettings):
     login_max_failures_per_client: int = 20
     # Proxies whose X-Forwarded-For / X-Real-IP name the visitor (IPs or CIDRs).
     trusted_proxy_ips: str = "127.0.0.1,::1"
+    # Largest request body accepted (R6, 14.3): JSON and forms, and multipart uploads.
+    max_json_body_bytes: int = Field(default=1024 * 1024, ge=1024)
+    max_upload_body_bytes: int = Field(default=8 * 1024 * 1024, ge=1024)
 
     # ---- E-mail codes ----
     smtp_host: str = ""

@@ -1,7 +1,7 @@
 """HTTP middleware: request ID and CORS (technical-architecture.md API-13, 14.3).
 
-CSRF protection is app/core/security/csrf_protection.py; security headers and rate limiting
-come in step R6.
+CSRF protection is app/core/security/csrf_protection.py; security headers and body
+limits app/core/http_hardening.py; rate limits app/modules/rate_limits.
 """
 
 import re
@@ -14,6 +14,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from app.core.config import Settings
+from app.core.http_hardening import BodySizeLimitMiddleware, SecurityHeadersMiddleware
 
 REQUEST_ID_HEADER = "X-Request-ID"
 # A caller-supplied request ID is kept only if it looks like one (no header injection,
@@ -98,17 +99,26 @@ def is_allowed_origin(origin: str | None, settings: Settings) -> bool:
     return not settings.is_production() and bool(_LOCAL_ORIGIN.match(origin))
 
 
+# CORS (14.3): only the configured frontend origins, with credentials, and only the
+# methods and headers the web app uses (R6: was "*").
+CORS_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
+CORS_HEADERS = ["Accept", "Accept-Language", "Content-Type", "X-CSRF-Token", "X-Request-ID"]
+
+
 def add_middleware(app: FastAPI, settings: Settings) -> None:
-    """Order matters: the last one added is the outermost. CORS stays outermost so its
-    headers are on every answer, refusals included; the request ID sits inside it."""
+    """Order matters: the last one added is the outermost. Security headers are outermost,
+    so every answer carries them; CORS is next, so its headers are on every answer,
+    refusals included; the request ID and the body-size limit sit inside it."""
+    app.add_middleware(BodySizeLimitMiddleware, settings=settings)
     app.add_middleware(RequestIdMiddleware)
     cors_options: dict[str, object] = {
         "allow_origins": allowed_origins(settings),
         "allow_credentials": True,
-        "allow_methods": ["*"],
-        "allow_headers": ["*"],
+        "allow_methods": CORS_METHODS,
+        "allow_headers": CORS_HEADERS,
         "expose_headers": [REQUEST_ID_HEADER],
     }
     if not settings.is_production():
         cors_options["allow_origin_regex"] = LOCAL_ORIGIN_PATTERN
     app.add_middleware(CORSMiddleware, **cors_options)  # type: ignore[arg-type]
+    app.add_middleware(SecurityHeadersMiddleware, settings=settings)

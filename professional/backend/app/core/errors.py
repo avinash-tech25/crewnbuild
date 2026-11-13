@@ -15,6 +15,8 @@ import logging
 from typing import Any
 
 from fastapi import FastAPI, Request
+from fastapi.encoders import jsonable_encoder
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from app.core.middleware import current_request_id
@@ -55,6 +57,21 @@ async def handle_unexpected_error(request: Request, error: Exception) -> JSONRes
     )
 
 
+# What a validation error may say about each problem: never the submitted value ("input"),
+# which can be a password, a code or a token, nor the internals ("ctx", "url").
+VALIDATION_FIELDS = ("type", "loc", "msg")
+
+
+async def handle_validation_error(request: Request, error: Exception) -> JSONResponse:
+    """FastAPI's 422 {"detail": [...]} shape, as the frontend reads it, without the
+    submitted values (R6: the default answer echoed them back)."""
+    if not isinstance(error, RequestValidationError):
+        raise error
+    problems = [{key: problem[key] for key in VALIDATION_FIELDS if key in problem} for problem in error.errors()]
+    return JSONResponse(status_code=422, content={"detail": jsonable_encoder(problems)})
+
+
 def register_error_handlers(app: FastAPI) -> None:
+    app.add_exception_handler(RequestValidationError, handle_validation_error)
     app.add_exception_handler(ApiError, handle_api_error)
     app.add_exception_handler(Exception, handle_unexpected_error)

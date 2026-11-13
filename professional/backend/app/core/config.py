@@ -98,6 +98,9 @@ class Settings(BaseSettings):
     # Reverse proxies (comma-separated IPs or CIDRs) whose forwarded-for headers the
     # per-address limits believe. Empty ignores forwarded headers entirely.
     trusted_proxy_ips: str = "127.0.0.1,::1"
+    # Largest request body accepted (R6, 14.3): JSON and forms, and multipart uploads.
+    max_json_body_bytes: int = Field(default=1024 * 1024, ge=1024)
+    max_upload_body_bytes: int = Field(default=12 * 1024 * 1024, ge=1024)
     # Failed password sign-ins (section 6.4), counted in PostgreSQL across processes.
     login_failure_window_seconds: int = Field(default=900, ge=60)
     login_max_failures_per_account: int = Field(default=5, ge=1)
