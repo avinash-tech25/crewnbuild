@@ -1,8 +1,8 @@
 """Permission names and the role-to-permission map (technical-architecture.md 7.2).
 
 A permission here says what kind of action a role may take at all; which records it may
-touch is the module's policies.py (ownership). Modules add their permissions to this map
-as they are ported; identity needs only `handoff:create`.
+touch is the module's policies.py (ownership). Only the Book Technician hand-off
+(`handoff:create`) is in it; the other modules check roles directly, as the old code did.
 
 Administrator permissions are not in this map: they are the named grants on the
 administrator's own profile (admin_profiles.permissions), checked by modules/admin/dependencies.py

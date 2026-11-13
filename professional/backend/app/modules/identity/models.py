@@ -7,7 +7,7 @@
     phone_verification_codes      was phone_verifications (integer key -> UUID)
     otp_send_events               was phone_otp_send_events (integer key -> UUID)
     user_verification_reviews     was verification_records (integer key -> UUID); written by
-                                  the admin verification screens, which are ported with admin
+                                  the admin verification screens
 
 Column changes against the old users table (API field names stay the same; see
 service.user_response):

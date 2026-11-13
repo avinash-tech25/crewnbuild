@@ -8,10 +8,6 @@ and Master Catalog pictures for any signed-in user; listed documents under the d
 rule; listing media to whoever may see the listing; site media to whoever has project
 access; chat attachments to the conversation; administrators under the admin document
 rule.
-
-The lookups into modules not ported yet are the `pending_*` functions: each finds nothing
-until its module replaces it (docs/porting-todo.md). Until then those files are private
-to their uploader.
 """
 
 from sqlalchemy.orm import Session
@@ -36,9 +32,6 @@ def file_module(stored: File) -> str:
     """The module the file was uploaded under (the second part of its storage key)."""
     parts = (stored.storage_key or "").split("/")
     return parts[1] if len(parts) > 1 else "general"
-
-
-# ---- lookups into modules not ported yet (stubs) ----
 
 
 # ---- the rule ----

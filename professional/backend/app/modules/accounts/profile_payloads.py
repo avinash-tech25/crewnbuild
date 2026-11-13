@@ -153,7 +153,7 @@ def supplier_profile_payload(
         "document_types": document_type_labels(profile.documents),
         "can_view_documents": can_view_documents,
         "gallery": split_profile_list(profile.gallery),
-        # The supplier's products come with the marketplace module; the logo save never
+        # Discovery (marketplace) fills in the supplier's products; the logo save never
         # passed any.
         "profile_products": [],
         "can_view_contact": can_view_contact,

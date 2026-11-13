@@ -4,8 +4,8 @@ profile_service.request_counterparty_profile_payload / engineer_summary_payload,
 rules and fields).
 
 Contact (phone, e-mail) is private until an accepted project request links the two
-accounts in either direction. Property enquiries will also count once the property
-module is ported (they move to property_enquiries).
+accounts in either direction. An accepted property enquiry (property_enquiries) counts
+too.
 """
 
 import uuid

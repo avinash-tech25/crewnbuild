@@ -1,8 +1,8 @@
 """Database queries of the weather module (ported from the old weather_repository.py).
 
-The project queries read the projects module's tables. The store, marketplace, labour
-and equipment queries (which projects a Store Manager or a Supplier delivers to) are
-stubs below, which find nothing until those modules replace them (docs/porting-todo.md).
+The project queries read the projects module's tables. Which projects a Store Manager or a
+Supplier delivers to is asked of the store, marketplace, labour and equipment modules
+(their links.py).
 """
 
 import uuid

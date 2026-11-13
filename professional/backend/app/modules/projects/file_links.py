@@ -3,8 +3,8 @@ file_repository project rules, same answers).
 
     a project's cover          shown wherever the owner's project is shown
     a site photo or video      the project's House Owner, awarded builder and actively
-                               assigned Site Engineer (the builder's photos plan rule is
-                               billing's and allows everything until it is ported)
+                               assigned Site Engineer, while the builder's photos plan
+                               allows it (billing)
     a team engineer's files    the builder whose team the engineer is ACTIVE on
 """
 

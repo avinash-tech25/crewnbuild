@@ -1,7 +1,7 @@
 """When a Site Engineer's daily record (and its timeline entries and site photos) is open
 for writing (the old daily_cost_service.daily_record_is_open / ensure_daily_record_open,
 same rule): today only, before DAILY_WORK_CUTOFF local time, never on a Sunday. The rest
-of the daily record comes with the site_operations module.
+of the daily record is the site_operations module's.
 """
 
 from datetime import date, time

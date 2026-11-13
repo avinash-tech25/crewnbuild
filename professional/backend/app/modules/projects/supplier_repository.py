@@ -1,5 +1,4 @@
-"""Supplier assignment rows (ported from the old project_supplier_repository.py). A
-supplier's published products come with the marketplace module (pending_links)."""
+"""Supplier assignment rows (ported from the old project_supplier_repository.py)."""
 
 import uuid
 
