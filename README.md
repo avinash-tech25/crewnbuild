@@ -92,6 +92,13 @@ crewnbuild/
    cd partner\backend;      .venv\Scripts\Activate.ps1; uvicorn app.main:app --reload --host 127.0.0.1 --port 8200
    ```
 
+   And each service's scheduler (the periodic jobs: renewal notices, weather alerts, dispatch timeouts, purges), one terminal each:
+
+   ```powershell
+   cd professional\backend; .venv\Scripts\python -m app.jobs.run_scheduler
+   cd partner\backend;      .venv\Scripts\python -m app.jobs.run_scheduler
+   ```
+
    Check `http://localhost:8000/api/v1/health/db` and `http://localhost:8200/api/v1/health/db`: both report `"schema_at_head": true` and no missing tables.
 
 7. **Frontends** (after R7): `npm ci` and `npm run dev` in `professionalrontend` (port 5173) and `partnerrontend` (port 5373), each with a `.env.local` copied from its `.env.example`.

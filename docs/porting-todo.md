@@ -1,21 +1,6 @@
 # Porting to-do: open stubs and temporary behaviour
 
-Every stub or temporary behaviour the restructure has left in place and that is still open, one line each, grouped by the step that closes it. A step removes its rows when it closes them. Paths are under `professional/backend/app/` unless they name another place. The R4b modules are all ported (docs/coverage-professional.md), and so is Partner (R4c, docs/coverage-partner.md). R5 gave each service its Alembic baseline (`scripts/migrate.py`, `scripts/seed.py`); finished rows have been removed.
-
-## R6: security layer and scheduler
-
-| # | Module | File / function | What is switched off or temporary | Closed by |
-| --- | --- | --- | --- | --- |
-| 16 | accounts | `modules/accounts/service.py` → `complete_user_profile` | Complete-profile writes `profile_image_url`, `company_logo_url` and `store_logo_url` without the own-upload check (old bug kept) | R6 (security layer) |
-| 18 | identity | `modules/identity/login_throttle.py` | Password sign-in throttle counts in each process at 10 per account / 50 per address, not shared and not section 6.4's 5/20 | R6 (security layer) |
-| 29 | support | `modules/support/ticket_service.py` → `within_rate_limit`; `modules/support/router.py` → `contact_within_rate_limit` | Support-ticket and contact-form limits count in each process, as before, not shared | R6 (security layer) |
-| 33 | content | `modules/content/vastu/router.py` → `_within_rate_limit` | Vastu analyses are limited per process, as before, not shared | R6 (security layer) |
-| 39 | weather | `jobs/weather_alert_monitor.py` | The monitor no longer starts inside the API process (section 15.1); until the scheduler unit exists it runs only when started by hand or cron (`python -m app.jobs.weather_alert_monitor`) | Must be wired by R6: scheduler unit (`jobs/run_scheduler.py`, with `pg_try_advisory_lock`, SC-01) |
-| 42 | admin | `modules/admin/dependencies.py` → `require_admin` | A refused admin request (403) is not written to the audit log (AZ-05 asks for denied attempts too); only administrator writes are | R6 (security layer) |
-| 64 | billing | `jobs/subscription_renewal_sweep.py` | The renewal reminders and expiry notices of builders who are signed out no longer go out from a thread inside the API (the old app ran it there every 60 minutes); until the scheduler unit exists it runs only when started by hand or cron (`python -m app.jobs.subscription_renewal_sweep`). A signed-in builder's status read still sends them | R6 (scheduler unit, with row 39) |
-| 68 | partner identity | `partner/backend/app/modules/identity/auth_service.py` → `LoginThrottle` | Technician sign-in throttle counts in each process at 10 per e-mail / 50 per address, as before, not shared | R6 (security layer) |
-| 71 | partner bookings | `partner/backend/app/main.py` → `DispatchWorker` | The dispatch sweeper (offer timeouts, re-offers, stuck searches, old location purge) runs in every API process every DISPATCH_SWEEP_INTERVAL_SECONDS, as before; the row locks keep it correct, but each process sweeps | R6 (scheduler unit, with row 39) |
-| 72 | partner weather | `partner/backend/app/modules/weather/weather_service.py` → `_cache`, `PUBLIC_NEW_FETCHES_PER_MINUTE` | Forecasts are cached, and new public places limited to 60 a minute, in each process, as before, not shared | R6 (security layer) |
+Every stub or temporary behaviour the restructure has left in place and that is still open, one line each, grouped by the step that closes it. A step removes its rows when it closes them. Paths are under `professional/backend/app/` unless they name another place. The R4b modules are all ported (docs/coverage-professional.md), and so is Partner (R4c, docs/coverage-partner.md). R5 gave each service its Alembic baseline (`scripts/migrate.py`, `scripts/seed.py`), and R6 its security layer and scheduler unit; finished rows have been removed.
 
 ## R7: legacy logs retired
 
@@ -39,3 +24,8 @@ Every stub or temporary behaviour the restructure has left in place and that is 
 | 61 | cctv | `modules/cctv/services/media_gateway.py` → `GATEWAY_API_USER` | The media gateway login name is now `crewnbuild-backend` (was the old name); update the real gateway settings at deployment | Deployment (gateway settings) |
 | 69 | partner onboarding | `partner/backend/app/modules/technicians/identity_service.py` → `face_capture_root` | Face captures awaiting review are written, encrypted, to FACE_CAPTURE_DIRECTORY on the API server's disk (as before), so every API process must share that directory; they are never served | Deployment (a shared volume, or move them to S3) |
 | 73 | partner bookings | `partner/backend/app/modules/bookings/job_media_storage.py`; `modules/technicians/upload_service.py` | Job photos (encrypted, JOB_MEDIA_DIRECTORY) and technician profile images (UPLOAD_DIRECTORY) are on the API server's disk, as before, so every API process must share those directories | Deployment (a shared volume, or move them to S3) |
+| 74 | both | `app/jobs/run_scheduler.py` | The scheduled jobs run only in the scheduler unit: deploy one `python -m app.jobs.run_scheduler` per service (a second copy is a standby). Without it no renewal notices, weather alerts, dispatch timeouts or purges happen | Deployment (scheduler units, section 15.1) |
+| 75 | both | `core/config.py` → `TRUSTED_PROXY_IPS` | Per-address limits and audit addresses read X-Forwarded-For only from these proxies; set it to the load balancer / nginx addresses (the default trusts only this machine) | Deployment (proxy addresses) |
+| 76 | both | `requirements.txt` | Dependencies not audited online: `pip-audit` (and `npm audit` for the frontends) must run in CI. Starlette 0.41.3 (pinned by FastAPI 0.115.6) predates the fixes for its multipart-upload and Range-header advisories (0.47.2, 0.49.1, from memory, unverified); upgrade FastAPI and re-run both suites | Deployment / CI (dependency audit) |
+| 77 | both | web servers | The APIs send their own security headers; the web apps' Content-Security-Policy of section 14.3 (Razorpay, map tiles, S3 images) is set where the frontends are served | Deployment (nginx / CDN, with R7) |
+| 78 | both | `core/config.py` → `DATABASE_URL` | Section 14.2 asks for `sslmode=require` on production database connections; not enforced by the startup checks | Deployment (database URL) |
