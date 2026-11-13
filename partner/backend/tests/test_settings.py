@@ -73,3 +73,25 @@ def test_the_old_public_key_name_is_not_read(monkeypatch: pytest.MonkeyPatch) ->
     monkeypatch.delenv("PROFESSIONAL_HANDOFF_PUBLIC_KEY", raising=False)
     monkeypatch.setenv("OCTABUILD_HANDOFF_PUBLIC_KEY", one_line(public_pem))
     assert check_settings(Settings(_env_file=None)).professional_handoff_public_key == ""
+
+
+# ---- R6: production refuses every placeholder, naming the setting only ----
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [("smtp_user", "change-me"), ("geocoder_user_agent", "change-me-agent"), ("smtp_password", "change-me")],
+)
+def test_production_refuses_any_placeholder(field: str, value: str) -> None:
+    _, public_pem = key_pair()
+    message = refused(**PRODUCTION, professional_handoff_public_key=public_pem, **{field: value})
+    assert field.upper() in message and value not in message.replace(field.upper(), "")
+    assert make_settings(**{field: value})  # away from production it does not stop the process
+
+
+@pytest.mark.parametrize(
+    ("overrides", "named"), [({"debug": True}, "DEBUG"), ({"auth_cookie_secure": False}, "AUTH_COOKIE_SECURE")]
+)
+def test_production_refuses_debug_and_insecure_cookies(overrides: dict, named: str) -> None:
+    _, public_pem = key_pair()
+    assert named in refused(**{**PRODUCTION, "professional_handoff_public_key": public_pem, **overrides})

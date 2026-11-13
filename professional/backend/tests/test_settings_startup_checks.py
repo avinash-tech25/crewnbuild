@@ -114,3 +114,47 @@ def test_secrets_never_appear_in_repr() -> None:
     configured = production_settings()
     assert configured.jwt_secret_key.get_secret_value() not in repr(configured)
     assert "real-password" not in repr(configured)
+
+
+# ---- R6: production refuses every placeholder, naming the setting only ----
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("razorpay_key_secret", "change-me-razorpay-secret"),
+        ("smtp_user", "change-me"),
+        ("support_email", "change-me@example.in"),
+        ("google_client_id", "change-me.apps.googleusercontent.com"),
+    ],
+)
+def test_production_refuses_any_placeholder(field: str, value: str) -> None:
+    with pytest.raises(InsecureConfigurationError) as error:
+        check_settings(production_settings(**{field: value}))
+    assert field.upper() in str(error.value)
+    assert value not in str(error.value)
+    # Away from production the same values do not stop the process.
+    check_settings(production_settings(environment="development", auth_cookie_secure=False, **{field: value}))
+
+
+def test_production_refuses_a_placeholder_database_password() -> None:
+    with pytest.raises(InsecureConfigurationError, match=r"database password|DATABASE_URL"):
+        check_settings(
+            production_settings(
+                database_url="postgresql+psycopg://crewnbuild_professional:change-me@db:5432/crewnbuild"
+            )
+        )
+
+
+@pytest.mark.parametrize(
+    ("overrides", "named"),
+    [
+        ({"debug": True}, "DEBUG"),
+        ({"auth_cookie_secure": False}, "AUTH_COOKIE_SECURE"),
+        ({"razorpay_allow_mock": True}, "RAZORPAY_ALLOW_MOCK"),
+        ({"test_otp_login_enabled": True}, "TEST_OTP_LOGIN_ENABLED"),
+    ],
+)
+def test_production_refuses_debug_insecure_cookies_mock_and_test_sign_in(overrides: dict, named: str) -> None:
+    with pytest.raises(InsecureConfigurationError, match=named):
+        check_settings(production_settings(**overrides))

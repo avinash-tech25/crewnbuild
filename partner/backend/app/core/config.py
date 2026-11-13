@@ -491,11 +491,29 @@ def is_local_origin(origin: str) -> bool:
     return host in {"localhost", "::1"} or host.startswith("127.") or host.endswith(".localhost")
 
 
+def validate_no_placeholders(configured: Settings) -> None:
+    """Production refuses to start with any setting still holding a .env.example
+    placeholder (R6, CF-04): every secret and every plain value, and the password inside
+    DATABASE_URL. The message names the setting, never its value."""
+    for name in type(configured).model_fields:
+        value = getattr(configured, name)
+        text_value = value.get_secret_value() if isinstance(value, SecretStr) else value
+        if isinstance(text_value, str) and is_placeholder(text_value):
+            raise InsecureConfigurationError(f"Production requires a real {name.upper()}; it is still a placeholder.")
+    try:
+        password = make_url(configured.database_url.get_secret_value()).password or ""
+    except Exception:
+        password = ""
+    if is_placeholder(str(password)):
+        raise InsecureConfigurationError("Production requires a real database password in DATABASE_URL.")
+
+
 def validate_production(configured: Settings) -> None:
     if not configured.is_production():
         return
     if configured.debug:
         raise InsecureConfigurationError("Production requires DEBUG=false.")
+    validate_no_placeholders(configured)
     origin = (configured.frontend_origin or "").strip()
     if not origin.startswith("https://") or is_local_origin(origin):
         raise InsecureConfigurationError("Production requires FRONTEND_ORIGIN to be the deployed https:// address.")
