@@ -18,6 +18,7 @@ from sqlalchemy.orm import Session
 
 from app.modules.accounts.profile_completion import is_store_manager
 from app.modules.accounts.repository import AccountRepository
+from app.modules.equipment_supply import links as equipment_links
 from app.modules.identity.models import ROLE_BUILDER, ROLE_ENGINEER, ROLE_SUPPLIER, User
 from app.modules.labour_supply import links as labour_links
 from app.modules.marketplace import account_links as marketplace_links
@@ -27,21 +28,10 @@ from app.modules.site_operations import project_links as site_links
 # ---- reads of modules not ported yet (stubs) ----
 
 
-def pending_builder_history_project_ids(database: Session, user_id: uuid.UUID) -> list[uuid.UUID]:
-    """STUB (equipment_supply): projects holding this builder's equipment requests."""
-    return []
-
-
 def pending_supplier_store_payment_count(database: Session, user_id: uuid.UUID) -> int:
     """STUB (store): Store Manager payment records with this supplier or naming one of its
     listings."""
     return 0
-
-
-def pending_supplier_history_project_ids(database: Session, user_id: uuid.UUID) -> list[uuid.UUID]:
-    """STUB (equipment_supply): projects holding equipment requests addressed to this
-    supplier."""
-    return []
 
 
 def pending_store_manager_store_history_count(database: Session, user_id: uuid.UUID) -> int:
@@ -51,8 +41,7 @@ def pending_store_manager_store_history_count(database: Session, user_id: uuid.U
 
 
 def pending_engineer_history_project_ids(database: Session, user_id: uuid.UUID) -> list[uuid.UUID]:
-    """STUB (equipment_supply, store): projects holding this engineer's equipment
-    requests and usage logs and store requests."""
+    """STUB (store): projects holding this engineer's store requests."""
     return []
 
 
@@ -63,7 +52,7 @@ def builder_history_project_titles(database: Session, user_id: uuid.UUID) -> lis
         deletion_history.builder_history_project_ids(user_id),
         site_links.builder_history_project_ids(database, user_id)
         + labour_links.builder_history_project_ids(database, user_id)
-        + pending_builder_history_project_ids(database, user_id),
+        + equipment_links.builder_history_project_ids(database, user_id),
     )
 
 
@@ -73,7 +62,7 @@ def supplier_project_history_titles(database: Session, user_id: uuid.UUID) -> li
         user_id,
         deletion_history.supplier_history_project_ids(user_id),
         labour_links.supplier_history_project_ids(database, user_id)
-        + pending_supplier_history_project_ids(database, user_id),
+        + equipment_links.supplier_history_project_ids(database, user_id),
     )
 
 
@@ -84,6 +73,7 @@ def engineer_history_project_titles(database: Session, user_id: uuid.UUID) -> li
         deletion_history.engineer_history_project_ids(user_id),
         marketplace_links.buyer_order_project_ids(database, user_id)
         + labour_links.engineer_history_project_ids(database, user_id)
+        + equipment_links.engineer_history_project_ids(database, user_id)
         + pending_engineer_history_project_ids(database, user_id),
     )
 

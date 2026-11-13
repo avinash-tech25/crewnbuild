@@ -19,6 +19,7 @@ from app.modules.catalog.router import admin_router as admin_catalog_router
 from app.modules.catalog.router import router as catalog_router
 from app.modules.content.router import router as content_router
 from app.modules.content.vastu.router import router as vastu_router
+from app.modules.equipment_supply.router import router as equipment_supply_router
 from app.modules.files.router import router as files_router
 from app.modules.identity.router import router as identity_router
 from app.modules.labour_supply.router import router as labour_supply_router
@@ -65,6 +66,7 @@ MODULE_ROUTERS: list[APIRouter] = [
     # Labour supply, where the old app registered it (after payments, which are not
     # ported yet).
     labour_supply_router,
+    equipment_supply_router,
     # Every /weather path is new, so it shadows nothing registered above.
     weather_router,
 ]

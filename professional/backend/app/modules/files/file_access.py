@@ -20,6 +20,7 @@ from sqlalchemy.orm import Session
 
 from app.modules.accounts.profile_lists import read_completed_project_details
 from app.modules.admin.admin_identity import account_locality, active_admin_identity
+from app.modules.equipment_supply.links import is_equipment_listing_image
 from app.modules.files.file_ownership import file_ids_in
 from app.modules.files.models import File
 from app.modules.identity.models import ROLE_BUILDER, ROLE_ENGINEER, ROLE_SUPPLIER, User
@@ -39,11 +40,6 @@ def file_module(stored: File) -> str:
 
 
 # ---- lookups into modules not ported yet (stubs) ----
-
-
-def pending_is_equipment_listing_image(database: Session, supplier_id: uuid.UUID, file_id: uuid.UUID) -> bool:
-    """STUB (equipment_supply): a photo on one of the supplier's equipment listings."""
-    return False
 
 
 def pending_listing_shows_file_to(database: Session, seller_id: uuid.UUID, file_id: uuid.UUID, viewer: User) -> bool:
@@ -107,7 +103,7 @@ def file_view_allowed(database: Session, user: User, stored: File) -> bool:
                     return True
             if is_supplier_listing_image(database, owner.id, file_id):
                 return True
-            if pending_is_equipment_listing_image(database, owner.id, file_id):
+            if is_equipment_listing_image(database, owner.id, file_id):
                 return True
         engineer_photo = owner.engineer_profile.profile_image_url if owner.engineer_profile else None
         if file_id in file_ids_in(owner.profile_image_url, engineer_photo):
