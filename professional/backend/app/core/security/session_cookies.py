@@ -8,7 +8,7 @@ Names depend on AUTH_COOKIE_SECURE:
 
 Browsers refuse a `__Host-` cookie that is not Secure, so on plain http the prefix is
 dropped and local sign-in keeps working. `__Host-` also forces Path=/ and no Domain.
-Partner uses other names (`ptr_`), so the two apps never read each other's cookies on
+Partner uses other names (`par_`), so the two apps never read each other's cookies on
 one host.
 
 The OAuth transaction cookie is sent only to the OAuth routes, so it cannot use

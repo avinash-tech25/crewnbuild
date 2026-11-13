@@ -408,7 +408,7 @@ Access tokens drop from 30 to 15 minutes; refresh is silent, so users see no dif
 | Access token | JWT, HS256, signed with the service's own key. Claims: `sub` (user UUID), `sid` (session UUID), `role`, `typ=access`, `iat`, `exp`, `iss` (`professional` or `partner`), `aud`. Nothing personal (no e-mail, phone or name). |
 | Refresh token | 256-bit random opaque string; only its SHA-256 hash is stored in the session row. Rotated on every use. |
 | Reuse detection | A refresh token used again after a 10-second grace revokes the whole session family. |
-| Cookie names | `__Host-pro_at`, `__Host-pro_rt` (Professional); `__Host-ptr_at`, `__Host-ptr_rt`, `__Host-ptr_req` (Partner). Distinct names, so the two apps never clash on one host. |
+| Cookie names | `__Host-pro_at`, `__Host-pro_rt` (Professional); `__Host-par_at`, `__Host-par_rt`, `__Host-par_req_at`, `__Host-par_req_rt` (Partner; technician and booking sessions). Distinct names, so the two apps never clash on one host. |
 | Cookie flags | `HttpOnly`, `Secure`, `SameSite=Lax`, `Path=/`, no `Domain` (the `__Host-` prefix enforces this). Development without HTTPS drops the prefix. |
 | CSRF | Every state-changing request carries `X-CSRF-Token`, matched against the session's CSRF secret, plus an allowed `Origin`. The token is returned by sign-in, refresh and `GET /auth/session` and kept in memory only. |
 | Storage in the browser | No token in `localStorage` or `sessionStorage`. Only a non-secret "who is signed in" hint may be stored to pick the first screen. |
