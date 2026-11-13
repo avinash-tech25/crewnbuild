@@ -29,7 +29,7 @@ Nothing here talks to a websocket directly. Messages are collected in an
 a technician is never alerted to an offer that another connection cannot see yet,
 or that was rolled back.
 
-Expiry is driven by the sweeper (dispatch_worker.py) every few seconds, so a
+Expiry is driven by the sweeper (the scheduler's dispatch_sweep job) every few seconds, so a
 booking never waits for somebody to read it before it moves on. An acceptance
 that arrives after the deadline also lapses the offer on the spot.
 

@@ -2,7 +2,7 @@
 account's own place ("My location") once it has one (ported from the old
 app/weather/monitor.py, same rules).
 
-Run by the scheduler unit (section 15.1), not by the API processes; the old backend
+Run by the scheduler unit (app/jobs/run_scheduler.py, section 15.1), not by the API processes; the old backend
 started it in a daemon thread at startup. A pass runs every
 WEATHER_SEVERE_CHECK_INTERVAL_MINUTES (or the monitoring interval, if shorter) and
 refreshes each site when it is due: WEATHER_MONITORING_INTERVAL_MINUTES since its last
@@ -16,14 +16,11 @@ One pass by hand or from cron:
 """
 
 import logging
-import threading
-import time
 from collections import Counter
 
 from app.database.session import SessionLocal
 from app.modules.weather.repository import WeatherRepository, weather_installed
 from app.modules.weather.weather_provider_service import WeatherProviderError, WeatherRateLimited
-from app.modules.weather.weather_settings import get_weather_settings
 
 
 def _check(service, site, outcomes: Counter, label) -> bool:
@@ -48,7 +45,6 @@ def _check(service, site, outcomes: Counter, label) -> bool:
 
 
 logger = logging.getLogger(__name__)
-_started = threading.Event()
 
 
 def run(session_factory=SessionLocal, service_factory=None) -> dict:
@@ -80,33 +76,6 @@ def run(session_factory=SessionLocal, service_factory=None) -> dict:
     finally:
         database.close()
     return dict(outcomes)
-
-
-def start_background_monitor() -> bool:
-    """Start the periodic monitor once per process. Returns whether it was started."""
-    settings = get_weather_settings()
-    interval = settings.weather_monitoring_interval_minutes
-    if not settings.weather_monitoring_enabled or interval <= 0 or _started.is_set():
-        return False
-    _started.set()
-    tick = min(interval, settings.weather_severe_check_interval_minutes)
-
-    def loop() -> None:
-        while True:
-            try:
-                logger.info("weather.monitor %s", run())
-            except Exception:
-                logger.exception("weather.monitor_pass_error")
-            time.sleep(tick * 60)
-
-    threading.Thread(target=loop, name="weather-monitor", daemon=True).start()
-    logger.info(
-        "Weather monitoring started: provider=%s, every %s min (severe sites every %s min).",
-        settings.provider,
-        interval,
-        settings.weather_severe_check_interval_minutes,
-    )
-    return True
 
 
 if __name__ == "__main__":

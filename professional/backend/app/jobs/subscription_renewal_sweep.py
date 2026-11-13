@@ -4,9 +4,9 @@ app/subscription/sweep.py, same rules).
 These notices are otherwise written the next time the builder's status is read
 (GET /subscriptions/me). The old backend also ran this sweep itself, at startup and every
 SUBSCRIPTION_SWEEP_INTERVAL_MINUTES, in a daemon thread; here it is run by the scheduler
-unit (section 15.1), not by the API processes, so a builder whose free month or paid plan
-ends while they are signed out, and the house owners and Site Engineers of their projects,
-are still told. Until the scheduler unit exists it runs when started by hand or by cron:
+unit (app/jobs/run_scheduler.py, section 15.1), not by the API processes, so a builder whose
+free month or paid plan ends while they are signed out, and the house owners and Site
+Engineers of their projects, are still told. It can also be run once by hand:
 
     .venv/Scripts/python.exe -m app.jobs.subscription_renewal_sweep
 

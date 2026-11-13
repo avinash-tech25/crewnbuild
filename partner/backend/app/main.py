@@ -54,20 +54,15 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         # The realtime hub is bound to this process's event loop (and relays between
-        # processes when REALTIME_CROSS_PROCESS), then this process's dispatch sweeper
-        # starts (DISPATCH_WORKER_ENABLED), as the old app did at startup.
-        from app.modules.bookings.dependencies import get_realtime, sweep_once
-        from app.modules.bookings.dispatch_worker import DispatchWorker
+        # processes when REALTIME_CROSS_PROCESS). The dispatch sweeper is not run here:
+        # the scheduler unit runs it once for every process (app/jobs/run_scheduler.py, R6).
+        from app.modules.bookings.dependencies import get_realtime
 
         realtime = get_realtime()
         realtime.attach(asyncio.get_running_loop(), cross_process=settings.realtime_cross_process)
-        worker = DispatchWorker(sweep_once, settings.dispatch_sweep_interval_seconds)
-        if settings.dispatch_worker_enabled:
-            worker.start()
         try:
             yield
         finally:
-            await worker.stop()
             realtime.detach()
 
     app = FastAPI(title=settings.app_name, lifespan=lifespan, **docs)  # type: ignore[arg-type]

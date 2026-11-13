@@ -90,7 +90,7 @@ def build_tracking_service(database: Session) -> TrackingService:
 
 
 def sweep_once() -> dict[str, object]:
-    """One sweeper pass on its own session (called from the worker thread)."""
+    """One sweeper pass on its own session (the scheduler's dispatch_sweep job)."""
     with SessionLocal() as database:
         result: dict[str, object] = build_dispatch_service(database).sweep()
         return result

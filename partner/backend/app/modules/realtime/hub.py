@@ -92,8 +92,15 @@ class RealtimeHub:
         self._stop = threading.Event()
         self._listener: threading.Thread | None = None
         self._listening = threading.Event()
+        self._publisher_only = False
 
     # ------------------------------------------------------------- lifecycle
+
+    def publish_from_outside(self) -> None:
+        """For a process with no sockets of its own (the scheduler): every message is
+        sent with NOTIFY for the API processes to deliver, without listening here."""
+        self._cross_process = True
+        self._publisher_only = True
 
     def attach(self, loop: asyncio.AbstractEventLoop, *, cross_process: bool | None = None) -> None:
         """Bind to the process's event loop (app startup) and start listening."""
@@ -116,7 +123,7 @@ class RealtimeHub:
 
     @property
     def relaying(self) -> bool:
-        return self._cross_process and self._listening.is_set()
+        return self._cross_process and (self._listening.is_set() or self._publisher_only)
 
     # --------------------------------------------- subscribers (loop thread)
 

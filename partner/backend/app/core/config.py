@@ -197,9 +197,9 @@ class Settings(BaseSettings):
     dispatch_offer_timeout_seconds: int = 30
     # Batches per dispatch round before a booking stops as EXPIRED (the requester may retry).
     max_dispatch_attempts: int = 3
-    # Background sweeper (modules/bookings/dispatch_worker.py): expires unanswered offers,
-    # re-dispatches stuck bookings and purges abandoned positions. One per process;
-    # SKIP LOCKED keeps several processes from handling the same booking.
+    # The dispatch sweeper (DispatchService.sweep, run by the scheduler unit,
+    # app/jobs/run_scheduler.py): expires unanswered offers, re-dispatches stuck bookings and
+    # purges abandoned positions, once for every process. false turns the job off.
     dispatch_worker_enabled: bool = True
     dispatch_sweep_interval_seconds: float = 3.0
     # A SEARCHING booking with no outstanding offer for this long is picked up by
