@@ -7,7 +7,6 @@ answers "nothing found" (or "allowed" for a plan check) until that module replac
     messaging       conversations and their messages (request, quotation, assignment and
                     negotiation lines in the chat) are not written; notifications are
     billing         a builder's plan never gates the calendar or the site photos
-    labour_supply   a Labour Supplier shows no active trades to a builder
     property        property enquiries are not in the request list
 """
 
@@ -54,14 +53,6 @@ def pending_project_feature_allowed(database: Session, user: User, project: Any,
 def pending_require_project_feature(database: Session, user: User, project: Any, feature: str) -> None:
     """STUB (billing): pending_project_feature_allowed as a guard (403 when paused)."""
     return None
-
-
-# ---- labour_supply ----
-
-
-def pending_active_labour_trades(database: Session, supplier_ids: list[uuid.UUID]) -> dict[uuid.UUID, list[str]]:
-    """STUB (labour_supply): the trades each Labour Supplier has active."""
-    return {}
 
 
 # ---- property ----

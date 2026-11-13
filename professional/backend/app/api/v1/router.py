@@ -21,6 +21,7 @@ from app.modules.content.router import router as content_router
 from app.modules.content.vastu.router import router as vastu_router
 from app.modules.files.router import router as files_router
 from app.modules.identity.router import router as identity_router
+from app.modules.labour_supply.router import router as labour_supply_router
 from app.modules.marketplace.router import router as marketplace_router
 from app.modules.projects.router import router as projects_router
 from app.modules.site_operations.router import router as site_operations_router
@@ -61,6 +62,9 @@ MODULE_ROUTERS: list[APIRouter] = [
     # Estimates, ads and translation; then Vastu.
     content_router,
     vastu_router,
+    # Labour supply, where the old app registered it (after payments, which are not
+    # ported yet).
+    labour_supply_router,
     # Every /weather path is new, so it shadows nothing registered above.
     weather_router,
 ]

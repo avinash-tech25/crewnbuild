@@ -9,6 +9,7 @@ from fastapi import HTTPException
 from app.database.types import naive_utc_now
 from app.modules.accounts.profile_lists import split_profile_list
 from app.modules.identity.models import ROLE_BUILDER, ROLE_ENGINEER, ROLE_OWNER, ROLE_SUPPLIER, User
+from app.modules.labour_supply.links import active_labor_trades_by_supplier
 from app.modules.marketplace.project_links import published_products_by_supplier
 from app.modules.messaging.live_events import queue_live_hint
 from app.modules.projects.access import (
@@ -19,7 +20,6 @@ from app.modules.projects.access import (
 )
 from app.modules.projects.models import ProjectSupplier
 from app.modules.projects.notices import create_request_notification
-from app.modules.projects.pending_links import pending_active_labour_trades
 from app.modules.projects.schemas import SupplierAssignRequest
 from app.modules.projects.supplier_repository import ProjectSupplierRepository
 
@@ -39,7 +39,7 @@ class ProjectSupplierService:
         if not profile:
             return []
         if (profile.supplier_category or "").strip() == LABOR_SUPPLIER_CATEGORY:
-            return pending_active_labour_trades(self.database, [supplier.id]).get(supplier.id, [])
+            return active_labor_trades_by_supplier(self.database, [supplier.id]).get(supplier.id, [])
         return split_profile_list(profile.categories)
 
     def fetch_contractor_accepted_suppliers(self, user: User):

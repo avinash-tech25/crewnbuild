@@ -31,11 +31,11 @@ from app.modules.billing import lead_locations
 from app.modules.catalog.models import CatalogProduct, CatalogSubcategory
 from app.modules.files.file_access import admin_may_view_account_documents, can_view_account_documents
 from app.modules.identity.models import ROLE_BUILDER, ROLE_ENGINEER, ROLE_OWNER, ROLE_SUPPLIER, User
+from app.modules.labour_supply.links import active_labor_trades_by_supplier
 from app.modules.marketplace.listings import catalog_entry_payload, catalog_listings, supplier_product_payload
 from app.modules.marketplace.models import SupplierProduct
 from app.modules.projects.access import engineers_working_on_a_project, ensure_role
 from app.modules.projects.models import ContractorEngineer, Project, ProjectRequest, Review
-from app.modules.projects.pending_links import pending_active_labour_trades
 from app.modules.projects.people import can_view_private_contact, engineer_summary_payload
 from app.modules.projects.project_service import fetch_latest_owner_project
 
@@ -343,7 +343,7 @@ class MarketplaceService:
             profile = supplier.supplier_profile
             return bool(profile and (profile.supplier_category or "").strip() == LABOR_SUPPLIER_CATEGORY)
 
-        labour_trades = pending_active_labour_trades(
+        labour_trades = active_labor_trades_by_supplier(
             self.database, [supplier.id for supplier in suppliers if is_labour(supplier)]
         )
         supplier_clients = []
