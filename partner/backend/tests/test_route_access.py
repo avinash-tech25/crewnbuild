@@ -4,7 +4,7 @@ one answers 401 without one (discovered from the app, so a new route is covered)
 import re
 
 import pytest
-from conftest import ClientFactory
+from conftest import ClientFactory, app_routes
 from fastapi.routing import APIRoute, APIWebSocketRoute
 from sqlalchemy.orm import Session
 from starlette.websockets import WebSocketDisconnect
@@ -20,7 +20,7 @@ SOCKETS = ("/api/v1/dispatch/ws/technician", "/api/v1/tracking/ws/bookings/{book
 
 def test_every_route_needs_a_session_unless_reviewed_public(make_client: ClientFactory, database: Session) -> None:
     client = make_client()
-    routes = [route for route in client.app.routes if isinstance(route, APIRoute)]  # type: ignore[attr-defined]
+    routes = [route for route in app_routes(client.app) if isinstance(route, APIRoute)]  # type: ignore[attr-defined]
     found = set()
     for route in routes:
         path = route.path.removeprefix("/api/v1")
@@ -37,7 +37,7 @@ def test_every_route_needs_a_session_unless_reviewed_public(make_client: ClientF
 
 def test_every_socket_refuses_a_handshake_without_a_session(make_client: ClientFactory, database: Session) -> None:
     client = make_client()
-    sockets = {route.path for route in client.app.routes if isinstance(route, APIWebSocketRoute)}  # type: ignore[attr-defined]
+    sockets = {route.path for route in app_routes(client.app) if isinstance(route, APIWebSocketRoute)}  # type: ignore[attr-defined]
     assert sockets == set(SOCKETS)
     for path, subprotocol in zip(SOCKETS, ("partner.dispatch.v1", "partner.tracking.v1"), strict=True):
         concrete = path.replace("{booking_id}", "01a1d46b-c840-7248-909d-eda994d7faa9")

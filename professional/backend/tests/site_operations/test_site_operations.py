@@ -8,7 +8,7 @@ import uuid
 from typing import Any
 
 import pytest
-from conftest import ClientFactory
+from conftest import ClientFactory, app_routes
 from fastapi.routing import APIRoute
 from fastapi.testclient import TestClient
 from files.test_files import PNG, FakeStorage
@@ -59,7 +59,9 @@ def workflow(site: Site, **changes: Any) -> Any:
 
 
 def test_every_site_route_needs_a_session(client: TestClient) -> None:
-    routes = [r for r in client.app.routes if isinstance(r, APIRoute) and r.endpoint.__module__ == site_router.__name__]  # type: ignore[attr-defined]
+    routes = [
+        r for r in app_routes(client.app) if isinstance(r, APIRoute) and r.endpoint.__module__ == site_router.__name__
+    ]  # type: ignore[attr-defined]
     assert len(routes) == 12
     for route in routes:
         path = route.path

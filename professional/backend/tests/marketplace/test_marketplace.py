@@ -9,7 +9,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 import pytest
-from conftest import ClientFactory
+from conftest import ClientFactory, app_routes
 from fastapi.routing import APIRoute
 from fastapi.testclient import TestClient
 from files.test_files import FakeStorage
@@ -141,7 +141,7 @@ def accept_between(database: Session, sender: Person, receiver: Person, request_
 def test_every_marketplace_route_needs_a_session(client: TestClient) -> None:
     routes = [
         route
-        for route in client.app.routes  # type: ignore[attr-defined]
+        for route in app_routes(client.app)
         if isinstance(route, APIRoute) and route.endpoint.__module__ == marketplace_router.__name__
     ]
     assert len(routes) == 28

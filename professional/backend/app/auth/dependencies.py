@@ -78,11 +78,19 @@ def authenticate_request(request: Request, database: Session, settings: Settings
     return Principal(user=user, session=session, role=role, permissions=permissions_for_role(role))
 
 
+def served_route_template(request: Request) -> str:
+    """The matched route's template as the app serves it, every router prefix included
+    (/api/v1/...). FastAPI 0.16x keeps it on the effective route context; the route
+    object holds only its path inside its own router, so a route of a nested router
+    would otherwise be checked under a shorter path."""
+    context = (request.scope.get("fastapi") or {}).get("effective_route_context")
+    template = getattr(context, "path_format", None) or getattr(request.scope.get("route"), "path_format", None)
+    return str(template or request.url.path)
+
+
 def route_path(request: Request) -> str:
     """The path of the matched route as registered, without /api/v1."""
-    route = request.scope.get("route")
-    path = str(getattr(route, "path_format", request.url.path))
-    return path.removeprefix(API_PREFIX)
+    return served_route_template(request).removeprefix(API_PREFIX)
 
 
 # Routes whose old answer to a request with no session cookie at all was a different

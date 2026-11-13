@@ -5,6 +5,7 @@ import uuid
 from typing import Any
 
 import pytest
+from conftest import app_routes
 from fastapi.routing import APIRoute
 from fastapi.testclient import TestClient
 from identity.helpers import create_user
@@ -20,7 +21,7 @@ ROLE_ONLY = {"/api/v1/admin/me", "/api/v1/admin/overview"}
 def admin_routes(client: TestClient) -> list[tuple[str, str, str | None]]:
     """(method, path with ids filled in, required permission or None) per admin route."""
     found = []
-    for route in client.app.routes:  # type: ignore[attr-defined]
+    for route in app_routes(client.app):  # type: ignore[attr-defined]
         if not isinstance(route, APIRoute) or not route.path.startswith("/api/v1/admin"):
             continue
         permission = None
@@ -48,7 +49,7 @@ def test_every_admin_route_states_who_may_use_it(client: TestClient) -> None:
         if permission is None:
             assert any(path == role_only for role_only in ROLE_ONLY), f"{method} {path} has no permission"
     # The two role-only routes still resolve the administrator.
-    role_only = [r for r in client.app.routes if isinstance(r, APIRoute) and r.path in ROLE_ONLY]  # type: ignore[attr-defined]
+    role_only = [r for r in app_routes(client.app) if isinstance(r, APIRoute) and r.path in ROLE_ONLY]  # type: ignore[attr-defined]
     assert all(any(d.call is current_admin for d in r.dependant.dependencies) for r in role_only)
 
 

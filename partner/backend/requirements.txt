@@ -3,13 +3,15 @@
 # Install: pip install -r requirements.txt -r requirements-dev.txt
 
 # Web framework and servers
-fastapi==0.115.6
+fastapi==0.162.6
+# Pinned for its security fixes (pip-audit, R6); FastAPI alone allows older releases.
+starlette==1.10.0
 uvicorn[standard]==0.32.1
 # Production process manager (Linux containers); not used for local development on Windows.
 gunicorn==27.0.0
 pydantic==2.14.3
 pydantic-settings==2.6.1
-python-multipart==0.0.19
+python-multipart==0.0.33
 email-validator==2.2.0
 
 # Database
@@ -24,6 +26,6 @@ PyJWT[crypto]==2.15.1
 cryptography==50.0.2
 
 # Images (job photos are re-encoded without their metadata), outside services and logging
-Pillow==12.3.0
+Pillow==13.0.0
 httpx==0.28.1
 structlog==26.1.0

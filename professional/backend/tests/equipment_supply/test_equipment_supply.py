@@ -8,7 +8,7 @@ from datetime import date, timedelta
 from typing import Any
 
 import pytest
-from conftest import ClientFactory
+from conftest import ClientFactory, app_routes
 from fastapi.routing import APIRoute
 from fastapi.testclient import TestClient
 from files.test_files import FakeStorage
@@ -53,7 +53,7 @@ def rent(item_id: str, quantity: int = 2, days: int = 3) -> dict[str, Any]:
 def test_every_equipment_route_needs_a_session(client: TestClient) -> None:
     routes = [
         route
-        for route in client.app.routes  # type: ignore[attr-defined]
+        for route in app_routes(client.app)
         if isinstance(route, APIRoute) and route.endpoint.__module__ == equipment_router.__name__
     ]
     assert len(routes) == 14

@@ -8,7 +8,7 @@ import uuid
 from typing import Any
 
 import pytest
-from conftest import ClientFactory
+from conftest import ClientFactory, app_routes
 from fastapi.routing import APIRoute
 from fastapi.testclient import TestClient
 from files.test_files import PNG, FakeStorage
@@ -55,7 +55,7 @@ def start(sender: Person, receiver: Person) -> str:
 def test_every_messaging_route_needs_a_session(client: TestClient) -> None:
     routes = [
         route
-        for route in client.app.routes  # type: ignore[attr-defined]
+        for route in app_routes(client.app)
         if isinstance(route, APIRoute) and route.endpoint.__module__ == messaging_router.__name__
     ]
     assert len(routes) == 9

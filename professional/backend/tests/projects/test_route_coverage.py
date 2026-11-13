@@ -4,6 +4,7 @@ access test for each route the other project tests do not reach."""
 import uuid
 
 import pytest
+from conftest import app_routes
 from fastapi.routing import APIRoute
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
@@ -16,7 +17,7 @@ from projects.test_projects import THURSDAY_MORNING, detail
 
 def project_routes(client: TestClient) -> list[tuple[str, str]]:
     found = []
-    for route in client.app.routes:  # type: ignore[attr-defined]
+    for route in app_routes(client.app):  # type: ignore[attr-defined]
         if isinstance(route, APIRoute) and route.endpoint.__module__ == router.__name__:
             path = route.path
             for name in route.param_convertors:

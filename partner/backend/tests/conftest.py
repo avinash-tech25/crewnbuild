@@ -170,3 +170,23 @@ def stamp_head(engine: Any, schema: str) -> None:
 def unstamp(engine: Any, schema: str) -> None:
     with engine.begin() as connection:
         connection.execute(text(f'DROP TABLE IF EXISTS "{schema}".alembic_version'))
+
+
+def app_routes(app: Any) -> list[Any]:
+    """Every route as the app serves it, with its full path (/api/v1/...).
+
+    FastAPI 0.16x keeps an included router as one entry in app.routes; the routes behind
+    it are listed by iter_route_contexts. Each is a copy of the APIRoute (or
+    APIWebSocketRoute) with the served path and methods, so tests read it as before."""
+    import copy
+
+    from fastapi.routing import iter_route_contexts
+
+    routes = []
+    for context in iter_route_contexts(app.routes):
+        route = copy.copy(context.route)
+        route.path = context.path
+        if context.methods is not None:
+            route.methods = set(context.methods)
+        routes.append(route)
+    return routes

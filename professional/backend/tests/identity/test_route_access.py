@@ -4,7 +4,7 @@ checks; the builder checkout rule; the account's own session list (off by defaul
 import pytest
 from conftest import ClientFactory
 from fastapi import Depends, FastAPI, HTTPException
-from fastapi.routing import APIRoute
+from fastapi.routing import APIRoute, iter_route_contexts
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
@@ -20,9 +20,10 @@ from identity.helpers import create_user, sign_in
 def module_routes() -> list[tuple[str, str]]:
     routes = []
     for router in MODULE_ROUTERS:
-        for route in router.routes:
-            assert isinstance(route, APIRoute)
-            routes.extend((method, route.path) for method in sorted(route.methods))
+        # Included sub-routers are listed through iter_route_contexts (FastAPI 0.16x).
+        for context in iter_route_contexts(router.routes):
+            assert isinstance(context.route, APIRoute)
+            routes.extend((method, context.path) for method in sorted(context.methods or ()))
     return routes
 
 
@@ -137,3 +138,24 @@ def test_http_exception_keeps_the_detail_body() -> None:
         raise HTTPException(status_code=409, detail="nope")
 
     assert TestClient(app).get("/x").json() == {"detail": "nope"}
+
+
+def test_the_access_gate_reads_the_served_path_of_a_nested_route(make_client: ClientFactory, database: Session) -> None:
+    """FastAPI 0.16x: a route inside a nested router is checked under its full served path,
+    so it can never pass for a public route that happens to share its inner path."""
+    from fastapi import APIRouter
+
+    from app.auth.dependencies import enforce_route_access
+
+    client = make_client()
+    outer = APIRouter(prefix="/zz-nested", dependencies=[Depends(enforce_route_access)])
+    inner = APIRouter(prefix="/auth")
+
+    @inner.post("/login")  # the inner path equals the public POST /auth/login
+    def look_alike() -> dict[str, bool]:
+        return {"reached": True}
+
+    outer.include_router(inner)
+    client.app.include_router(outer, prefix="/api/v1")  # type: ignore[attr-defined]
+    answer = client.post("/api/v1/zz-nested/auth/login")
+    assert answer.status_code == 401

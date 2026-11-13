@@ -13,7 +13,7 @@ from fastapi import Depends, HTTPException, Request, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.auth.dependencies import current_user
+from app.auth.dependencies import current_user, served_route_template
 from app.database.session import get_db
 from app.modules.accounts.models import ADMIN_SCOPES, AdminProfile
 from app.modules.admin.admin_identity import PERMISSIONS, AdminIdentity
@@ -22,9 +22,8 @@ from app.modules.identity.models import ADMIN_ROLES, User
 
 
 def _route(request: Request) -> str:
-    """The route template (never the concrete path, which could carry anything)."""
-    route = request.scope.get("route")
-    return str(getattr(route, "path", "") or request.url.path)
+    """The route template as served (never the concrete path, which could carry anything)."""
+    return served_route_template(request)
 
 
 def refuse(request: Request, user: User, scope: str | None, detail: str) -> HTTPException:

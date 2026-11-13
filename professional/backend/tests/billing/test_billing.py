@@ -15,7 +15,7 @@ from typing import Any
 
 import pytest
 from admin.helpers import create_admin, create_manager, signed_in
-from conftest import ClientFactory
+from conftest import ClientFactory, app_routes
 from fastapi.routing import APIRoute
 from fastapi.testclient import TestClient
 from files.test_files import FakeStorage
@@ -131,7 +131,7 @@ def billing_routes(client: TestClient) -> list[APIRoute]:
     names = ("app.modules.billing.router", "app.modules.billing.booking_payments_router", "app.modules.billing.coupon")
     return [
         route
-        for route in client.app.routes  # type: ignore[attr-defined]
+        for route in app_routes(client.app)
         if (isinstance(route, APIRoute) and route.endpoint.__module__.startswith(names))
         or (isinstance(route, APIRoute) and route.endpoint.__module__ == "app.modules.billing.payment_history_admin")
     ]
