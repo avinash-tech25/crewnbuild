@@ -1,6 +1,6 @@
 """Times shown to people: stored in UTC, shown in the configured local zone (DB-08)."""
 
-from datetime import UTC, datetime, timedelta, timezone
+from datetime import UTC, date, datetime, timedelta, timezone
 
 from app.core.config import Settings
 
@@ -32,3 +32,12 @@ def local_workflow_now() -> datetime:
 
     settings = get_settings()
     return datetime.now(timezone(timedelta(minutes=settings.local_utc_offset_minutes), name=settings.local_timezone))
+
+
+def local_today() -> date:
+    """Today's date in the configured local zone (India), whatever the server's clock zone.
+
+    Dates people enter (start dates, usage dates, expiry dates) are India dates, so they are
+    compared with India's today. Before R6 they were compared with date.today(), the
+    server's own date, which on a UTC server is still yesterday until 05:30 IST."""
+    return local_workflow_now().date()

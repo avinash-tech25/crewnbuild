@@ -4,7 +4,7 @@ import uuid
 from collections.abc import Iterable
 from datetime import datetime
 
-from sqlalchemy import delete, func, or_, select, text, update
+from sqlalchemy import delete, func, select, text, update
 from sqlalchemy.orm import Session
 
 from app.modules.accounts.models import AdminProfile
@@ -34,11 +34,24 @@ class UserRepository:
         return self.database.scalars(select(User.id).where(func.lower(User.email) == email.strip().lower())).first()
 
     def get_by_email_or_name(self, identifier: str) -> User | None:
-        """The old sign-in lookup: the e-mail address, or the account name, without case."""
+        """The sign-in lookup: the e-mail address, or else the account name, without case.
+
+        Names are not unique. Before R6 the first account with the name was taken, so a
+        password could be tried against whichever account the database returned first;
+        now a name signs in only when exactly one live account has it, and an ambiguous
+        name finds no account (the caller answers as for an unknown one)."""
         normalized = identifier.strip().lower()
-        return self.database.scalars(
-            select(User).where(or_(func.lower(User.email) == normalized, func.lower(User.name) == normalized))
+        if not normalized:
+            return None
+        by_email = self.database.scalars(
+            select(User).where(func.lower(User.email) == normalized, User.deleted_at.is_(None))
         ).first()
+        if by_email is not None:
+            return by_email
+        by_name = self.database.scalars(
+            select(User).where(func.lower(User.name) == normalized, User.deleted_at.is_(None)).limit(2)
+        ).all()
+        return by_name[0] if len(by_name) == 1 else None
 
     def get_by_phone(self, phone: str, country: str = DEFAULT_COUNTRY) -> User | None:
         """The account holding this number in this country, keyed as the unique index

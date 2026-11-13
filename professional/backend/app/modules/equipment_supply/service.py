@@ -28,7 +28,7 @@ from typing import Any
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
-from app.core.local_time import local_iso
+from app.core.local_time import local_iso, local_today
 from app.database.types import naive_utc_now
 from app.modules.equipment_supply.models import (
     EQUIPMENT_REQUEST_STATUSES,
@@ -159,7 +159,7 @@ class EquipmentSupplyService:
     def available_to_rent(self, item: EquipmentItem, start: date, end: date) -> int:
         # An accepted rental is out until the supplier completes it, so an overdue one
         # is still out today.
-        today = date.today()
+        today = local_today()
         intervals = [
             (first, max(last, today) if first <= today else last, quantity)
             for first, last, quantity in rental_intervals(self.repository.list_accepted_rentals(item.id))
@@ -168,7 +168,7 @@ class EquipmentSupplyService:
 
     def committed_to_rentals(self, item: EquipmentItem, today: date | None = None) -> int:
         """Units current and future accepted rentals need at their peak."""
-        today = today or date.today()
+        today = today or local_today()
         intervals = [
             (max(row.start_date, today), max(row.end_date, today), row.quantity)  # type: ignore[type-var]
             for row in self.repository.list_accepted_rentals(item.id)
@@ -183,7 +183,7 @@ class EquipmentSupplyService:
     # ---- payloads ----
 
     def item_payload(self, item: EquipmentItem, start: date | None = None, end: date | None = None) -> dict[str, Any]:
-        today = date.today()
+        today = local_today()
         range_start, range_end = (start, end) if start and end else (today, today)
         return {
             "id": item.id,
@@ -521,7 +521,7 @@ class EquipmentSupplyService:
             )
         if not item.is_active:
             raise HTTPException(status_code=409, detail=f"{item.name} is no longer offered.")
-        if payload.start_date and payload.start_date < date.today():
+        if payload.start_date and payload.start_date < local_today():
             raise HTTPException(status_code=400, detail="Start date cannot be in the past.")
         if payload.request_kind == KIND_RENT:
             if not allows_rent(item):
@@ -622,7 +622,7 @@ class EquipmentSupplyService:
             )
         if usage_date < row.start_date or usage_date > row.end_date:  # type: ignore[operator]
             raise HTTPException(status_code=400, detail="This date is outside the rental period.")
-        if usage_date > date.today():
+        if usage_date > local_today():
             raise HTTPException(status_code=400, detail="Usage cannot be recorded for a future date.")
         if payload.hours_used > 24 * row.quantity:
             raise HTTPException(

@@ -28,7 +28,7 @@ from fastapi import HTTPException
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.core.local_time import local_iso
+from app.core.local_time import local_iso, local_today
 from app.database.types import naive_utc_now
 from app.modules.identity.models import ROLE_BUILDER, ROLE_ENGINEER, ROLE_SUPPLIER, User
 from app.modules.labour_supply.models import (
@@ -406,7 +406,7 @@ class LaborSupplyService:
         assignment = self.active_labor_assignment(project, supplier.id, user.id)
         if not assignment:
             raise HTTPException(status_code=403, detail="This Labor Supplier is not assigned to you on this project.")
-        if payload.start_date < date.today():
+        if payload.start_date < local_today():
             raise HTTPException(status_code=400, detail="Start date cannot be in the past.")
         if payload.end_date and payload.end_date < payload.start_date:
             raise HTTPException(status_code=400, detail="End date cannot be before the start date.")
@@ -514,7 +514,7 @@ class LaborSupplyService:
         for field in ("workers_required", "start_date"):
             if field in changes and changes[field] is None:
                 raise HTTPException(status_code=400, detail=f"{field} cannot be empty.")
-        if "start_date" in changes and changes["start_date"] < date.today():
+        if "start_date" in changes and changes["start_date"] < local_today():
             raise HTTPException(status_code=400, detail="Start date cannot be in the past.")
         start = changes.get("start_date", row.start_date)
         end = changes.get("end_date", row.end_date)
@@ -569,7 +569,7 @@ class LaborSupplyService:
             raise HTTPException(status_code=400, detail="This date is before the assignment's start date.")
         if row.end_date and work_date > row.end_date:
             raise HTTPException(status_code=400, detail="This date is after the assignment's end date.")
-        if work_date > date.today():
+        if work_date > local_today():
             raise HTTPException(status_code=400, detail="Attendance cannot be recorded for a future date.")
         counted = payload.present_count + payload.absent_count + payload.half_day_count
         if counted > (row.workers_allocated or 0):

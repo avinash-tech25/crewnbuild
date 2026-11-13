@@ -6,7 +6,6 @@ they are kept here because the public side has to read them too.
 """
 
 import uuid
-from datetime import date
 from typing import Any
 
 from fastapi import HTTPException
@@ -14,6 +13,7 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
+from app.core.local_time import local_today
 from app.modules.content.models import AD_STATUS_ACTIVE, Ad, AdDailyStat
 from app.modules.identity.schemas import RETIRED_KUWAIT_VALUES
 
@@ -109,7 +109,7 @@ def running_adverts(database: Session, placement: str, country: str | None, posi
         return []
     if str(country or "").strip().upper() in RETIRED_KUWAIT_VALUES:
         raise HTTPException(status_code=422, detail=INDIA_ONLY_DETAIL)
-    today = date.today()
+    today = local_today()
     console = placement_console(known)
     wrapped = func.concat(",", Ad.placements, ",")
     candidates = database.scalars(
@@ -175,7 +175,7 @@ def record_event(database: Session, advert_id: uuid.UUID, placement: str, event:
     statement = insert(AdDailyStat.__table__).values(
         ad_id=advert_id,
         placement=known,
-        day=date.today(),
+        day=local_today(),
         views=1 if event == EVENT_VIEW else 0,
         clicks=1 if event == EVENT_CLICK else 0,
     )

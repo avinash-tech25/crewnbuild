@@ -93,19 +93,13 @@ class EmailVerificationService:
         code = generate_code()
         delivered = self.email.configured and self.send_code_email(email, code)
         if not delivered:
-            if self.settings.is_production():
-                raise HTTPException(
-                    status_code=status.HTTP_502_BAD_GATEWAY
-                    if self.email.configured
-                    else status.HTTP_503_SERVICE_UNAVAILABLE,
-                    detail="We could not send the verification email. Try again in a moment.",
-                )
-            # Away from production an undeliverable code goes to the server's own log, as
-            # before, so a developer without a mailbox can still sign up. Never in a reply.
-            logger.warning(
-                "Email could not be delivered, so the signup code is %s. "
-                "This is written here only because this is not production.",
-                code,
+            # R6: refused in every environment. Before, away from production an undeliverable
+            # code was written to the server's log; codes are never logged now (section 14.2).
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY
+                if self.email.configured
+                else status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="We could not send the verification email. Try again in a moment.",
             )
         self.store_code(email, code, SIGNUP)
         return {

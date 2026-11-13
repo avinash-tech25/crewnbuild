@@ -7,13 +7,14 @@ current decision. Documents are read from the profile's comma-joined string
 """
 
 import uuid
-from datetime import date, datetime
+from datetime import datetime
 from typing import Any
 
 from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.core.local_time import local_today
 from app.modules.admin.admin_identity import AdminIdentity
 from app.modules.admin.audit_log import ACTION_VERIFICATION_APPROVED, ACTION_VERIFICATION_REJECTED, record
 from app.modules.admin.schemas import VerificationDecision
@@ -75,7 +76,7 @@ def is_verified(review: UserVerificationReview | None) -> bool:
     """An expired approval is not a verification."""
     if review is None or review.status != STATUS_APPROVED:
         return False
-    return not (review.expires_on and review.expires_on < date.today())
+    return not (review.expires_on and review.expires_on < local_today())
 
 
 def queue(database: Session, admin: Any, state: str = "PENDING") -> list[dict[str, Any]]:

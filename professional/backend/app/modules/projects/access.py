@@ -18,7 +18,7 @@ from fastapi import HTTPException
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
-from app.core.local_time import local_workflow_now
+from app.core.local_time import local_today, local_workflow_now
 from app.modules.accounts.profile_completion import is_store_manager, profile_complete
 from app.modules.identity.models import ROLE_BUILDER, ROLE_ENGINEER, ROLE_OWNER, User
 from app.modules.projects.models import ContractorEngineer, Project, ProjectEngineer
@@ -220,7 +220,7 @@ def _working_assignment_filters() -> tuple[Any, ...]:
         ProjectEngineer.status == "ACTIVE",
         func.lower(func.coalesce(Project.status, "")) != "completed",
         func.coalesce(Project.completion_percentage, 0) < 100,
-        or_(Project.end_date.is_(None), Project.end_date >= date.today()),
+        or_(Project.end_date.is_(None), Project.end_date >= local_today()),
     )
 
 

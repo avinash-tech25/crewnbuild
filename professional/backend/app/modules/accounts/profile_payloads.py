@@ -4,12 +4,12 @@ contact field is visible; the other viewers (marketplace, requests) come with th
 modules.
 """
 
-from datetime import date
 from typing import Any
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.core.local_time import local_today
 from app.modules.accounts.models import BuilderProfile, SupplierProfile
 from app.modules.accounts.profile_completion import profile_complete
 from app.modules.accounts.profile_lists import document_type_labels, read_completed_project_details, split_profile_list
@@ -28,7 +28,7 @@ def is_verified(database: Session, user: User) -> bool:
     ).first()
     if record is None or record.status != VERIFICATION_APPROVED:
         return False
-    return not (record.expires_on and record.expires_on < date.today())
+    return not (record.expires_on and record.expires_on < local_today())
 
 
 def builder_reviews(database: Session, builder: User, limit: int = 10) -> tuple[int, list[dict[str, Any]]]:

@@ -22,6 +22,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.config import PROFESSIONAL_SCHEMA, Settings
+from app.core.local_time import local_today
 from app.integrations.email.email_sender import EmailSender
 from app.modules.accounts.account_deletion_service import support_mailbox
 from app.modules.admin.admin_identity import account_locality
@@ -202,7 +203,7 @@ def clean_details(submission: TicketSubmission, allowed: tuple[str, ...]) -> dic
             raise field_error(f"details.{key}", f"{spec['label']} is too long.")
         if spec.get("type") == "date":
             try:
-                in_future = date.fromisoformat(value) > date.today()
+                in_future = date.fromisoformat(value) > local_today()
             except ValueError as error:
                 raise field_error(f"details.{key}", "Please enter a valid date.") from error
             if in_future:
