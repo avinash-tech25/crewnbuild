@@ -6,12 +6,8 @@ a bcrypt (or outdated Argon2id) hash is replaced with a fresh Argon2id one right
 successful sign-in.
 """
 
-import hashlib
 import re
-import threading
-import time
 import uuid
-from collections import deque
 
 from fastapi import HTTPException
 from sqlalchemy.exc import IntegrityError
@@ -33,6 +29,7 @@ from app.modules.identity.models import ACCOUNT_STATUS_ONBOARDING, PURPOSE_SIGNU
 from app.modules.identity.otp_service import OtpService, normalize_email
 from app.modules.identity.repository import TechnicianRepository
 from app.modules.identity.schemas import AuthResponse, CodeSentResponse, OnboardingState, TechnicianResponse
+from app.modules.rate_limits import service as limits
 
 THROTTLED_MESSAGE = "Too many sign-in attempts. Please wait a few minutes and try again."
 EMAIL_PATTERN = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
@@ -44,54 +41,40 @@ ALREADY_REGISTERED = "This email is already registered. Log in instead."
 
 
 class LoginThrottle:
-    """Failed sign-in attempts, counted per e-mail address and per client address in a
-    sliding window (LOGIN_FAILURE_WINDOW_SECONDS). Past either limit a sign-in is refused
-    before its password is checked, with the same answer whether or not the e-mail has
-    an account. A successful sign-in clears its e-mail's count. Kept in this process, as
-    before (docs/porting-todo.md)."""
+    """Failed sign-in attempts (technical-architecture.md 6.4), counted in rate_limit_events
+    so every API process shares them: LOGIN_MAX_FAILURES_PER_EMAIL (5) per e-mail address
+    and LOGIN_MAX_FAILURES_PER_CLIENT (20) per client address over
+    LOGIN_FAILURE_WINDOW_SECONDS (15 minutes). Past either limit a sign-in is refused with
+    429 before its password is checked, the same whether or not the e-mail has an account;
+    the refused attempt counts too, so the wait grows while attempts continue. A
+    successful sign-in clears its e-mail's count. Only hashes of the keys are stored.
 
-    def __init__(self) -> None:
-        self._failures: dict[str, deque[float]] = {}
-        self._lock = threading.Lock()
+    Before R6 the counts lived in each process, at 10 and 50."""
 
-    @staticmethod
-    def _keys(email: str, client: str | None) -> tuple[str, str]:
-        return "email:" + hashlib.sha256(email.encode("utf-8")).hexdigest(), "client:" + (client or "unknown")
+    EMAIL_BUCKET = "login:account"
+    CLIENT_BUCKET = "login:address"
 
-    def _recent(self, key: str, now: float, window: int) -> deque[float]:
-        attempts = self._failures.get(key)
-        if attempts is None:
-            return deque()
-        while attempts and attempts[0] <= now - window:
-            attempts.popleft()
-        if not attempts:
-            del self._failures[key]
-        return attempts
-
-    def blocked(self, settings: Settings, email: str, client: str | None) -> bool:
-        email_key, client_key = self._keys(email, client)
-        now = time.monotonic()
+    def ensure_allowed(self, database: Session, settings: Settings, email: str, client: str | None) -> None:
         window = settings.login_failure_window_seconds
-        with self._lock:
-            return (
-                len(self._recent(email_key, now, window)) >= settings.login_max_failures_per_email
-                or len(self._recent(client_key, now, window)) >= settings.login_max_failures_per_client
-            )
+        over_email = limits.blocked(database, self.EMAIL_BUCKET, email, settings.login_max_failures_per_email, window)
+        over_client = limits.blocked(
+            database, self.CLIENT_BUCKET, client or "unknown", settings.login_max_failures_per_client, window
+        )
+        if not (over_email or over_client):
+            return
+        self.failed(database, email, client)
+        wait = max(
+            limits.retry_after_seconds(database, self.EMAIL_BUCKET, email, window) if over_email else 0,
+            limits.retry_after_seconds(database, self.CLIENT_BUCKET, client or "unknown", window) if over_client else 0,
+        )
+        raise HTTPException(status_code=429, detail=THROTTLED_MESSAGE, headers={"Retry-After": str(wait)})
 
-    def failed(self, email: str, client: str | None) -> None:
-        now = time.monotonic()
-        with self._lock:
-            for key in self._keys(email, client):
-                self._failures.setdefault(key, deque()).append(now)
+    def failed(self, database: Session, email: str, client: str | None) -> None:
+        limits.record(database, self.EMAIL_BUCKET, email)
+        limits.record(database, self.CLIENT_BUCKET, client or "unknown")
 
-    def succeeded(self, email: str, client: str | None) -> None:
-        email_key, _ = self._keys(email, client)
-        with self._lock:
-            self._failures.pop(email_key, None)
-
-    def reset(self) -> None:
-        with self._lock:
-            self._failures.clear()
+    def succeeded(self, database: Session, email: str) -> None:
+        limits.clear(database, self.EMAIL_BUCKET, email)
 
 
 login_throttle = LoginThrottle()
@@ -241,8 +224,7 @@ class AuthService:
         never tells whether the e-mail has an account or which part was wrong; too many
         recent failures are refused with 429 before the password is checked."""
         email = normalize_email(raw_email)
-        if login_throttle.blocked(self.settings, email, client_address):
-            raise HTTPException(status_code=429, detail=THROTTLED_MESSAGE)
+        login_throttle.ensure_allowed(self.database, self.settings, email, client_address)
         technician = self.technicians.get_by_email(email) if email else None
         stored_hash = technician.password_hash if technician and technician.password_hash else None
         if stored_hash is None:
@@ -259,9 +241,10 @@ class AuthService:
             and within_limit
             and technician.onboarding_step == STEP_COMPLETE
         ):
-            login_throttle.failed(email, client_address)
+            self.database.rollback()
+            login_throttle.failed(self.database, email, client_address)
             raise HTTPException(status_code=401, detail=INVALID_CREDENTIALS_MESSAGE)
-        login_throttle.succeeded(email, client_address)
+        login_throttle.succeeded(self.database, email)
         if technician.is_suspended:
             raise HTTPException(status_code=403, detail=SUSPENDED_MESSAGE)
         if needs_rehash(stored_hash):

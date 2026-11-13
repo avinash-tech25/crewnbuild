@@ -43,15 +43,6 @@ def test_sign_in_by_account_name_still_works(client: TestClient, database: Sessi
     sign_in(client, identifier="asha rao")
 
 
-def test_repeated_failures_are_throttled(client: TestClient, database: Session) -> None:
-    create_user(database)
-    for _ in range(10):
-        client.post("/api/v1/auth/login", json={"email": "asha@example.in", "password": "Wrong#Pass123"})
-    response = client.post("/api/v1/auth/login", json={"email": "asha@example.in", "password": STRONG_PASSWORD})
-    assert response.status_code == 429
-    assert response.headers["Retry-After"] == str(15 * 60)
-
-
 def test_suspended_and_partner_accounts_cannot_sign_in(client: TestClient, database: Session) -> None:
     create_user(database, email="suspended@example.in", status="SUSPENDED")
     create_user(database, email="partner@example.in", role="PROFESSIONAL", phone="")

@@ -39,7 +39,6 @@ from app.core.security.access_tokens import csrf_token_for
 from app.core.security.session_cookies import REQUESTER, TECHNICIAN, access_cookie_name, refresh_cookie_name
 from app.database.session import engine, get_db
 from app.main import create_app
-from app.modules.identity.auth_service import login_throttle
 from app.modules.locations.location_service import get_pincode_directory
 from app.modules.technicians.identity_service import _VERHOEFF_D, _VERHOEFF_P
 
@@ -202,7 +201,6 @@ def client(
         finally:
             session.close()
 
-    login_throttle.reset()
     app = create_app(legacy_settings)
     app.dependency_overrides[get_db] = override_database
     app.dependency_overrides[get_pincode_directory] = lambda: directory

@@ -10,10 +10,11 @@ Where, in this order:
 
 The page asks without coordinates first, so a current job always wins; CHOSEN
 and DEVICE come with the request and are kept only in that technician's
-browser. Nothing is stored in the database: Partner's tables are unchanged.
+browser; the database keeps no place of any technician.
 
-Forecasts are cached in memory by place, rounded to about a kilometre, for
-WEATHER_CACHE_MINUTES -- technicians in one area share a fetch, and the provider
+Forecasts are cached in weather_forecasts by place, rounded to about a kilometre, for
+WEATHER_CACHE_MINUTES -- technicians in one area share a fetch, whichever API process
+serves them (R6; it was each process's memory before), and the provider
 is never sent a position more exact than that. When the provider fails, the last
 good forecast is shown, marked with its time, for up to
 WEATHER_MAX_STALE_MINUTES. Weather is never made up.
@@ -26,19 +27,21 @@ carries the presentation theme (weather_presentation) the pages are styled by.
 public() answers the public pages (no sign-in) for coordinates the visitor's
 browser sends: general weather and forecast warnings only, from the same cache;
 at most PUBLIC_NEW_FETCHES_PER_MINUTE places not already cached are fetched in
-any minute, so public traffic cannot run the provider into its rate limit.
+any minute across every process (rate_limit_events), so public traffic cannot run the
+provider into its rate limit.
 """
 
 import logging
-import threading
-import time
-from collections import deque
 from datetime import UTC, datetime, timedelta, timezone
+from decimal import Decimal
 
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.modules.bookings.models import TECHNICIAN_BUSY_STATUSES, ServiceRequest
 from app.modules.identity.models import Technician
+from app.modules.rate_limits import service as limits
+from app.modules.weather.models import WeatherForecast
 from app.modules.weather.weather_config import WeatherSettings, get_weather_settings
 from app.modules.weather.weather_presentation import presentation
 from app.modules.weather.weather_provider import HttpJson, OpenMeteoProvider, WeatherProviderError, WeatherRateLimited
@@ -52,33 +55,7 @@ COUNTRY_CODE = "IN"
 PLACE_DECIMALS = 2
 SOURCES = ("JOB", "CHOSEN", "DEVICE")
 PUBLIC_NEW_FETCHES_PER_MINUTE = 60
-_recent_public_fetches: deque = deque()
-
-_cache: dict[tuple[float, float], dict] = {}
-_cache_guard = threading.Lock()
-_place_locks: dict[tuple[float, float], threading.Lock] = {}
-
-
-def _place_lock(key: tuple[float, float]) -> threading.Lock:
-    with _cache_guard:
-        return _place_locks.setdefault(key, threading.Lock())
-
-
-def clear_cache() -> None:
-    with _cache_guard:
-        _cache.clear()
-        _recent_public_fetches.clear()
-
-
-def _public_budget_allows() -> bool:
-    now = time.monotonic()
-    with _cache_guard:
-        while _recent_public_fetches and _recent_public_fetches[0] < now - 60:
-            _recent_public_fetches.popleft()
-        if len(_recent_public_fetches) >= PUBLIC_NEW_FETCHES_PER_MINUTE:
-            return False
-        _recent_public_fetches.append(now)
-        return True
+PUBLIC_FETCH_BUCKET = "weather:public-new-place"
 
 
 def utcnow() -> datetime:
@@ -142,20 +119,31 @@ class TechnicianWeatherService:
 
     # ------------------------------------------------------------------ forecast
     def forecast(self, latitude: float, longitude: float, *, public: bool = False) -> tuple[dict | None, dict]:
-        """(weather data or None, its status) for a place, through the shared cache."""
+        """(weather data or None, its status) for a place, through the shared cache
+        (weather_forecasts): a place is fetched by one process at a time, and the public
+        pages fetch at most PUBLIC_NEW_FETCHES_PER_MINUTE new places a minute, counted
+        across every process."""
         key = (round(latitude, PLACE_DECIMALS), round(longitude, PLACE_DECIMALS))
         now = self.clock()
-        entry = _cache.get(key)
-        if not self._fresh(entry, now):
-            with _place_lock(key):
-                entry = _cache.get(key)
-                if (
-                    not self._fresh(entry, now)
-                    and not self._cooling_down(entry, now)
-                    and (not public or _public_budget_allows())
-                ):
-                    entry = self._fetch(key, entry, now)
+        entry = self._load(key)
+        if self._fresh(entry, now) or self._cooling_down(entry, now):
+            return self._status(entry, now)
+        if public and not limits.hit(self.database, PUBLIC_FETCH_BUCKET, "all", PUBLIC_NEW_FETCHES_PER_MINUTE, 60):
+            return self._status(entry, now)
+        self.database.execute(
+            text("SELECT pg_advisory_xact_lock(hashtext(:k))"), {"k": f"weather:{key[0]:.2f}:{key[1]:.2f}"}
+        )
+        entry = self._load(key)  # another process may have fetched it while this one waited
+        if not self._fresh(entry, now) and not self._cooling_down(entry, now):
+            entry = self._fetch(key, entry, now)
+        self.database.commit()
         return self._status(entry, now)
+
+    def _load(self, key: tuple[float, float]) -> dict | None:
+        row = self.database.get(WeatherForecast, (Decimal(f"{key[0]:.2f}"), Decimal(f"{key[1]:.2f}")))
+        if row is None:
+            return None
+        return {"data": row.data, "fetched_at": row.fetched_at, "error": row.error, "failed_at": row.failed_at}
 
     def _fresh(self, entry: dict | None, now: datetime) -> bool:
         return bool(
@@ -174,11 +162,21 @@ class TechnicianWeatherService:
             entry.update(data=self.provider.fetch(*key), fetched_at=now, error=None, failed_at=None)
         except WeatherProviderError as error:
             logger.warning("partner.weather_fetch_failed place=%s: %s", key, error.reason)
-            entry.update(error=error.reason, failed_at=now)
+            entry.update(error=str(error.reason)[:200], failed_at=now)
             entry.setdefault("data", None)
             entry.setdefault("fetched_at", None)
-        with _cache_guard:
-            _cache[key] = entry
+        position = (Decimal(f"{key[0]:.2f}"), Decimal(f"{key[1]:.2f}"))
+        row = self.database.get(WeatherForecast, position) or WeatherForecast(
+            latitude=position[0], longitude=position[1]
+        )
+        row.data, row.fetched_at, row.error, row.failed_at = (
+            entry.get("data"),
+            entry.get("fetched_at"),
+            entry.get("error"),
+            entry.get("failed_at"),
+        )
+        self.database.add(row)
+        self.database.flush()
         return entry
 
     def _status(self, entry: dict | None, now: datetime) -> tuple[dict | None, dict]:

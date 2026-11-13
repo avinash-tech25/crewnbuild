@@ -87,7 +87,12 @@ class ClientInfo:
 
 
 def client_info(connection: HTTPConnection) -> ClientInfo:
+    """The browser behind a request: its user agent and its address, read through
+    TRUSTED_PROXY_IPS (app/core/client_address.py), never the proxy's own address."""
+    from app.core.client_address import visitor_address
+
+    settings: Settings = connection.app.state.settings
     return ClientInfo(
         user_agent=connection.headers.get("user-agent"),
-        ip_address=connection.client.host if connection.client else None,
+        ip_address=visitor_address(connection, settings.trusted_proxy_ips),
     )

@@ -11,10 +11,7 @@ support_service.py, same rules). The staff side is modules/admin/support_desk_se
 
 import logging
 import re
-import threading
-import time
 import uuid
-from collections import defaultdict, deque
 from datetime import UTC, date, datetime
 from typing import Any
 
@@ -33,6 +30,7 @@ from app.modules.files.upload_service import ALLOWED_CONTENT_TYPES, MAX_UPLOAD_B
 from app.modules.identity.models import User
 from app.modules.identity.schemas import RETIRED_KUWAIT_VALUES
 from app.modules.messaging.notifications import add_notification
+from app.modules.rate_limits import service as limits
 from app.modules.support import taxonomy
 from app.modules.support.models import (
     ACTIVE_STATUSES,
@@ -75,34 +73,16 @@ def require_tickets(database: Session) -> None:
         raise support_unavailable()
 
 
-# ---- throttle (in-process, per hour, keyed by account or connection) ----
+# ---- throttle (per hour, keyed by account or address; shared by every process) ----
 
-_throttle_lock = threading.Lock()
-_recent: dict[str, deque[float]] = defaultdict(deque)
+SUPPORT_BUCKET = "support:ticket"
 _WINDOW_SECONDS = 3600
-_MAX_TRACKED = 2048
 
 
-def within_rate_limit(key: str, settings: Settings) -> bool:
-    limit = max(1, settings.support_max_tickets_per_hour)
-    now = time.monotonic()
-    with _throttle_lock:
-        history = _recent[key]
-        while history and now - history[0] > _WINDOW_SECONDS:
-            history.popleft()
-        if len(history) >= limit:
-            return False
-        history.append(now)
-        if len(_recent) > _MAX_TRACKED:
-            for stale in [k for k, v in _recent.items() if not v or now - v[-1] > _WINDOW_SECONDS]:
-                del _recent[stale]
-        return True
-
-
-def reset_rate_limit() -> None:
-    """Tests only."""
-    with _throttle_lock:
-        _recent.clear()
+def within_rate_limit(database: Session, key: str, settings: Settings) -> bool:
+    """Count this ticket against its account or address, or False when the hour's
+    SUPPORT_MAX_TICKETS_PER_HOUR is used up (counted in rate_limit_events)."""
+    return limits.hit(database, SUPPORT_BUCKET, key, settings.support_max_tickets_per_hour, _WINDOW_SECONDS)
 
 
 # ---- public configuration ----

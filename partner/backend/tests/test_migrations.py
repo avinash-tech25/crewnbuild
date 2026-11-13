@@ -14,7 +14,7 @@ def scripts() -> ScriptDirectory:
 
 def test_one_head_and_short_revision_ids() -> None:
     directory = scripts()
-    assert directory.get_heads() == ["0001"]
+    assert directory.get_heads() == ["0002"]
     for revision in directory.walk_revisions():
         assert len(revision.revision) < 32
 

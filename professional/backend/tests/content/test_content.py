@@ -16,7 +16,6 @@ from sqlalchemy.orm import Session
 from app.modules.content import estimate_location_check, translation_service
 from app.modules.content import router as content_router
 from app.modules.content.models import Ad, AdDailyStat
-from app.modules.content.vastu import router as vastu_router
 from app.modules.content.vastu.geometry import classify
 from app.modules.content.vastu.labels import normalise_label
 from app.modules.files.models import File
@@ -214,11 +213,6 @@ def png_bytes() -> bytes:
     buffer = io.BytesIO()
     Image.new("RGB", (40, 30), "white").save(buffer, format="PNG")
     return buffer.getvalue()
-
-
-@pytest.fixture(autouse=True)
-def fresh_vastu_limit() -> None:
-    vastu_router.reset_rate_limit()
 
 
 def test_vastu_refuses_unusable_files_and_answers_503_without_a_provider(client: TestClient) -> None:

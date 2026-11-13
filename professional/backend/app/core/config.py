@@ -98,6 +98,10 @@ class Settings(BaseSettings):
     # Reverse proxies (comma-separated IPs or CIDRs) whose forwarded-for headers the
     # per-address limits believe. Empty ignores forwarded headers entirely.
     trusted_proxy_ips: str = "127.0.0.1,::1"
+    # Failed password sign-ins (section 6.4), counted in PostgreSQL across processes.
+    login_failure_window_seconds: int = Field(default=900, ge=60)
+    login_max_failures_per_account: int = Field(default=5, ge=1)
+    login_max_failures_per_address: int = Field(default=20, ge=1)
 
     # ---- Book Technician hand-off to Partner ----
     # How long the one-time hand-off token stays usable.

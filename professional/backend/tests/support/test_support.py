@@ -2,7 +2,6 @@
 
 import json
 import uuid
-from collections.abc import Iterator
 from typing import Any
 
 import pytest
@@ -11,7 +10,7 @@ from fastapi import Depends
 from fastapi.testclient import TestClient
 from files.test_files import BUCKETS, PNG, FakeStorage
 from identity.helpers import FakeEmailSender, create_user, service_overrides, sign_in
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.orm import Session
 
 from app.database.session import get_db
@@ -20,16 +19,7 @@ from app.modules.files.router import get_upload_service
 from app.modules.files.upload_service import UploadService
 from app.modules.identity.models import ROLE_BUILDER
 from app.modules.messaging.models import Notification
-from app.modules.support import router as support_router
-from app.modules.support import ticket_service
 from app.modules.support.models import STATUS_CLOSED, STATUS_WAITING_FOR_USER, SupportTicket
-
-
-@pytest.fixture(autouse=True)
-def fresh_limits() -> Iterator[None]:
-    ticket_service.reset_rate_limit()
-    support_router.reset_contact_rate_limit()
-    yield
 
 
 @pytest.fixture
@@ -252,8 +242,22 @@ def test_the_contact_form(
     assert "City:     Pune" in mailbox.sent[-1]["text"]
     assert client.post("/api/v1/contact", json=enquiry).status_code == 429
 
-    support_router.reset_contact_rate_limit()
+    database.execute(text("DELETE FROM professional.rate_limit_events"))  # a new hour
+    database.commit()
     mailbox.configured = False
     assert client.post("/api/v1/contact", json=enquiry).status_code == 503
     unconfigured = build(make_client, FakeEmailSender(), storage, contact_destination_email="")
     assert unconfigured.post("/api/v1/contact", json=enquiry).status_code == 503
+
+
+def test_the_contact_limit_is_shared_by_every_process(
+    make_client: ClientFactory, mailbox: FakeEmailSender, storage: FakeStorage, database: Session
+) -> None:
+    """R6: the per-address limit is counted in rate_limit_events, not in each process."""
+    enquiry = {"name": "Meena", "email": "meena@example.in", "message": "Do you build in Pune?", "city": "Pune"}
+    first = build(make_client, mailbox, storage, contact_max_per_hour_per_ip=2)
+    second = build(make_client, mailbox, storage, contact_max_per_hour_per_ip=2)
+    assert first.post("/api/v1/contact", json=enquiry).status_code == 202
+    assert second.post("/api/v1/contact", json=enquiry).status_code == 202
+    assert first.post("/api/v1/contact", json=enquiry).status_code == 429
+    assert second.post("/api/v1/contact", json=enquiry).status_code == 429

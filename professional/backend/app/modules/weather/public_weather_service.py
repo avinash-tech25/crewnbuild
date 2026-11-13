@@ -21,12 +21,13 @@ city level), cached the same way and asked at most once a second.
 import logging
 import threading
 import time
-from collections import deque
 from datetime import UTC, datetime, timedelta, timezone
 
 import httpx
+from sqlalchemy.orm import Session
 
 from app.database.types import naive_utc_now
+from app.modules.rate_limits import service as limits
 from app.modules.weather.weather_alert_service import ALERT_TYPE_LABELS, SEVERITY_RANK, evaluate, recommendations_for
 from app.modules.weather.weather_presentation import presentation
 from app.modules.weather.weather_provider_service import USER_AGENT, WeatherProviderError, build_provider
@@ -43,7 +44,6 @@ _cache: dict[tuple[float, float], dict] = {}
 _names: dict[tuple[float, float], str | None] = {}
 _guard = threading.Lock()
 _place_locks: dict[tuple[float, float], threading.Lock] = {}
-_recent_fetches: deque = deque()
 _name_lock = threading.Lock()
 _last_name_lookup = {"monotonic": 0.0}
 
@@ -52,7 +52,6 @@ def clear_public_cache() -> None:
     with _guard:
         _cache.clear()
         _names.clear()
-        _recent_fetches.clear()
 
 
 def place_key(latitude: float, longitude: float) -> tuple[float, float]:
@@ -68,8 +67,14 @@ def utcnow() -> datetime:
     return naive_utc_now()
 
 
+PUBLIC_FETCH_BUCKET = "weather:public-new-place"
+
+
 class PublicWeatherService:
-    def __init__(self, settings: WeatherSettings | None = None, provider=None, clock=utcnow, transport=None):
+    def __init__(
+        self, database: Session, settings: WeatherSettings | None = None, provider=None, clock=utcnow, transport=None
+    ):
+        self.database = database
         self.settings = settings or get_weather_settings()
         self._provider = provider
         self.clock = clock
@@ -83,14 +88,9 @@ class PublicWeatherService:
 
     # ------------------------------------------------------------------ weather
     def _budget_allows(self) -> bool:
-        now = time.monotonic()
-        with _guard:
-            while _recent_fetches and _recent_fetches[0] < now - 60:
-                _recent_fetches.popleft()
-            if len(_recent_fetches) >= PUBLIC_NEW_FETCHES_PER_MINUTE:
-                return False
-            _recent_fetches.append(now)
-            return True
+        """At most PUBLIC_NEW_FETCHES_PER_MINUTE places not already cached are fetched for
+        the public pages each minute, counted across every process (rate_limit_events)."""
+        return limits.hit(self.database, PUBLIC_FETCH_BUCKET, "all", PUBLIC_NEW_FETCHES_PER_MINUTE, 60)
 
     def forecast(self, key) -> dict | None:
         now = self.clock()

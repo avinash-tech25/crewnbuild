@@ -104,8 +104,10 @@ class Settings(BaseSettings):
 
     # ---- Technician sign-in throttle (counted in this process, as before) ----
     login_failure_window_seconds: int = 900
-    login_max_failures_per_email: int = 10
-    login_max_failures_per_client: int = 50
+    login_max_failures_per_email: int = 5
+    login_max_failures_per_client: int = 20
+    # Proxies whose X-Forwarded-For / X-Real-IP name the visitor (IPs or CIDRs).
+    trusted_proxy_ips: str = "127.0.0.1,::1"
 
     # ---- E-mail codes ----
     smtp_host: str = ""

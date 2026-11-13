@@ -12,9 +12,6 @@ Staff ticket and report handling: /admin/support/tickets and /admin/reports (mod
 """
 
 import logging
-import threading
-import time
-from collections import defaultdict, deque
 from typing import Any
 from urllib.parse import quote
 
@@ -24,6 +21,7 @@ from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import app_settings, current_user, optional_user
+from app.core.client_address import visitor_address
 from app.core.config import Settings
 from app.database.session import get_db
 from app.integrations.email.email_sender import EmailSender
@@ -32,6 +30,7 @@ from app.modules.files.router import get_upload_service
 from app.modules.files.upload_service import UploadService
 from app.modules.identity.models import User
 from app.modules.identity.router import get_email_sender
+from app.modules.rate_limits import service as limits
 from app.modules.support import report_service
 from app.modules.support import ticket_service as tickets
 from app.modules.support.models import REPORT_CATEGORIES
@@ -77,10 +76,10 @@ def submit_ticket(
 ) -> dict[str, Any]:
     tickets.require_tickets(database)
     submission = tickets.parse_submission(payload)
-    key = f"user:{user.id}" if user else f"ip:{request.client.host if request.client else 'unknown'}"
+    key = f"user:{user.id}" if user else f"ip:{visitor_address(request, settings.trusted_proxy_ips)}"
     # A repeat of a request already made is answered without counting again.
     already = tickets.ticket_by_request(database, submission.client_request_id)
-    if not already and not tickets.within_rate_limit(key, settings):
+    if not already and not tickets.within_rate_limit(database, key, settings):
         raise HTTPException(status_code=429, detail="Too many support requests. Please try again later.")
     ticket, created = tickets.create_ticket(database, settings, uploads, email, submission, user, attachment)
     if not created:
@@ -178,10 +177,8 @@ def fetch_my_reports(user: User = Depends(current_user), database: Session = Dep
 
 # ---- public contact form (stores nothing; delivered by e-mail) ----
 
-_contact_lock = threading.Lock()
-_contact_recent: dict[str, deque[float]] = defaultdict(deque)
+CONTACT_BUCKET = "contact:address"
 _CONTACT_WINDOW_SECONDS = 3600
-_CONTACT_MAX_TRACKED = 2048
 
 
 class ContactEnquiry(BaseModel):
@@ -193,26 +190,11 @@ class ContactEnquiry(BaseModel):
     city: str = Field(default="", max_length=120)
 
 
-def contact_within_rate_limit(client: str, settings: Settings) -> bool:
-    limit = max(1, settings.contact_max_per_hour_per_ip)
-    now = time.monotonic()
-    with _contact_lock:
-        history = _contact_recent[client]
-        while history and now - history[0] > _CONTACT_WINDOW_SECONDS:
-            history.popleft()
-        if len(history) >= limit:
-            return False
-        history.append(now)
-        if len(_contact_recent) > _CONTACT_MAX_TRACKED:
-            for stale in [k for k, v in _contact_recent.items() if not v or now - v[-1] > _CONTACT_WINDOW_SECONDS]:
-                del _contact_recent[stale]
-        return True
-
-
-def reset_contact_rate_limit() -> None:
-    """Tests only."""
-    with _contact_lock:
-        _contact_recent.clear()
+def contact_within_rate_limit(database: Session, client: str | None, settings: Settings) -> bool:
+    """CONTACT_MAX_PER_HOUR_PER_IP per address, shared by every process."""
+    return limits.hit(
+        database, CONTACT_BUCKET, client or "unknown", settings.contact_max_per_hour_per_ip, _CONTACT_WINDOW_SECONDS
+    )
 
 
 def compose_enquiry(enquiry: ContactEnquiry) -> tuple[str, str]:
@@ -233,8 +215,10 @@ def submit_contact_enquiry(
     request: Request,
     settings: Settings = Depends(app_settings),
     email: EmailSender = Depends(get_email_sender),
+    database: Session = Depends(get_db),
 ) -> dict[str, bool]:
-    """202 only once the mail service took the enquiry; nothing is stored."""
+    """202 only once the mail service took the enquiry; nothing is stored (but the attempt
+    is counted against the address, in rate_limit_events)."""
     destination = settings.contact_destination_email.strip()
     if not destination:
         logger.error("A contact enquiry arrived but CONTACT_DESTINATION_EMAIL is not set; it was not delivered.")
@@ -242,7 +226,7 @@ def submit_contact_enquiry(
     if not email.configured:
         logger.error("A contact enquiry arrived but email delivery is not configured; it was not delivered.")
         raise HTTPException(status_code=503, detail="Enquiries are temporarily unavailable.")
-    if not contact_within_rate_limit(request.client.host if request.client else "unknown", settings):
+    if not contact_within_rate_limit(database, visitor_address(request, settings.trusted_proxy_ips), settings):
         raise HTTPException(status_code=429, detail="Too many enquiries from this connection. Please try again later.")
     subject, body = compose_enquiry(enquiry)
     if not email.send_email(destination, subject, body):

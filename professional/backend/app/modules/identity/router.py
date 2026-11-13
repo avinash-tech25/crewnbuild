@@ -119,7 +119,7 @@ def get_oauth_service(
 def client_info(request: Request) -> ClientInfo:
     return ClientInfo(
         user_agent=request.headers.get("user-agent"),
-        ip_address=request.client.host if request.client else None,
+        ip_address=visitor_address(request, app_settings(request).trusted_proxy_ips),
     )
 
 
@@ -295,16 +295,18 @@ def login_user(
     settings: Settings = Depends(app_settings),
     auth: AuthService = Depends(get_auth_service),
     sessions: SessionService = Depends(get_session_service),
+    database: Session = Depends(get_db),
 ) -> dict[str, Any]:
-    address = request.client.host if request.client else None
-    login_throttle.ensure_allowed(payload.email, address)
+    address = visitor_address(request, settings.trusted_proxy_ips)
+    login_throttle.ensure_allowed(database, settings, payload.email, address)
     try:
         user = auth.login(payload.email, payload.password)
     except HTTPException as error:
         if error.status_code == 401:
-            login_throttle.record_failure(payload.email, address)
+            database.rollback()
+            login_throttle.record_failure(database, payload.email, address)
         raise
-    login_throttle.record_success(payload.email)
+    login_throttle.record_success(database, payload.email)
     return answer_with_session(response, settings, auth, user, sessions.start(user, client_info(request)))
 
 

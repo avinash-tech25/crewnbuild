@@ -59,7 +59,6 @@ from app.core.config import PROFESSIONAL_SCHEMA  # noqa: E402
 from app.database.base import Base  # noqa: E402
 from app.database.session import SessionLocal, engine  # noqa: E402
 from app.main import create_app  # noqa: E402
-from app.modules.identity import login_throttle  # noqa: E402
 
 FRONTEND_ORIGIN = "http://localhost:5173"
 
@@ -93,7 +92,6 @@ def database_tables() -> Iterator[None]:
 @pytest.fixture
 def database(database_tables: None) -> Iterator[Session]:
     session = SessionLocal()
-    login_throttle.reset()
     yield session
     session.rollback()
     session.close()

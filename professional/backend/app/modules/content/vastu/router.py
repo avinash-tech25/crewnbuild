@@ -15,52 +15,35 @@ Status meanings, and the HTTP code each is returned with:
 """
 
 import logging
-import threading
 import time
-from collections import defaultdict, deque
 
-from fastapi import APIRouter, File, Request, UploadFile
+from fastapi import APIRouter, Depends, File, Request, UploadFile
 from fastapi.responses import JSONResponse
+from sqlalchemy.orm import Session
 
+from app.core.client_address import visitor_address
 from app.core.config import get_settings
+from app.database.session import get_db
 from app.modules.content.vastu import gemini_client
 from app.modules.content.vastu.analysis import analyse
 from app.modules.content.vastu.files import MAX_PLAN_BYTES, PlanFileError, inspect_plan
+from app.modules.rate_limits import service as limits
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["Vastu"])
 
-# Per-client-address throttle over an hour, the same in-process shape as the
-# contact form's: a guard against casual abuse of a paid call, per worker.
-_throttle_lock = threading.Lock()
-_recent_by_client: dict[str, deque] = defaultdict(deque)
+# Per-address throttle over an hour, shared by every process (rate_limit_events): a
+# guard against abuse of a paid call.
+VASTU_BUCKET = "vastu:address"
 _WINDOW_SECONDS = 3600
-_MAX_TRACKED_CLIENTS = 2048
 
 _FILE_ERROR_STATUS = {"file_too_large": 413, "unsupported_type": 415}
 
 
-def reset_rate_limit() -> None:
-    """Tests only."""
-    with _throttle_lock:
-        _recent_by_client.clear()
-
-
-def _within_rate_limit(client: str) -> bool:
-    limit = max(1, get_settings().vastu_analysis_max_per_hour_per_ip)
-    now = time.monotonic()
-    with _throttle_lock:
-        history = _recent_by_client[client]
-        while history and now - history[0] > _WINDOW_SECONDS:
-            history.popleft()
-        if len(history) >= limit:
-            return False
-        history.append(now)
-        if len(_recent_by_client) > _MAX_TRACKED_CLIENTS:
-            for key in [k for k, v in _recent_by_client.items() if not v or now - v[-1] > _WINDOW_SECONDS]:
-                del _recent_by_client[key]
-        return True
+def _within_rate_limit(database: Session, client: str) -> bool:
+    limit = get_settings().vastu_analysis_max_per_hour_per_ip
+    return limits.hit(database, VASTU_BUCKET, client, limit, _WINDOW_SECONDS)
 
 
 def _answer(status_code: int, status: str, reason: str, **extra) -> JSONResponse:
@@ -70,14 +53,14 @@ def _answer(status_code: int, status: str, reason: str, **extra) -> JSONResponse
 
 
 @router.post("/vastu/plan-analysis")
-def analyse_plan(request: Request, plan: UploadFile = File(...)):
+def analyse_plan(request: Request, plan: UploadFile = File(...), database: Session = Depends(get_db)):
     # Read one byte past the limit so an oversized upload is refused without
     # holding more than that in memory.
     request_started = time.monotonic()
     # Rate-limited before the upload is read or decoded: decoding a large image
     # is the expensive part, so it must not be free to repeat.
-    client = request.client.host if request.client else "unknown"
-    if not _within_rate_limit(client):
+    client = visitor_address(request, get_settings().trusted_proxy_ips) or "unknown"
+    if not _within_rate_limit(database, client):
         return _answer(429, "rate_limited", "Too many plan analyses from this connection. Please try again later.")
     content = plan.file.read(MAX_PLAN_BYTES + 1)
     try:

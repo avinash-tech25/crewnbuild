@@ -21,8 +21,8 @@ def get_weather_service(database: Session = Depends(get_database)) -> WeatherSer
     return WeatherService(database)
 
 
-def get_public_weather_service() -> PublicWeatherService:
-    return PublicWeatherService()
+def get_public_weather_service(database: Session = Depends(get_database)) -> PublicWeatherService:
+    return PublicWeatherService(database)
 
 
 # Every signed-in account, whatever its role, has its own place (/weather/me).

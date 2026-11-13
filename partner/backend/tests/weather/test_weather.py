@@ -102,25 +102,22 @@ def forecasts(monkeypatch, client):
         settings, HttpJson(settings, transport=httpx.MockTransport(handler), sleep=lambda _: None)
     )
     clock = {"now": NOW}
-    weather_service.clear_cache()
     reset_rate_limit()
     app = client.app  # the app the shared client fixture built
 
-    app.dependency_overrides[weather_routes.get_technician_weather_service] = lambda: (
-        weather_service.TechnicianWeatherService(
-            _database(app), settings=settings, provider=provider, clock=lambda: clock["now"]
+    from fastapi import Depends
+
+    from app.database.session import get_db
+
+    def service(database=Depends(get_db)):  # the request's own session, as in the app
+        return weather_service.TechnicianWeatherService(
+            database, settings=settings, provider=provider, clock=lambda: clock["now"]
         )
-    )
+
+    app.dependency_overrides[weather_routes.get_technician_weather_service] = service
     state["clock"] = clock
     yield state
     app.dependency_overrides.pop(weather_routes.get_technician_weather_service, None)
-    weather_service.clear_cache()
-
-
-def _database(app):
-    from app.database.session import get_db
-
-    return next(app.dependency_overrides[get_db]())
 
 
 def read(client, auth, **params):
@@ -300,3 +297,48 @@ def test_public_place_search_and_naming(client, monkeypatch):
     )
     named = client.get("/weather/public/describe", params={"latitude": 17.448312, "longitude": 78.391544})
     assert named.json() == {"name": "Hyderabad, Telangana"} and asked == [(17.45, 78.39)]  # never the exact position
+
+
+# ---------------------------------------------------------------- shared by every process (R6)
+
+
+def _service(database, forecasts_calls):
+    def handler(request):
+        params = dict(request.url.params)
+        if "air-quality" in request.url.path:
+            return httpx.Response(200, json={"hourly": {"time": [], "dust": []}})
+        forecasts_calls.append((float(params["latitude"]), float(params["longitude"])))
+        return httpx.Response(200, json=payload(CALM))
+
+    settings = WeatherSettings(weather_max_retries=0)
+    provider = OpenMeteoProvider(
+        settings, HttpJson(settings, transport=httpx.MockTransport(handler), sleep=lambda _: None)
+    )
+    return weather_service.TechnicianWeatherService(database, settings=settings, provider=provider, clock=lambda: NOW)
+
+
+def test_the_forecast_cache_is_shared_by_every_process(connection):
+    """Two services on two sessions (two processes' worth): the second reads the first's
+    fetch from weather_forecasts instead of asking the provider again."""
+    from sqlalchemy.orm import Session
+
+    calls = []
+    first = Session(bind=connection, join_transaction_mode="create_savepoint")
+    data, status = _service(first, calls).forecast(*CHOSEN)
+    assert data is not None and status["available"]
+    second = Session(bind=connection, join_transaction_mode="create_savepoint")
+    data, status = _service(second, calls).forecast(*CHOSEN)
+    assert data is not None and status["available"]
+    assert calls == [(16.51, 80.65)]
+
+
+def test_the_public_budget_is_shared_by_every_process(connection, monkeypatch):
+    from sqlalchemy.orm import Session
+
+    monkeypatch.setattr(weather_service, "PUBLIC_NEW_FETCHES_PER_MINUTE", 1)
+    calls = []
+    first = Session(bind=connection, join_transaction_mode="create_savepoint")
+    assert _service(first, calls).forecast(*CHOSEN, public=True)[0] is not None
+    second = Session(bind=connection, join_transaction_mode="create_savepoint")
+    assert _service(second, calls).forecast(*DEVICE, public=True)[0] is None  # budget spent elsewhere
+    assert calls == [(16.51, 80.65)]

@@ -129,9 +129,10 @@ def client(make_client: ClientFactory, provider: Provider) -> TestClient:
     def weather_service(database: Session = Depends(get_db)) -> WeatherService:
         return service_for(database, provider)
 
-    def public_service() -> public_weather_service.PublicWeatherService:
+    def public_service(database: Session = Depends(get_db)) -> public_weather_service.PublicWeatherService:
         transport = httpx.MockTransport(provider.handler)
         return public_weather_service.PublicWeatherService(
+            database,
             settings=SETTINGS,
             provider=providers.build_provider(SETTINGS, transport=transport, sleep=lambda _: None),
             clock=lambda: NOW,
