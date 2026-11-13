@@ -85,6 +85,9 @@ class Settings(BaseSettings):
     auth_cookie_secure: bool = True
     auth_cookie_samesite: str = "lax"
     frontend_origin: str = "http://localhost:5373"
+    # An open websocket re-checks its session (live, not revoked or expired, account
+    # still allowed) this often.
+    websocket_session_recheck_seconds: float = 30.0
 
     # ---- Local time (times are stored in UTC and shown in this zone, DB-08) ----
     local_timezone: str = "Asia/Kolkata"
@@ -343,6 +346,14 @@ class Settings(BaseSettings):
         # A Google app password is shown as four groups of four; the spaces are not part of it.
         if isinstance(value, str):
             return "".join(value.split())
+        return value
+
+    @field_validator("partner_commission_rate_percent")
+    @classmethod
+    def check_commission_rate(cls, value: Decimal) -> Decimal:
+        # Refused when the Settings are built, as in the old app (also re-checked at startup).
+        if not value.is_finite() or value < 0 or value > 100 or int(value.as_tuple().exponent) < -2:
+            raise ValueError("PARTNER_COMMISSION_RATE_PERCENT must be between 0 and 100 with at most two decimals.")
         return value
 
     def is_production(self) -> bool:

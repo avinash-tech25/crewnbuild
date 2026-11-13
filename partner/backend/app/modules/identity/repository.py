@@ -29,6 +29,22 @@ class TechnicianRepository:
     def add(self, technician: Technician) -> None:
         self.database.add(technician)
 
+    # The old UserRepository's operations, used by the ported technician dashboard.
+    def get_with_profile(self, technician_id: uuid.UUID) -> Technician | None:
+        return self.get(technician_id)
+
+    def update(self, technician: Technician, values: dict[str, object]) -> Technician:
+        for key, value in values.items():
+            setattr(technician, key, value)
+        self.database.flush()
+        return technician
+
+    def commit(self) -> None:
+        self.database.commit()
+
+    def expire_all(self) -> None:
+        self.database.expire_all()
+
 
 class OtpRepository:
     def __init__(self, database: Session) -> None:

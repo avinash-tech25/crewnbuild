@@ -12,12 +12,17 @@ own principal (technician or requester) through app/auth/dependencies.py.
 from fastapi import APIRouter
 
 from app.api.v1.health import database_health
+from app.modules.bookings.dispatch_router import router as dispatch_router
+from app.modules.bookings.requester_router import router as booking_router
 from app.modules.catalog.router import router as catalog_router
 from app.modules.identity.router import router as identity_router
 from app.modules.identity.router import technician_router
 from app.modules.locations.router import router as locations_router
+from app.modules.realtime.router import router as realtime_router
 from app.modules.requesters.router import router as requester_router
 from app.modules.technicians.onboarding_router import router as onboarding_router
+from app.modules.technicians.router import router as technicians_router
+from app.modules.tracking.router import router as tracking_router
 
 api_router = APIRouter()
 
@@ -35,10 +40,18 @@ MODULE_ROUTERS: list[APIRouter] = [
     identity_router,
     onboarding_router,
     locations_router,
-    # PUT /technicians/me/password (old technician_routes, after the location routes).
+    # The technician dashboard and jobs (old technician_routes, after the location routes),
+    # with PUT /technicians/me/password from the identity module.
     technician_router,
+    technicians_router,
+    # The booking session, then the bookings (old requester_routes).
     requester_router,
+    booking_router,
     catalog_router,
+    dispatch_router,
+    tracking_router,
+    # The live websockets (old tracking and dispatch ws_router), after the HTTP routes.
+    realtime_router,
 ]
 
 for module_router in MODULE_ROUTERS:

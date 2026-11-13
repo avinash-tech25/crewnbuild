@@ -16,6 +16,7 @@ columns (REQUESTERS_STAND_IN), dropped at the end.
 import os
 import secrets
 from collections.abc import Callable, Iterator
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -142,3 +143,10 @@ def make_client(database: Session) -> ClientFactory:
         return TestClient(app, headers={"Origin": FRONTEND_ORIGIN})
 
     return build
+
+
+# The old Partner suite's fixtures (tests/legacy.py), for the ported tests.
+import sys  # noqa: E402
+
+sys.path.insert(0, str(Path(__file__).parent))
+from legacy import *  # noqa: E402, F403

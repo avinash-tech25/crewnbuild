@@ -31,14 +31,14 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = ["S101", "S105", "S106"]  # assert and fixture secrets are fine in tests
+"tests/**" = ["S101", "S105", "S106", "S107"]  # assert and fixture secrets are fine in tests
 # Ported from the old Partner app unchanged (long lines, the old error handling and
 # naming); restyle when each module is next changed.
-"app/modules/{bookings,catalog,locations,realtime,technicians,tracking,weather}/*.py" = ["E501", "B904", "N818", "RUF001", "RUF002", "RUF003", "UP046", "SIM102", "SIM108", "C408", "C416", "B023", "S311"]
+"app/modules/{bookings,catalog,locations,realtime,technicians,tracking,weather}/*.py" = ["E501", "B904", "N818", "E731", "B905", "ERA001", "RUF007", "S110", "SIM105", "RUF001", "RUF002", "RUF003", "UP046", "SIM102", "SIM108", "C408", "C416", "B023", "S311", "RUF005"]
 "app/database/base_repository.py" = ["UP046"]
 "app/seeds/*.py" = ["E501", "T201", "B904"]
 "app/scripts/*.py" = ["E501", "T201", "B904"]
-"tests/{onboarding,technicians,bookings,tracking,weather,realtime}/*.py" = ["E501", "S101", "S105", "S106", "N802", "N806", "RUF001", "RUF003", "S311", "B023", "SIM117", "PT011", "C408"]
+"tests/{onboarding,technicians,bookings,tracking,weather,realtime}/*.py" = ["E501", "S101", "S105", "S106", "N802", "N806", "RUF001", "RUF003", "S311", "B023", "SIM117", "PT011", "C408", "E731", "B017", "RUF059", "RUF005", "F841", "B007", "RUF015", "S608"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["app"]

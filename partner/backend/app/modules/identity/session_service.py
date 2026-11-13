@@ -180,6 +180,19 @@ class SessionService:
             return None
         return row if self._is_live(row, naive_utc_now()) else None
 
+    def family_is_live(self, claims: AccessClaims, principal_type: str) -> bool:
+        """Whether the sign-in an access token belongs to is still live (an open websocket
+        outlives the row it was admitted with: a refresh retires that row but continues
+        the family). Sign-out, reuse detection, a password change and expiry all end it."""
+        now = naive_utc_now()
+        return any(
+            row.principal_type == principal_type
+            and row.user_id == claims.user_id
+            and row.scope == claims.scope
+            and self._is_live(row, now)
+            for row in self.repository.list_unrevoked_in_family(claims.family_id)
+        )
+
     # ---- rotate ----
 
     def rotate(

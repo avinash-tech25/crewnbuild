@@ -1,5 +1,5 @@
 # Partner API runtime packages, pinned to exact versions (technical-architecture.md 3, NFR-19).
-# The same versions as professional/backend; part 2 adds what bookings need (images, S3).
+# The same versions as professional/backend.
 # Install: pip install -r requirements.txt -r requirements-dev.txt
 
 # Web framework and servers
@@ -23,6 +23,7 @@ bcrypt==4.0.1
 PyJWT[crypto]==2.15.1
 cryptography==50.0.2
 
-# Outside services and logging
+# Images (job photos are re-encoded without their metadata), outside services and logging
+Pillow==12.3.0
 httpx==0.28.1
 structlog==26.1.0

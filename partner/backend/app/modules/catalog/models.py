@@ -117,7 +117,7 @@ class ServiceStepTemplate(Base):
     """One step of the default checklist for a catalog service ("Inspect leakage").
 
     A template is only ever COPIED: a booking made for the service gets its own
-    `service_request_steps` rows at booking time, so editing or retiring a step
+    booking_checklist_steps rows at booking time, so editing or retiring a step
     here never changes a job that already exists. Retire a step with
     `is_active = False`; the foreign key from the booking copies is SET NULL, and
     the one to the service is RESTRICT, like every other reference to a service.

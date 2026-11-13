@@ -18,16 +18,17 @@ def use_settings(value: Settings | None) -> None:
 
 
 class _SettingsProxy:
+    # No instance __dict__: monkeypatch.setattr(settings, ...) then records the value it
+    # read through the proxy and writes that back on undo, instead of deleting.
+    __slots__ = ()
+
     def __getattr__(self, name: str) -> Any:
         return getattr(_override or get_settings(), name)
 
     def __setattr__(self, name: str, value: Any) -> None:
-        # Writes go to the running app's Settings (the ported tests change a setting
-        # for one test with monkeypatch.setattr(settings, ...)).
+        # Writes go to the running app's Settings (the ported tests change a setting for
+        # one test with monkeypatch.setattr(settings, ...)).
         setattr(_override or get_settings(), name, value)
-
-    def __delattr__(self, name: str) -> None:
-        raise AttributeError(name)
 
 
 settings: Any = _SettingsProxy()

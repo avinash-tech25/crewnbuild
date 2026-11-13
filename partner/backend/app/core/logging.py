@@ -48,3 +48,22 @@ def configure_logging(debug: bool) -> None:
         uvicorn_logger = logging.getLogger(name)
         uvicorn_logger.handlers = []
         uvicorn_logger.propagate = True
+
+
+def _value(value: object) -> str:
+    if value is None:
+        return "-"
+    if isinstance(value, float):
+        return f"{value:.4g}" if abs(value) < 1 else f"{value:.1f}"
+    text = str(value)
+    return f'"{text}"' if (" " in text or not text) else text
+
+
+def log_event(logger: logging.Logger, event: str, level: int = logging.INFO, **fields: object) -> None:
+    """One structured line: `event key=value key=value` (the old Partner helper). Callers
+    pass identifiers (the SR-XXXXXXXX booking reference, technician ids, counts,
+    distances) and never personal data: no names, phone numbers, addresses or coordinates."""
+    if not logger.isEnabledFor(level):
+        return
+    rendered = " ".join(f"{key}={_value(value)}" for key, value in fields.items())
+    logger.log(level, "%s %s", event, rendered)
