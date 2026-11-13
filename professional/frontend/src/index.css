@@ -1,0 +1,1280 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+  html {
+    scroll-behavior: smooth;
+    scrollbar-color: #cbd5e1 #ffffff;
+  }
+  body {
+    @apply bg-white text-graphite font-sans antialiased;
+    overflow-x: hidden;
+    /* A single Tamil, Malayalam or Kannada word in a large heading can be wider
+       than a phone screen. break-word splits a word only when it cannot fit on
+       its line at all, so text that already fits renders exactly as before. It
+       is inherited, and leaves table and min-content sizing unchanged. */
+    overflow-wrap: break-word;
+  }
+  ::selection {
+    @apply bg-brand-500/25 text-brand-950;
+  }
+}
+
+@layer components {
+  .container-x {
+    @apply mx-auto w-full max-w-7xl px-5 sm:px-8;
+  }
+  .h-display {
+    @apply font-display font-extrabold tracking-tighter text-graphite;
+  }
+  .eyebrow {
+    @apply inline-flex items-center gap-2 rounded-full border border-brand-200 bg-brand-50/80 px-3 py-1 text-xs font-bold uppercase tracking-[0.14em] text-brand-700;
+  }
+  .eyebrow-dark {
+    @apply inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.14em] text-brand-300 backdrop-blur-sm;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-bold transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:ring-offset-2;
+  }
+  .btn-primary {
+    @apply btn bg-brand-700 text-white shadow-orange hover:bg-brand-600 hover:-translate-y-0.5 active:translate-y-0;
+  }
+  .btn-secondary {
+    @apply btn bg-graphite text-white shadow-soft hover:bg-slate-900 hover:-translate-y-0.5 active:translate-y-0;
+  }
+  .btn-ghost {
+    @apply btn border border-slate-200 bg-white text-graphite hover:border-brand-400 hover:bg-brand-50 hover:text-brand-800;
+  }
+  .btn-white {
+    @apply btn bg-white text-graphite shadow-soft hover:-translate-y-0.5;
+  }
+  .glass-card {
+    @apply rounded-3xl border border-white/70 bg-white/85 shadow-card backdrop-blur-md;
+  }
+  .pill {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-graphite shadow-sm;
+  }
+
+  /* ---------- Auth pages ---------- */
+  .auth-shell {
+    @apply relative grid min-h-screen grid-rows-[56px_minmax(0,1fr)] overflow-x-hidden text-white;
+    background: #0d0b14;
+  }
+  .auth-backdrop {
+    @apply absolute inset-0 h-full w-full object-cover;
+    object-position: center;
+    filter: blur(1px) saturate(1.05);
+  }
+  .auth-overlay {
+    @apply pointer-events-none absolute inset-0;
+    background:
+      radial-gradient(circle at 78% 16%, rgba(46, 125, 85, 0.18), transparent 30%),
+      radial-gradient(circle at 52% 62%, rgba(19, 65, 39, 0.14), transparent 45%),
+      linear-gradient(180deg, rgba(2, 6, 23, 0.32) 0%, rgba(2, 6, 23, 0.58) 100%);
+  }
+  .auth-top-control {
+    @apply inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-[13px] font-bold text-slate-900 transition duration-300;
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: 0 8px 25px rgba(2, 6, 23, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(18px);
+  }
+  .auth-top-control:hover {
+    transform: translateY(-2px);
+    background: #ffffff;
+    box-shadow: 0 12px 30px rgba(2, 6, 23, 0.30);
+  }
+  .auth-eyebrow {
+    @apply inline-flex items-center rounded-full px-4 py-2 text-[11px] font-extrabold uppercase tracking-[0.18em] text-brand-300;
+    border: 1px solid rgba(46, 125, 85, 0.4);
+    background: rgba(15, 23, 42, 0.55);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(12px);
+  }
+  .auth-panel {
+    @apply relative overflow-hidden rounded-[30px] p-3 sm:p-4 text-graphite;
+    background: linear-gradient(150deg, #ffffff 0%, #f8fafc 60%, #f0f6f2 100%);
+    border: 1px solid rgba(226, 232, 240, 0.9);
+    box-shadow: 0 34px 90px rgba(2, 6, 23, 0.42), 0 2px 0 rgba(255, 255, 255, 0.9) inset;
+    backdrop-filter: blur(22px) saturate(1.15);
+  }
+  .auth-field {
+    @apply mt-1 flex h-9 items-center gap-3 rounded-xl px-4 text-graphite transition duration-200;
+    border: 1px solid #e5e7eb;
+    background: #f9fafb;
+    box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.04);
+  }
+  .auth-field input {
+    color: inherit;
+  }
+  .auth-field input:-webkit-autofill,
+  .auth-field input:-webkit-autofill:hover,
+  .auth-field input:-webkit-autofill:focus {
+    -webkit-text-fill-color: #1f2937;
+    -webkit-box-shadow: 0 0 0 1000px #ffffff inset;
+    transition: background-color 9999s ease-in-out 0s;
+  }
+  .auth-field:hover {
+    border-color: rgba(26, 80, 56, 0.45);
+    background: #ffffff;
+  }
+  .auth-field:focus-within {
+    border-color: rgba(35, 102, 69, 0.8);
+    background: #ffffff;
+    box-shadow: 0 0 0 4px rgba(46, 125, 85, 0.18), inset 0 1px 2px rgba(15, 23, 42, 0.03);
+  }
+  .auth-submit {
+    @apply inline-flex h-9 w-full items-center justify-center gap-2 rounded-xl text-sm font-extrabold text-white transition duration-300 disabled:cursor-not-allowed disabled:opacity-70;
+    background: #134127;
+    box-shadow: 0 14px 26px rgba(19, 65, 39, 0.4);
+  }
+  .auth-submit:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 18px 34px rgba(19, 65, 39, 0.5);
+    filter: brightness(1.05);
+  }
+  .auth-social {
+    @apply flex h-8 items-center justify-center rounded-xl text-sm font-bold text-graphite transition duration-200;
+    border: 1px solid rgba(148, 163, 184, 0.28);
+    background: rgba(255, 255, 255, 0.85);
+  }
+  .auth-social:hover {
+    transform: translateY(-2px);
+    border-color: rgba(26, 80, 56, 0.45);
+    background: #fff;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.10);
+  }
+  .auth-role-card {
+    @apply flex items-center gap-2.5 rounded-2xl px-3 py-2.5 text-left text-white transition duration-300;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: linear-gradient(145deg, rgba(51, 65, 85, 0.75), rgba(30, 41, 59, 0.58));
+    box-shadow: 0 12px 30px rgba(2, 6, 23, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(14px);
+  }
+  .auth-role-card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(46, 125, 85, 0.5);
+    background: linear-gradient(145deg, rgba(35, 102, 69, 0.9), rgba(13, 50, 37, 0.85));
+    box-shadow: 0 18px 36px rgba(2, 6, 23, 0.32);
+  }
+
+  /* ---------- Auth animated background & entrance ---------- */
+  .auth-float {
+    @apply pointer-events-none absolute select-none;
+  }
+  .auth-glow-orb {
+    @apply pointer-events-none absolute rounded-full;
+  }
+  .auth-float-ring {
+    @apply pointer-events-none absolute rounded-full border border-white/10;
+  }
+  .auth-house-watermark {
+    @apply pointer-events-none absolute select-none;
+  }
+  .auth-anim-fade-up {
+    opacity: 0;
+    animation: auth-fade-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+  .auth-anim-fade-in {
+    opacity: 0;
+    animation: auth-fade-in 0.8s ease-out forwards;
+  }
+  .auth-check-item {
+    @apply flex items-center gap-2.5 text-sm font-semibold text-white/85;
+  }
+  .auth-check-item-compact {
+    @apply flex items-center gap-2 text-xs font-semibold text-white/80;
+  }
+  .auth-check-dot {
+    @apply grid h-5 w-5 shrink-0 place-items-center rounded-full bg-slate-950/70 text-white ring-1 ring-white/40;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: #ffffff;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #2e7d55;
+}
+
+.bg-grid {
+  background-image: radial-gradient(rgba(30, 41, 59, 0.07) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+/* ---------- Auth page motion ---------- */
+@keyframes auth-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes auth-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes auth-float-a {
+  0%, 100% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  33% {
+    transform: translate3d(24px, -34px, 0) rotate(8deg);
+  }
+  66% {
+    transform: translate3d(-16px, -14px, 0) rotate(-6deg);
+  }
+}
+@keyframes auth-float-b {
+  0%, 100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(-28px, 22px, 0) scale(1.06);
+  }
+}
+@keyframes auth-float-c {
+  0%, 100% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.5;
+  }
+  50% {
+    transform: translate3d(20px, 26px, 0) scale(1.12);
+    opacity: 0.9;
+  }
+}
+@keyframes auth-glow-pulse {
+  0%, 100% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.15);
+  }
+}
+@keyframes auth-drift {
+  0%, 100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(-10px, -8px, 0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .auth-anim-fade-up,
+  .auth-anim-fade-in {
+    opacity: 1;
+    animation: none;
+  }
+  .auth-float,
+  .auth-glow-orb,
+  .auth-float-ring,
+  .auth-house-watermark {
+    animation: none !important;
+  }
+}
+.text-balance {
+  text-wrap: balance;
+}
+.dash-scroll {
+  scrollbar-width: none;
+}
+.dash-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* ============================================================
+   Dashboard canvas — the landing page's construction backdrop
+   Scoped via the .dash-yellow-bg class on DashboardShell so
+   landing / login / signup pages keep their original backgrounds.
+
+   The image is the same asset the landing hero uses
+   (/landing/mini-city.png) so the dashboard stands in
+   the same place as the marketing site rather than a look-alike.
+   A heavy cream wash sits over it: the scene should be felt, not
+   read, and the white cards on top must stay legible.
+
+   It is painted on a position:fixed pseudo-element rather than with
+   background-attachment: fixed. Same result — the scene stays put
+   while the page scrolls — but attachment:fixed is ignored on iOS
+   Safari and breaks inside any transformed ancestor, which this
+   shell has (framer-motion animates its children). One element, one
+   copy of the image, no repeat, no reflow.
+   ============================================================ */
+.dash-yellow-bg {
+  position: relative;
+  background: #FEFAEF;
+}
+.dash-yellow-bg::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(254, 250, 239, 0.93), rgba(254, 250, 239, 0.955)),
+    url('/landing/mini-city.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+/* The shell's own content sits above that layer. */
+.dash-yellow-bg > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Workspace sidebar green gradient — mirrors the yellow gradient intensity */
+.dash-green-bg {
+  background: linear-gradient(160deg, #eaf7ea 0%, #d4efd4 45%, #b8e6b8 100%);
+}
+
+/* ============================================================
+   Welcome-banner illustration
+   The artwork appears only when the banner itself is wide enough
+   to give a share of it away without pushing the greeting onto an
+   extra line and growing the banner. Measured on the real banner:
+   a 37% share needs 900px of banner, a 28% share needs 820px, and
+   below that there is no room so it stays hidden. The thresholds
+   read 2px lower because a container query measures the content
+   box and the banner carries a 1px border on each side.
+
+   Keyed on the BANNER's width, not the viewport, so a collapsed
+   sidebar, a narrower window and browser zoom are all accounted
+   for on their own. Where @container is unsupported the artwork
+   simply never shows and the banner is exactly as it was.
+   ============================================================ */
+.oc-hero {
+  container-type: inline-size;
+}
+.oc-hero-art {
+  display: none;
+}
+@container (min-width: 818px) {
+  .oc-hero-art {
+    display: block;
+    width: 28%;
+  }
+}
+@container (min-width: 898px) {
+  .oc-hero-art {
+    width: 37%;
+  }
+}
+
+/* ============================================================
+   Shared dashboard gold hover
+   Exactly the Estimates/Requirements hover (gold face + deep-green
+   border) used across every interactive dashboard item so the
+   whole dashboard shares one hover style. Additive class — the
+   landing page never uses it, so it stays untouched.
+   ============================================================ */
+.dash-gold-hover {
+  transition:
+    border-color 300ms cubic-bezier(0.23, 1, 0.32, 1),
+    background 300ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+.dash-gold-hover:hover,
+.dash-gold-hover:hover > td,
+.dash-gold-hover:hover > th {
+  border-color: rgba(8, 62, 43, 0.22);
+  background-image: linear-gradient(180deg, #f9c85f 0%, #f4b740 52%, #e9a92f 100%);
+}
+
+/* ============================================================
+   Shared dashboard typography and rhythm
+   Contractor dashboard scale is the reference for every role.
+   Scoped to DashboardShell so landing/auth pages are unaffected.
+   ============================================================ */
+.dashboard-main {
+  --dash-page-title: 1.125rem;
+  --dash-section-title: 1.125rem;
+  --dash-card-title: 0.9375rem;
+  --dash-body: 0.8125rem;
+  --dash-label: 0.75rem;
+  font-size: var(--dash-body);
+  line-height: 1.5;
+}
+
+.dashboard-main h1 {
+  font-family: theme('fontFamily.display');
+  font-size: var(--dash-page-title);
+  font-weight: 800;
+  line-height: 1.3;
+  letter-spacing: -0.015em;
+}
+
+.dashboard-main h2 {
+  font-family: theme('fontFamily.display');
+  font-size: var(--dash-section-title);
+  font-weight: 800;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+}
+
+.dashboard-main h3 {
+  font-family: theme('fontFamily.display');
+  font-size: var(--dash-card-title);
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+.dashboard-main h4 {
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.dashboard-main h1 + p,
+.dashboard-main h2 + p,
+.dashboard-main h3 + p {
+  font-size: var(--dash-body);
+  line-height: 1.5;
+}
+
+.dashboard-main button,
+.dashboard-main input,
+.dashboard-main select,
+.dashboard-main textarea {
+  font-size: var(--dash-body);
+  line-height: 1.35;
+}
+
+.dashboard-main input::placeholder,
+.dashboard-main textarea::placeholder {
+  font-size: var(--dash-body);
+}
+
+.dashboard-main label > span:first-child,
+.dashboard-main label > p:first-child {
+  font-size: var(--dash-label);
+  line-height: 1.35;
+}
+
+.dashboard-main table th {
+  font-size: 0.6875rem;
+  font-weight: 800;
+  line-height: 1.35;
+  letter-spacing: 0.045em;
+}
+
+.dashboard-main table td {
+  font-size: var(--dash-body);
+  line-height: 1.45;
+}
+
+@media (min-width: 640px) {
+  .dashboard-main {
+    --dash-page-title: 1.25rem;
+  }
+}
+
+/* ============================================================
+   Dark theme — applied to the dashboard app shell (html.dark)
+   The app uses hardcoded light Tailwind utilities, so the dark
+   theme remaps the shared surface / text / border palette inside
+   the `.dash-canvas` scope. Unlayered rules beat Tailwind's
+   @layer utilities, so these win without !important.
+   ============================================================ */
+html.dark {
+  color-scheme: dark;
+}
+/* Only when the dashboard shell is mounted (:has) — landing/auth pages keep their own styling */
+html.dark body:has(.dash-canvas) {
+  background-color: #020617;
+  scrollbar-color: #334155 #0f172a;
+}
+html.dark body:has(.dash-canvas) ::-webkit-scrollbar-track {
+  background: #0f172a;
+}
+html.dark body:has(.dash-canvas) ::-webkit-scrollbar-thumb {
+  background: #334155;
+}
+html.dark body:has(.dash-canvas) ::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+
+/* ---------- Canvas & page backdrop ---------- */
+html.dark .dash-canvas {
+  background-color: #020617;
+  /* The shell carries `text-oc-ink` on this same element, and the token remap
+     for that class uses a descendant combinator, so it never reached the
+     element itself -- anything inheriting its colour stayed near-black on a
+     dark page. Setting the inherited default here fixes every such element at
+     once; anything with its own text-* class still wins over it. */
+  color: #e2e8f0;
+}
+/* ...except on an overlay that only borrows the scope.
+   The account menu renders through a portal, outside the shell's subtree, so
+   it carries `dash-canvas` to give its own contents the remaps above. It is a
+   full-screen click-catcher, not a page canvas: painting it drops an opaque
+   near-black sheet over the whole app at z-140. That is what happened the
+   moment dark mode was switched on, because the switch lives inside this menu
+   and the menu deliberately stays open. Only the backdrop is dropped; the
+   text colour and every descendant remap still apply. */
+html.dark .dash-canvas.dash-canvas-overlay {
+  background-color: transparent;
+}
+html.dark .dash-canvas .bg-grid {
+  background-image: radial-gradient(rgba(148, 163, 184, 0.14) 1px, transparent 1px);
+}
+
+/* ---------- Surfaces: white cards -> slate-900 family ---------- */
+html.dark .dash-canvas .bg-white {
+  background-color: #0f172a;
+}
+html.dark .dash-canvas .bg-white\/95 {
+  background-color: rgba(15, 23, 42, 0.96);
+}
+html.dark .dash-canvas .bg-white\/92 {
+  background-color: rgba(15, 23, 42, 0.94);
+}
+html.dark .dash-canvas .bg-white\/90 {
+  background-color: rgba(15, 23, 42, 0.92);
+}
+html.dark .dash-canvas .bg-white\/86 {
+  background-color: rgba(15, 23, 42, 0.9);
+}
+html.dark .dash-canvas .bg-white\/85 {
+  background-color: rgba(15, 23, 42, 0.9);
+}
+html.dark .dash-canvas .bg-white\/80 {
+  background-color: rgba(15, 23, 42, 0.88);
+}
+html.dark .dash-canvas .bg-white\/72 {
+  background-color: rgba(15, 23, 42, 0.86);
+}
+html.dark .dash-canvas .bg-white\/70 {
+  background-color: rgba(15, 23, 42, 0.84);
+}
+html.dark .dash-canvas .bg-white\/60 {
+  background-color: rgba(15, 23, 42, 0.78);
+}
+
+/* ---------- Slate & cream surfaces ---------- */
+html.dark .dash-canvas .bg-slate-50 {
+  background-color: #1e293b;
+}
+html.dark .dash-canvas .bg-slate-100 {
+  background-color: #1e293b;
+}
+html.dark .dash-canvas .bg-slate-200 {
+  background-color: #334155;
+}
+html.dark .dash-canvas .bg-slate-300 {
+  background-color: #475569;
+}
+html.dark .dash-canvas .bg-slate-50\/90 {
+  background-color: rgba(30, 41, 59, 0.92);
+}
+html.dark .dash-canvas .bg-slate-50\/80 {
+  background-color: rgba(30, 41, 59, 0.82);
+}
+html.dark .dash-canvas .bg-slate-50\/70 {
+  background-color: rgba(30, 41, 59, 0.72);
+}
+html.dark .dash-canvas .bg-slate-50\/60 {
+  background-color: rgba(30, 41, 59, 0.62);
+}
+html.dark .dash-canvas .bg-slate-50\/50 {
+  background-color: rgba(30, 41, 59, 0.52);
+}
+html.dark .dash-canvas .bg-slate-200\/80 {
+  background-color: rgba(51, 65, 85, 0.82);
+}
+html.dark .dash-canvas .bg-cream {
+  background-color: #1e293b;
+}
+html.dark .dash-canvas .bg-cream\/70 {
+  background-color: rgba(30, 41, 59, 0.72);
+}
+html.dark .dash-canvas .bg-cream\/60 {
+  background-color: rgba(30, 41, 59, 0.62);
+}
+html.dark .dash-canvas .bg-cream\/55 {
+  background-color: rgba(30, 41, 59, 0.57);
+}
+html.dark .dash-canvas .bg-cream\/50 {
+  background-color: rgba(30, 41, 59, 0.52);
+}
+html.dark .dash-canvas .bg-cream\/40 {
+  background-color: rgba(30, 41, 59, 0.42);
+}
+html.dark .dash-canvas .bg-cream\/35 {
+  background-color: rgba(30, 41, 59, 0.37);
+}
+html.dark .dash-canvas .bg-cream\/30 {
+  background-color: rgba(30, 41, 59, 0.32);
+}
+
+/* ---------- Hover / focus / disabled surfaces ---------- */
+html.dark .dash-canvas [class~="hover:bg-white"]:hover {
+  background-color: #0f172a;
+}
+html.dark .dash-canvas [class~="hover:bg-white\/60"]:hover {
+  background-color: rgba(15, 23, 42, 0.62);
+}
+html.dark .dash-canvas [class~="hover:bg-slate-50"]:hover {
+  background-color: #1e293b;
+}
+html.dark .dash-canvas [class~="hover:bg-slate-50\/70"]:hover {
+  background-color: rgba(30, 41, 59, 0.72);
+}
+html.dark .dash-canvas [class~="hover:bg-slate-50\/80"]:hover {
+  background-color: rgba(30, 41, 59, 0.82);
+}
+html.dark .dash-canvas [class~="hover:bg-slate-100"]:hover {
+  background-color: #1e293b;
+}
+html.dark .dash-canvas [class~="hover:bg-slate-200"]:hover {
+  background-color: #334155;
+}
+html.dark .dash-canvas [class~="focus:bg-white"]:focus {
+  background-color: #0f172a;
+}
+html.dark .dash-canvas [class~="disabled:bg-slate-200"]:disabled {
+  background-color: #334155;
+}
+html.dark .dash-canvas [class~="disabled:text-slate-400"]:disabled {
+  color: #64748b;
+}
+
+/* ---------- Text ---------- */
+html.dark .dash-canvas .text-slate-950 {
+  color: #f1f5f9;
+}
+html.dark .dash-canvas .text-slate-900 {
+  color: #e2e8f0;
+}
+html.dark .dash-canvas .text-slate-800 {
+  color: #e2e8f0;
+}
+html.dark .dash-canvas .text-slate-700 {
+  color: #cbd5e1;
+}
+html.dark .dash-canvas .text-slate-600 {
+  color: #94a3b8;
+}
+html.dark .dash-canvas .text-slate-500 {
+  color: #94a3b8;
+}
+html.dark .dash-canvas .text-slate-400 {
+  color: #64748b;
+}
+html.dark .dash-canvas .text-slate-300 {
+  color: #cbd5e1;
+}
+html.dark .dash-canvas .text-slate-300\/80 {
+  color: rgba(203, 213, 225, 0.8);
+}
+html.dark .dash-canvas .text-slate-300\/70 {
+  color: rgba(203, 213, 225, 0.7);
+}
+html.dark .dash-canvas .text-slate-200 {
+  color: #e2e8f0;
+}
+html.dark .dash-canvas .text-graphite {
+  color: #e2e8f0;
+}
+html.dark .dash-canvas .text-graphite\/80 {
+  color: rgba(226, 232, 240, 0.82);
+}
+html.dark .dash-canvas .text-graphite\/75 {
+  color: rgba(226, 232, 240, 0.78);
+}
+html.dark .dash-canvas .text-graphite\/70 {
+  color: rgba(226, 232, 240, 0.72);
+}
+html.dark .dash-canvas .text-graphite\/65 {
+  color: rgba(226, 232, 240, 0.68);
+}
+html.dark .dash-canvas .text-graphite\/62 {
+  color: rgba(226, 232, 240, 0.65);
+}
+html.dark .dash-canvas .text-graphite\/60 {
+  color: rgba(226, 232, 240, 0.62);
+}
+html.dark .dash-canvas .text-graphite\/55 {
+  color: rgba(226, 232, 240, 0.58);
+}
+html.dark .dash-canvas .text-graphite\/50 {
+  color: rgba(226, 232, 240, 0.52);
+}
+html.dark .dash-canvas .text-graphite\/45 {
+  color: rgba(226, 232, 240, 0.48);
+}
+html.dark .dash-canvas .text-graphite\/40 {
+  color: rgba(226, 232, 240, 0.44);
+}
+html.dark .dash-canvas [class~="hover:text-slate-800"]:hover {
+  color: #e2e8f0;
+}
+html.dark .dash-canvas [class~="hover:text-slate-700"]:hover {
+  color: #cbd5e1;
+}
+html.dark .dash-canvas [class~="hover:text-graphite"]:hover {
+  color: #e2e8f0;
+}
+
+/* ---------- Borders, rings, dividers ---------- */
+html.dark .dash-canvas .border-slate-200 {
+  border-color: #1e293b;
+}
+html.dark .dash-canvas .border-slate-100 {
+  border-color: #1e293b;
+}
+html.dark .dash-canvas .border-slate-300 {
+  border-color: #334155;
+}
+html.dark .dash-canvas .border-slate-50 {
+  border-color: #1e293b;
+}
+html.dark .dash-canvas .border-slate-200\/90 {
+  border-color: rgba(30, 41, 59, 0.92);
+}
+html.dark .dash-canvas .border-slate-200\/80 {
+  border-color: rgba(30, 41, 59, 0.82);
+}
+html.dark .dash-canvas .border-slate-200\/70 {
+  border-color: rgba(30, 41, 59, 0.72);
+}
+html.dark .dash-canvas [class~="hover:border-slate-200"]:hover {
+  border-color: #334155;
+}
+html.dark .dash-canvas [class~="hover:border-slate-300"]:hover {
+  border-color: #334155;
+}
+html.dark .dash-canvas .ring-slate-200 {
+  --tw-ring-color: #1e293b;
+}
+html.dark .dash-canvas .ring-slate-200\/90 {
+  --tw-ring-color: rgba(30, 41, 59, 0.92);
+}
+html.dark .dash-canvas .ring-slate-200\/70 {
+  --tw-ring-color: rgba(30, 41, 59, 0.72);
+}
+html.dark .dash-canvas .ring-slate-100 {
+  --tw-ring-color: #1e293b;
+}
+html.dark .dash-canvas .divide-slate-200 {
+  border-color: #1e293b;
+}
+html.dark .dash-canvas .divide-slate-100 {
+  border-color: #1e293b;
+}
+
+/* ---------- Depth shadows on dark ---------- */
+html.dark .dash-canvas .shadow-card {
+  box-shadow: 0 8px 30px -8px rgba(0, 0, 0, 0.6);
+}
+html.dark .dash-canvas .shadow-soft {
+  box-shadow: 0 10px 40px -12px rgba(0, 0, 0, 0.65);
+}
+html.dark .dash-canvas .shadow-float {
+  box-shadow: 0 24px 60px -15px rgba(0, 0, 0, 0.7);
+}
+
+/* ---------- Accent palette (dark green) on dark ---------- */
+html.dark .dash-canvas .bg-brand-50 {
+  background-color: #0c2317;
+}
+html.dark .dash-canvas .bg-brand-100 {
+  background-color: #10301f;
+}
+html.dark .dash-canvas .bg-brand-50\/80 {
+  background-color: rgba(12, 35, 23, 0.82);
+}
+html.dark .dash-canvas .bg-brand-50\/70 {
+  background-color: rgba(12, 35, 23, 0.72);
+}
+html.dark .dash-canvas .bg-brand-50\/60 {
+  background-color: rgba(12, 35, 23, 0.62);
+}
+html.dark .dash-canvas .bg-brand-50\/50 {
+  background-color: rgba(12, 35, 23, 0.52);
+}
+html.dark .dash-canvas .bg-brand-50\/40 {
+  background-color: rgba(12, 35, 23, 0.42);
+}
+html.dark .dash-canvas .bg-brand-50\/30 {
+  background-color: rgba(12, 35, 23, 0.32);
+}
+html.dark .dash-canvas [class~="hover:bg-brand-50"]:hover {
+  background-color: rgba(12, 35, 23, 0.62);
+}
+html.dark .dash-canvas .from-brand-100 {
+  --tw-gradient-from: #10301f;
+}
+html.dark .dash-canvas .to-brand-200 {
+  --tw-gradient-to: #16402a;
+}
+
+html.dark .dash-canvas .text-brand-950 {
+  color: #d9f0e3;
+}
+html.dark .dash-canvas .text-brand-900 {
+  color: #c9e9d6;
+}
+html.dark .dash-canvas .text-brand-800 {
+  color: #a8d8bd;
+}
+html.dark .dash-canvas .text-brand-700 {
+  color: #82c29e;
+}
+html.dark .dash-canvas .text-brand-600 {
+  color: #5fae85;
+}
+html.dark .dash-canvas .text-brand-800\/55 {
+  color: rgba(168, 216, 189, 0.55);
+}
+html.dark .dash-canvas .text-brand-600\/80 {
+  color: rgba(95, 174, 133, 0.8);
+}
+html.dark .dash-canvas [class~="hover:text-brand-700"]:hover {
+  color: #82c29e;
+}
+html.dark .dash-canvas [class~="hover:text-brand-800"]:hover {
+  color: #a8d8bd;
+}
+html.dark .dash-canvas [class~="hover:text-brand-900"]:hover {
+  color: #c9e9d6;
+}
+
+/* Green buttons keep readable text on the green fill */
+html.dark .dash-canvas [class~="bg-brand-500"][class~="text-brand-950"] {
+  color: #061f15;
+}
+html.dark .dash-canvas [class~="bg-brand-400"][class~="text-brand-950"] {
+  color: #061f15;
+}
+html.dark .dash-canvas [class~="bg-brand-600"][class~="text-brand-950"] {
+  color: #061f15;
+}
+html.dark .dash-canvas [class~="bg-brand-500"][class~="text-brand-900"] {
+  color: #061f15;
+}
+html.dark .dash-canvas .btn-primary {
+  color: #ffffff;
+}
+
+html.dark .dash-canvas .border-brand-100 {
+  border-color: #10301f;
+}
+html.dark .dash-canvas .border-brand-100\/80 {
+  border-color: rgba(16, 48, 31, 0.82);
+}
+html.dark .dash-canvas .border-brand-200 {
+  border-color: #16402a;
+}
+html.dark .dash-canvas .ring-brand-100 {
+  --tw-ring-color: #10301f;
+}
+html.dark .dash-canvas .ring-brand-200 {
+  --tw-ring-color: #16402a;
+}
+html.dark .dash-canvas .ring-brand-50 {
+  --tw-ring-color: #0c2317;
+}
+
+/* Forest (green) accent */
+html.dark .dash-canvas .bg-forest-50 {
+  background-color: #0c2317;
+}
+html.dark .dash-canvas .bg-forest-50\/60 {
+  background-color: rgba(12, 35, 23, 0.62);
+}
+html.dark .dash-canvas .text-forest-950 {
+  color: #d9f0e3;
+}
+html.dark .dash-canvas .text-forest-900 {
+  color: #c9e9d6;
+}
+html.dark .dash-canvas .text-forest-800 {
+  color: #a8d8bd;
+}
+html.dark .dash-canvas .text-forest-700 {
+  color: #82c29e;
+}
+html.dark .dash-canvas .text-forest-600 {
+  color: #5fae85;
+}
+html.dark .dash-canvas .border-forest-100 {
+  border-color: #10301f;
+}
+html.dark .dash-canvas .border-forest-200 {
+  border-color: #16402a;
+}
+
+/* Arbitrary-value light surfaces inside the shell */
+html.dark .dash-canvas [class~="bg-[#f8fafc]"] {
+  background-color: #1e293b;
+}
+html.dark .dash-canvas [class~="text-[#1f2937]"] {
+  color: #e2e8f0;
+}
+html.dark .dash-canvas [class~="bg-[linear-gradient(135deg,#ffffff,#f7fbf5_60%,#eef6f0)]"] {
+  background-image: linear-gradient(135deg, #16211b, #18241d 60%, #0e2419);
+}
+
+/* Native form controls inside the dark shell */
+html.dark .dash-canvas select option {
+  background-color: #0f172a;
+  color: #e2e8f0;
+}
+
+/* ============================================================
+   Site Engineer Calendar — dark-mode contrast fixes.
+   The Calendar stays theme-consistent (dark in dark mode), but
+   every number, label, border and button must be clearly visible.
+   These scoped selectors have higher specificity than the global
+   `.dash-canvas` dark remap, so they win in dark mode only and
+   only inside `.site-calendar-dark` (the Site Engineer page).
+   ============================================================ */
+html.dark .dash-canvas .site-calendar-dark {
+  color: #f1f5f9; /* default inherited text: date numbers, titles */
+}
+/* Weekday labels (SUN..SAT) & secondary text — clearly visible, not faded */
+html.dark .dash-canvas .site-calendar-dark .text-slate-400 {
+  color: #94a3b8;
+}
+html.dark .dash-canvas .site-calendar-dark .text-slate-500 {
+  color: #94a3b8;
+}
+/* Calendar grid cell borders — visible but subtle against dark cells */
+html.dark .dash-canvas .site-calendar-dark .border-slate-200 {
+  border-color: #334155;
+}
+html.dark .dash-canvas .site-calendar-dark .border-slate-100 {
+  border-color: #334155;
+}
+/* Future dates must not fade into the background (date numbers stay readable) */
+html.dark .dash-canvas .site-calendar-dark [class~="opacity-45"] {
+  opacity: 1;
+}
+/* Green action buttons keep dark text for strong contrast on the green fill */
+html.dark .dash-canvas .site-calendar-dark [class~="bg-brand-500"][class~="text-slate-950"] {
+  color: #061f15;
+}
+
+/* Calendar day view (a date open, small calendar on the left): on desktop
+   the green navigation strip stays under the sticky top bar (56px) while
+   the day scrolls, and the small calendar sits below both (56 + 53 + 16).
+   Scoped with :has(), so every other page keeps its normal strip. */
+@media (min-width: 1024px) {
+  .dash-canvas:has(.se-day-workspace) .dash-nav-strip {
+    position: sticky;
+    top: 56px;
+    z-index: 29;
+  }
+  .dash-canvas:has(.dash-nav-strip) .se-day-workspace .se-day-calendar {
+    top: 125px;
+  }
+}
+
+/* ============================================================
+   Supplier Products — dark-mode dropdown/input contrast.
+   Guarantees the category filter, sort dropdown (e.g. "Price:
+   low to high"), and search box stay readable in dark mode.
+   ============================================================ */
+html.dark .dash-canvas .supplier-catalog-dark select,
+html.dark .dash-canvas .supplier-catalog-dark input {
+  color: #e2e8f0;
+  caret-color: #e2e8f0;
+}
+html.dark .dash-canvas .supplier-catalog-dark select {
+  background-color: #0f172a;
+}
+html.dark .dash-canvas .supplier-catalog-dark select option {
+  background-color: #0f172a;
+  color: #e2e8f0;
+}
+/* Search box placeholder & icon inside the catalog toolbar must stay visible
+   in dark mode (placeholder:text-graphite/45 is dark gray and would vanish). */
+html.dark .dash-canvas .supplier-catalog-dark input::placeholder {
+  color: #94a3b8;
+  opacity: 1;
+}
+html.dark .dash-canvas .supplier-catalog-dark label svg,
+html.dark .dash-canvas .supplier-catalog-dark label [class~="text-brand-800"] {
+  color: #a8d8bd;
+}
+
+/* ============================================================
+   Contractor Dashboard — requests board dark-mode contrast.
+   The row status tints (amber/emerald/sky/rose at low opacity) are
+   pastel light colours that render as a milky silver band over the
+   dark table. Remap them to dark colour-tinted backgrounds that keep
+   the status distinction without the faded/silver look.
+   ============================================================ */
+html.dark .dash-canvas .contractor-board-dark .bg-brand-50\/40 {
+  background-color: rgba(46, 125, 85, 0.12);
+}
+html.dark .dash-canvas .contractor-board-dark .bg-emerald-50\/40 {
+  background-color: rgba(16, 185, 129, 0.12);
+}
+html.dark .dash-canvas .contractor-board-dark .bg-sky-50\/40 {
+  background-color: rgba(14, 165, 233, 0.12);
+}
+html.dark .dash-canvas .contractor-board-dark .bg-rose-50\/30 {
+  background-color: rgba(244, 63, 94, 0.09);
+}
+html.dark .dash-canvas .contractor-board-dark [class~="hover:bg-brand-50\/70"]:hover {
+  background-color: rgba(46, 125, 85, 0.2);
+}
+html.dark .dash-canvas .contractor-board-dark [class~="hover:bg-emerald-50\/70"]:hover {
+  background-color: rgba(16, 185, 129, 0.2);
+}
+html.dark .dash-canvas .contractor-board-dark [class~="hover:bg-sky-50\/70"]:hover {
+  background-color: rgba(14, 165, 233, 0.2);
+}
+html.dark .dash-canvas .contractor-board-dark [class~="hover:bg-rose-50\/60"]:hover {
+  background-color: rgba(244, 63, 94, 0.18);
+}
+
+/* ============================================================
+   Contractor Dashboard — Messages page dark-mode contrast.
+   The selected conversation and rich request/assignment cards use
+   a `from-brand-50 to-white` gradient which the global remap does
+   not cover, so they rendered as a light cream card in dark mode.
+   Scoped to the Contractor Messages page only.
+   ============================================================ */
+html.dark .dash-canvas .contractor-messages-dark [class~="from-brand-50"] {
+  --tw-gradient-from: #2e2413;
+}
+html.dark .dash-canvas .contractor-messages-dark [class~="to-white"] {
+  --tw-gradient-to: #0f172a;
+}
+/* Ensure typed text and placeholders inside the composer stay readable */
+html.dark .dash-canvas .contractor-messages-dark input::placeholder {
+  color: #94a3b8;
+  opacity: 1;
+}
+/* Keep unread badge ring and day separators visible on dark cards */
+html.dark .dash-canvas .contractor-messages-dark .bg-slate-200\/80 {
+  background-color: #334155;
+}
+
+/* ============================================================
+   Dark theme — the shared entity card (EntityCard / EntityPill)
+   The card uses the landing page's `oc-` palette, which the
+   remap above does not cover, so its ink-on-white text stayed
+   dark on the dark card surface. Same approach as the rest of
+   this section: remap the surface, text and border tokens.
+   ============================================================ */
+html.dark .dash-canvas .bg-oc-sunken {
+  background-color: #111c2f;
+}
+/* The sibling surface token, missed when the rest of this table was written.
+   `text-oc-ink` below remaps to near-white, so anything left on the light
+   #f7faf7 paper -- the accepted-quotation card and the overview status pills
+   -- was near-white text on a near-white surface. Same value as sunken: both
+   are the inset surface that sits on a card. */
+html.dark .dash-canvas .bg-oc-paper {
+  background-color: #111c2f;
+}
+/* `.dash-canvas` and `.dash-yellow-bg` are the SAME element on the shell, so a
+   descendant combinator here matched nothing and the page kept its light cream
+   backdrop in dark mode. Compound selector, no space. */
+html.dark .dash-canvas.dash-yellow-bg {
+  background-color: #0a1014;
+}
+/* The scene stays; only the wash over it changes. A very dark charcoal rather
+   than flat black, with the photograph still faintly readable underneath, so
+   the page has depth and the lighter cards (#0f172a) sit clearly on top. */
+html.dark .dash-canvas.dash-yellow-bg::before {
+  background-image:
+    linear-gradient(rgba(10, 16, 20, 0.90), rgba(10, 16, 20, 0.94)),
+    url('/landing/mini-city.png');
+}
+
+/* ---------- Amber surfaces keep dark text in dark mode ----------
+   The gold header and the gold active navigation pill deliberately keep their
+   brand colour when the theme flips. The token remaps above lighten text so it
+   reads on dark surfaces, which is exactly wrong on these two -- pale mint on
+   gold is unreadable. Text sitting DIRECTLY on the gold is restored to its
+   light-mode colour here.
+
+   Deliberately narrow: the white control pills nested in the header (bells,
+   messages, profile) become dark surfaces like every other card and keep their
+   own light text, so they are not touched. */
+html.dark .dash-canvas .dash-amber-bar a[href="/"] .text-brand-800 {
+  color: #134127;
+}
+html.dark .dash-canvas .dash-amber-bar a[href="/"] .text-brand-700 {
+  color: #1a5038;
+}
+html.dark .dash-canvas .dash-amber-bar input[type="search"] {
+  color: #17201c;
+}
+html.dark .dash-canvas .dash-amber-bar input[type="search"]::placeholder {
+  color: rgba(8, 62, 43, 0.55);
+}
+/* The compound `.dash-nav-amber.text-oc-deep` is deliberate: the button carries
+   both classes, so a plain descendant selector would tie with the
+   `.text-oc-deep` remap above and lose on source order. */
+html.dark .dash-canvas .dash-nav-amber,
+html.dark .dash-canvas .dash-nav-amber.text-oc-deep,
+html.dark .dash-canvas .dash-nav-amber .text-oc-deep {
+  color: #083e2b;
+}
+html.dark .dash-canvas .bg-oc-mint {
+  background-color: #14352a;
+}
+html.dark .dash-canvas .bg-ocbrand-50 {
+  background-color: #10291f;
+}
+html.dark .dash-canvas .bg-ocaccent-50 {
+  background-color: #2a2413;
+}
+html.dark .dash-canvas .text-oc-ink {
+  color: #e2e8f0;
+}
+html.dark .dash-canvas .text-oc-muted {
+  color: rgba(226, 232, 240, 0.72);
+}
+html.dark .dash-canvas .text-oc-faint {
+  color: rgba(226, 232, 240, 0.52);
+}
+html.dark .dash-canvas .text-oc-green,
+html.dark .dash-canvas .text-oc-deep {
+  color: #7bc2a2;
+}
+html.dark .dash-canvas .text-ocbrand-700 {
+  color: #7bc2a2;
+}
+html.dark .dash-canvas .text-ocaccent-600 {
+  color: #e8b23c;
+}
+html.dark .dash-canvas .border-oc-line {
+  border-color: #1e293b;
+}
+html.dark .dash-canvas .border-ocbrand-100 {
+  border-color: #1c4535;
+}
+html.dark .dash-canvas .border-ocaccent-100 {
+  border-color: #4a3d1a;
+}
+html.dark .dash-canvas [class~="hover:border-ocbrand-300"]:hover {
+  border-color: #2f6d51;
+}
+/* On the amber hover surface the card keeps its light-theme ink, so the dark
+   theme's light text tones are put back to the deep ink for that moment. */
+html.dark .dash-canvas .oc-entity-card:hover .text-oc-ink,
+html.dark .dash-canvas .oc-entity-card:hover .text-oc-muted,
+html.dark .dash-canvas .oc-entity-card:hover .text-oc-faint {
+  color: #17201c;
+}
+
+/* Owner Projects cards: the clean white/green look of the projects reference.
+   Colours only, scoped to these grids (Owner, Builder and Site Engineer Projects).
+   Hover uses the dashboard's shared yellow (.dash-gold-hover) like every other card. */
+:is(.owner-project-cards, .builder-project-cards, .engineer-project-cards, .supplier-client-cards) .oc-entity-card {
+  border-color: #e6ebe8;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 10px 28px -20px rgba(16, 24, 40, 0.18);
+}
+:is(.owner-project-cards, .builder-project-cards, .engineer-project-cards, .supplier-client-cards) .oc-entity-card:hover {
+  background: linear-gradient(180deg, #f9c85f 0%, #f4b740 52%, #e9a92f 100%);
+  border-color: rgba(8, 62, 43, 0.22);
+  box-shadow: 0 18px 38px -24px rgba(18, 107, 69, 0.38);
+}
+:is(.owner-project-cards, .builder-project-cards, .engineer-project-cards, .supplier-client-cards) .oc-entity-card:hover .text-oc-muted { color: #083e2b; }
+:is(.owner-project-cards, .builder-project-cards, .engineer-project-cards, .supplier-client-cards) .oc-entity-card:hover .text-oc-faint { color: rgba(8, 62, 43, 0.75); }
+
+/* Builder cards in supplier Find Clients: the services line reads in the
+   card's mid grey, as in the reference, rather than the faint grey. */
+.supplier-client-cards .oc-entity-card .text-oc-faint { color: #61736a; }
+html.dark .dash-canvas .supplier-client-cards .oc-entity-card .text-oc-faint { color: rgba(226, 232, 240, 0.72); }
+html.dark .dash-canvas .supplier-client-cards .bg-amber-50 { background-color: #2a2212; }
+
+html.dark .dash-canvas :is(.owner-project-cards, .builder-project-cards, .engineer-project-cards, .supplier-client-cards) .oc-entity-card { border-color: #1e293b; }
+html.dark .dash-canvas :is(.owner-project-cards, .builder-project-cards, .engineer-project-cards, .supplier-client-cards) .oc-entity-card:hover {
+  background: linear-gradient(180deg, #f9c85f 0%, #f4b740 52%, #e9a92f 100%);
+  border-color: rgba(8, 62, 43, 0.22);
+}
+html.dark .dash-canvas :is(.owner-project-cards, .builder-project-cards, .engineer-project-cards, .supplier-client-cards) .oc-entity-card:hover .text-oc-ink { color: #17201c; }
+html.dark .dash-canvas :is(.owner-project-cards, .builder-project-cards, .engineer-project-cards, .supplier-client-cards) .oc-entity-card:hover .text-oc-muted { color: #17201c; }
+html.dark .dash-canvas :is(.owner-project-cards, .builder-project-cards, .engineer-project-cards, .supplier-client-cards) .oc-entity-card:hover .text-oc-faint { color: #17201c; }
+html.dark .dash-canvas :is(.owner-project-cards, .builder-project-cards, .supplier-client-cards, .engineer-project-cards, .engineer-supplier-cards) .bg-emerald-50 { background-color: #0f2a20; }
+html.dark .dash-canvas :is(.owner-project-cards, .builder-project-cards, .engineer-project-cards, .supplier-client-cards) .border-emerald-100 { border-color: #1c4535; }
+html.dark .dash-canvas :is(.owner-project-cards, .builder-project-cards, .supplier-client-cards, .engineer-project-cards) .text-emerald-700 { color: #7bc2a2; }
+html.dark .dash-canvas :is(.owner-project-cards, .builder-project-cards, .engineer-project-cards, .supplier-client-cards) .bg-blue-50 { background-color: #12203a; }
+html.dark .dash-canvas :is(.owner-project-cards, .builder-project-cards, .engineer-project-cards, .supplier-client-cards) .border-blue-100 { border-color: #1e3a5f; }
+html.dark .dash-canvas :is(.owner-project-cards, .builder-project-cards, .engineer-project-cards, .supplier-client-cards) .text-slate-700 { color: #cbd5e1; }
+html.dark .dash-canvas :is(.owner-project-cards, .builder-project-cards, .engineer-project-cards, .supplier-client-cards) .bg-red-50 { background-color: #2a1418; }
+html.dark .dash-canvas :is(.owner-project-cards, .builder-project-cards, .engineer-project-cards, .supplier-client-cards) .border-red-100 { border-color: #4c1d24; }
+html.dark .dash-canvas :is(.owner-project-cards, .builder-project-cards, .engineer-project-cards, .supplier-client-cards) .border-slate-200 { border-color: #1e293b; }
+html.dark .dash-canvas :is(.owner-project-cards, .builder-project-cards, .engineer-project-cards, .supplier-client-cards) .bg-slate-200 { background-color: #1e293b; }
+
+/* Requests panel (Site Engineer > Find Opportunities > Requests): the card
+   rows' light tints in the dark theme. */
+html.dark .dash-canvas .requests-panel .bg-oc-paper { background-color: #0b1324; }
+html.dark .dash-canvas .requests-panel .bg-amber-50 { background-color: #2a2212; }
+html.dark .dash-canvas .requests-panel .bg-emerald-50 { background-color: #0f2a20; }
+html.dark .dash-canvas .requests-panel .border-emerald-100 { border-color: #1c4535; }
+html.dark .dash-canvas .requests-panel .text-emerald-700 { color: #7bc2a2; }
+html.dark .dash-canvas .requests-panel .bg-red-50 { background-color: #2a1418; }
+html.dark .dash-canvas .requests-panel .border-red-100 { border-color: #4c1d24; }
+
+/* Site Engineer > Suppliers reference cards: chip and tab tints in dark. */
+html.dark .dash-canvas .engineer-supplier-cards .bg-emerald-50 { background-color: #0f2a20; }
+html.dark .dash-canvas .engineer-supplier-cards .bg-emerald-100 { background-color: #14382a; }
+html.dark .dash-canvas .engineer-supplier-cards .text-oc-deep { color: #7bc2a2; }
+
+/* Builder's Live Camera buttons: red and blinking so the live feed is easy to
+   find. Off for people who ask the system for reduced motion. */
+@keyframes live-camera-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+.live-camera-blink {
+  animation: live-camera-blink 1.6s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .live-camera-blink { animation: none; }
+}
+
+/* Supplier storefront (Products page + product page): one font, Inter, for
+   the whole section -- headings included (.dashboard-main sets them in the
+   display font). Heading sizes there use important utilities (!text-...). */
+.dashboard-main .storefront,
+.dashboard-main .storefront :is(h1, h2, h3) {
+  font-family: theme('fontFamily.sans');
+}
+
+/* Product page motion: an image fading in when the gallery switches, and an
+   accordion row's content easing open. Off for reduced-motion users. */
+@keyframes storefront-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes storefront-reveal {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: none; }
+}
+.storefront-fade { animation: storefront-fade 260ms ease-out; }
+.storefront-reveal { animation: storefront-reveal 220ms ease-out; }
+@media (prefers-reduced-motion: reduce) {
+  .storefront-fade,
+  .storefront-reveal { animation: none; }
+}

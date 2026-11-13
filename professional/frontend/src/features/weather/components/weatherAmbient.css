@@ -1,0 +1,30 @@
+/*
+ * The subtle weather effects behind a weather card or strip: never over text
+ * (pointer-events none, low opacity, under the content), off for anyone who
+ * asks for reduced motion, and never on a warning banner.
+ */
+.wx-ambient { position: relative; isolation: isolate; overflow: hidden; }
+.wx-ambient > .wx-effect { position: absolute; inset: 0; z-index: -1; pointer-events: none; }
+
+.wx-effect-sun { background: radial-gradient(circle at 88% 10%, rgba(244, 183, 64, 0.32), transparent 45%); }
+.wx-effect-heat { background: radial-gradient(circle at 90% 0%, rgba(249, 115, 22, 0.28), transparent 50%), linear-gradient(180deg, rgba(254, 215, 170, 0.18), transparent); }
+.wx-effect-cloud { background: radial-gradient(ellipse at 15% 0%, rgba(148, 163, 184, 0.22), transparent 55%), radial-gradient(ellipse at 85% 10%, rgba(148, 163, 184, 0.18), transparent 50%); animation: wx-drift 28s ease-in-out infinite alternate; }
+.wx-effect-light-rain, .wx-effect-rain, .wx-effect-heavy-rain, .wx-effect-storm {
+  background-image: repeating-linear-gradient(105deg, transparent 0 14px, rgba(14, 116, 144, 0.10) 14px 15px);
+  background-size: 160px 160px;
+  animation: wx-rain 1.6s linear infinite;
+}
+.wx-effect-light-rain { opacity: 0.55; animation-duration: 2.4s; }
+.wx-effect-heavy-rain { opacity: 1; animation-duration: 0.9s; background-image: repeating-linear-gradient(105deg, transparent 0 9px, rgba(14, 116, 144, 0.16) 9px 10px); }
+.wx-effect-storm { animation-duration: 0.8s; background-color: rgba(127, 29, 29, 0.03); }
+.wx-effect-wind { background-image: repeating-linear-gradient(180deg, transparent 0 22px, rgba(13, 148, 136, 0.10) 22px 23px); background-size: 220px 46px; animation: wx-wind 3.2s linear infinite; }
+.wx-effect-dust { background: linear-gradient(90deg, rgba(217, 119, 6, 0.10), rgba(180, 83, 9, 0.16), rgba(217, 119, 6, 0.08)); background-size: 300% 100%; animation: wx-dust 12s ease-in-out infinite alternate; }
+
+@keyframes wx-rain { to { background-position: -40px 160px; } }
+@keyframes wx-wind { to { background-position: 220px 0; } }
+@keyframes wx-dust { to { background-position: 100% 0; } }
+@keyframes wx-drift { to { transform: translateX(3%); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .wx-ambient > .wx-effect { animation: none !important; }
+}
