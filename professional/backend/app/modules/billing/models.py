@@ -401,7 +401,7 @@ class BookingPaymentReceipt(UuidPrimaryKeyMixin, Base):
 
 # booking_payment_orders.booking_id -> partner.bookings.id ON DELETE RESTRICT (section 10).
 # Created with the table when Partner's bookings table already exists; otherwise the later
-# Professional migration adds it (docs/porting-todo.md).
+# Professional migration 0002 adds it, after Partner's baseline.
 BOOKING_FOREIGN_KEY_NAME = "fk_booking_payment_orders__booking_id__bookings"
 BOOKING_FOREIGN_KEY = DDL(
     f"ALTER TABLE {PROFESSIONAL_SCHEMA}.booking_payment_orders "

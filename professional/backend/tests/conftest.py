@@ -11,6 +11,7 @@ them after each test (children first, only the tables written), and drop them at
 import os
 import secrets
 from collections.abc import Callable, Iterator
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -82,7 +83,9 @@ def database_tables() -> Iterator[None]:
             raise RuntimeError(f"Tests run only against {TEST_DATABASE_NAME}.")
     Base.metadata.drop_all(engine)
     Base.metadata.create_all(engine)
+    stamp_head(engine, PROFESSIONAL_SCHEMA)
     yield
+    unstamp(engine, PROFESSIONAL_SCHEMA)
     Base.metadata.drop_all(engine)
     engine.dispose()
 
@@ -164,3 +167,23 @@ def make_client(database: Session) -> ClientFactory:
 @pytest.fixture
 def client(make_client: ClientFactory) -> TestClient:
     return make_client()
+
+
+def stamp_head(engine: Any, schema: str) -> None:
+    """Record the Alembic head in {schema}.alembic_version, as a migrated database has it:
+    create_all builds the same tables as the migrations (scripts/migrate.py --check)."""
+    from alembic.config import Config
+    from alembic.script import ScriptDirectory
+
+    backend = Path(__file__).resolve().parents[1]
+    heads = ScriptDirectory.from_config(Config(str(backend / "alembic.ini"))).get_heads()
+    with engine.begin() as connection:
+        connection.execute(text(f'DROP TABLE IF EXISTS "{schema}".alembic_version'))
+        connection.execute(text(f'CREATE TABLE "{schema}".alembic_version (version_num varchar(32) PRIMARY KEY)'))
+        for head in heads:
+            connection.execute(text(f'INSERT INTO "{schema}".alembic_version VALUES (:v)'), {"v": head})  # noqa: S608 our schema
+
+
+def unstamp(engine: Any, schema: str) -> None:
+    with engine.begin() as connection:
+        connection.execute(text(f'DROP TABLE IF EXISTS "{schema}".alembic_version'))

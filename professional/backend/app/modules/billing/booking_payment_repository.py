@@ -7,8 +7,9 @@ nothing in `partner` is written. The price read is the booking's own `quoted_amo
 catalogue price snapshotted when the booking was made), which is what the House Owner
 agreed to pay.
 
-Until Partner's baseline creates and grants the view, there are no bookings to pay
-(docs/porting-todo.md); `booking_source` is the single place the rows come from.
+Partner's baseline creates and grants the view (scripts/migrate.py runs it right after
+Professional's); where it is not visible there are no bookings to pay. `booking_source` is
+the single place the rows come from.
 """
 
 import uuid

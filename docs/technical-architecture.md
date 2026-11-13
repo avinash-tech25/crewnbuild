@@ -1109,8 +1109,11 @@ The platform is not in production yet, so instead of changing old tables step by
 
 | Service | File | Creates |
 | --- | --- | --- |
-| Professional | `professional/backend/alembic/versions/20261114_0001_initial_professional_schema.py` | Schema `professional`, all 100 tables, indexes, constraints, view `v_partner_requesters`, grants to `crewnbuild_partner` |
-| Partner | `partner/backend/alembic/versions/20261114_0001_initial_partner_schema.py` | Schema `partner`, all 22 tables, indexes, constraints, foreign key to `professional.users`, view v\_professional\_bookings and its grant to crewnbuild\_professional |
+| Professional | `professional/backend/alembic/versions/20261113_0001_initial_professional_schema.py` | Schema `professional`, all 100 tables, indexes, constraints, the append-only trigger on `admin_audit_logs`, view `v_partner_requesters`, grants to `crewnbuild_partner` (USAGE, SELECT on the view, REFERENCES on `users.id`) |
+| Partner | `partner/backend/alembic/versions/20261113_0001_initial_partner_schema.py` | Schema `partner`, all 22 tables, indexes, constraints, foreign key to `professional.users`, view v\_professional\_bookings and its grants to crewnbuild\_professional (USAGE, SELECT on the view, REFERENCES on `bookings.id`) |
+| Professional | `professional/backend/alembic/versions/20261113_0002_booking_payment_orders_booking_key.py` | Foreign key `booking_payment_orders.booking_id → partner.bookings` (RESTRICT); needs Partner's baseline |
+
+The keys between the schemas point both ways, so the order is Professional 0001, Partner 0001, Professional 0002. `python scripts/migrate.py` runs exactly that (`--down` reverses it, `--check` runs `alembic check` for both).
 
 - **MG-01** Professional is always migrated first: Partner's baseline refers to `professional.users` and the requester view. Partner's `env.py` stops with a clear message if they are missing.
 - **MG-02** Each service keeps its version table in its own schema (`professional.alembic_version`, `partner.alembic_version`) and only looks at its own schema.
@@ -1242,9 +1245,7 @@ python -m venv .venv
 .venv\Scripts\Activate.ps1
 pip install -r requirements.txt -r requirements-dev.txt
 Copy-Item .env.example .env        # then fill in local values
-alembic upgrade head               # creates every professional table
-python -m app.seeds.run_all_seeds  # catalog, plan prices, first admin
-uvicorn app.main:app --reload --port 8000
+uvicorn app.main:app --reload --port 8000   # after step 5
 ```
 
 4. **Partner backend** (new terminal)
@@ -1255,19 +1256,25 @@ python -m venv .venv
 .venv\Scripts\Activate.ps1
 pip install -r requirements.txt -r requirements-dev.txt
 Copy-Item .env.example .env
-alembic upgrade head               # creates every partner table
-python -m app.seeds.run_all_seeds  # service catalog, checklist templates
-uvicorn app.main:app --reload --host 127.0.0.1 --port 8200
+uvicorn app.main:app --reload --host 127.0.0.1 --port 8200   # after step 5
 ```
 
-5. **Frontends** (one terminal each)
+5. **Tables and reference data** (from the repository root, both `.env` files filled in)
+
+```powershell
+python scripts\migrate.py   # Professional 0001, Partner, Professional 0002, each with its own .env
+python scripts\seed.py      # master catalog, plan prices, Partner service catalog and checklists
+cd professional\backend; .venv\Scripts\python -m app.seeds.seed_admin_account   # the first administrator
+```
+
+6. **Frontends** (one terminal each)
 
 ```powershell
 cd professional\frontend; npm ci; Copy-Item .env.example .env.local; npm run dev   # http://localhost:5173
 cd partner\frontend;      npm ci; Copy-Item .env.example .env.local; npm run dev   # http://localhost:5373
 ```
 
-6. **Check:** `http://localhost:8000/api/v1/health/db` and `http://localhost:8200/api/v1/health/db` both report the schema at head with no missing tables.
+7. **Check:** `http://localhost:8000/api/v1/health/db` and `http://localhost:8200/api/v1/health/db` both report the schema at head with no missing tables.
 
 `scripts/setup_local_environment.ps1` runs steps 3 to 5 in one go once `.env` files exist.
 

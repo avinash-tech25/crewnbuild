@@ -18,7 +18,7 @@ def test_a_healthy_database(make_client: ClientFactory, database: Session) -> No
     assert body["status"] == "ok" and body["database_reachable"] and body["schema_at_head"]
     assert body["missing_tables"] == [] and body["missing_table_count"] == 0
     assert body["database"] == "crewnbuild_test" and "users" in body["tables"]
-    assert body["current_revision"] == body["head_revision"] == []  # no revision until the R5 baseline
+    assert body["current_revision"] == body["head_revision"] == ["0002"]  # stamped by the test setup
 
 
 def test_behind_the_head_or_missing_a_table_is_503(

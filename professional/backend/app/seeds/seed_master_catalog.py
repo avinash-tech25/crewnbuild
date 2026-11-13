@@ -8,8 +8,8 @@ nothing existing is changed or deleted, and any failed check rolls the whole run
 The script's own messages ("Added ...", "Exists ...", the CHECK lines) are printed.
 
 Reference data, not an account, so it runs in every environment, production
-included. The catalog tables must exist (the Professional migrations create them);
-the R5 baseline can run the same file with op.execute.
+included. The catalog tables must exist (the Professional baseline creates them);
+scripts/seed.py runs this after scripts/migrate.py (MG-03: data by seed, not migration).
 """
 
 import sys

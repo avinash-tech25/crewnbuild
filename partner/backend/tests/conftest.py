@@ -100,6 +100,7 @@ def database_tables() -> Iterator[None]:
         )
     Base.metadata.drop_all(engine)
     Base.metadata.create_all(engine)
+    stamp_head(engine, TEST_SCHEMA)
     with engine.begin() as connection:
         connection.execute(text(f"DROP TABLE IF EXISTS {REQUESTERS_STAND_IN}"))
         connection.execute(
@@ -112,6 +113,7 @@ def database_tables() -> Iterator[None]:
     yield
     with engine.begin() as connection:
         connection.execute(text(f"DROP TABLE IF EXISTS {REQUESTERS_STAND_IN}"))
+    unstamp(engine, TEST_SCHEMA)
     Base.metadata.drop_all(engine)
     engine.dispose()
 
@@ -150,3 +152,23 @@ import sys  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).parent))
 from legacy import *  # noqa: E402, F403
+
+
+def stamp_head(engine: Any, schema: str) -> None:
+    """Record the Alembic head in {schema}.alembic_version, as a migrated database has it:
+    create_all builds the same tables as the migrations (scripts/migrate.py --check)."""
+    from alembic.config import Config
+    from alembic.script import ScriptDirectory
+
+    backend = Path(__file__).resolve().parents[1]
+    heads = ScriptDirectory.from_config(Config(str(backend / "alembic.ini"))).get_heads()
+    with engine.begin() as connection:
+        connection.execute(text(f'DROP TABLE IF EXISTS "{schema}".alembic_version'))
+        connection.execute(text(f'CREATE TABLE "{schema}".alembic_version (version_num varchar(32) PRIMARY KEY)'))
+        for head in heads:
+            connection.execute(text(f'INSERT INTO "{schema}".alembic_version VALUES (:v)'), {"v": head})  # noqa: S608 our schema
+
+
+def unstamp(engine: Any, schema: str) -> None:
+    with engine.begin() as connection:
+        connection.execute(text(f'DROP TABLE IF EXISTS "{schema}".alembic_version'))

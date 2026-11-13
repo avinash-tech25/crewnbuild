@@ -940,7 +940,7 @@ class ServiceRequestRatingTag(Base):
 # bookings.requested_by_user_id -> professional.users.id ON DELETE RESTRICT (section 9.3,
 # a reference across schemas). Professional grants REFERENCES on users.id to the Partner
 # role in its baseline; the key is created with the table when that is already so, and
-# otherwise by the Partner baseline after Professional's (docs/porting-todo.md).
+# the baseline migration 0001 adds it explicitly (after Professional's baseline granted it).
 BOOKING_REQUESTER_FOREIGN_KEY = DDL(
     "ALTER TABLE partner.bookings ADD CONSTRAINT fk_bookings__requested_by_user_id__users "
     "FOREIGN KEY (requested_by_user_id) REFERENCES professional.users (id) ON DELETE RESTRICT"
@@ -948,10 +948,12 @@ BOOKING_REQUESTER_FOREIGN_KEY = DDL(
 
 
 def professional_users_referenceable(ddl: object, target: object, bind: Any, **_: object) -> bool:
+    # Professional grants REFERENCES on the id column only (a column privilege).
     found = bind.execute(
         text(
-            "SELECT 1 FROM information_schema.table_privileges WHERE table_schema = 'professional' "
-            "AND table_name = 'users' AND privilege_type = 'REFERENCES' AND grantee = current_user"
+            "SELECT 1 FROM information_schema.column_privileges WHERE table_schema = 'professional' "
+            "AND table_name = 'users' AND column_name = 'id' AND privilege_type = 'REFERENCES' "
+            "AND grantee = current_user"
         )
     ).first()
     return found is not None

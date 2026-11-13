@@ -91,7 +91,7 @@ class BookingCreateRequest(BaseModel):
     # catalog existed, or by any caller that leaves it out, still works.
     #
     # There is deliberately NO price field here, and adding one would be a
-    # mistake. The amount is read from `partner.services` at booking time, so a
+    # mistake. The amount is read from `partner.catalog_services` at booking time, so a
     # requester cannot propose, influence or tamper with what a job costs --
     # there is nothing for them to send.
     service_id: UUID | None = None

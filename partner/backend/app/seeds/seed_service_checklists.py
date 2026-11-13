@@ -355,7 +355,7 @@ def main(argv: list[str]) -> int:
     for trade, slug, outcome, count in report:
         print(f"{trade:<12} {slug:<31} {outcome:<16} {count}")
     outcomes = {name: sum(1 for row in report if row[2] == name) for name in {row[2] for row in report}}
-    print(f"services: {len(report)} | {outcomes} | templates in partner.service_step_templates: {total}")
+    print(f"services: {len(report)} | {outcomes} | templates in partner.catalog_service_checklist_steps: {total}")
     if any(row[2] == "kept" for row in report):
         print("NOTE: 'kept' services already had different templates; they were left untouched.")
     return 1 if any(row[2] == "missing-service" for row in report) else 0

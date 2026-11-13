@@ -11,7 +11,8 @@ import pkgutil
 from logging.config import fileConfig
 
 from alembic import context
-from sqlalchemy import create_engine, text
+from sqlalchemy import Connection, create_engine, text
+from sqlalchemy.types import TypeDecorator
 
 import app.modules
 from app.core.config import get_settings
@@ -44,11 +45,25 @@ def include_name(name: str | None, type_: str, parent_names: dict[str, str | Non
     return True
 
 
+# Foreign keys to the other service's schema. The models create them with a DDL event
+# (only once the other schema can be referenced) and the migrations add them explicitly,
+# so autogenerate leaves them alone.
+CROSS_SCHEMA_KEYS = {"fk_bookings__requested_by_user_id__users"}
+
+
 def include_object(obj: object, name: str | None, type_: str, reflected: bool, compare_to: object) -> bool:
     # Only this service's tables are compared and migrated.
     if type_ == "table":
         return getattr(obj, "schema", None) == SCHEMA
-    return True
+    return not (type_ == "foreign_key_constraint" and name in CROSS_SCHEMA_KEYS)
+
+
+def render_item(type_: str, obj: object, autogen_context: object) -> str | bool:
+    # A TypeDecorator (NaiveUtcTimestamp) is written as the column type it stores, so the
+    # migrations never import application code.
+    if type_ == "type" and isinstance(obj, TypeDecorator):
+        return f"sa.{obj.impl!r}"
+    return False
 
 
 def database_url() -> str:
@@ -67,16 +82,43 @@ def run_migrations_offline() -> None:
         version_table="alembic_version",
         version_table_schema=SCHEMA,
         compare_type=True,
+        render_item=render_item,
     )
     with context.begin_transaction():
         context.run_migrations()
 
 
+PROFESSIONAL_FIRST = (
+    "Professional's baseline has not been applied to this database: migrate Professional first "
+    "(python scripts/migrate.py does both, in order). Partner needs professional.users and "
+    "professional.v_partner_requesters (MG-01)."
+)
+
+
+def require_professional_baseline(connection: Connection) -> None:
+    """MG-01: Partner's baseline refers to professional.users and the requester view."""
+    found = connection.execute(
+        text(
+            "SELECT count(*) FROM information_schema.tables WHERE table_schema = 'professional' "
+            "AND table_name IN ('users', 'v_partner_requesters')"
+        )
+    ).scalar()
+    if found != 2:
+        raise SystemExit(PROFESSIONAL_FIRST)
+
+
 def run_migrations_online() -> None:
     engine = create_engine(database_url())
     with engine.connect() as connection:
-        # A no-op when infrastructure/database/create_database_and_roles.sql already created it.
-        connection.execute(text(f'CREATE SCHEMA IF NOT EXISTS "{SCHEMA}"'))
+        require_professional_baseline(connection)
+        # infrastructure/database/create_database_and_roles.sql creates the schema, owned by
+        # this service's role; the role has no CREATE on the database, and PostgreSQL checks
+        # that even for IF NOT EXISTS, so look first.
+        exists = connection.execute(text("SELECT 1 FROM pg_namespace WHERE nspname = :s"), {"s": SCHEMA}).first()
+        if exists is None:
+            connection.execute(text(f'CREATE SCHEMA "{SCHEMA}"'))
+        # End the transaction those statements began, or Alembic would run inside it and
+        # leave the commit to us.
         connection.commit()
         context.configure(
             connection=connection,
@@ -87,6 +129,7 @@ def run_migrations_online() -> None:
             version_table="alembic_version",
             version_table_schema=SCHEMA,
             compare_type=True,
+            render_item=render_item,
         )
         with context.begin_transaction():
             context.run_migrations()

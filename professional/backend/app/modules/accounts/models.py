@@ -296,3 +296,7 @@ class AccountDeletionRequest(UuidPrimaryKeyMixin, TimestampMixin, Base):
     requester_notified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     notification_attempts: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
     notification_error: Mapped[str | None] = mapped_column(Text)
+
+
+# The view Partner reads requesters through, and its grants, come with these tables.
+from app.modules.accounts import partner_view  # noqa: E402, F401

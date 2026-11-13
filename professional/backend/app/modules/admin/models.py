@@ -8,8 +8,8 @@ user_reports (support), ads and ad_daily_stats (content), user_verification_revi
 
 The audit log is append-only, enforced by the database: a trigger refuses every UPDATE
 and DELETE, so an administrator cannot rewrite or remove their own history even through
-the application's own connection. The trigger is created with the table here and must
-be part of the R5 baseline migration (porting-todo).
+the application's own connection. The trigger is created with the table here (tests)
+and by the baseline migration 0001.
 """
 
 import uuid

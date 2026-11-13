@@ -109,7 +109,9 @@ def main() -> None:
     finally:
         session.close()
     approved = sum(len(entries) for entries in CATALOG.values())
-    print(f"catalog: {created} created, {updated} updated, {total} rows in partner.services ({approved} approved)")
+    print(
+        f"catalog: {created} created, {updated} updated, {total} rows in partner.catalog_services ({approved} approved)"
+    )
 
 
 if __name__ == "__main__":

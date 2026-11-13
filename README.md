@@ -7,7 +7,7 @@ CREWNBUILD is a construction platform built as two products on one PostgreSQL da
 
 The two services never call each other over HTTP. They connect in three ways only: the signed Book Technician hand-off, a read-only view of requesters, and a read-only view of bookings. See `docs/technical-architecture.md`, sections 2 and 11.
 
-> **Status: restructure in progress.** This repository replaces the old `Kuwait-Version` repository. Steps R1 to R3 of `docs/technical-architecture.md` section 16.1 have set up the layout, settings templates and database script. The application code arrives in step R4 and later, so the apps below cannot run yet.
+> **Status: restructure in progress.** This repository replaces the old `Kuwait-Version` repository. Both backends are ported (R4) and each has its Alembic baseline (R5); the frontends follow in R7.
 
 ## Repository layout
 
@@ -24,7 +24,7 @@ crewnbuild/
 │   ├── docker/         Dockerfiles (to come)
 │   └── nginx/          Reverse proxy settings (to come)
 ├── docs/               Architecture, requirements and connection map
-├── scripts/            Local setup scripts (to come)
+├── scripts/            migrate.py (both services, in order) and seed.py
 └── .github/workflows/  CI
 ```
 
@@ -39,24 +39,64 @@ crewnbuild/
 
 ## Running locally
 
-**You need:** Git, Python 3.12, Node.js 20 LTS or later, and PostgreSQL 18 or later. The full steps are in `docs/technical-architecture.md` section 18. Always migrate Professional before Partner.
+**You need:** Git, Python 3.12, Node.js 20 LTS or later, and **PostgreSQL 18** (the tables use its `uuidv7()`). The full steps are in `docs/technical-architecture.md` section 18.
 
-1. **Create the database, roles and schemas** (once per machine). First replace the `change-me` passwords in the script, then run:
+1. **Install PostgreSQL 18** and make sure `psql` is on your PATH.
 
-   ```powershell
-   psql -U postgres -f infrastructure\database\create_database_and_roles.sql
-   ```
-
-2. **Create the settings files** from the templates. Fill in local values only, and never commit the `.env` files:
+2. **Create the database, roles and schemas** (once per machine). Copy the script, replace both `change-me` passwords with your own, and run it as the PostgreSQL superuser:
 
    ```powershell
-   Copy-Item professional\backend\.env.example professional\backend\.env
-   Copy-Item partner\backend\.env.example partner\backend\.env
-   Copy-Item professional\frontend\.env.example professional\frontend\.env.local
-   Copy-Item partner\frontend\.env.example partner\frontend\.env.local
+   Copy-Item infrastructure\database\create_database_and_roles.sql $env:TEMP\create_crewnbuild.sql
+   notepad $env:TEMP\create_crewnbuild.sql          # set your two passwords
+   psql -U postgres -f $env:TEMP\create_crewnbuild.sql
    ```
 
-3. **Start the backends and frontends** as described in section 18 once the code is in place. The backends run on ports 8000 and 8200, the frontends on 5173 and 5373.
+   It creates the databases `crewnbuild` and `crewnbuild_test`, the roles `crewnbuild_professional` and `crewnbuild_partner`, and one schema per service. Each service creates its own tables; neither role can create databases.
+
+3. **Install each backend** and create its settings file from the template. Put the password you chose for that service's role in its `DATABASE_URL`, and never commit a `.env` file:
+
+   ```powershell
+   cd professional\backend
+   python -m venv .venv; .venv\Scripts\Activate.ps1
+   pip install -r requirements.txt -r requirements-dev.txt
+   Copy-Item .env.example .env        # then fill in local values
+   deactivate; cd ..\..
+
+   cd partner\backend
+   python -m venv .venv; .venv\Scripts\Activate.ps1
+   pip install -r requirements.txt -r requirements-dev.txt
+   Copy-Item .env.example .env        # then fill in local values
+   deactivate; cd ..\..
+   ```
+
+4. **Create the tables** of both services, from the repository root. The two schemas refer to each other, so the order matters (Professional 0001, Partner, then Professional 0002), and the script runs exactly that order with each backend's own `.env`:
+
+   ```powershell
+   python scripts\migrate.py           # safe to run again
+   python scripts\migrate.py --check   # models and database match
+   ```
+
+   `python scripts\migrate.py --down` removes everything again, in reverse order. Running `alembic upgrade head` in `professional\backend` alone stops at revision 0002 with a message to migrate Partner first, and applies nothing; Partner on its own refuses to start before Professional (MG-01).
+
+5. **Load the reference data** (master catalog, subscription plan prices, Partner service catalog and checklists). Every seed is idempotent:
+
+   ```powershell
+   python scripts\seed.py                        # add --with-test-accounts for the OTP test accounts (never production)
+   cd professional\backend; .venv\Scripts\python -m app.seeds.seed_admin_account; cd ..\..   # the first administrator
+   ```
+
+6. **Start both backends** (one terminal each):
+
+   ```powershell
+   cd professional\backend; .venv\Scripts\Activate.ps1; uvicorn app.main:app --reload --port 8000
+   cd partner\backend;      .venv\Scripts\Activate.ps1; uvicorn app.main:app --reload --host 127.0.0.1 --port 8200
+   ```
+
+   Check `http://localhost:8000/api/v1/health/db` and `http://localhost:8200/api/v1/health/db`: both report `"schema_at_head": true` and no missing tables.
+
+7. **Frontends** (after R7): `npm ci` and `npm run dev` in `professionalrontend` (port 5173) and `partnerrontend` (port 5373), each with a `.env.local` copied from its `.env.example`.
+
+**Tests** use the database `crewnbuild_test` only, create their tables there and drop them afterwards: run `pytest` in each backend.
 
 ## Secrets
 
