@@ -23,6 +23,11 @@ PUBLIC_ROUTES: frozenset[tuple[str, str]] = frozenset(
         ("POST", "/requester/logout"),
         # India Post pincode lookup for the registration and profile forms (as before)
         ("GET", "/locations/pincode/{pincode}"),
+        # Weather for the public pages (landing, sign-in, registration): coordinates the
+        # visitor's browser sends; nothing about any account, job or booking (as before)
+        ("GET", "/weather/public"),
+        ("GET", "/weather/public/places"),
+        ("GET", "/weather/public/describe"),
     }
 )
 

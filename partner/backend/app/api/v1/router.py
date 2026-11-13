@@ -23,6 +23,8 @@ from app.modules.requesters.router import router as requester_router
 from app.modules.technicians.onboarding_router import router as onboarding_router
 from app.modules.technicians.router import router as technicians_router
 from app.modules.tracking.router import router as tracking_router
+from app.modules.weather.router import public_router as public_weather_router
+from app.modules.weather.router import router as weather_router
 
 api_router = APIRouter()
 
@@ -52,6 +54,10 @@ MODULE_ROUTERS: list[APIRouter] = [
     tracking_router,
     # The live websockets (old tracking and dispatch ws_router), after the HTTP routes.
     realtime_router,
+    # Technician weather (/technicians/me/weather) and the public pages' weather; last,
+    # so it changes no earlier match (as before).
+    weather_router,
+    public_weather_router,
 ]
 
 for module_router in MODULE_ROUTERS:

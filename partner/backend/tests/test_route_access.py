@@ -13,8 +13,8 @@ from app.auth.public_routes import PUBLIC_ROUTES, is_public
 
 # 2 health + 9 /auth + 3 /onboarding + 3 /locations + 38 /technicians/me (profile, work,
 # earnings, bank account, offers, jobs, location) + 23 /requester (5 session, 2 catalog,
-# 16 bookings) + 3 /tracking
-EXPECTED_ROUTES = 81
+# 16 bookings) + 3 /tracking + 3 /technicians/me/weather + 3 /weather/public
+EXPECTED_ROUTES = 87
 SOCKETS = ("/api/v1/dispatch/ws/technician", "/api/v1/tracking/ws/bookings/{booking_id}")
 
 
