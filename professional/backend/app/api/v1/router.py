@@ -17,6 +17,8 @@ from app.modules.admin.router import router as admin_router
 from app.modules.admin.router import staff_router as admin_staff_router
 from app.modules.catalog.router import admin_router as admin_catalog_router
 from app.modules.catalog.router import router as catalog_router
+from app.modules.cctv.router import gateway_router as cctv_gateway_router
+from app.modules.cctv.router import router as cctv_router
 from app.modules.content.router import router as content_router
 from app.modules.content.vastu.router import router as vastu_router
 from app.modules.equipment_supply.router import router as equipment_supply_router
@@ -64,6 +66,10 @@ MODULE_ROUTERS: list[APIRouter] = [
     property_router,
     # The old order put the file routes after property and estimates.
     files_router,
+    # Live cameras, and the media gateway's loopback-only authentication callback
+    # (old cctv_routes, after the file routes).
+    cctv_router,
+    cctv_gateway_router,
     # Reports, contact and support, in the old order, with the admin deleted-accounts
     # and support-ticket screens where the old app registered them.
     support_router,

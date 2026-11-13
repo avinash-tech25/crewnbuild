@@ -42,6 +42,9 @@ ignore = [
 "app/modules/site_operations/service.py" = ["E501", "RUF005", "RUF046", "B904", "B905", "SIM105", "S110"]
 "app/modules/site_operations/repository.py" = ["E501"]
 "app/modules/store/*_service.py" = ["E501", "RUF001", "RUF036", "B904", "B905"]
+# Ported from the old app/shared/cctv unchanged (long lines; token-type and digest-scheme
+# names are not passwords; the old exception name and the probe loop that skips a dead port).
+"app/modules/cctv/**/*.py" = ["E501", "S105", "N818", "S112"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["app"]

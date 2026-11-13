@@ -26,3 +26,4 @@ Every stub or temporary behaviour the restructure has left in place, one line ea
 | 51 | property | `requests` split | The old `requests` rows of kind PROPERTY_BUYER_TO_SELLER (with `property_listing_id`) go to `property_enquiries` in the data copy; the app reads and answers them there already | R8 (data copy) |
 | 56 | site_operations | `modules/site_operations/models.py` → `site_daily_record_adjustments` | The table exists; the builder's corrections of closed records and the premium summary that reads them come with billing | billing module |
 | 59 | marketplace | `modules/marketplace/order_service.py` → `fulfil_line` | A listing name longer than 80 characters fails the legacy material log on fulfilment (500), as before (old bug kept) | R7 (legacy logs retired) |
+| 60 | cctv | `modules/cctv/pending_links.py` → `builder_feature_allowed` | A builder's plan never limits live or recorded camera video to SD: every viewer may choose HD | billing module |
