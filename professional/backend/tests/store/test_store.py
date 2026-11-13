@@ -8,7 +8,8 @@ import uuid
 from typing import Any
 
 import pytest
-from conftest import ClientFactory
+from conftest import ClientFactory, make_settings
+from fastapi import HTTPException
 from fastapi.routing import APIRoute
 from fastapi.testclient import TestClient
 from files.test_files import FakeStorage
@@ -20,6 +21,8 @@ from projects.test_projects import detail
 from sqlalchemy.orm import Session
 from support.test_support import build
 
+from app.core.config import InsecureConfigurationError, check_settings
+from app.integrations.razorpay import PaymentGatewayConfigurationError, payment_client, resolve_gateway
 from app.modules.accounts import deletion_blockers
 from app.modules.identity.models import ROLE_ENGINEER
 from app.modules.store import links
@@ -312,3 +315,34 @@ def test_payments_answer_503_without_razorpay(make_client: ClientFactory, databa
     refused = manager.get("/store-manager/buy/products", params={"project_id": site.project_id})
     assert refused.status_code == 503 and detail(refused)["code"] == "PAYMENT_GATEWAY_MISCONFIGURED"
     assert manager.get("/store-manager/payments").status_code == 200
+
+
+def test_the_mock_never_runs_in_production() -> None:
+    """Production refuses the simulated checkout three ways: the app does not start with
+    RAZORPAY_ALLOW_MOCK=true, the gateway gate never picks the mock, and so payments answer
+    503 with the old message whatever the flag says."""
+    production = make_settings(razorpay_allow_mock=True).model_copy(update={"environment": "production"})
+    with pytest.raises(InsecureConfigurationError):
+        check_settings(production)
+    with pytest.raises(PaymentGatewayConfigurationError, match="never used in production"):
+        resolve_gateway(production)
+    with pytest.raises(HTTPException) as refused:
+        payment_client(production)
+    assert refused.value.status_code == 503
+    assert refused.value.detail["code"] == "PAYMENT_GATEWAY_MISCONFIGURED"  # type: ignore[index]
+    assert refused.value.detail["message"].startswith("Payments are unavailable: Razorpay TEST keys")  # type: ignore[index]
+
+
+def test_the_mock_checkout_route_refuses_a_real_gateway(make_client: ClientFactory, database: Session) -> None:
+    client = build(
+        make_client,
+        FakeEmailSender(),
+        FakeStorage(),
+        razorpay_key_id="rzp_test_demo",
+        razorpay_key_secret="demo-secret",
+    )
+    site = make_site(client, database)
+    manager = store_manager(client, database, site)
+    refused = manager.post("/store-manager/purchases/mock-checkout", json={"payment_id": str(uuid.uuid4()),
+                                                                             "outcome": "success"})  # fmt: skip
+    assert (refused.status_code, detail(refused)["code"]) == (404, "PAYMENT_MOCK_DISABLED")

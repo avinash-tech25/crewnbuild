@@ -1,7 +1,7 @@
 """Property tables (technical-architecture.md section 10, domain Property): houses and
 plots offered for sale, and buyers' enquiries.
 
-    property_listings          UUID, + deleted_at; seller_id -> seller_user_id,
+    property_listings          UUID; seller_id -> seller_user_id,
                                price -> price_amount
     property_listing_images    UUID
     property_enquiries         the property rows of the old requests table
@@ -22,8 +22,8 @@ keys are unchanged. Times are timestamptz read as naive UTC.
 Delete rules (9.3): a listing goes with nothing but its own delete (its photos and
 enquiries go with it, CASCADE, as the old requests rows did); it keeps its seller
 (RESTRICT; accounts are soft-deleted); its optional source project is SET NULL; an
-enquiry keeps its buyer and seller (RESTRICT). deleted_at is in the table for the
-data copy and later soft delete; the seller's delete still removes the row, as before.
+enquiry keeps its buyer and seller (RESTRICT). There is no deleted_at: the old app
+deleted a listing outright (its photos and enquiries with it), and so does this one.
 """
 
 import uuid
@@ -108,7 +108,6 @@ class PropertyListing(UuidPrimaryKeyMixin, Base):
     listed_at: Mapped[datetime | None] = mapped_column(NaiveUtcTimestamp)
     sold_at: Mapped[datetime | None] = mapped_column(NaiveUtcTimestamp)
     created_at: Mapped[datetime] = created_at_column()
-    deleted_at: Mapped[datetime | None] = mapped_column(NaiveUtcTimestamp)
 
     seller = relationship("User", foreign_keys=[seller_id])
     images = relationship(

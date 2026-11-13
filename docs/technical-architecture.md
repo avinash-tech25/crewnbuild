@@ -738,7 +738,7 @@ The 98 current tables become 100 target tables: 44 are renamed, 2 are split in t
 | Messaging | `messages` | `messages` | int | UUID |
 | Messaging | `notifications` | `notifications` | int | UUID |
 | Files | `uploaded_files` | `files` | int | Rename, UUID |
-| Property | `property_listings` | `property_listings` | int | UUID; add `deleted_at` |
+| Property | `property_listings` | `property_listings` | int | UUID; hard delete kept (no `deleted_at`: the seller's delete removes the listing, its photos and enquiries, as before) |
 | Property | `property_listing_images` | `property_listing_images` | int | UUID |
 | Cameras | `cctv_devices`, `cctv_channels`, `cctv_device_credentials`, `cctv_discovery_results`, `cctv_playback_sessions`, `cctv_project_access`, `cctv_audit_events` | same names | uuid | Add FK to `projects`, `users` where missing |
 | Cameras | `cctv_rate_limit_events` | `cctv_rate_limit_events` | bigint | UUID |
