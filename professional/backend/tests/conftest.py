@@ -5,7 +5,7 @@ The database is crewnbuild_test only (section 17). Its address comes from
 TEST_DATABASE_URL, or else from the app's own DATABASE_URL with the database name
 switched to crewnbuild_test. Neither is printed. Any other database name is refused.
 Tests that use the database create every table in schema `professional` once, empty
-them after each test, and drop them at the end.
+them after each test (children first, only the tables written), and drop them at the end.
 """
 
 import os
@@ -51,8 +51,10 @@ get_settings.cache_clear()
 
 from fastapi.testclient import TestClient  # noqa: E402
 from sqlalchemy import text  # noqa: E402
+from sqlalchemy.exc import IntegrityError  # noqa: E402
 from sqlalchemy.orm import Session  # noqa: E402
 
+from app.core.config import PROFESSIONAL_SCHEMA  # noqa: E402
 from app.database.base import Base  # noqa: E402
 from app.database.session import SessionLocal, engine  # noqa: E402
 from app.main import create_app  # noqa: E402
@@ -92,9 +94,52 @@ def database(database_tables: None) -> Iterator[Session]:
     yield session
     session.rollback()
     session.close()
-    tables = ", ".join(f'"{table.schema}"."{table.name}"' for table in Base.metadata.sorted_tables)
+    empty_written_tables()
+
+
+def qualified(table: Any) -> str:
+    return f'"{table.schema}"."{table.name}"'
+
+
+def empty_written_tables() -> None:
+    """Empty every table the test wrote to, and only those, children first.
+
+    One query finds the tables holding rows. Each is emptied with DELETE (milliseconds),
+    in reverse dependency order so no foreign key is in the way; a table whose own
+    trigger forbids DELETE (the append-only admin audit log), or whose DELETE is refused
+    because two tables reference each other, is TRUNCATEd (CASCADE). The old
+    TRUNCATE ... CASCADE of all ~100 tables cost ~1.8 s per test. Tests keep their real
+    commits, and every test still starts with every table empty.
+    """
+    tables = list(Base.metadata.sorted_tables)
+    probe = " UNION ALL ".join(
+        f"SELECT {index} WHERE EXISTS (SELECT 1 FROM {qualified(table)})"  # noqa: S608 (our own table names)
+        for index, table in enumerate(tables)
+    )
     with engine.begin() as connection:
-        connection.execute(text(f"TRUNCATE {tables} CASCADE"))
+        written = [tables[index] for (index,) in connection.execute(text(probe))]
+        guarded = {
+            name
+            for (name,) in connection.execute(
+                text(
+                    "SELECT DISTINCT c.relname FROM pg_trigger t JOIN pg_class c ON c.oid = t.tgrelid "
+                    "JOIN pg_namespace n ON n.oid = c.relnamespace WHERE NOT t.tgisinternal AND n.nspname = :schema"
+                ),
+                {"schema": PROFESSIONAL_SCHEMA},
+            )
+        }
+        refused = [table for table in written if table.name in guarded]
+        for table in reversed(written):
+            if table.name in guarded:
+                continue
+            try:
+                with connection.begin_nested():
+                    connection.execute(text(f"DELETE FROM {qualified(table)}"))  # noqa: S608 (our own table names)
+            except IntegrityError:
+                # Two tables referencing each other (project_awards and their offers).
+                refused.append(table)
+        if refused:
+            connection.execute(text(f"TRUNCATE {', '.join(qualified(table) for table in refused)} CASCADE"))
 
 
 ClientFactory = Callable[..., TestClient]
