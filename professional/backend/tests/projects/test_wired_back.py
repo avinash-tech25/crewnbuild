@@ -2,6 +2,7 @@
 the deletion blockers, project reports, file access (cover, site media, team files),
 the admin project screens and project weather."""
 
+import json
 from typing import Any
 
 import pytest
@@ -17,6 +18,7 @@ from support.test_support import build
 from app.modules.accounts import deletion_blockers
 from app.modules.accounts.models import OwnerProfile
 from app.modules.accounts.profile_payloads import builder_reviews
+from app.modules.messaging.models import Message
 from app.modules.projects import daily_window
 from app.modules.projects.models import Project, Review
 from app.modules.projects.owner_first_project import create_owner_profile_project_if_missing
@@ -159,3 +161,25 @@ def test_deleting_a_project_removes_its_weather_site(client: TestClient, databas
     assert house_owner.delete(f"/projects/{project_id}").status_code == 200
     database.expire_all()
     assert database.scalars(select(WeatherSiteLocation)).all() == []
+
+
+def test_the_assignment_card_follows_the_award(client: TestClient, database: Session) -> None:
+    """The owner's ASSIGNMENT card in the chat shows the award's state: accepted once the
+    project is assigned, cancelled when the owner unassigns the builder."""
+    house_owner, house_builder = owner(client, database), builder(client, database)
+    project_id = create_project(house_owner)["id"]
+    awarded = award(house_owner, house_builder, project_id)
+
+    def card() -> dict[str, Any]:
+        database.expire_all()
+        rows = database.scalars(select(Message).where(Message.message_type == "ASSIGNMENT")).all()
+        cards = [json.loads(row.body) for row in rows if row.body.startswith("{")]
+        assert len(cards) == 1
+        return cards[0]
+
+    assigned = card()
+    assert (assigned["kind"], assigned["status"]) == ("PROJECT_ASSIGNMENT", "accepted")
+    assert assigned["request_id"] == str(awarded["request_id"])
+    cancelled = house_owner.post(f"/awards/{awarded['award_id']}/cancel")
+    assert cancelled.status_code == 200, cancelled.text
+    assert card()["status"] == "cancelled"
