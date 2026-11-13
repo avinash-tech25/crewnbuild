@@ -15,6 +15,8 @@ from app.auth.dependencies import enforce_route_access
 from app.modules.accounts.router import router as accounts_router
 from app.modules.admin.router import router as admin_router
 from app.modules.admin.router import staff_router as admin_staff_router
+from app.modules.billing.booking_payments_router import router as booking_payments_router
+from app.modules.billing.router import router as billing_router
 from app.modules.catalog.router import admin_router as admin_catalog_router
 from app.modules.catalog.router import router as catalog_router
 from app.modules.cctv.router import gateway_router as cctv_gateway_router
@@ -55,7 +57,7 @@ MODULE_ROUTERS: list[APIRouter] = [
     # Notifications and messages, where the old app registered them (before projects).
     messaging_router,
     # Projects, requests, awards, teams and supplier assignments, where the old app
-    # registered them (after notifications and messages, which are not ported yet).
+    # registered them (after notifications and messages).
     projects_router,
     # The daily record, the cost tool and the owner's analysis (old daily_cost_routes).
     site_operations_router,
@@ -77,8 +79,8 @@ MODULE_ROUTERS: list[APIRouter] = [
     # Estimates, ads and translation; then Vastu.
     content_router,
     vastu_router,
-    # Labour supply, where the old app registered it (after payments, which are not
-    # ported yet).
+    # Book Technician booking payments, then labour supply, as the old app registered them.
+    booking_payments_router,
     labour_supply_router,
     equipment_supply_router,
     # The Store Manager, the Site Engineer's store requests and Builder <-> Store
@@ -86,6 +88,8 @@ MODULE_ROUTERS: list[APIRouter] = [
     store_router,
     # Every /weather path is new, so it shadows nothing registered above.
     weather_router,
+    # Builder plans, coupons, the premium tools and their admin screens: last, as before.
+    billing_router,
 ]
 
 for module_router in MODULE_ROUTERS:

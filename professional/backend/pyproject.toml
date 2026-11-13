@@ -45,6 +45,11 @@ ignore = [
 # Ported from the old app/shared/cctv unchanged (long lines; token-type and digest-scheme
 # names are not passwords; the old exception name and the probe loop that skips a dead port).
 "app/modules/cctv/**/*.py" = ["E501", "S105", "N818", "S112"]
+# Ported from the old app/subscription and app/payment_gateway unchanged (long lines, the
+# old error handling).
+"app/modules/billing/*_service.py" = ["E501", "B904"]
+"app/modules/billing/*_admin.py" = ["E501", "B904"]
+"app/modules/billing/booking_payment_*.py" = ["E501", "B904"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["app"]

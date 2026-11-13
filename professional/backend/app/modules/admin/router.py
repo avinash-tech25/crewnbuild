@@ -6,7 +6,8 @@ Every route needs an administrator role AND its named permission (require_admin)
 GET /admin/me and GET /admin/overview need the administrator role only, as before.
 The projects screens (/admin/projects, /admin/leads) read the projects module through
 project_links.py. Admin > Master Catalog is the catalog module's
-(/admin/catalog); the coupon and payment-history screens come with billing.
+(/admin/catalog); the coupon and payment-history screens are billing's
+(/admin/coupons, /admin/subscription-payments).
 """
 
 import uuid

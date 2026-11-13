@@ -55,6 +55,14 @@ PUBLIC_ROUTES: frozenset[tuple[str, str]] = frozenset(
         # machine, not by browsers, so it has no session; it answers 404 to any caller
         # that is not loopback and checks the playback token or gateway secret itself.
         ("POST", "/internal/cctv/media-gateway/auth"),
+        # Builder plan prices, shown on the public plans page, as before
+        ("GET", "/subscriptions/plans"),
+        # Razorpay's signed webhooks: called by Razorpay, not browsers; each checks the
+        # X-Razorpay-Signature HMAC of the raw body before reading it
+        ("POST", "/subscriptions/webhooks/razorpay"),
+        ("POST", "/payments/webhooks/razorpay"),
+        # Which payment gateway is active (test, mock or unavailable); never a key or secret
+        ("GET", "/payments/gateway-status"),
     }
 )
 

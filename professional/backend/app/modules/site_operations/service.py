@@ -21,6 +21,8 @@ from app.core.config import get_settings
 from app.core.local_time import local_iso as to_local_iso
 from app.core.local_time import local_workflow_now
 from app.database.types import naive_utc_now
+from app.modules.billing.entitlements import require_builder_feature, require_project_feature
+from app.modules.billing.plans import BUILDER_BILLING
 from app.modules.files.upload_service import SITE_IMAGE, SITE_VIDEO, UploadService
 from app.modules.identity.models import User
 from app.modules.marketplace.site_links import fulfilled_orders, supplier_listings
@@ -36,7 +38,6 @@ from app.modules.projects.award_service import get_awarded_contract
 from app.modules.projects.daily_window import daily_record_is_open, ensure_daily_record_open
 from app.modules.projects.models import Project, ProjectTimeline
 from app.modules.projects.notices import create_notification
-from app.modules.projects.pending_links import pending_require_project_feature
 from app.modules.projects.project_service import project_locality, save_upload_files, serialize_cost_entry
 from app.modules.site_operations.models import (
     CostExpense,
@@ -51,10 +52,6 @@ from app.modules.site_operations.models import (
     DailyCostRegister,
     LabourLog,
     MaterialLog,
-)
-from app.modules.site_operations.pending_links import (
-    BUILDER_BILLING,
-    pending_require_builder_feature,
 )
 from app.modules.site_operations.repository import DailyCostRepository
 from app.modules.site_operations.schemas import (
@@ -670,9 +667,7 @@ class DailyCostService:
         project = ensure_project_cost_read_access(self.database, project_id, user)
         if work_date:
             checked_work_date(work_date)
-        pending_require_builder_feature(
-            self.database, user, BUILDER_BILLING
-        )  # builder only; the engineer is never gated
+        require_builder_feature(self.database, user, BUILDER_BILLING)  # builder only; the engineer is never gated
         return cost_summary_payload(self.database, project, work_date)
 
     def fetch_owner_project_analysis(self, project_id: uuid.UUID, user: User):
@@ -680,7 +675,7 @@ class DailyCostService:
         project = ensure_project_owner_analysis_access(self.database, project_id, user)
         # The same rule as the owner's calendar and photos: paused while the
         # project's builder has lost the feature (BUILDER_ACCESS_PAUSED).
-        pending_require_project_feature(self.database, user, project, BUILDER_BILLING)
+        require_project_feature(self.database, user, project, BUILDER_BILLING)
         return owner_analysis_payload(cost_summary_payload(self.database, project), project)
 
     def save_daily_cost_register(self, payload: DailyCostRegisterCreate, user: User):
@@ -851,7 +846,7 @@ class DailyCostService:
         # The builder the project is awarded to, checked before anything is written
         # or anyone is notified -- not merely any builder naming a project id.
         project = ensure_contractor_project_access(self.database, payload.project_id, user)
-        pending_require_builder_feature(self.database, user, BUILDER_BILLING)
+        require_builder_feature(self.database, user, BUILDER_BILLING)
         log = MaterialLog(**payload.model_dump())
         self.repository.add(log)
         create_notification(
@@ -868,7 +863,7 @@ class DailyCostService:
     def save_labour_log(self, payload: LabourCreate, user: User):
         # As above: only the awarded builder may record labour on this project.
         project = ensure_contractor_project_access(self.database, payload.project_id, user)
-        pending_require_builder_feature(self.database, user, BUILDER_BILLING)
+        require_builder_feature(self.database, user, BUILDER_BILLING)
         log = LabourLog(**payload.model_dump())
         self.repository.add(log)
         create_notification(

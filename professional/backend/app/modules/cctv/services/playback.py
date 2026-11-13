@@ -48,9 +48,9 @@ from fastapi import HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 from app.database.session import SessionLocal
-from app.modules.cctv import pending_links as entitlements
+from app.modules.billing import entitlements
+from app.modules.billing import plans as catalogue
 from app.modules.cctv.models import SESSION_OPEN_STATUSES, CctvPlaybackSession
-from app.modules.cctv.pending_links import catalogue
 from app.modules.cctv.repository import CctvRepository
 from app.modules.cctv.runtime import settings
 from app.modules.cctv.schemas import (

@@ -14,11 +14,12 @@ from datetime import datetime
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.modules.billing.entitlements import project_feature_allowed
+from app.modules.billing.plans import BUILDER_PHOTOS
 from app.modules.identity.models import ROLE_BUILDER, ROLE_ENGINEER, ROLE_OWNER, User
 from app.modules.projects.access import contractor_has_project_access, engineer_has_project_access
 from app.modules.projects.daily_window import daily_record_is_open
 from app.modules.projects.models import ContractorEngineer, Project, ProjectImage, ProjectTimeline
-from app.modules.projects.pending_links import BUILDER_PHOTOS, pending_project_feature_allowed
 
 
 def address(file_id: uuid.UUID) -> str:
@@ -48,9 +49,7 @@ def project_media_visible(database: Session, user: User, file_id: uuid.UUID) -> 
         return False
     # The builder's photos tool: a builder without it, or the owner while the project's
     # builder's access is paused, is refused.
-    if user.role in (ROLE_BUILDER, ROLE_OWNER) and not pending_project_feature_allowed(
-        database, user, project, BUILDER_PHOTOS
-    ):
+    if user.role in (ROLE_BUILDER, ROLE_OWNER) and not project_feature_allowed(database, user, project, BUILDER_PHOTOS):
         return False
     if user.role == ROLE_OWNER and project.owner_id == user.id:
         return True
@@ -63,7 +62,7 @@ def project_media_visible(database: Session, user: User, file_id: uuid.UUID) -> 
 
 def engineer_site_photo_paused(database: Session, user: User, file_id: uuid.UUID) -> bool:
     """A Site Engineer's site photo of a closed day while the project's builder's photo
-    access is paused (never while billing is not ported)."""
+    access is paused."""
     if user.role != ROLE_ENGINEER:
         return False
     found = database.execute(
@@ -74,7 +73,7 @@ def engineer_site_photo_paused(database: Session, user: User, file_id: uuid.UUID
     if found is None:
         return False
     project_id, work_date = found
-    if pending_project_feature_allowed(database, user, database.get(Project, project_id), BUILDER_PHOTOS):
+    if project_feature_allowed(database, user, database.get(Project, project_id), BUILDER_PHOTOS):
         return False
     return not (isinstance(work_date, datetime) and daily_record_is_open(work_date.date()))
 

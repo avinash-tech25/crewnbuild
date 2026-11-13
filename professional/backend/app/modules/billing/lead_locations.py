@@ -1,27 +1,22 @@
-"""A builder's lead locations and the plan limits on them (India builders only).
+"""A builder's lead locations and the plan limits on them (India builders only; the old
+app/subscription/lead_locations.py).
 
-Ported in the accounts step only as far as the profile saves need it: the cap on saved
-service locations (require_location_count) and on the account's own pincode
-(require_account_pincode). Lead counting comes with the projects module.
-
-Limits: Free 1 location, Professional 3, Premium (BUSINESS) none. The plan in force is
-read from builder_subscriptions (a paid period now, or within its grace days); no
-period means Free, as before. builder_subscriptions belongs to billing and is not
-created yet; until it is, every builder is on Free, which is what an empty table says.
-The billing module replaces limited_plan with its own subscription_state.
+Limits: Free 1 location and 5 open leads per location, Professional 3 and 10, Premium
+(BUSINESS) none. The free first month keeps the Free limits. The plan whose limits apply
+is the one subscription_state reports in force (a paid period now, or within its grace
+days); otherwise Free.
 """
 
 import re
-from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from fastapi import HTTPException
-from sqlalchemy import select, text
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.core.config import PROFESSIONAL_SCHEMA, get_settings
 from app.modules.accounts.models import BuilderProfile
 from app.modules.accounts.profile_lists import split_profile_list
+from app.modules.billing import entitlements
 from app.modules.identity.models import ROLE_BUILDER, User
 
 LOCATION_LIMIT_REACHED = "LOCATION_LIMIT_REACHED"
@@ -39,40 +34,14 @@ LOCATION_UPGRADE_OFFERS = {
 _PINCODE = re.compile(r"(?<!\d)([1-9]\d{5})(?!\d)")
 
 
-def is_india_account(user: User) -> bool:
-    return (user.country_code or "India").strip().upper() in {"INDIA", "IN", "IND"}
-
-
-def plan_in_force(database: Session, user: User) -> str:
-    table = f"{PROFESSIONAL_SCHEMA}.builder_subscriptions"
-    if database.execute(text("SELECT to_regclass(:name)"), {"name": table}).scalar() is None:
-        return FREE
-    now = datetime.now(UTC)
-    grace = timedelta(days=get_settings().subscription_grace_days)
-    rows = database.execute(
-        text(
-            f"SELECT plan_code, subscription_start, subscription_end FROM {table} "  # noqa: S608 constant table name
-            "WHERE builder_id = :builder_id"
-        ),
-        {"builder_id": user.id},
-    ).all()
-    current = [row for row in rows if row.subscription_start <= now < row.subscription_end]
-    if current:
-        return str(current[0].plan_code)
-    lapsed = [row for row in rows if row.subscription_end <= now]
-    if lapsed and grace:
-        latest = max(lapsed, key=lambda row: row.subscription_end)
-        if now < latest.subscription_end + grace:
-            return str(latest.plan_code)
-    return FREE
-
-
 def limited_plan(database: Session, user: User) -> str | None:
-    """The tier whose limits apply to this builder now, or None (not a builder, or
-    outside India)."""
-    if (user.role or "").upper() != ROLE_BUILDER or not is_india_account(user):
+    """The tier whose limits apply to this builder now, or None when none apply (not a
+    builder, or outside India)."""
+    if (user.role or "").upper() != ROLE_BUILDER or not entitlements.core_tools_gated(user):
         return None
-    return plan_in_force(database, user)
+    state = entitlements.subscription_state(database, user.id)
+    in_force = state.status in (entitlements.STATUS_ACTIVE, entitlements.STATUS_GRACE)
+    return state.plan_code if in_force else FREE
 
 
 def location_cap(plan_code: str | None) -> int | None:
@@ -218,3 +187,23 @@ def require_lead_slot(database: Session, user: User, pincode: str | None) -> Non
                 "message": f"You've reached the {cap}-lead limit for this location.",
             },
         )
+
+
+def usage(database: Session, user: User) -> dict[str, Any] | None:
+    """Locations and open leads used against the limits, for the status payload."""
+    plan_code = limited_plan(database, user)
+    if plan_code is None:
+        return None
+    cap = lead_cap(plan_code)
+    counts = open_lead_counts(database, user.id, lead_pincodes(database, user))
+    return {
+        "plan_code": plan_code,
+        "locations_used": len(saved_locations(database, user)),
+        "max_locations": location_cap(plan_code),
+        "max_leads_per_location": cap,
+        "location_upgrade_offers": LOCATION_UPGRADE_OFFERS.get(plan_code, []),
+        "leads": [
+            {"pincode": pincode, "used": used, "remaining": None if cap is None else max(cap - used, 0)}
+            for pincode, used in counts.items()
+        ],
+    }

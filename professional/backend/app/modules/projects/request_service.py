@@ -2,8 +2,7 @@
 builder (award) or a Site Engineer (ported from the old project_request_service.py, same
 rules and answers).
 
-The chat lines of a request are not written until the messaging module is ported
-(pending_links). Property enquiries (property_enquiries, once rows of the requests
+A request's chat lines are written as before. Property enquiries (property_enquiries, once rows of the requests
 table) are in the incoming list and answered by accept and reject, as before.
 """
 

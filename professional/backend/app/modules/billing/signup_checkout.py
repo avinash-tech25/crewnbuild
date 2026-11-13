@@ -1,24 +1,25 @@
 """Subscription-first builder registration: a builder who chose a paid plan when signing
 up finishes checkout before using anything else.
 
-Ported in R4b only as far as identity needs it (sign-up stores the choice, the session
-answer reports it, every protected route enforces it). The rest of billing comes with
-the billing module.
-
 The choice is stored on builder_profiles (signup_plan_code / signup_duration_code) and
 grants nothing. It is pending until the builder's first verified paid period exists in
-builder_subscriptions. That table belongs to billing and is not created yet; while it is
-missing, no builder has a paid period, which is what an empty table would say.
+builder_subscriptions, read on every check, so a payment verified by a webhook or a
+recovery while the browser was closed counts the moment it is recorded.
+
+While pending, every authenticated request is refused except the few the onboarding
+needs (`enforce`, run for every protected route): sign-in and session, the PIN code step,
+the subscription and checkout routes. Every other role, every free builder and every
+builder who has paid is untouched.
 """
 
 from typing import Any
 
 from fastapi import HTTPException
-from sqlalchemy import select, text
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.core.config import PROFESSIONAL_SCHEMA
 from app.modules.accounts.models import BuilderProfile
+from app.modules.billing.models import BuilderSubscription
 from app.modules.identity.models import ROLE_BUILDER, User
 
 CHECKOUT_REQUIRED = "SUBSCRIPTION_CHECKOUT_REQUIRED"
@@ -53,13 +54,8 @@ def remember_signup_plan(profile: BuilderProfile, plan_code: str | None, duratio
 
 
 def has_paid_period(database: Session, user: User) -> bool:
-    table = f"{PROFESSIONAL_SCHEMA}.builder_subscriptions"
-    if database.execute(text("SELECT to_regclass(:name)"), {"name": table}).scalar() is None:
-        return False
-    found = database.execute(
-        text(f"SELECT 1 FROM {table} WHERE builder_id = :builder_id LIMIT 1"),  # noqa: S608 constant table name
-        {"builder_id": user.id},
-    ).first()
+    """A verified payment has activated a period: onboarding is over."""
+    found = database.scalar(select(BuilderSubscription.id).where(BuilderSubscription.builder_id == user.id).limit(1))
     return found is not None
 
 
@@ -104,4 +100,47 @@ def enforce(database: Session, user: User, path: str) -> None:
                 "message": "Finish your plan checkout to start using CREWNBUILD.",
                 **pending,
             },
+        )
+
+
+PINCODE_REQUIRED = "SUBSCRIPTION_PINCODE_REQUIRED"
+FREE_PLAN = "FREE"
+
+
+def change_signup_plan(
+    database: Session, user: User, plan_code: str | None, duration_code: str | None
+) -> dict[str, Any] | None:
+    """Before paying: switch between the paid offers, or (plan FREE) give up the paid
+    sign-up and continue on the free plan. Refused once a paid period exists."""
+    pending = pending_checkout(user, database)
+    if pending is None:
+        raise HTTPException(
+            status_code=409,
+            detail={"code": "SUBSCRIPTION_SIGNUP_PLAN_CLOSED", "message": "There is no unpaid plan choice to change."},
+        )
+    profile = database.scalars(select(BuilderProfile).where(BuilderProfile.user_id == user.id)).one()
+    if (plan_code or "").upper() == FREE_PLAN:
+        profile.signup_plan_code = profile.signup_duration_code = None
+    else:
+        choice = valid_signup_offer(plan_code, duration_code)
+        if choice is None:
+            raise HTTPException(
+                status_code=400,
+                detail={
+                    "code": "SUBSCRIPTION_PLAN_NOT_AVAILABLE",
+                    "message": "Choose Professional Pro Monthly or Premium Annual.",
+                },
+            )
+        profile.signup_plan_code, profile.signup_duration_code = choice
+    database.commit()
+    return pending_checkout(user, database)
+
+
+def require_pincode(user: User, database: Session) -> None:
+    """A paid sign-up pays only after the PIN code step (PATCH /auth/location, which
+    checks it against India Post)."""
+    if pending_checkout(user, database) is not None and not (user.pincode or "").strip():
+        raise HTTPException(
+            status_code=409,
+            detail={"code": PINCODE_REQUIRED, "message": "Verify your PIN code before paying for your plan."},
         )

@@ -1,8 +1,6 @@
 """A builder's award: the assignment decision, its negotiation and the contract
-confirmation (ported from the old builder award_service.py, same rules and answers).
-
-The chat lines of the negotiation are not written until the messaging module is ported
-(pending_links); the notifications are.
+confirmation (ported from the old builder award_service.py, same rules and answers). The
+negotiation's chat lines and notifications are written as before.
 """
 
 import uuid

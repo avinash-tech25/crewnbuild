@@ -98,16 +98,14 @@ class CctvDevice(Base):
         PrimaryKeyConstraint("id", name="pk_cctv_devices"),
         UniqueConstraint("id", "project_id", name="uq_cctv_devices_id_project_id"),
         UniqueConstraint("project_id", "host", "rtsp_port", name="uq_cctv_devices_project_host_rtsp_port"),
-        CheckConstraint("length(btrim(name)) > 0", name="ck_cctv_devices_name_not_blank"),
-        CheckConstraint(_in("device_type", DEVICE_TYPES), name="ck_cctv_devices_device_type"),
-        CheckConstraint("host ~ '^[a-z0-9.:-]{1,253}$'", name="ck_cctv_devices_host_format"),
-        CheckConstraint("rtsp_port BETWEEN 1 AND 65535", name="ck_cctv_devices_rtsp_port_range"),
-        CheckConstraint(
-            "onvif_port IS NULL OR onvif_port BETWEEN 1 AND 65535", name="ck_cctv_devices_onvif_port_range"
-        ),
-        CheckConstraint(_path_only("onvif_service_path"), name="ck_cctv_devices_onvif_service_path"),
-        CheckConstraint(_in("connection_method", CONNECTION_METHODS), name="ck_cctv_devices_connection_method"),
-        CheckConstraint(_in("status", DEVICE_STATUSES), name="ck_cctv_devices_status"),
+        CheckConstraint("length(btrim(name)) > 0", name="name_not_blank"),
+        CheckConstraint(_in("device_type", DEVICE_TYPES), name="device_type"),
+        CheckConstraint("host ~ '^[a-z0-9.:-]{1,253}$'", name="host_format"),
+        CheckConstraint("rtsp_port BETWEEN 1 AND 65535", name="rtsp_port_range"),
+        CheckConstraint("onvif_port IS NULL OR onvif_port BETWEEN 1 AND 65535", name="onvif_port_range"),
+        CheckConstraint(_path_only("onvif_service_path"), name="onvif_service_path"),
+        CheckConstraint(_in("connection_method", CONNECTION_METHODS), name="connection_method"),
+        CheckConstraint(_in("status", DEVICE_STATUSES), name="status"),
         Index("ix_cctv_devices_project_id", "project_id"),
         Index("ix_cctv_devices_created_by_user_id", "created_by_user_id"),
         Index("ix_cctv_devices_updated_by_user_id", "updated_by_user_id"),
@@ -164,12 +162,10 @@ class CctvDeviceCredential(Base):
             name="fk_cctv_device_credentials_device",
             ondelete="CASCADE",
         ),
-        CheckConstraint("octet_length(username_ciphertext) > 0", name="ck_cctv_device_credentials_username_present"),
-        CheckConstraint("octet_length(password_ciphertext) > 0", name="ck_cctv_device_credentials_password_present"),
-        CheckConstraint(
-            _in("encryption_scheme", ENCRYPTION_SCHEMES), name="ck_cctv_device_credentials_encryption_scheme"
-        ),
-        CheckConstraint("key_version >= 1", name="ck_cctv_device_credentials_key_version"),
+        CheckConstraint("octet_length(username_ciphertext) > 0", name="username_present"),
+        CheckConstraint("octet_length(password_ciphertext) > 0", name="password_present"),
+        CheckConstraint(_in("encryption_scheme", ENCRYPTION_SCHEMES), name="encryption_scheme"),
+        CheckConstraint("key_version >= 1", name="key_version"),
         Index("ix_cctv_device_credentials_created_by_user_id", "created_by_user_id"),
         Index("ix_cctv_device_credentials_updated_by_user_id", "updated_by_user_id"),
     )
@@ -216,23 +212,23 @@ class CctvChannel(Base):
             name="fk_cctv_channels_device",
             ondelete="CASCADE",
         ),
-        CheckConstraint("channel_number >= 1", name="ck_cctv_channels_channel_number"),
-        CheckConstraint("length(btrim(name)) > 0", name="ck_cctv_channels_name_not_blank"),
-        CheckConstraint(_path_only("main_stream_path"), name="ck_cctv_channels_main_stream_path"),
-        CheckConstraint(_path_only("sub_stream_path"), name="ck_cctv_channels_sub_stream_path"),
-        CheckConstraint(f"main_codec IS NULL OR {_in('main_codec', CODECS)}", name="ck_cctv_channels_main_codec"),
-        CheckConstraint(f"sub_codec IS NULL OR {_in('sub_codec', CODECS)}", name="ck_cctv_channels_sub_codec"),
+        CheckConstraint("channel_number >= 1", name="channel_number"),
+        CheckConstraint("length(btrim(name)) > 0", name="name_not_blank"),
+        CheckConstraint(_path_only("main_stream_path"), name="main_stream_path"),
+        CheckConstraint(_path_only("sub_stream_path"), name="sub_stream_path"),
+        CheckConstraint(f"main_codec IS NULL OR {_in('main_codec', CODECS)}", name="main_codec"),
+        CheckConstraint(f"sub_codec IS NULL OR {_in('sub_codec', CODECS)}", name="sub_codec"),
         CheckConstraint(
             "(main_width IS NULL OR main_width > 0) AND (main_height IS NULL OR main_height > 0) "
             "AND (sub_width IS NULL OR sub_width > 0) AND (sub_height IS NULL OR sub_height > 0)",
-            name="ck_cctv_channels_dimensions",
+            name="dimensions",
         ),
-        CheckConstraint(_in("preferred_stream", STREAM_VARIANTS), name="ck_cctv_channels_preferred_stream"),
-        CheckConstraint(_in("status", CHANNEL_STATUSES), name="ck_cctv_channels_status"),
-        CheckConstraint("display_order >= 0", name="ck_cctv_channels_display_order"),
+        CheckConstraint(_in("preferred_stream", STREAM_VARIANTS), name="preferred_stream"),
+        CheckConstraint(_in("status", CHANNEL_STATUSES), name="status"),
+        CheckConstraint("display_order >= 0", name="display_order"),
         CheckConstraint(
             "NOT is_enabled OR COALESCE(main_stream_path, sub_stream_path, main_profile_token, sub_profile_token) IS NOT NULL",
-            name="ck_cctv_channels_enabled_has_source",
+            name="enabled_has_source",
         ),
         Index("ix_cctv_channels_project_id", "project_id"),
         Index("ix_cctv_channels_created_by_user_id", "created_by_user_id"),
@@ -292,23 +288,21 @@ class CctvPlaybackSession(Base):
             name="fk_cctv_playback_sessions_channel",
             ondelete="CASCADE",
         ),
-        CheckConstraint(_in("viewer_role", VIEWER_ROLES), name="ck_cctv_playback_sessions_viewer_role"),
-        CheckConstraint(_in("access_basis", ACCESS_BASES), name="ck_cctv_playback_sessions_access_basis"),
-        CheckConstraint(_in("stream_variant", STREAM_VARIANTS), name="ck_cctv_playback_sessions_stream_variant"),
-        CheckConstraint(_in("transport", TRANSPORTS), name="ck_cctv_playback_sessions_transport"),
-        CheckConstraint("octet_length(token_hash) = 32", name="ck_cctv_playback_sessions_token_hash_length"),
-        CheckConstraint(
-            "gateway_path IS NULL OR gateway_path ~ '^[A-Za-z0-9_-]+$'", name="ck_cctv_playback_sessions_gateway_path"
-        ),
-        CheckConstraint(_in("status", SESSION_STATUSES), name="ck_cctv_playback_sessions_status"),
+        CheckConstraint(_in("viewer_role", VIEWER_ROLES), name="viewer_role"),
+        CheckConstraint(_in("access_basis", ACCESS_BASES), name="access_basis"),
+        CheckConstraint(_in("stream_variant", STREAM_VARIANTS), name="stream_variant"),
+        CheckConstraint(_in("transport", TRANSPORTS), name="transport"),
+        CheckConstraint("octet_length(token_hash) = 32", name="token_hash_length"),
+        CheckConstraint("gateway_path IS NULL OR gateway_path ~ '^[A-Za-z0-9_-]+$'", name="gateway_path"),
+        CheckConstraint(_in("status", SESSION_STATUSES), name="status"),
         CheckConstraint(
             f"end_reason IS NULL OR {_in('end_reason', SESSION_END_REASONS)}",
-            name="ck_cctv_playback_sessions_end_reason",
+            name="end_reason",
         ),
-        CheckConstraint("expires_at > created_at", name="ck_cctv_playback_sessions_expires_after_created"),
+        CheckConstraint("expires_at > created_at", name="expires_after_created"),
         CheckConstraint(
             "status IN ('PENDING', 'ACTIVE') OR ended_at IS NOT NULL",
-            name="ck_cctv_playback_sessions_terminal_has_ended_at",
+            name="terminal_has_ended_at",
         ),
         Index("ix_cctv_playback_sessions_channel_id_status", "channel_id", "status"),
         Index("ix_cctv_playback_sessions_viewer_user_id", "viewer_user_id"),
@@ -359,9 +353,9 @@ class CctvAuditEvent(Base):
     __tablename__ = "cctv_audit_events"
     __table_args__ = (
         PrimaryKeyConstraint("id", name="pk_cctv_audit_events"),
-        CheckConstraint(r"action ~ '^[a-z]+(\.[a-z_]+)+$'", name="ck_cctv_audit_events_action_format"),
-        CheckConstraint(_in("outcome", AUDIT_OUTCOMES), name="ck_cctv_audit_events_outcome"),
-        CheckConstraint("jsonb_typeof(detail) = 'object'", name="ck_cctv_audit_events_detail_is_object"),
+        CheckConstraint(r"action ~ '^[a-z]+(\.[a-z_]+)+$'", name="action_format"),
+        CheckConstraint(_in("outcome", AUDIT_OUTCOMES), name="outcome"),
+        CheckConstraint("jsonb_typeof(detail) = 'object'", name="detail_is_object"),
         Index("ix_cctv_audit_events_occurred_at", "occurred_at"),
         Index("ix_cctv_audit_events_project_id_occurred_at", "project_id", "occurred_at"),
         Index("ix_cctv_audit_events_device_id", "device_id"),
@@ -453,8 +447,8 @@ class CctvDiscoveryResult(Base):
     __tablename__ = "cctv_discovery_results"
     __table_args__ = (
         PrimaryKeyConstraint("id", name="pk_cctv_discovery_results"),
-        CheckConstraint("jsonb_typeof(candidates) = 'array'", name="ck_cctv_discovery_results_candidates_is_array"),
-        CheckConstraint("expires_at > created_at", name="ck_cctv_discovery_results_expires_after_created"),
+        CheckConstraint("jsonb_typeof(candidates) = 'array'", name="candidates_is_array"),
+        CheckConstraint("expires_at > created_at", name="expires_after_created"),
         ForeignKeyConstraint(
             ["device_id"],
             ["cctv_devices.id"],
@@ -493,7 +487,7 @@ class CctvRateLimitEvent(Base):
     __tablename__ = "cctv_rate_limit_events"
     __table_args__ = (
         PrimaryKeyConstraint("id", name="pk_cctv_rate_limit_events"),
-        CheckConstraint(_in("scope", RATE_LIMIT_SCOPES), name="ck_cctv_rate_limit_events_scope"),
+        CheckConstraint(_in("scope", RATE_LIMIT_SCOPES), name="scope"),
         Index("ix_cctv_rate_limit_events_lookup", "scope", "subject", "occurred_at"),
     )
 

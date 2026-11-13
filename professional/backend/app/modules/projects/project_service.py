@@ -16,6 +16,8 @@ from sqlalchemy.orm import Session
 
 from app.core.local_time import local_iso
 from app.modules.admin.scope import refuse_kuwait
+from app.modules.billing.entitlements import project_feature_allowed, require_project_feature
+from app.modules.billing.plans import BUILDER_CALENDAR, BUILDER_PHOTOS
 from app.modules.files.models import File
 from app.modules.files.upload_service import SITE_IMAGE, UploadService
 from app.modules.identity.models import ROLE_BUILDER, ROLE_ENGINEER, ROLE_OWNER, User
@@ -36,12 +38,6 @@ from app.modules.projects.award_service import (
 from app.modules.projects.daily_window import daily_record_is_open, ensure_daily_record_open
 from app.modules.projects.models import EscrowMilestone, Project, ProjectImage, ProjectTimeline
 from app.modules.projects.notices import create_notification
-from app.modules.projects.pending_links import (
-    BUILDER_CALENDAR,
-    BUILDER_PHOTOS,
-    pending_project_feature_allowed,
-    pending_require_project_feature,
-)
 from app.modules.projects.project_repository import ProjectRepository
 from app.modules.projects.schemas import ProjectCreate, ProjectProgressUpdate
 
@@ -430,7 +426,7 @@ class ProjectService:
         # The timelines carry the calendar and its photo addresses: a builder without
         # the calendar, or the owner or Site Engineer while the project's builder's
         # access is paused, gets the project without them.
-        if not pending_project_feature_allowed(self.database, user, project, BUILDER_CALENDAR):
+        if not project_feature_allowed(self.database, user, project, BUILDER_CALENDAR):
             payload.pop("timelines", None)
         return payload
         return {
@@ -526,7 +522,7 @@ class ProjectService:
         # The builder's view needs a plan or the free trial; the owner's and the Site
         # Engineer's follow the project's builder (the engineer's daily screen does
         # not use this list; it reads the open days from the timeline entries).
-        pending_require_project_feature(self.database, user, project, BUILDER_PHOTOS)
+        require_project_feature(self.database, user, project, BUILDER_PHOTOS)
         images = self.repository.list_project_images(project_id)
         media = serialize_project_media(self.database, images)
         return [
@@ -633,11 +629,9 @@ class ProjectService:
     def fetch_project_timeline_entries(self, project_id: uuid.UUID, user: User):
         project = ensure_project_activity_read_access(self.database, project_id, user)
         if user.role != ROLE_ENGINEER:
-            pending_require_project_feature(self.database, user, project, BUILDER_CALENDAR)  # builder and owner
+            require_project_feature(self.database, user, project, BUILDER_CALENDAR)  # builder and owner
         entries = self.repository.list_timeline_entries(project_id)
-        if user.role == ROLE_ENGINEER and not pending_project_feature_allowed(
-            self.database, user, project, BUILDER_CALENDAR
-        ):
+        if user.role == ROLE_ENGINEER and not project_feature_allowed(self.database, user, project, BUILDER_CALENDAR):
             # The engineer's daily screen loads this together with its form, so it is
             # never refused: while the builder's access is paused only the days still
             # open for reporting come back (today's entries and photos), not the history.

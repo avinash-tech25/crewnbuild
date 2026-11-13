@@ -125,6 +125,18 @@ def verify_checkout_signature(secret: str, razorpay_order_id: str, razorpay_paym
     return hmac.compare_digest(checkout_signature(secret, razorpay_order_id, razorpay_payment_id), signature)
 
 
+def verify_webhook_signature(secret: str, raw_body: bytes, signature: str | None) -> bool:
+    """X-Razorpay-Signature: HMAC-SHA256 of the raw request body with the webhook secret,
+    compared in constant time; a missing secret or signature never verifies."""
+    if not (secret and raw_body is not None and signature):
+        return False
+    return hmac.compare_digest(_hmac_sha256_hex(secret, raw_body), signature)
+
+
+def webhook_secret(settings: Settings) -> str:
+    return settings.razorpay_webhook_secret.get_secret_value().strip()
+
+
 # ---- the clients ----
 
 
