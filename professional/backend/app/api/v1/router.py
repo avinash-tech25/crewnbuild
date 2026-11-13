@@ -11,6 +11,7 @@ unless it is in app/auth/public_routes.py (AZ-01).
 
 from fastapi import APIRouter, Depends
 
+from app.api.v1.health import database_health
 from app.auth.dependencies import enforce_route_access
 from app.modules.accounts.router import router as accounts_router
 from app.modules.admin.router import router as admin_router
@@ -44,6 +45,10 @@ api_router = APIRouter()
 def health_check() -> dict[str, str]:
     """Process health, as before: {"status": "ok"}."""
     return {"status": "ok"}
+
+
+# Database reachability, migration head and missing tables (the old /health/db, NFR-13).
+api_router.add_api_route("/health/db", database_health, methods=["GET"], tags=["health"])
 
 
 MODULE_ROUTERS: list[APIRouter] = [

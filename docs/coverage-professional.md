@@ -4,17 +4,17 @@ Every route and table of the old backend (`Kuwait-Version/Octabuild/backend`) an
 
 ## MISSING
 
-- Route `GET /health/db` (`database_health_check`): Not ported. The docs keep it as `/api/v1/health/db` (NFR-13, technical-architecture section 15); no decision retires it.
+None.
 
 ## Totals
 
 | | Count |
 | --- | --- |
 | Old routes (HTTP and WebSocket) | 374 (the old app registered `GET /projects/{project_id}/suppliers` three times, with one handler: 376 registrations) |
-| New routes (HTTP and WebSocket) | 374 |
-| Old routes ported | 372 |
+| New routes (HTTP and WebSocket) | 375 |
+| Old routes ported | 373 |
 | Old routes retired by decision | 1 |
-| Old routes missing | 1 |
+| Old routes missing | 0 |
 | New routes with no old counterpart | 2 |
 | Old tables | 98 |
 | New tables | 100 |
@@ -132,7 +132,7 @@ New routes with no old counterpart: `GET /api/v1/auth/sessions`; `DELETE /api/v1
 | Method | Old path | New path |
 | --- | --- | --- |
 | GET | `/health` | `/api/v1/health` |
-| GET | `/health/db` | **MISSING**: Not ported. The docs keep it as `/api/v1/health/db` (NFR-13, technical-architecture section 15); no decision retires it. |
+| GET | `/health/db` | `/api/v1/health/db` |
 
 ### app.payment_gateway.router
 
