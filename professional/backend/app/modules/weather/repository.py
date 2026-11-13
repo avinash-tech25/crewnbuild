@@ -85,8 +85,10 @@ class WeatherRepository:
         return category == CATEGORY_STORE_MANAGER
 
     def store_request_project_ids(self, store_manager_id: uuid.UUID) -> set[Any]:
-        """STUB (store): projects this Store Manager has open site requests for."""
-        return set()
+        """Projects this Store Manager has open site requests for."""
+        from app.modules.store.links import open_request_project_ids
+
+        return open_request_project_ids(self.database, store_manager_id)
 
     def supplier_order_project_ids(self, supplier_id: uuid.UUID) -> set[Any]:
         """Delivery destinations: projects this Supplier has open material, equipment or
@@ -140,8 +142,10 @@ class WeatherRepository:
         return self.database.query(User).filter(User.id.in_(list(user_ids)), User.status == "ACTIVE").all()
 
     def store_request_recipient_ids(self, project_id: Any) -> set[uuid.UUID]:
-        """STUB (store)."""
-        return set()
+        """Store Managers with open site requests for the project."""
+        from app.modules.store.links import open_request_store_manager_ids
+
+        return open_request_store_manager_ids(self.database, project_id)
 
     def supplier_order_recipient_ids(self, project_id: Any) -> set[uuid.UUID]:
         """Suppliers with open material, equipment or labour orders for the project."""

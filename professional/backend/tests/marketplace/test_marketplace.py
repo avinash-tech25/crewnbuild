@@ -74,6 +74,10 @@ class Catalog:
 
 @pytest.fixture
 def catalog(database: Session) -> Catalog:
+    return make_catalog(database)
+
+
+def make_catalog(database: Session) -> Catalog:
     unit = CatalogUnit(code="BAG", name="Bag")
     category = CatalogCategory(
         country_code="IN", slug="cement", name="Cement", image_url="https://cdn.example.in/c.png"

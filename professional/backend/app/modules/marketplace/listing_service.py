@@ -27,7 +27,6 @@ from app.modules.marketplace.listings import (
     tiers_for,
 )
 from app.modules.marketplace.models import PurchaseOrderItem, SupplierProduct
-from app.modules.marketplace.pending_links import pending_store_payment_count_for_listing
 from app.modules.marketplace.schemas import (
     SupplierBulkPricingUpdate,
     SupplierCatalogListingCreate,
@@ -220,7 +219,10 @@ class SupplierProductService:
         orders = self.database.scalar(
             select(func.count(PurchaseOrderItem.id)).where(PurchaseOrderItem.product_id == product.id)
         )
-        payments = pending_store_payment_count_for_listing(self.database, product.id)
+        # Imported here: the store reads the marketplace.
+        from app.modules.store.links import payment_count_for_listing
+
+        payments = payment_count_for_listing(self.database, product.id)
         if orders or payments:
             raise HTTPException(
                 status_code=409,
