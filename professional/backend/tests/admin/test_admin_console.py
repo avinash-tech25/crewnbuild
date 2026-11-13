@@ -102,7 +102,8 @@ def test_the_old_escalation_checks(make_client: ClientFactory, database: Session
     )
     assert created.status_code == 201, created.text
     assert created.json()["scope"] == "IN" and created.json()["permissions"] == []
-    assert audit_actions(database) == ["admin.created"]
+    # R6: the refused manager request above is in the log too (AZ-05).
+    assert audit_actions(database) == ["access.denied", "admin.created"]
     assert make(global_admin, global_headers, new_admin("LOC@example.in", "LOCATION_SUPER_ADMIN")) == 409
 
 

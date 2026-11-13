@@ -45,7 +45,7 @@ from app.modules.cctv.schemas import (
     CctvDiscoveryOut,
     CctvVerifyOut,
 )
-from app.modules.cctv.services import audit, cctv_error, devices, field_error, network_policy
+from app.modules.cctv.services import audit, cctv_error, devices, field_error, network_policy, rate_limits
 from app.modules.cctv.services import credentials as credential_service
 from app.modules.cctv.services import onvif_client as onvif
 from app.modules.cctv.services.access import CctvGrant
@@ -119,7 +119,7 @@ def _prepare(database: Session, device: CctvDevice, user: User, request: Request
             status.HTTP_409_CONFLICT, "CCTV_CREDENTIALS_MISSING", "Store the device credentials before verifying it."
         )
     # 3. The existing rate limit, shared with reconnect.
-    devices._reserve_reconnect(user, device.id)
+    rate_limits.reserve_device_check(database, device.id, user.id)
     # 4. The stored address and service path, under the current policy.
     try:
         host = network_policy.validate_device_host(device.host, "host")

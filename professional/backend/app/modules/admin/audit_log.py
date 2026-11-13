@@ -5,6 +5,7 @@ Every state change an administrator makes goes through `record()`, staged before
 commit that makes the change, so the action and its entry land in one transaction.
 """
 
+import logging
 import uuid
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -13,11 +14,15 @@ from fastapi import HTTPException
 from sqlalchemy import Select, func, select
 from sqlalchemy.orm import Session
 
+from app.database.session import SessionLocal
 from app.modules.accounts.models import AdminProfile
 from app.modules.admin.admin_identity import AdminIdentity
 from app.modules.admin.models import AdminAuditLog
 from app.modules.admin.scope import viewing
 from app.modules.identity.models import User
+from app.modules.rate_limits import service as limits
+
+logger = logging.getLogger(__name__)
 
 ACTION_ADMIN_CREATED = "admin.created"
 ACTION_ADMIN_UPDATED = "admin.updated"
@@ -39,6 +44,10 @@ ACTION_ADMIN_PHONE_CHANGED = "admin.phone_changed"
 ACTION_CATALOG_PRODUCT_CREATED = "catalog.product_created"
 ACTION_CATALOG_PRODUCT_UPDATED = "catalog.product_updated"
 ACTION_CATALOG_IMAGE_ADDED = "catalog.image_added"
+# A signed-in account refused by an administrator route (AZ-05).
+ACTION_ACCESS_DENIED = "access.denied"
+SCOPE_NONE = "NONE"  # the scope of an account that is not an administrator
+DENIED_BUCKET = "audit:admin-denied"
 
 
 def record(
@@ -83,6 +92,35 @@ def record_admin_action(
         target_type=target_type,
         target_id=target_id,
     )
+
+
+def record_denied_access(user: User, scope: str | None, method: str, route: str, reason: str) -> None:
+    """An entry for a signed-in account refused by an administrator route (AZ-05, R6).
+
+    Written in its own short transaction: the refused request is about to fail and roll
+    back. At most one entry per account, method and route a minute (counted across
+    processes), so a client retrying in a loop cannot fill the log. A failure to write it
+    never changes the refusal."""
+    try:
+        with SessionLocal() as database:
+            key = f"{user.id}:{method}:{route}"
+            if not limits.hit(database, DENIED_BUCKET, key, 1, 60):
+                return
+            database.add(
+                AdminAuditLog(
+                    actor_id=user.id,
+                    actor_email=user.email or "",
+                    actor_role=user.role,
+                    scope=scope or SCOPE_NONE,
+                    action=ACTION_ACCESS_DENIED,
+                    target_type="route",
+                    target_id=route[:64],
+                    summary=f"{method} {route} refused: {reason}",
+                )
+            )
+            database.commit()
+    except Exception:
+        logger.exception("admin_audit.denied_entry_failed user=%s", user.id)
 
 
 def scope_audit(statement: Select[Any], admin: Any) -> Select[Any]:

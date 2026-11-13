@@ -8,19 +8,18 @@ request body can never be written into it, whatever a caller hands over.
 import ipaddress
 import logging
 import re
-import threading
-import time
 import uuid
-from collections import defaultdict, deque
 
 from fastapi import Request
 from sqlalchemy.orm import Session
 
+from app.core.client_address import visitor_address
 from app.database.session import SessionLocal
 from app.modules.cctv.models import CctvAuditEvent
 from app.modules.cctv.repository import CctvRepository
 from app.modules.cctv.runtime import settings
 from app.modules.identity.models import User
+from app.modules.rate_limits import service as limits
 
 logger = logging.getLogger(__name__)
 
@@ -109,7 +108,9 @@ def sanitize_detail(detail: dict | None) -> dict:
 
 
 def client_ip(request: Request | None) -> str | None:
-    host = getattr(getattr(request, "client", None), "host", None)
+    """The visitor's address, read through TRUSTED_PROXY_IPS (R6: it was the address
+    that connected, which behind the proxy is the proxy's)."""
+    host = visitor_address(request, settings.trusted_proxy_ips) if request is not None else None
     try:
         return str(ipaddress.ip_address(host)) if host else None
     except ValueError:
@@ -147,24 +148,16 @@ def record(
     return event
 
 
-_denied_lock = threading.Lock()
-_denied_history: dict[str, deque] = defaultdict(deque)
+DENIED_BUCKET = "audit:cctv-denied"
 
 
-def _denied_allowed(actor: User | None) -> bool:
+def _denied_allowed(database: Session, actor: User | None) -> bool:
     """Cap access-denied rows per actor per minute, so a client hammering ids it
-    cannot see cannot fill the audit table."""
+    cannot see cannot fill the audit table. Counted across every process (R6;
+    rate_limit_events), no longer in each one."""
     key = str(actor.id) if actor else "anonymous"
-    now = time.monotonic()
     limit = max(1, settings.cctv_denied_audit_max_per_minute)
-    with _denied_lock:
-        history = _denied_history[key]
-        while history and now - history[0] > 60:
-            history.popleft()
-        if len(history) >= limit:
-            return False
-        history.append(now)
-        return True
+    return limits.hit(database, DENIED_BUCKET, key, limit, 60)
 
 
 def record_denied(
@@ -186,10 +179,10 @@ def record_denied(
     write the record must never turn the denial into a different response, so it
     is logged -- without detail -- and swallowed.
     """
-    if not _denied_allowed(actor):
-        return
     audit_session = SessionLocal()
     try:
+        if not _denied_allowed(audit_session, actor):
+            return
         record(
             audit_session,
             action=action,

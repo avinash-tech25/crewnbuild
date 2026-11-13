@@ -177,6 +177,14 @@ class AccountService:
                 status_code=422,
                 detail={"message": "Please complete the highlighted required fields.", "fields": field_errors},
             )
+        # R6 (porting-todo #16): an image or logo address must be one of this account's own
+        # uploads, as on every other profile endpoint; checked before anything is saved.
+        for value, field in (
+            (payload.profile_image_url, "Profile image"),
+            (payload.company_logo_url, "Business logo"),
+            (payload.store_logo_url, "Business logo"),
+        ):
+            own_file_url(self.database, user, value, field=field)
         if user.role == ROLE_BUILDER and payload.service_locations:
             saved = user.contractor_profile.service_locations if user.contractor_profile else None
             lead_locations.require_location_count(self.database, user, payload.service_locations, saved)

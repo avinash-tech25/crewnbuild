@@ -6,11 +6,9 @@ Writes go only to the five CCTV tables. ONVIF verification and channel discovery
 live in connectivity.py and live playback sessions in playback.py. A device's host, ports and ONVIF service path are never returned.
 """
 
-import threading
-import time
 import unicodedata
 import uuid
-from collections import defaultdict, deque
+from collections import defaultdict
 from datetime import UTC, datetime
 
 from fastapi import HTTPException, Request, status
@@ -34,7 +32,7 @@ from app.modules.cctv.schemas import (
     CctvProjectOut,
     CctvReconnectOut,
 )
-from app.modules.cctv.services import audit, cctv_error, field_error, media_gateway, network_policy
+from app.modules.cctv.services import audit, cctv_error, field_error, media_gateway, network_policy, rate_limits
 from app.modules.cctv.services import credentials as credential_service
 from app.modules.cctv.services.access import CctvGrant, accessible_project_rows
 from app.modules.identity.models import User
@@ -678,30 +676,6 @@ def channel_status(channel: CctvChannel, device: CctvDevice) -> CctvChannelStatu
 
 # --- reconnect ---------------------------------------------------------------
 
-_reconnect_lock = threading.Lock()
-_reconnect_by_device: dict[uuid.UUID, float] = {}
-_reconnect_by_user: dict[uuid.UUID, deque] = defaultdict(deque)
-
-
-def _reserve_reconnect(user: User, device_id: uuid.UUID) -> None:
-    """Rate-limit reconnects so they cannot be used to sweep a network's ports."""
-    now = time.monotonic()
-    with _reconnect_lock:
-        last = _reconnect_by_device.get(device_id)
-        if last is not None and now - last < max(0, settings.cctv_reconnect_min_interval_seconds):
-            raise cctv_error(
-                status.HTTP_429_TOO_MANY_REQUESTS, "CCTV_RATE_LIMITED", "Please wait before checking this device again."
-            )
-        history = _reconnect_by_user[user.id]
-        while history and now - history[0] > 60:
-            history.popleft()
-        if len(history) >= max(1, settings.cctv_reconnect_max_per_minute):
-            raise cctv_error(
-                status.HTTP_429_TOO_MANY_REQUESTS, "CCTV_RATE_LIMITED", "Too many device checks. Please wait a minute."
-            )
-        history.append(now)
-        _reconnect_by_device[device_id] = now
-
 
 def reconnect_device(
     database: Session, grant: CctvGrant, device: CctvDevice, user: User, request: Request
@@ -710,7 +684,8 @@ def reconnect_device(
         raise cctv_error(
             status.HTTP_409_CONFLICT, CODE_DEVICE_INACTIVE, "This device is inactive. Activate it before checking it."
         )
-    _reserve_reconnect(user, device.id)
+    # R6: the shared reservation (cctv_rate_limit_events), not this process's memory.
+    rate_limits.reserve_device_check(database, device.id, user.id)
     device_id, project_id = device.id, device.project_id
 
     # The stored address is checked again under the current policy: a device

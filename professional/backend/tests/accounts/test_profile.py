@@ -294,3 +294,56 @@ def test_an_administrator_phone_change_ends_its_other_sessions(
     assert "admin_phone_changed" in reasons
     entry = database.scalars(select(AdminAuditLog)).one()  # wired back by the admin module
     assert (entry.action, entry.actor_id, entry.target_id) == ("admin.phone_changed", admin.id, str(admin.id))
+
+
+ROLE_FIELDS: dict[str, dict[str, Any]] = {
+    "BUILDER": {
+        "company_name": "Rao Builders",
+        "license_number": "LIC-1",
+        "experience_years": 5,
+        "about": "We build homes.",
+        "services_offered": "Construction",
+        "service_locations": "Bengaluru",
+    },
+    "SUPPLIER": {
+        "store_name": "Shop",
+        "about": "Cement",
+        "service_locations": "Bengaluru",
+        "categories": "Cement",
+        "supplier_category": "material supplier",
+    },
+}
+
+
+@pytest.mark.parametrize(
+    ("role", "field", "message"),
+    [
+        ("OWNER", "profile_image_url", "Profile image must be a file you uploaded."),
+        ("BUILDER", "company_logo_url", "Business logo must be a file you uploaded."),
+        ("SUPPLIER", "store_logo_url", "Business logo must be a file you uploaded."),
+    ],
+)
+def test_complete_profile_takes_only_own_uploads(
+    client: TestClient, database: Session, role: str, field: str, message: str
+) -> None:
+    """R6 (porting-todo #16): complete-profile used to store any address it was sent;
+    now an image or logo must be one of the account's own uploads, as elsewhere, and a
+    refusal saves nothing."""
+    user, headers = signed_in(client, database, role=role, phone="9876543210")
+    stranger = create_user(database, email="other@example.in", phone="9123456780")
+    if role == ROLE_SUPPLIER:
+        database.add(SupplierProfile(user_id=user.id, store_name="Shop"))
+        database.commit()
+    payload = {
+        **BASE,
+        "name": "Changed Name",
+        **ROLE_FIELDS.get(role, {}),
+    }
+    for refused in (add_file(database, stranger), "https://evil.example/x.png", "/files/not-a-uuid"):
+        response = client.patch(COMPLETE, json={**payload, field: refused}, headers=headers)
+        assert (response.status_code, response.json()) == (422, {"detail": message})
+    database.expire_all()
+    assert database.get(User, user.id).name == "Asha Rao"  # type: ignore[union-attr]
+    own = add_file(database, user)
+    accepted = client.patch(COMPLETE, json={**payload, field: own}, headers=headers)
+    assert accepted.status_code == 200, accepted.text

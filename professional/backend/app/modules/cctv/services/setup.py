@@ -47,7 +47,16 @@ from app.modules.cctv.schemas import (
     CctvDiscoveredChannelSelection,
     CctvDiscoveredChannelsSave,
 )
-from app.modules.cctv.services import access, audit, cctv_error, connectivity, devices, field_error, network_policy
+from app.modules.cctv.services import (
+    access,
+    audit,
+    cctv_error,
+    connectivity,
+    devices,
+    field_error,
+    network_policy,
+    rate_limits,
+)
 from app.modules.cctv.services import credentials as credential_service
 from app.modules.cctv.services import onvif_client as onvif
 from app.modules.identity.models import User
@@ -229,7 +238,7 @@ def connect(
 
     # The same rate limit the reconnect and verify paths share, so this cannot
     # become a way to try passwords against the recorder in a loop.
-    devices._reserve_reconnect(user, device.id)
+    rate_limits.reserve_device_check(database, device.id, user.id)
 
     service_path = (
         network_policy.validate_service_path(device.onvif_service_path, "onvif_service_path")
