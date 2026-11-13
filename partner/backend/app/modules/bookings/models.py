@@ -948,6 +948,12 @@ BOOKING_REQUESTER_FOREIGN_KEY = DDL(
 
 
 def professional_users_referenceable(ddl: object, target: object, bind: Any, **_: object) -> bool:
+    # Only where requesters really come from Professional's schema: with PROFESSIONAL_SCHEMA
+    # pointed elsewhere (the tests' requester stand-in) the key would name the wrong table.
+    from app.core.runtime import settings
+
+    if settings.professional_schema != "professional":
+        return False
     # Professional grants REFERENCES on the id column only (a column privilege).
     found = bind.execute(
         text(
