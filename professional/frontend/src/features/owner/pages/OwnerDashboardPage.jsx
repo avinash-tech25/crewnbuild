@@ -146,7 +146,7 @@ const projectSectionPath = (projectId, sectionId) => (
 )
 
 export default function HomeownerDashboard() {
-  const { user, accessToken, refreshToken } = useSelector((state) => state.auth)
+  const { user } = useSelector((state) => state.auth)
   const { t, td } = useLanguage()
   const dispatch = useDispatch()
   const cartCount = useSelector(selectCartCount)
@@ -154,7 +154,7 @@ export default function HomeownerDashboard() {
   // chose "Later" on the pincode step.
   const locationPrompt = useLocationLeadsPrompt(user)
   const saveOwnerLocation = (updatedUser) => {
-    dispatch(setAuthenticatedUser({ accessToken, refreshToken, user: updatedUser }))
+    dispatch(setAuthenticatedUser({ user: updatedUser }))
     locationPrompt.finishPrompt()
   }
   // Back from Complete Profile with a Buy waiting: open the cart, which resumes it.
@@ -321,7 +321,7 @@ export default function HomeownerDashboard() {
     const uploadedFile = await uploadLocalFile(file)
     setProfileImagePreview(uploadedFile.previewUrl || uploadedFile.url)
     const updatedUser = await updateUserProfileImage(uploadedFile.url)
-    dispatch(setAuthenticatedUser({ accessToken, refreshToken, user: updatedUser }))
+    dispatch(setAuthenticatedUser({ user: updatedUser }))
     setProfileImageMessage(t('dash.msg.profileImageUpdated'))
   }
 
@@ -943,7 +943,7 @@ export default function HomeownerDashboard() {
         floor_type: ownerProfileEditDetails.floor_type || null,
       })
       ownerProfileHasUnsavedEdits.current = false
-      dispatch(setAuthenticatedUser({ accessToken, refreshToken, user: updatedUser }))
+      dispatch(setAuthenticatedUser({ user: updatedUser }))
       setProfileImageMessage(t('dash.msg.profileSaved'))
       refreshOwnerData()
     } catch (error) {

@@ -27,14 +27,3 @@ export function forgetSeenWarnings(storage) {
     /* storage unavailable: nothing was remembered either */
   }
 }
-
-/** Calls `onSignOut` whenever the store's signed-in account goes away (every
- *  sign-out dispatches logoutUser, which clears `auth.user`). */
-export function watchSignOut(store, onSignOut) {
-  let signedIn = Boolean(store.getState().auth?.user)
-  return store.subscribe(() => {
-    const now = Boolean(store.getState().auth?.user)
-    if (signedIn && !now) onSignOut()
-    signedIn = now
-  })
-}

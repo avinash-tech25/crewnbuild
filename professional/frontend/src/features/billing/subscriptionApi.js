@@ -1,3 +1,4 @@
+import { apiClient } from '../../shared/api/apiClient.js'
 import { baseApi } from '../../shared/api/baseApi.js'
 import { runMutation, runQuery } from '../../shared/api/callEndpoint.js'
 import { orderRequestBody } from './subscription/subscriptionOffers.js'
@@ -27,6 +28,7 @@ export const subscriptionApi = baseApi.injectEndpoints({
       query: (body) => ({ url: '/subscriptions/mock/checkout', method: 'POST', data: body }),
       invalidatesTags: ['Subscription'],
     }),
+    builderPortfolio: build.query({ query: () => ({ url: '/builder/portfolio' }) }),
     builderBadges: build.query({ query: (builderIds) => ({ url: '/subscriptions/badges', params: { builder_ids: builderIds.join(',') } }) }),
     costAdjustments: build.query({ query: (registerId) => ({ url: `/cost-tool/registers/${registerId}/builder-adjustments` }) }),
     saveCostAdjustment: build.mutation({
@@ -127,3 +129,41 @@ export const saveCostAdjustment = (registerId, { fieldName, adjustedValue, reaso
     registerId,
     body: { field_name: fieldName, adjusted_value: Number(adjustedValue), reason },
   })
+
+export const fetchBuilderPortfolio = () => runQuery(subscriptionApi.endpoints.builderPortfolio)
+
+/**
+ * Downloads a CSV as a file. It needs the session, so it goes through the API client (a
+ * file for the browser, not data for the store).
+ */
+async function downloadCsv(path, fallbackName) {
+  let response
+  try {
+    response = await apiClient.get(path, { responseType: 'blob' })
+  } catch (error) {
+    // A refusal arrives as a Blob here; read its JSON so the caller can tell an expired
+    // or missing plan (detail.code) from any other failure.
+    const data = error?.response?.data
+    if (data && typeof data.text === 'function') {
+      try {
+        error.response.data = JSON.parse(await data.text())
+      } catch {
+        /* not JSON: keep as is */
+      }
+    }
+    throw error
+  }
+  const disposition = response.headers?.['content-disposition'] || ''
+  const match = /filename="?([^";]+)"?/i.exec(disposition)
+  const url = URL.createObjectURL(response.data)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = match ? match[1] : fallbackName
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000)
+}
+
+export const downloadProjectSummary = (projectId) => downloadCsv(`/projects/${projectId}/summary.csv`, `project-${projectId}-summary.csv`)
+export const downloadPortfolioExport = () => downloadCsv('/builder/portfolio/export.csv', 'builder-portfolio.csv')

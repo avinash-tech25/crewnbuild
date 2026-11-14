@@ -41,6 +41,9 @@ const CompleteProfilePage = page(() => import('../../features/onboarding/pages/C
 const SubscriptionCheckoutPage = page(() => import('../../features/billing/pages/SubscriptionCheckoutPage.jsx'))
 const OwnerDashboardPage = page(() => import('../../features/owner/pages/OwnerDashboardPage.jsx'))
 const WeatherPage = page(() => import('../../features/weather/pages/WeatherPage.jsx'))
+const BuilderDashboardPage = page(() => import('../../features/builder/pages/BuilderDashboardPage.jsx'))
+// The builder profile is a page here and a pop-up on the dashboards (same component).
+const BuilderProfilePage = page(() => import('../../features/builder/components/BuilderProfileDetails.jsx'))
 
 const ENGINEERS = ['ENGINEER', 'SITE_ENGINEER', 'STORE_MANAGER']
 const MARKETPLACE = ['OWNER', 'BUILDER', 'SUPPLIER', ...ENGINEERS]
@@ -87,13 +90,8 @@ export const routes = [
   // ---- dashboards: placeholders until their part ----
   { path: '/owner/*', Component: OwnerDashboardPage, access: { roles: ['OWNER'] } },
   { path: '/weather', Component: WeatherPage, access: { roles: EVERY_SIGNED_IN, checkout: true } },
-  { path: '/contractor/*', Component: planned('Builder dashboard', 3), access: { roles: ['BUILDER'], checkout: true }, part: 3 },
-  {
-    path: '/contractors/:contractorId',
-    Component: planned('Builder profile', 3),
-    access: { roles: ['OWNER', 'BUILDER', 'SUPPLIER'], checkout: true },
-    part: 3,
-  },
+  { path: '/contractor/*', Component: BuilderDashboardPage, access: { roles: ['BUILDER'], checkout: true } },
+  { path: '/contractors/:contractorId', Component: BuilderProfilePage, access: { roles: ['OWNER', 'BUILDER', 'SUPPLIER'], checkout: true } },
   { path: '/engineer/live-camera', Component: planned('Live camera', 4), access: { roles: ENGINEER_DASHBOARD }, part: 4 },
   { path: '/engineer/*', Component: planned('Site Engineer dashboard', 4), access: { roles: ENGINEER_DASHBOARD }, part: 4 },
   { path: `${STORE_MANAGER_PATH}/*`, Component: planned('Store Manager dashboard', 4), access: { roles: ['STORE_MANAGER'] }, part: 4 },

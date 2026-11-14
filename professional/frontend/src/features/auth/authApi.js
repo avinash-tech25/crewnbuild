@@ -19,6 +19,9 @@ export const authApi = baseApi.injectEndpoints({
     updateProfileImage: build.mutation({
       query: (profileImageUrl) => ({ url: '/auth/profile-image', method: 'PATCH', data: { profile_image_url: profileImageUrl } }),
     }),
+    updateBusinessLogo: build.mutation({
+      query: (logoUrl) => ({ url: '/auth/business-logo', method: 'PATCH', data: { logo_url: logoUrl } }),
+    }),
     partnerHandoff: build.mutation({ query: () => ({ url: '/auth/partner-handoff', method: 'POST' }) }),
   }),
 })
@@ -77,3 +80,4 @@ export async function requestPartnerHandoffToken() {
 }
 
 export const updateUserProfileImage = (profileImageUrl) => runMutation(authApi.endpoints.updateProfileImage, profileImageUrl)
+export const updateBusinessLogo = (logoUrl) => runMutation(authApi.endpoints.updateBusinessLogo, logoUrl)

@@ -19,7 +19,7 @@ import { setAuthenticatedUser } from '../../../shared/auth/authSlice.js'
 import { dashboardPath, needsLocationPincode, postAuthPath, subscriptionCheckoutPending } from '../../../shared/auth/accountPaths.js'
 
 export default function PincodeSetupPage() {
-  const { user, accessToken, refreshToken } = useSelector((state) => state.auth)
+  const { user } = useSelector((state) => state.auth)
   const dispatch = useDispatch()
   const navigate = useNavigate()
 
@@ -29,7 +29,7 @@ export default function PincodeSetupPage() {
   const goToDashboard = (account = user) => navigate(postAuthPath(account), { replace: true })
 
   const saved = (updatedUser) => {
-    dispatch(setAuthenticatedUser({ accessToken, refreshToken, user: updatedUser }))
+    dispatch(setAuthenticatedUser({ user: updatedUser }))
     goToDashboard(updatedUser)
   }
 

@@ -10,7 +10,8 @@ Every page and address of the old app (`Kuwait-Version/Octabuild/frontend 7/fron
 | Kept in the new route table | 37 |
 | Ported in part 1 | 28 |
 | Ported in part 2 (House Owner, weather) | 2 top-level routes (`/owner/*` with all its sections, `/weather`) |
-| Placeholders (later parts) | 7 top-level routes: the Builder, Site Engineer, Store Manager and Supplier dashboards, the admin console, live camera and the builder profile |
+| Ported in part 3 (Builder) | 2 top-level routes (`/contractor/*` with all its sections, `/contractors/:contractorId`) |
+| Placeholders (later parts) | 5 top-level routes: the Site Engineer, Store Manager and Supplier dashboards, the admin console and live camera |
 | Old addresses missing | 0 |
 
 ## Part 1: ported
@@ -64,12 +65,34 @@ projects, requests, messages, notifications, property, engineers, cameras, cart,
 supplier products, material requests, the cost tool, labour, equipment and technician
 payments.
 
+## Part 3: ported (Builder)
+
+The role is `BUILDER`; the addresses keep `/contractor`, as the old app had them.
+
+| Old address | New page (src/) | Access |
+| --- | --- | --- |
+| `/contractor` (overview: figures, projects by category, recent requests, quick actions, progress, requests by status, budgets) | `features/builder/pages/BuilderDashboardPage.jsx` | BUILDER (after checkout) |
+| `/contractor/projects` (current, previous, upcoming; project workspace with site activity, team, suppliers, analysis, live camera) | same page, `features/builder/components/BuilderProjectViews.jsx` | BUILDER |
+| `/contractor/portfolio` (Professional plan; locked Premium feature otherwise, as before) | same page, `features/billing/subscription/BuilderPortfolioSection.jsx` | BUILDER |
+| `/contractor/subscription` (plan and billing, plans, coupons, payment history) | same page, `features/billing/subscription/BuilderSubscriptionPanel.jsx` | BUILDER |
+| `/contractor/requests` (House Owner, Supplier and Store Manager requests; quotations, awards) | same page, `features/builder/components/BuilderRequestViews.jsx` | BUILDER |
+| `/contractor/my-site-engineers` (My Partners: site engineers, find site engineers, suppliers, pending requests) | same page, `features/builder/components/BuilderTeamSections.jsx` | BUILDER |
+| `/contractor/find-clients` (nearby projects, owners and suppliers; send request with an optional quotation) | same page, `features/builder/components/BuilderFindClients.jsx` | BUILDER |
+| `/contractor/buy-sell` | same page, `features/property/components/PropertyBuySellHub.jsx` | BUILDER |
+| `/contractor/product-catalog` | same page, `features/shop/components/ProductCatalogPage.jsx` | BUILDER |
+| `/contractor/messages` | same page, `features/messaging/components/MessageThread.jsx` | BUILDER |
+| `/contractor/profile-settings` | same page, `features/builder/components/BuilderProfileSettings.jsx` | BUILDER |
+| `/contractors/:contractorId` (a builder's public profile; the same component is the profile pop-up) | `features/builder/components/BuilderProfileDetails.jsx` | OWNER, BUILDER, SUPPLIER (builders after checkout) |
+
+Plan-gated features show exactly as before: the portfolio, project CSV reports, cost
+corrections and HD camera video come from the server's answer (`GET /subscriptions/me`
+and the 403 with `SUBSCRIPTION_REQUIRED` / `PLAN_UPGRADE_REQUIRED`), with the same
+locked cards and badges.
+
 ## Later parts: placeholders now
 
 | Old address | Sections the old dashboard had (same URLs) | Access | Part |
 | --- | --- | --- | --- |
-| `/contractor/*` | `/contractor`, `/projects`, `/portfolio`, `/subscription`, `/requests`, `/my-site-engineers`, `/find-clients`, `/buy-sell`, `/product-catalog`, `/messages`, `/profile-settings` | BUILDER (after checkout) | 3 |
-| `/contractors/:contractorId` | | OWNER, BUILDER, SUPPLIER | 3 |
 | `/engineer/*` | `/engineer`, `/my-projects`, `/my-supplies`, `/store-requests`, `/find-opportunities`, `/calendar`, `/daily-logs`, `/messages`, `/notifications`, `/profile` | ENGINEER (not Store Manager) | 4 |
 | `/engineer/live-camera` | | ENGINEER (not Store Manager) | 4 |
 | `/store-manager/*` | `/store-manager`, `/catalog`, `/buy`, `/payments`, `/requests`, `/approvals`, `/builders`, `/messages`, `/notifications`, `/profile` | STORE\_MANAGER | 4 |

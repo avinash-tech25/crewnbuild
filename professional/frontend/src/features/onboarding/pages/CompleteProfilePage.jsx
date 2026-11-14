@@ -38,7 +38,7 @@ const SETUP_ROLE_KEYS = {
 
 export default function CompleteProfilePage() {
   const { t } = useLanguage()
-  const { user, accessToken, refreshToken } = useSelector((state) => state.auth)
+  const { user } = useSelector((state) => state.auth)
   const pendingEstimate = useMemo(readPendingEstimate, [])
   const dispatch = useDispatch()
   const navigate = useNavigate()
@@ -772,7 +772,7 @@ export default function CompleteProfilePage() {
         experience_years: profileDetails.experience_years === '' ? 0 : Number(profileDetails.experience_years || 0),
         registration_year: profileDetails.registration_year === '' ? null : Number(profileDetails.registration_year),
       })
-      dispatch(setAuthenticatedUser({ accessToken, refreshToken, user: updatedUser }))
+      dispatch(setAuthenticatedUser({ user: updatedUser }))
       localStorage.removeItem('crewnbuild_pending_estimate')
       sessionStorage.removeItem('crewnbuild_pending_dashboard_tab')
       window.scrollTo({ top: 0, behavior: 'auto' })

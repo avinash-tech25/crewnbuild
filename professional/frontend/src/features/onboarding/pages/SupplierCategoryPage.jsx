@@ -27,7 +27,7 @@ const CATEGORY_ICONS = {
 
 export default function SupplierCategoryPage() {
   const { t } = useLanguage()
-  const { user, accessToken, refreshToken } = useSelector((state) => state.auth)
+  const { user } = useSelector((state) => state.auth)
   const dispatch = useDispatch()
   // Empty until the supplier chooses; a save that failed restores their choice.
   const [category, setCategory] = useState(() => readPendingSupplierCategory(user?.id))
@@ -44,7 +44,7 @@ export default function SupplierCategoryPage() {
     setCategoryError('')
   }
 
-  const adoptAccount = (account) => dispatch(setAuthenticatedUser({ accessToken, refreshToken, user: account }))
+  const adoptAccount = (account) => dispatch(setAuthenticatedUser({ user: account }))
 
   const submit = async (event) => {
     event.preventDefault()
