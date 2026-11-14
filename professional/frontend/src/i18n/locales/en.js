@@ -5133,6 +5133,7 @@ const base = {
   'subscription.plans.subtitle': 'Start free. Upgrade for audited cost corrections, a portfolio dashboard and project report downloads.',
   'subscription.plans.testMode': 'Test mode: no real money is charged.',
   'subscription.plans.loadFailed': 'Plans could not be loaded right now.',
+  'subscription.plans.mostPopular': 'Most popular',
   'subscription.duration.MONTHLY': 'Monthly',
   'subscription.duration.SIX_MONTHS': '6 months',
   'subscription.duration.ANNUAL': 'Annual',

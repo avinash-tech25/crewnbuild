@@ -21,7 +21,7 @@ function SectionLabel({ children }) {
   return <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">{children}</p>
 }
 
-function Mark({ badge }) {
+export function Mark({ badge }) {
   const { t } = useLanguage()
   if (badge === 'PREMIUM') {
     return (

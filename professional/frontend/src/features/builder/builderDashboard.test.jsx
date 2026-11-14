@@ -57,9 +57,12 @@ describe('Builder dashboard: access', () => {
 describe('Builder dashboard: home', () => {
   it('greets the builder, shows the figures and reads the plan from the server', async () => {
     const { server } = openBuilder('/contractor')
-    expect(await screen.findByText('Welcome, Ravi Builders', {}, FIND)).toBeInTheDocument()
-    expect(screen.getByText('Total Projects')).toBeInTheDocument()
-    expect(server.calls('GET /subscriptions/me').length).toBeGreaterThan(0)
+    // Inside waitFor: the home re-renders as each of its calls answers.
+    await waitFor(() => {
+      expect(screen.getByText('Welcome, Ravi Builders')).toBeInTheDocument()
+      expect(screen.getByText('Total Projects')).toBeInTheDocument()
+      expect(server.calls('GET /subscriptions/me').length).toBeGreaterThan(0)
+    }, FIND)
   })
 })
 

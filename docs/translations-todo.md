@@ -4,7 +4,7 @@ The Professional web app is translated into Arabic (`ar`), Hindi (`hi`), Kannada
 
 **How this list was made:** every key in `locales/en.js` that the old app's English text (`Kuwait-Version/Octabuild/frontend 7/frontend/src/i18n/translations.js`, the state R7 started from) did not have, checked against each language file. All other English keys are unchanged since the old app, and no language lost a translation it had there.
 
-**Status (14 Nov 2026):** 17 keys, missing in all six languages. All are from the request details change (a supplier or builder shown by who they are, `features/requests/counterparty.js` and `features/requests/components/PartyDetails.jsx`).
+**Status (14 Nov 2026):** 18 keys, missing in all six languages. Seventeen are from the request details change (a supplier or builder shown by who they are, `features/requests/counterparty.js` and `features/requests/components/PartyDetails.jsx`); one is the plans section's "Most popular" label.
 
 | Key | English | Where it shows | Missing in |
 | --- | --- | --- | --- |
@@ -25,6 +25,7 @@ The Professional web app is translated into Arabic (`ar`), Hindi (`hi`), Kannada
 | `req.party.phone` | Phone | Request details, after acceptance | ar, hi, kn, ml, ta, te |
 | `req.party.email` | Email | Request details, after acceptance | ar, hi, kn, ml, ta, te |
 | `req.party.contactAfterAccept` | Phone and email are shared once the request is accepted. | Request details, before acceptance | ar, hi, kn, ml, ta, te |
+| `subscription.plans.mostPopular` | Most popular | Builder plans (landing page and sign-up): the label on the recommended plan | ar, hi, kn, ml, ta, te |
 
 **Not covered by this list:**
 

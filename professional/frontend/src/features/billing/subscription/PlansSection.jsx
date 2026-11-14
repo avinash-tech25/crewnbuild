@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useLanguage } from '../../../i18n/LanguageContext.jsx'
 import { fetchSubscriptionPlans } from '../subscriptionApi.js'
-import PlanCards from './PlanCards.jsx'
+import PlanShowcase, { RECOMMENDED_OFFER } from './PlanShowcase.jsx'
 import { clearPendingPlan, savePendingPlan } from './pendingPlan.js'
 import { subscriptionErrorMessage } from './subscriptionFormat.js'
-import { PAID_PLAN_BUTTON } from './subscriptionOffers.js'
 
 // Public landing section (#plans). Visitors here are signed out, so choosing a paid
 // option remembers the choice and leads to builder sign-up (or sign-in); after the
@@ -39,53 +38,63 @@ export default function PlansSection({ onChoose = null, onChooseFree = null, bus
     window.location.assign('/login')
   }
 
+  // One look for the buttons: Plus (recommended) filled, the other paid plans
+  // outlined, Free a subtle outline. Visible focus on every one.
+  const focus = 'outline-none focus-visible:ring-2 focus-visible:ring-oc-deep focus-visible:ring-offset-2'
+  const filled = `inline-flex h-11 w-full items-center justify-center rounded-lg bg-oc-deep text-sm font-extrabold text-white transition hover:bg-[#0b5a3e] disabled:opacity-45 ${focus}`
+  const outlined = `inline-flex h-11 w-full items-center justify-center rounded-lg border-2 border-oc-deep bg-white text-sm font-extrabold text-oc-deep transition hover:bg-emerald-50 disabled:opacity-45 ${focus}`
+  const subtle = `inline-flex h-11 w-full items-center justify-center rounded-lg border border-slate-300 bg-white text-sm font-extrabold text-slate-800 transition hover:bg-slate-50 disabled:opacity-45 ${focus}`
+  const signInLink = (onClick) => (
+    <button type="button" onClick={onClick} className={`mx-auto rounded text-center text-[12px] font-bold text-emerald-800 hover:underline ${focus}`}>
+      {t('subscription.cta.signin')}
+    </button>
+  )
+
   return (
-    <section id="plans" aria-labelledby="plans-title" className="scroll-mt-24 px-4 py-16 sm:py-20">
+    <section id="plans" aria-labelledby="plans-title" className="scroll-mt-24 bg-slate-50 px-4 py-16 sm:py-20">
       <div className="mx-auto max-w-6xl">
         <div className="mx-auto max-w-2xl text-center">
-          <p className="text-xs font-extrabold uppercase tracking-widest text-emerald-700">{t('subscription.plans.kicker')}</p>
+          <p className="text-xs font-extrabold uppercase tracking-widest text-emerald-800">{t('subscription.plans.kicker')}</p>
           <h2 id="plans-title" className="mt-2 text-3xl font-extrabold text-oc-ink sm:text-4xl">{t('subscription.plans.title')}</h2>
           <p className="mt-3 text-sm font-semibold text-slate-600 sm:text-base">{t('subscription.plans.intro')}</p>
-          <p className="mt-2 text-[11px] font-bold text-amber-700">{t('subscription.plans.testMode')}</p>
+          <p className="mt-3 inline-flex rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[11px] font-bold text-amber-900">{t('subscription.plans.testMode')}</p>
         </div>
-        <div className="mt-10">
+        <div className="mt-12">
           {failure && <p role="alert" className="mx-auto max-w-xl rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-center text-sm font-bold text-rose-800">{failure}</p>}
-          {!failure && !catalogue && <p className="text-center text-sm font-bold text-slate-400">{t('subscription.panel.loading')}</p>}
+          {!failure && !catalogue && <p className="text-center text-sm font-bold text-slate-600">{t('subscription.panel.loading')}</p>}
           {catalogue && (
-            <PlanCards
+            <PlanShowcase
               catalogue={catalogue}
               renderFreeAction={() => (onChooseFree ? (
-                <button type="button" disabled={busy} onClick={onChooseFree}
-                  className="inline-flex h-11 w-full items-center justify-center rounded-lg border border-slate-300 text-sm font-extrabold text-slate-800 transition hover:bg-slate-50 disabled:opacity-45">
+                <button type="button" disabled={busy} onClick={onChooseFree} className={subtle}>
                   {t('subscription.cta.signup')}
                 </button>
               ) : (
-                <a href="/signup?role=builder&plan=FREE" onClick={clearPendingPlan}
-                  className="inline-flex h-11 w-full items-center justify-center rounded-lg border border-slate-300 text-sm font-extrabold text-slate-800 transition hover:bg-slate-50">
-                  {t('subscription.cta.signup')}
-                </a>
+                <div className="grid gap-2">
+                  <a href="/signup?role=builder&plan=FREE" onClick={clearPendingPlan} className={subtle}>
+                    {t('subscription.cta.signup')}
+                  </a>
+                  {signInLink(() => { clearPendingPlan(); window.location.assign('/login') })}
+                </div>
               ))}
               renderAction={(offer, action) => (
                 action === 'unavailable' ? (
-                  <span className="inline-flex h-11 w-full items-center justify-center rounded-lg bg-slate-100 text-xs font-extrabold text-slate-500">
+                  <span className="inline-flex h-11 w-full items-center justify-center rounded-lg bg-slate-100 text-xs font-extrabold text-slate-600">
                     {t('subscription.cta.unavailable')}
                   </span>
                 ) : (
-                  <div className="grid gap-1.5">
+                  <div className="grid gap-2">
                     <button type="button" disabled={busy} onClick={() => choose(offer.planCode, offer.durationCode)}
-                      className={`inline-flex h-11 w-full items-center justify-center rounded-lg text-sm font-extrabold transition disabled:opacity-45 ${PAID_PLAN_BUTTON}`}>
+                      className={offer.id === RECOMMENDED_OFFER ? filled : outlined}>
                       {t('subscription.cta.chooseNamed', { plan: t(`subscription.offer.${offer.id}.name`) })}
                     </button>
-                    {!onChoose && (
-                      <button type="button" onClick={() => signIn(offer.planCode, offer.durationCode)} className="text-center text-[11px] font-bold text-emerald-700 hover:underline">
-                        {t('subscription.cta.signin')}
-                      </button>
-                    )}
+                    {!onChoose && signInLink(() => signIn(offer.planCode, offer.durationCode))}
                   </div>
                 )
               )}
             />
-          )}        </div>
+          )}
+        </div>
       </div>
     </section>
   )

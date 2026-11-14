@@ -89,7 +89,8 @@ describe.each(CASES)('Supplier Complete Profile: $category', (expected) => {
     const server = openCompleteProfile(expected.category)
     await screen.findAllByText(new RegExp(`^${expected.supply}`), {}, FIND)
     await user.click(await screen.findByRole('button', { name: /Complete profile/ }, FIND))
-    expect(await screen.findByText(expected.nameRequired, {}, FIND)).toBeInTheDocument()
+    // Asserted inside waitFor: the form re-renders the message, so a node found once can be replaced.
+    await waitFor(() => expect(screen.getByText(expected.nameRequired)).toBeInTheDocument(), FIND)
     await waitFor(() => expect(server.calls('PATCH /auth/complete-profile')).toHaveLength(0))
   })
 })
