@@ -11,7 +11,8 @@ Every page and address of the old app (`Kuwait-Version/Octabuild/frontend 7/fron
 | Ported in part 1 | 28 |
 | Ported in part 2 (House Owner, weather) | 2 top-level routes (`/owner/*` with all its sections, `/weather`) |
 | Ported in part 3 (Builder) | 2 top-level routes (`/contractor/*` with all its sections, `/contractors/:contractorId`) |
-| Placeholders (later parts) | 5 top-level routes: the Site Engineer, Store Manager and Supplier dashboards, the admin console and live camera |
+| Ported in part 4 (Site Engineer, live camera, Store Manager) | 3 top-level routes (`/engineer/*`, `/engineer/live-camera`, `/store-manager/*`) |
+| Placeholders (later parts) | 2 top-level routes: the Supplier dashboard and the admin console |
 | Old addresses missing | 0 |
 
 ## Part 1: ported
@@ -89,13 +90,36 @@ corrections and HD camera video come from the server's answer (`GET /subscriptio
 and the 403 with `SUBSCRIPTION_REQUIRED` / `PLAN_UPGRADE_REQUIRED`), with the same
 locked cards and badges.
 
+## Part 4: ported (Site Engineer, live camera, Store Manager)
+
+`/engineer/*` and `/engineer/live-camera` are for every engineer but a Store Manager, and
+`/store-manager/*` for Store Managers only, as before. Of the engineer categories, only a
+Site Engineer may book a technician (the hand-off permission) or be hired and assigned as
+a project's site engineer; the server enforces both, and Book Technician is shown only to
+a Site Engineer.
+
+| Old address | New page (src/) | Access |
+| --- | --- | --- |
+| `/engineer` (overview: budgets, costs, daily spend, site activity, recent activity, materials) | `features/engineer/pages/EngineerDashboardPage.jsx` | engineers but Store Manager |
+| `/engineer/my-projects`, `/calendar`, `/daily-logs` (projects, site log and daily cost register) | same page, `features/engineer/components/EngineerSections.jsx`, `features/site-work/` | engineers but Store Manager |
+| `/engineer/my-supplies` (suppliers, orders, labour, equipment) | same page, `features/engineer/components/EngineerSupplierHub.jsx` | engineers but Store Manager |
+| `/engineer/store-requests` | same page, `features/engineer/components/EngineerStoreRequestsSection.jsx` | engineers but Store Manager |
+| `/engineer/find-opportunities` (join team, requests, builders, opportunities) | same page | engineers but Store Manager |
+| `/engineer/messages`, `/notifications`, `/profile` | same page | engineers but Store Manager |
+| `/engineer/live-camera` (live and recorded, first-time recorder verification) | `features/cameras/pages/EngineerLiveCameraPage.jsx` | engineers but Store Manager |
+| `/store-manager` (overview) | `features/store/pages/StoreManagerDashboardPage.jsx` | STORE\_MANAGER |
+| `/store-manager/catalog`, `/buy`, `/payments`, `/requests`, `/approvals`, `/builders`, `/messages`, `/notifications`, `/profile` | same page, `features/store/components/` | STORE\_MANAGER |
+
+Camera passwords: typed into a password field, sent once in the request body, cleared
+from the form after every attempt, and never put in the store, browser storage or a URL
+(tested). Store purchases are priced by the server and paid through the existing Razorpay
+client; the simulated checkout appears only when the server chooses it, which it does
+only outside production with `RAZORPAY_ALLOW_MOCK=true`.
+
 ## Later parts: placeholders now
 
 | Old address | Sections the old dashboard had (same URLs) | Access | Part |
 | --- | --- | --- | --- |
-| `/engineer/*` | `/engineer`, `/my-projects`, `/my-supplies`, `/store-requests`, `/find-opportunities`, `/calendar`, `/daily-logs`, `/messages`, `/notifications`, `/profile` | ENGINEER (not Store Manager) | 4 |
-| `/engineer/live-camera` | | ENGINEER (not Store Manager) | 4 |
-| `/store-manager/*` | `/store-manager`, `/catalog`, `/buy`, `/payments`, `/requests`, `/approvals`, `/builders`, `/messages`, `/notifications`, `/profile` | STORE\_MANAGER | 4 |
 | `/supplier/*` | `/supplier`, `/my-projects`, `/find-clients`, `/requests`, `/products`, `/orders`, `/messages`, `/profile`, `/labor-services`, `/assignments`, `/equipment`, `/equipment-assignments` (the storefront is a view inside) | SUPPLIER | 5 |
 | `/admin/*` | `/admin`, `/users`, `/projects`, `/leads`, `/verification`, `/reports`, `/notifications`, `/admins`, `/ads`, `/audit`, `/catalog`, `/coupons`, `/subscription-payments`, `/account-deletion`, `/support`, `/mobile` | GLOBAL\_SUPER\_ADMIN, LOCATION\_SUPER\_ADMIN, MANAGER | 6 |
 

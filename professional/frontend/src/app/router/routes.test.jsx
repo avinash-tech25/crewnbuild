@@ -36,12 +36,10 @@ describe('the route table', () => {
 })
 
 // [address, the role allowed, its home, a role refused and where that one goes]
-// Dashboards still to come show the placeholder; the House Owner's and the Builder's
-// have their own tests (features/owner, features/builder).
+// Dashboards still to come show the placeholder; the ported ones have their own tests
+// (features/owner, features/builder, features/engineer).
 const DASHBOARDS = [
   ['/supplier/products', SUPPLIER, OWNER, '/owner'],
-  ['/engineer/my-projects', SITE_ENGINEER, STORE_MANAGER, '/store-manager'],
-  ['/store-manager/catalog', STORE_MANAGER, SITE_ENGINEER, '/engineer'],
   ['/admin/users', ADMIN, OWNER, '/owner'],
 ]
 

@@ -44,6 +44,9 @@ const WeatherPage = page(() => import('../../features/weather/pages/WeatherPage.
 const BuilderDashboardPage = page(() => import('../../features/builder/pages/BuilderDashboardPage.jsx'))
 // The builder profile is a page here and a pop-up on the dashboards (same component).
 const BuilderProfilePage = page(() => import('../../features/builder/components/BuilderProfileDetails.jsx'))
+const EngineerDashboardPage = page(() => import('../../features/engineer/pages/EngineerDashboardPage.jsx'))
+const EngineerLiveCameraPage = page(() => import('../../features/cameras/pages/EngineerLiveCameraPage.jsx'))
+const StoreManagerDashboardPage = page(() => import('../../features/store/pages/StoreManagerDashboardPage.jsx'))
 
 const ENGINEERS = ['ENGINEER', 'SITE_ENGINEER', 'STORE_MANAGER']
 const MARKETPLACE = ['OWNER', 'BUILDER', 'SUPPLIER', ...ENGINEERS]
@@ -92,9 +95,9 @@ export const routes = [
   { path: '/weather', Component: WeatherPage, access: { roles: EVERY_SIGNED_IN, checkout: true } },
   { path: '/contractor/*', Component: BuilderDashboardPage, access: { roles: ['BUILDER'], checkout: true } },
   { path: '/contractors/:contractorId', Component: BuilderProfilePage, access: { roles: ['OWNER', 'BUILDER', 'SUPPLIER'], checkout: true } },
-  { path: '/engineer/live-camera', Component: planned('Live camera', 4), access: { roles: ENGINEER_DASHBOARD }, part: 4 },
-  { path: '/engineer/*', Component: planned('Site Engineer dashboard', 4), access: { roles: ENGINEER_DASHBOARD }, part: 4 },
-  { path: `${STORE_MANAGER_PATH}/*`, Component: planned('Store Manager dashboard', 4), access: { roles: ['STORE_MANAGER'] }, part: 4 },
+  { path: '/engineer/live-camera', Component: EngineerLiveCameraPage, access: { roles: ENGINEER_DASHBOARD } },
+  { path: '/engineer/*', Component: EngineerDashboardPage, access: { roles: ENGINEER_DASHBOARD } },
+  { path: `${STORE_MANAGER_PATH}/*`, Component: StoreManagerDashboardPage, access: { roles: ['STORE_MANAGER'] } },
   { path: '/supplier/*', Component: planned('Supplier dashboard', 5), access: { roles: ['SUPPLIER'] }, part: 5 },
   { path: '/admin/*', Component: planned('Admin console', 6), access: { roles: ADMIN_ROLES }, part: 6 },
   // ---- not found ----
