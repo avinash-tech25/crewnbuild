@@ -42,6 +42,9 @@ def test_hsts_only_in_production_and_the_docs_alone_go_without_csp() -> None:
     assert not any(name == b"strict-transport-security" for name, _ in security_headers(development, "/x"))  # type: ignore[arg-type]
     assert not any(name == b"content-security-policy" for name, _ in security_headers(development, "/docs"))  # type: ignore[arg-type]
     assert any(name == b"content-security-policy" for name, _ in security_headers(production, "/docs"))  # type: ignore[arg-type]
+    # The admin console's answers hold people's data: never kept by the browser.
+    assert (b"cache-control", b"no-store") in security_headers(production, "/api/v1/admin/users")  # type: ignore[arg-type]
+    assert not any(name == b"cache-control" for name, _ in security_headers(production, "/api/v1/health"))  # type: ignore[arg-type]
 
 
 def test_cors_allows_only_the_frontend_and_the_headers_it_uses(make_client: ClientFactory, database: Session) -> None:

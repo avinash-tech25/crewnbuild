@@ -8,6 +8,8 @@
       Referrer-Policy          strict-origin-when-cross-origin
       Permissions-Policy       camera=(), geolocation=(), microphone=()
       Strict-Transport-Security max-age=31536000; includeSubDomains   (production only)
+      Cache-Control            no-store   (the admin console's answers, which hold people's
+                               data, unless a route set its own: added in R7)
   The interactive API docs (development only) load their scripts from a CDN, so they get
   no CSP. The web apps' own policy (the one in section 14.3) is set where they are served.
 * BodySizeLimitMiddleware: a request body over MAX_JSON_BODY_BYTES (or, for a
@@ -24,6 +26,7 @@ from app.core.config import Settings
 API_CONTENT_SECURITY_POLICY = "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'"
 HSTS = "max-age=31536000; includeSubDomains"
 DOCS_PATHS = ("/docs", "/redoc", "/openapi.json")
+ADMIN_PATH = "/api/v1/admin/"
 TOO_LARGE = "The request is too large."
 
 
@@ -38,6 +41,8 @@ def security_headers(settings: Settings, path: str) -> list[tuple[bytes, bytes]]
         headers.append((b"content-security-policy", API_CONTENT_SECURITY_POLICY.encode()))
     if settings.is_production():
         headers.append((b"strict-transport-security", HSTS.encode()))
+    if path.startswith(ADMIN_PATH):
+        headers.append((b"cache-control", b"no-store"))
     return headers
 
 

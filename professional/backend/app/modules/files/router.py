@@ -21,7 +21,7 @@ from app.core.config import Settings
 from app.database.session import get_db
 from app.integrations.s3_storage.object_storage import shared_object_storage
 from app.modules.admin.admin_identity import account_locality
-from app.modules.files.file_access import file_view_allowed
+from app.modules.files.file_access import file_view_allowed, must_not_be_stored
 from app.modules.files.upload_service import PROFILE_IMAGE, SITE_VIDEO, SUPPLIER_IMAGE, UploadService
 from app.modules.identity.models import ROLE_SUPPLIER, User
 from app.modules.projects.file_links import site_media_project_id
@@ -96,7 +96,11 @@ def fetch_file(
     entity_tag = f'"file-{stored.id}-{digest}"'
     site_media = site_media_project_id(database, stored.id) is not None
     cache_headers = {
-        "Cache-Control": "private, no-cache" if site_media else "private, max-age=3600",
+        "Cache-Control": "private, no-store"
+        if must_not_be_stored(database, user, stored)
+        else "private, no-cache"
+        if site_media
+        else "private, max-age=3600",
         "ETag": entity_tag,
         "Vary": "Authorization, Cookie",
     }

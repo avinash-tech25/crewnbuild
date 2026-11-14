@@ -105,3 +105,21 @@ def file_view_allowed(database: Session, user: User, stored: File) -> bool:
     if module == "engineer" and user.role == ROLE_BUILDER and stored.owner_user_id is not None:
         return file_links.has_active_team_link(database, user.id, stored.owner_user_id)
     return False
+
+
+def must_not_be_stored(database: Session, viewer: User, stored: File) -> bool:
+    """Whether the file is sent with `no-store`, so no copy stays in the browser's cache:
+    an account's verification documents, and anything an administrator opens that is not
+    their own (documents, people's photos, attachments). The uploader's own files keep
+    the normal private cache."""
+    if viewer.id == stored.owner_user_id:
+        return False
+    if active_admin_identity(database, viewer) is not None:
+        return True
+    owner = database.get(User, stored.owner_user_id) if stored.owner_user_id else None
+    if owner is None:
+        return False
+    documents = [
+        profile.documents for profile in (owner.contractor_profile, owner.supplier_profile) if profile is not None
+    ]
+    return stored.id in file_ids_in(*documents)

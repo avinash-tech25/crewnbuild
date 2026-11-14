@@ -143,7 +143,17 @@ def test_a_private_upload_is_refused_to_others_and_a_published_logo_is_not(
     admin_profile.permissions = "users.view"
     database.commit()
     sign_in(files_client, identifier="manager@example.in")
-    assert files_client.get(f"/api/v1{document}").status_code == 200
+    opened = files_client.get(f"/api/v1{document}")
+    assert opened.status_code == 200
+    # An administrator's copy of someone's document is never kept by the browser.
+    assert opened.headers["cache-control"] == "private, no-store"
+    # A published logo opened by an administrator: not their own file, so not kept either.
+    assert files_client.get(f"/api/v1{logo}").headers["cache-control"] == "private, no-store"
+
+    # The builder's own document keeps the normal private cache.
+    files_client.post("/api/v1/auth/logout")
+    sign_in(files_client, identifier="builder@example.in")
+    assert files_client.get(f"/api/v1{document}").headers["cache-control"] == "private, max-age=3600"
 
 
 def test_unknown_file_and_no_session(files_client: TestClient, database: Session) -> None:
