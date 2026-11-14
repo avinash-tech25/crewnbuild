@@ -35,7 +35,7 @@ import {
   UserX,
   LifeBuoy,
 } from 'lucide-react'
-import DashboardShell from '../../../shared/dashboard/DashboardShell.jsx'
+import AdminShell from '../components/AdminShell.jsx'
 import PhoneChangeSection from '../../accounts/components/PhoneChangeSection.jsx'
 import { logoutUser } from '../../../shared/auth/authSlice.js'
 import {
@@ -63,6 +63,7 @@ import { SECTION_PERMISSIONS, can, mayOpen } from '../adminAccess.js'
 import {
   createAdministrator,
   fetchAdminIdentity,
+  fetchAdminOverview,
   fetchAdminProjects,
   fetchAdminUsers,
   fetchAdministrators,
@@ -89,29 +90,48 @@ const MARKETPLACE_ROLES = [
   ['PROFESSIONAL', 'Experts (CREWNBUILD Partner)'],
 ]
 
-// Each section names the permission it needs. The sidebar is built from this
-// list, so adding an area later — Partner's jobs, for instance — is one entry
-// rather than a layout change.
+// Each section names the permission it needs and the sidebar group it sits in. The
+// sidebar is built from this list, so adding an area later — Partner's jobs, for
+// instance — is one entry rather than a layout change. A section the administrator's
+// permissions do not cover is left out of the sidebar, as before.
+//
+// Notifications is reached from the bell in the topbar rather than the sidebar. An
+// administrator receives none of their own, so the bell's dropdown would always be
+// empty; pointing it at the screen gives it a purpose and saves a sidebar row.
 const SECTIONS = [
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, permission: SECTION_PERMISSIONS['dashboard'] },
-  { id: 'users', label: 'Users', icon: Users, permission: SECTION_PERMISSIONS['users'] },
-  { id: 'projects', label: 'Projects', icon: Building2, permission: SECTION_PERMISSIONS['projects'] },
-  { id: 'leads', label: 'Leads', icon: Handshake, permission: SECTION_PERMISSIONS['leads'] },
-  { id: 'verification', label: 'Verification', icon: BadgeCheck, permission: SECTION_PERMISSIONS['verification'] },
-  { id: 'reports', label: 'Reports', icon: Flag, permission: SECTION_PERMISSIONS['reports'] },
-  { id: 'ads', label: 'Adverts', icon: Megaphone, permission: SECTION_PERMISSIONS['ads'] },
-  // Notifications is reached from the bell in the topbar rather than the
-  // sidebar. An administrator receives none of their own, so the bell's dropdown
-  // would always be empty; pointing it at the screen gives it a purpose and
-  // saves a sidebar row.
-  { id: 'admins', label: 'Administrators', icon: ShieldCheck, permission: SECTION_PERMISSIONS['admins'] },
-  { id: 'audit', label: 'Audit Log', icon: ScrollText, permission: SECTION_PERMISSIONS['audit'] },
-  { id: 'catalog', label: 'Master Catalog', icon: Library, permission: SECTION_PERMISSIONS['catalog'] },
-  { id: 'coupons', label: 'Coupons', icon: TicketPercent, permission: SECTION_PERMISSIONS['coupons'] },
-  { id: 'subscription-payments', label: 'Subscription Payments', icon: Receipt, permission: SECTION_PERMISSIONS['subscription-payments'] },
-  { id: 'account-deletion', label: 'Account Deletion', icon: UserX, permission: SECTION_PERMISSIONS['account-deletion'] },
-  { id: 'support', label: 'Support Tickets', icon: LifeBuoy, permission: SECTION_PERMISSIONS['support'] },
+  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, group: 'overview', permission: SECTION_PERMISSIONS['dashboard'] },
+  { id: 'users', label: 'Users', icon: Users, group: 'people', permission: SECTION_PERMISSIONS['users'] },
+  { id: 'admins', label: 'Administrators', icon: ShieldCheck, group: 'people', permission: SECTION_PERMISSIONS['admins'] },
+  { id: 'verification', label: 'Verification', icon: BadgeCheck, group: 'people', permission: SECTION_PERMISSIONS['verification'] },
+  { id: 'account-deletion', label: 'Account Deletion', icon: UserX, group: 'people', permission: SECTION_PERMISSIONS['account-deletion'] },
+  { id: 'projects', label: 'Projects', icon: Building2, group: 'activity', permission: SECTION_PERMISSIONS['projects'] },
+  { id: 'leads', label: 'Leads', icon: Handshake, group: 'activity', permission: SECTION_PERMISSIONS['leads'] },
+  { id: 'reports', label: 'Reports', icon: Flag, group: 'activity', permission: SECTION_PERMISSIONS['reports'] },
+  { id: 'support', label: 'Support Tickets', icon: LifeBuoy, group: 'activity', permission: SECTION_PERMISSIONS['support'] },
+  { id: 'catalog', label: 'Master Catalog', icon: Library, group: 'marketplace', permission: SECTION_PERMISSIONS['catalog'] },
+  { id: 'ads', label: 'Adverts', icon: Megaphone, group: 'marketplace', permission: SECTION_PERMISSIONS['ads'] },
+  { id: 'coupons', label: 'Coupons', icon: TicketPercent, group: 'marketplace', permission: SECTION_PERMISSIONS['coupons'] },
+  { id: 'subscription-payments', label: 'Subscription Payments', icon: Receipt, group: 'marketplace', permission: SECTION_PERMISSIONS['subscription-payments'] },
+  { id: 'audit', label: 'Audit Log', icon: ScrollText, group: 'system', permission: SECTION_PERMISSIONS['audit'] },
+  // Every administrator's own WhatsApp sign-in number (also in the account menu).
+  { id: 'mobile', label: 'Mobile number', icon: Smartphone, group: 'system', permission: SECTION_PERMISSIONS['mobile'] },
 ]
+
+// The sidebar's groups, in order. A group with no section left to show is not drawn.
+export const SIDEBAR_GROUPS = [
+  { id: 'overview', label: 'Overview' },
+  { id: 'people', label: 'People' },
+  { id: 'activity', label: 'Activity' },
+  { id: 'marketplace', label: 'Marketplace' },
+  { id: 'system', label: 'System' },
+]
+
+// Pages that are not in the sidebar, for the top bar's title.
+const OTHER_PAGES = { notifications: 'Notifications' }
+
+// The sidebar's counts, from the dashboard's own queues (GET /admin/overview): only
+// the queues that are work waiting, never a plain total.
+const BADGE_SOURCES = { verification: 'pending_verifications', reports: 'open_reports', leads: 'stalled_requests' }
 
 function StatusPill({ value }) {
   const active = (value || 'ACTIVE').toUpperCase() === 'ACTIVE'
@@ -146,11 +166,11 @@ function ScopeChip({ scope }) {
 // white card on the amber ground, rather than a flat bordered box.
 function Panel({ title, subtitle, children, right }) {
   return (
-    <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_16px_50px_-40px_rgba(15,23,42,0.55)] transition hover:border-slate-300">
-      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200/80 px-6 py-4">
+    <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-5 py-4 sm:px-6 dark:border-slate-700">
         <div>
-          <h2 className="flex items-center gap-2 font-display text-[15px] font-bold text-graphite">{title}</h2>
-          {subtitle && <p className="mt-0.5 text-xs font-medium text-slate-500">{subtitle}</p>}
+          <h2 className="flex items-center gap-2 font-display text-[15px] font-bold text-graphite dark:text-white">{title}</h2>
+          {subtitle && <p className="mt-0.5 text-xs font-medium text-slate-600 dark:text-slate-300">{subtitle}</p>}
         </div>
         {right}
       </header>
@@ -1102,6 +1122,29 @@ function AdminConsole({ identity, error, onIdentityChanged }) {
   // administrator can bookmark a section and the back button behaves.
   const activeId = location.pathname.replace(/^\/admin\/?/, '').split('/')[0] || 'dashboard'
 
+  // The sidebar's counts: the dashboard's own queues, read again when the
+  // administrator moves to another section so a count follows the work done.
+  const [badges, setBadges] = useState({})
+  useEffect(() => {
+    if (!identity) return undefined
+    let cancelled = false
+    fetchAdminOverview()
+      .then((data) => {
+        if (cancelled) return
+        const attention = data?.attention || {}
+        setBadges(Object.fromEntries(Object.entries(BADGE_SOURCES).map(([section, key]) => [section, attention[key] || 0])))
+      })
+      .catch(() => { if (!cancelled) setBadges({}) })
+    return () => { cancelled = true }
+  }, [identity, activeId])
+
+  const groups = useMemo(
+    () => SIDEBAR_GROUPS
+      .map((group) => ({ ...group, items: sections.filter((section) => section.group === group.id) }))
+      .filter((group) => group.items.length > 0),
+    [sections],
+  )
+
   const signOut = () => {
     dispatch(logoutUser())
     navigate('/login', { replace: true })
@@ -1118,7 +1161,7 @@ function AdminConsole({ identity, error, onIdentityChanged }) {
 
   if (error) {
     return (
-      <div className="grid min-h-screen place-items-center bg-gradient-to-br from-[#fef6d0] via-[#fde8b0] to-[#fcd988] px-6">
+      <div className="grid min-h-screen place-items-center bg-[#F3F4F6] dark:bg-[#0a1014] px-6">
         <div className="max-w-md rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-[0_16px_50px_-40px_rgba(15,23,42,0.55)]">
           <h1 className="font-display text-lg font-bold text-graphite">Administrator access</h1>
           <p className="mt-2 text-sm text-slate-500">{error}</p>
@@ -1136,7 +1179,7 @@ function AdminConsole({ identity, error, onIdentityChanged }) {
 
   if (!identity) {
     return (
-      <div className="grid min-h-screen place-items-center bg-gradient-to-br from-[#fef6d0] via-[#fde8b0] to-[#fcd988] text-sm font-medium text-slate-600">
+      <div className="grid min-h-screen place-items-center bg-[#F3F4F6] dark:bg-[#0a1014] text-sm font-medium text-slate-600">
         Loading your console…
       </div>
     )
@@ -1149,29 +1192,28 @@ function AdminConsole({ identity, error, onIdentityChanged }) {
         ? `${SCOPE_LABELS[identity.scope]} Super Admin`
         : `${SCOPE_LABELS[identity.scope]} Manager`
 
+  const current = SECTIONS.find((section) => section.id === activeId)
+  const title = current?.label || OTHER_PAGES[activeId] || 'Dashboard'
+  const groupLabel = SIDEBAR_GROUPS.find((group) => group.id === current?.group)?.label
+  const trail = ['Admin', ...(groupLabel ? [groupLabel] : []), title]
+
   return (
-    // The same ground as every other dashboard, so the admin console reads as
-    // part of CREWNBUILD rather than as a separate tool bolted on beside it.
-    <div className="min-h-screen bg-gradient-to-br from-[#fef6d0] via-[#fde8b0] to-[#fcd988] text-slate-950">
-      <DashboardShell
-        sidebarItems={sections.map((section) => ({
-          id: section.id,
-          label: section.label,
-          icon: section.icon,
-        }))}
+      <AdminShell
+        groups={groups}
         activeId={activeId}
         onNav={(id) => navigate(id === 'dashboard' ? '/admin' : `/admin/${id}`)}
+        badges={badges}
+        title={title}
+        trail={trail}
         user={shellUser}
         roleLabel={roleLabel}
         // The shell appends its own Logout whenever `onLogout` is given, the
-        // same one every other dashboard shows. Passing a second one through
-        // `userMenu` put two entries that did the same thing in the same menu.
+        // same one every other dashboard shows.
         onLogout={signOut}
         // Every administrator signs in with a WhatsApp code to its own number,
         // set here while signed in and saved only once verified.
         userMenu={[{ id: 'mobile', label: 'Mobile number (WhatsApp sign-in)', icon: Smartphone }]}
         onUserMenuSelect={(id) => { if (id === 'mobile') navigate('/admin/mobile') }}
-        defaultTab="dashboard"
         beforeLanguage={<WeatherNavButton />}
         onNotificationsClick={
           can(identity, SECTION_PERMISSIONS.notifications)
@@ -1182,10 +1224,6 @@ function AdminConsole({ identity, error, onIdentityChanged }) {
           // A location administrator gets a chip naming their territory, which
           // is their only indication of it. A Global Super Admin gets nothing
           // here: a chip reading "Global" would repeat the role label beside it.
-          //
-          // The theme toggle lives in the shell's own control cluster with the
-          // bells, not here, so it sits with the other settings rather than with
-          // the administrator's scope.
           identity.is_global ? null : <ScopeChip scope={identity.scope} />
         }
       >
@@ -1254,7 +1292,6 @@ function AdminConsole({ identity, error, onIdentityChanged }) {
           <Route path="*" element={<Navigate to="/admin" replace />} />
         </Routes>
         )}
-      </DashboardShell>
-    </div>
+      </AdminShell>
   )
 }

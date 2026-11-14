@@ -88,7 +88,7 @@ describe.each(CASES)('Supplier Complete Profile: $category', (expected) => {
     const user = userEvent.setup()
     const server = openCompleteProfile(expected.category)
     await screen.findAllByText(new RegExp(`^${expected.supply}`), {}, FIND)
-    await user.click(screen.getByRole('button', { name: /Complete profile/ }))
+    await user.click(await screen.findByRole('button', { name: /Complete profile/ }, FIND))
     expect(await screen.findByText(expected.nameRequired, {}, FIND)).toBeInTheDocument()
     await waitFor(() => expect(server.calls('PATCH /auth/complete-profile')).toHaveLength(0))
   })

@@ -62,7 +62,7 @@ describe('admin console: who may enter', () => {
 describe('admin console: sections by permission', () => {
   it('shows a Super Admin every section', async () => {
     openConsole('/admin', anIdentity('global'))
-    expect(await screen.findByText('Nothing needs you right now', {}, FIND)).toBeInTheDocument()
+    expect(await screen.findByText('Nothing needs your attention', {}, FIND)).toBeInTheDocument()
     for (const label of Object.values(SIDEBAR)) expect(screen.getByRole('button', { name: label })).toBeInTheDocument()
   })
 
@@ -301,7 +301,7 @@ describe('admin console: sensitive records', () => {
 describe('admin console: global and location administrators', () => {
   it('lets only a Global Super Admin switch the country being viewed', async () => {
     openConsole('/admin', anIdentity('global'))
-    expect(await screen.findByText('Nothing needs you right now', {}, FIND)).toBeInTheDocument()
+    expect(await screen.findByText('Nothing needs your attention', {}, FIND)).toBeInTheDocument()
     expect(screen.getByText(/whole platform/)).toBeInTheDocument()
   })
 

@@ -160,7 +160,10 @@ const AD_PLACEMENT_BY_ROLE = {
 
 // export function DashboardTopbar({ searchValue, onSearchChange, searchPlaceholder, user, roleLabel, userMenu = [], onUserMenuSelect, onLogout, onMessagesClick, unreadMessageCount = 0, activeId, defaultTab = 'dashboard', activityItems = null, onProfileImageUpload, projectSwitcher = null, headerActions = null, onNotificationsClick = null }) {
 // export function DashboardTopbar({ searchValue, onSearchChange, searchPlaceholder, user, roleLabel, userMenu = [], onUserMenuSelect, onLogout, onMessagesClick, unreadMessageCount = 0, activeId, defaultTab = 'dashboard', activityItems = null, onProfileImageUpload, projectSwitcher = null, headerActions = null, showPartnerCta = false }) {
-export function DashboardTopbar({ searchValue, onSearchChange, searchPlaceholder, showSearch = true, user, roleLabel, userMenu = [], onUserMenuSelect, onLogout, onMessagesClick, unreadMessageCount = 0, activeId, defaultTab = 'dashboard', activityItems = null, onProfileImageUpload, projectSwitcher = null, headerActions = null, onNotificationsClick = null, beforeLanguage = null }) {
+// `leading`, when given, takes the logo's place at the left of the bar (the admin console
+// puts its page title and breadcrumb there; its logo is in its own sidebar). Every other
+// dashboard leaves it out and keeps the logo.
+export function DashboardTopbar({ searchValue, onSearchChange, searchPlaceholder, showSearch = true, user, roleLabel, userMenu = [], onUserMenuSelect, onLogout, onMessagesClick, unreadMessageCount = 0, activeId, defaultTab = 'dashboard', activityItems = null, onProfileImageUpload, projectSwitcher = null, headerActions = null, onNotificationsClick = null, beforeLanguage = null, leading = null }) {
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const { t, td } = useLanguage()
   const { theme, toggleTheme } = useTheme()
@@ -211,6 +214,7 @@ export function DashboardTopbar({ searchValue, onSearchChange, searchPlaceholder
             both come from the existing component and its existing translation
             key. Hidden below `sm`, where the row has no width to spare once
             search and the account controls have taken theirs. */}
+        {leading || (
         <div className="hidden shrink-0 -ms-2 sm:block">
           {/* The landing page's logo and wordmark, straight on the white bar
               as on the landing header. In dark mode the bar turns dark, so the
@@ -219,6 +223,7 @@ export function DashboardTopbar({ searchValue, onSearchChange, searchPlaceholder
             <Brand logoOnly small />
           </span>
         </div>
+        )}
         {/* Takes the space left over rather than claiming it: flex-1 with a
             zero basis means search is the first thing to give way, so the
             profile keeps room for the full name and role. */}
