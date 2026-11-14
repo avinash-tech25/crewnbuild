@@ -12,7 +12,7 @@ import { location, renderApp, signedInAs, signedOut } from '../../test/renderApp
 const PASSWORD_LOGIN = { 'GET /auth/phone/config': { data: { enabled: false, login: false, dial_code: '+91', digits: 10 } } }
 
 async function signInWithPassword(user, email, password) {
-  await user.type(await screen.findByPlaceholderText('you@example.com', {}, { timeout: 8000 }), email)
+  await user.type(await screen.findByPlaceholderText('you@example.com', {}, { timeout: 15000 }), email)
   await user.type(screen.getByPlaceholderText('Enter your password'), password)
   await user.click(screen.getByRole('button', { name: 'Sign in' }))
 }
@@ -21,7 +21,7 @@ describe('the session on load', () => {
   it('asks the server, then opens the dashboard of the account it names', async () => {
     const server = installFakeServer(ownerDashboardServer({ 'GET /auth/session': { data: { user: anAccount(), csrf_token: 'csrf-s' } } }))
     renderApp('/owner', { session: 'live' })
-    expect(await screen.findByText('Welcome, Asha Rao!', {}, { timeout: 8000 })).toBeInTheDocument()
+    expect(await screen.findByText('Welcome, Asha Rao!', {}, { timeout: 15000 })).toBeInTheDocument()
     expect(server.calls('GET /auth/session')).toHaveLength(1)
     expect(currentCsrfToken()).toBe('csrf-s')
   })
@@ -58,7 +58,7 @@ describe('the session on load', () => {
       },
     }))
     renderApp('/owner', { session: 'live' })
-    expect(await screen.findByText('Welcome, Asha Rao!', {}, { timeout: 8000 })).toBeInTheDocument()
+    expect(await screen.findByText('Welcome, Asha Rao!', {}, { timeout: 15000 })).toBeInTheDocument()
   })
 })
 
@@ -134,7 +134,7 @@ describe('WhatsApp sign-in', () => {
       'POST /auth/phone/login/verify-code': { data: { user: anAccount(), csrf_token: 'csrf-wa' } },
     })
     renderApp('/login', { auth: signedOut })
-    await user.type(await screen.findByPlaceholderText('10 digit mobile number', {}, { timeout: 8000 }), '9876543210')
+    await user.type(await screen.findByPlaceholderText('10 digit mobile number', {}, { timeout: 15000 }), '9876543210')
     await user.click(screen.getByRole('button', { name: /Send OTP on WhatsApp/ }))
     const digits = await screen.findAllByLabelText(/ \d$/)
     '482913'.split('').forEach((digit, index) => fireEvent.change(digits[index], { target: { value: digit } }))

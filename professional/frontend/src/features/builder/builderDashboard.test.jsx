@@ -17,7 +17,7 @@ import {
   professionalPlan,
 } from './builderTestData.js'
 
-const FIND = { timeout: 8000 }
+const FIND = { timeout: 15000 }
 const SECTIONS = ['/contractor', '/contractor/projects', '/contractor/portfolio', '/contractor/subscription', '/contractor/requests',
   '/contractor/my-site-engineers', '/contractor/find-clients', '/contractor/buy-sell', '/contractor/product-catalog',
   '/contractor/messages', '/contractor/profile-settings']

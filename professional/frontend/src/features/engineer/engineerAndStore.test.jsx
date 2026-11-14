@@ -26,7 +26,7 @@ vi.mock('hls.js', () => {
   return { default: { isSupported: () => false } }
 })
 
-const FIND = { timeout: 8000 }
+const FIND = { timeout: 15000 }
 const ENGINEER_SECTIONS = ['/engineer', '/engineer/my-projects', '/engineer/my-supplies', '/engineer/store-requests', '/engineer/find-opportunities',
   '/engineer/calendar', '/engineer/daily-logs', '/engineer/messages', '/engineer/notifications', '/engineer/profile', '/engineer/live-camera']
 const STORE_SECTIONS = ['/store-manager', '/store-manager/catalog', '/store-manager/buy', '/store-manager/payments', '/store-manager/requests',

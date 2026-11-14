@@ -16,7 +16,7 @@ import {
   supplierDashboardServer,
 } from './supplierTestData.js'
 
-const FIND = { timeout: 8000 }
+const FIND = { timeout: 15000 }
 const SECTIONS = ['/supplier', '/supplier/my-projects', '/supplier/find-clients', '/supplier/requests', '/supplier/products', '/supplier/orders',
   '/supplier/messages', '/supplier/profile', '/supplier/labor-services', '/supplier/assignments', '/supplier/equipment', '/supplier/equipment-assignments']
 

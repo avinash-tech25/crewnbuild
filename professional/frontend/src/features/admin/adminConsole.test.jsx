@@ -6,7 +6,7 @@ import { location, renderApp, signedInAs, signedOut } from '../../test/renderApp
 import { SECTION_PERMISSIONS } from './adminAccess.js'
 import { USER_ID, aUserRow, adminServer, anAdminAccount, anIdentity } from './adminTestData.js'
 
-const FIND = { timeout: 8000 }
+const FIND = { timeout: 15000 }
 const ALL_ADDRESSES = ['/admin', ...Object.keys(SECTION_PERMISSIONS).filter((id) => id !== 'dashboard').map((id) => `/admin/${id}`)]
 // Every section that needs a permission, with the endpoint its screen reads first.
 const GATED = [

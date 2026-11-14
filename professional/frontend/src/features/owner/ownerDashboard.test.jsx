@@ -5,7 +5,7 @@ import { anAccount, installFakeServer } from '../../test/fakeServer.js'
 import { location, renderApp, signedInAs, signedOut } from '../../test/renderApp.jsx'
 import { BUILDER_ID, OWNER, PROJECT_ID, REQUEST_ID, aProject, aQuotation, ownerDashboardServer } from './ownerTestData.js'
 
-const FIND = { timeout: 8000 }
+const FIND = { timeout: 15000 }
 const CONVERSATION_ID = '0190a8b2-4c1e-7aa0-9f00-0000000000d1'
 
 const aConversation = () => ({

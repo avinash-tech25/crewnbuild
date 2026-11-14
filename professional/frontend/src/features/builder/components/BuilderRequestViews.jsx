@@ -10,6 +10,7 @@ import { useLanguage } from '../../../i18n/LanguageContext.jsx'
 import AwardPanel from '../../requests/components/AwardPanel.jsx'
 import { FLOW_TONES, hasAssignmentFlow, requestFlowStatus, useRequestAwards } from '../../requests/requestAwards.js'
 import { formatDate } from '../../../shared/utils/formatters.js'
+import { isPartyRequest, offerSummary, partyDetailRows, partyHeading, partyLocation, supplierCategoryLabel } from '../../requests/counterparty.js'
 
 // The request's workflow status (quotation / assignment / negotiation /
 // contract), shown wherever the request's plain status would otherwise be.
@@ -209,7 +210,10 @@ function RequestDetailsDrawer({ request, onClose, variant = 'owner', award = nul
   const { t, td } = useLanguage()
   const board = BOARD_VARIANTS[variant] || BOARD_VARIANTS.owner
   const category = categorizeRequest(request)
-  const title = td(request.project_title) || t('dash.contractor.homeownerProject')
+  // A supplier's request with no project is about the supplier: headed by its store
+  // name, with the supplier's own details instead of the project fields.
+  const party = isPartyRequest(request)
+  const title = party ? partyHeading(request, td) : td(request.project_title) || t('dash.contractor.homeownerProject')
   const ownerName = td(request.sender_name || request.profile_title) || t(board.fallbackName)
   const location = td(request.project_address || request.sender_address) || request.project_pincode || t('dash.owner.estimates.locationNotSet')
   const flow = variant === 'owner' ? requestFlowStatus(request, award, 'builder') : null
@@ -345,6 +349,30 @@ function RequestDetailsDrawer({ request, onClose, variant = 'owner', award = nul
           </div>
           {/* A plain list: small label, value on the right. The project and
               status are already in the header and badge above. */}
+          {party ? (
+            <>
+              {/* The supplier's own logo (or picture) and its details: only the rows
+                  that apply to a supplier, each with a value. */}
+              <div className="flex items-center gap-3 rounded-xl border border-slate-100 px-3 py-2.5" data-testid="party-identity">
+                <HomeownerAvatar name={ownerName} request={request} role={board.role} size="h-11 w-11" />
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-extrabold text-slate-900">{title}</p>
+                  {supplierCategoryLabel(request, t) && <p className="truncate text-[11px] font-semibold text-slate-500">{supplierCategoryLabel(request, t)}</p>}
+                </div>
+              </div>
+              <dl className="divide-y divide-slate-100 rounded-xl border border-slate-100" data-testid="party-details">
+                {partyDetailRows(request, t, td).map(([label, value]) => (
+                  <div key={label} className="flex items-start justify-between gap-3 px-3 py-1.5 text-xs">
+                    <dt className="shrink-0 text-slate-400">{label}</dt>
+                    <dd className="min-w-0 text-right font-semibold text-slate-800">{value}</dd>
+                  </div>
+                ))}
+              </dl>
+              {!request.can_view_contact && (
+                <p className="text-[11px] font-medium text-slate-500">{t('req.party.contactAfterAccept')}</p>
+              )}
+            </>
+          ) : (
           <dl className="divide-y divide-slate-100 rounded-xl border border-slate-100">
             {[
               [t(board.counterpartyLabel), ownerName],
@@ -361,6 +389,7 @@ function RequestDetailsDrawer({ request, onClose, variant = 'owner', award = nul
               </div>
             ))}
           </dl>
+          )}
           {/* A request with an assignment opens in the full layout above. */}
           {request.project_description && (
             <div>
@@ -630,12 +659,25 @@ export function ContractorRequestsBoard({ requestList, onAccept, onReject, onWit
                         <td className="px-2.5 py-2 align-middle">
                           <div className="flex min-w-0 items-center gap-2">
                             <Home className="h-3 w-3 shrink-0 text-brand-600/80" strokeWidth={2} />
+                            {isPartyRequest(request) ? (
+                              // A supplier's request with no project: the supplier, not a project.
+                              <div className="min-w-0">
+                                <p className="truncate font-bold text-slate-950">{partyHeading(request, td)}</p>
+                                <p className="mt-0.5 truncate text-[11px] text-slate-500">
+                                  {[supplierCategoryLabel(request, t), offerSummary(request, t)].filter(Boolean).join(' · ')}
+                                </p>
+                                <p className="mt-0.5 flex items-center gap-1 truncate text-[11px] text-slate-500">
+                                  <MapPin className="h-3 w-3 shrink-0 text-slate-400" /> {partyLocation(request, td) || location}
+                                </p>
+                              </div>
+                            ) : (
                             <div className="min-w-0">
                               <p className="truncate font-bold text-slate-950">{title}</p>
                               <p className="mt-0.5 flex items-center gap-1 truncate text-[11px] text-slate-500">
                                 <MapPin className="h-3 w-3 shrink-0 text-slate-400" /> {location}
                               </p>
                             </div>
+                            )}
                           </div>
                         </td>
                         {/* Budget -- not for a supplier request */}
@@ -784,11 +826,26 @@ export function ContractorRequestsBoard({ requestList, onAccept, onReject, onWit
                     <div className="flex items-start gap-2">
                       <HomeownerAvatar name={ownerName} request={request} role={board.role} size="h-9 w-9" />
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-[13px] font-extrabold text-slate-900">{ownerName}</p>
-                        {/* A supplier's company (store) name, under their own name,
-                            when the two differ. */}
-                        {variant === 'supplier' && td(request.profile_title) && td(request.profile_title) !== ownerName && (
-                          <p className="flex min-w-0 items-center gap-1 text-[11px] text-slate-600" title={td(request.profile_title)}><Store className="h-3 w-3 shrink-0 text-brand-700" /> <span className="truncate">{td(request.profile_title)}</span></p>
+                        {isPartyRequest(request) ? (
+                          <>
+                            {/* A supplier's request with no project: headed by its
+                                store name, then who it is and what it supplies. */}
+                            <p className="truncate text-[13px] font-extrabold text-slate-900" title={partyHeading(request, td)}>{partyHeading(request, td)}</p>
+                            <p className="flex min-w-0 items-center gap-1 text-[11px] text-slate-600">
+                              <Store className="h-3 w-3 shrink-0 text-brand-700" />
+                              <span className="truncate">{[partyHeading(request, td) !== ownerName ? ownerName : '', supplierCategoryLabel(request, t)].filter(Boolean).join(' · ')}</span>
+                              {request.profile_verified && <span className="shrink-0 rounded-full bg-emerald-50 px-1.5 text-[10px] font-extrabold text-emerald-700">{t('req.party.verifiedYes')}</span>}
+                            </p>
+                          </>
+                        ) : (
+                          <>
+                            <p className="truncate text-[13px] font-extrabold text-slate-900">{ownerName}</p>
+                            {/* A supplier's company (store) name, under their own name,
+                                when the two differ. */}
+                            {variant === 'supplier' && td(request.profile_title) && td(request.profile_title) !== ownerName && (
+                              <p className="flex min-w-0 items-center gap-1 text-[11px] text-slate-600" title={td(request.profile_title)}><Store className="h-3 w-3 shrink-0 text-brand-700" /> <span className="truncate">{td(request.profile_title)}</span></p>
+                            )}
+                          </>
                         )}
                         {/* For a supplier request the status is the badge alone. */}
                         {variant !== 'supplier' && <p className="truncate text-[11px] text-slate-500">{t(board.rowNote[category])}</p>}
@@ -809,11 +866,15 @@ export function ContractorRequestsBoard({ requestList, onAccept, onReject, onWit
                               project shows that project's name. */}
                           {/* The project, if the request has one. */}
                           {request.project_id && <p className="truncate text-xs font-bold text-slate-700" title={title}>{title}</p>}
+                          {/* What the supplier offers, when it has said. */}
+                          {isPartyRequest(request) && offerSummary(request, t) && (
+                            <p className="truncate text-xs font-bold text-slate-700" title={offerSummary(request, t)}>{offerSummary(request, t)}</p>
+                          )}
                           {dateLine && (
                             <p className="mt-0.5 flex min-w-0 items-center gap-1 text-[11px] text-slate-500"><CalendarDays className="h-3 w-3 shrink-0 text-slate-400" /> <span className="truncate">{dateLine}</span></p>
                           )}
-                          <p className="mt-0.5 flex items-center gap-1 truncate text-[11px] text-slate-500" title={location}>
-                            <MapPin className="h-3 w-3 shrink-0 text-slate-400" /> {location}
+                          <p className="mt-0.5 flex items-center gap-1 truncate text-[11px] text-slate-500" title={isPartyRequest(request) ? partyLocation(request, td) || location : location}>
+                            <MapPin className="h-3 w-3 shrink-0 text-slate-400" /> {isPartyRequest(request) ? partyLocation(request, td) || location : location}
                           </p>
                         </div>
                         <div className="flex shrink-0 items-center gap-1.5">

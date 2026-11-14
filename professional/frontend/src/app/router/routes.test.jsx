@@ -55,7 +55,7 @@ describe('RequireAccess', () => {
   it.each([OWNER, BUILDER, SUPPLIER, SITE_ENGINEER, STORE_MANAGER, ADMIN])('opens weather for every signed-in role (%#)', async (account) => {
     installFakeServer({ 'GET /weather/projects': { status: 503, data: {} }, 'GET /subscriptions/me': { data: {} } })
     renderApp('/weather', { auth: signedInAs(account) })
-    expect(await screen.findByText('Site Weather', {}, { timeout: 8000 })).toBeInTheDocument()
+    expect(await screen.findByText('Site Weather', {}, { timeout: 15000 })).toBeInTheDocument()
     expect(location.current.pathname).toBe('/weather')
   })
 

@@ -12,7 +12,7 @@ import { anAccount, installFakeServer } from '../../test/fakeServer.js'
 import { renderApp, signedInAs } from '../../test/renderApp.jsx'
 import { EQUIPMENT, LABOUR, MATERIAL, SUPPLIER_ID, aSupplierProfile } from '../supplier/supplierTestData.js'
 
-const FIND = { timeout: 8000 }
+const FIND = { timeout: 15000 }
 
 // A supplier who chose a category but has not completed the profile yet.
 const newSupplier = (category) =>

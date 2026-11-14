@@ -52,7 +52,11 @@ from app.modules.projects.models import (
     ProjectRequest,
 )
 from app.modules.projects.notices import create_request_notification
-from app.modules.projects.people import can_view_private_contact, request_counterparty_profile_payload
+from app.modules.projects.people import (
+    can_view_private_contact,
+    request_counterparty_profile_payload,
+    request_counterparty_public_details,
+)
 from app.modules.projects.request_repository import ProjectRequestRepository
 from app.modules.projects.request_types import (
     OWNER_BUILDER_REQUEST_TYPES,
@@ -441,8 +445,12 @@ class ProjectRequestService:
         # per row. Requests that are not property enquiries carry NULL here and are
         # completely unaffected.
         payload = []
+        # The other party's public business details, read once per person on the list.
+        public_details: dict[Any, dict[str, Any]] = {}
         for item in requests:
             display_user = item.receiver if item.sender_id == user.id else item.sender
+            if display_user.id not in public_details:
+                public_details[display_user.id] = request_counterparty_public_details(self.database, display_user)
             owner_profile = item.sender.owner_profile or item.receiver.owner_profile
             project_owner = (
                 item.sender
@@ -470,6 +478,7 @@ class ProjectRequestService:
                     "sender_address": display_user.address,
                     "sender_pincode": display_user.pincode,
                     **request_counterparty_profile_payload(display_user, contact_visible),
+                    **public_details[display_user.id],
                     "can_view_contact": contact_visible,
                     "project_id": item.project_id,
                     "project_title": item.project.title

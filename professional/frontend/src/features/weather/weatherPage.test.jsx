@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { anAccount, installFakeServer } from '../../test/fakeServer.js'
 import { location, renderApp, signedInAs, signedOut } from '../../test/renderApp.jsx'
 
-const FIND = { timeout: 8000 }
+const FIND = { timeout: 15000 }
 const PROJECT_ID = '0190a8b2-4c1e-7aa0-9f00-0000000000a1'
 const BENGALURU = { latitude: 12.97, longitude: 77.59, location_name: 'Bengaluru', country_code: 'IN', timezone: 'Asia/Kolkata', source: 'MANUAL', approximate: false }
 

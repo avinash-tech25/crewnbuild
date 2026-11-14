@@ -8,6 +8,7 @@ import { userAvatarSrc } from '../../../shared/ui/avatars.js'
 import { EntityCard } from '../../../shared/ui/EntityCard.jsx'
 import { EntityAvatar, EntityPill } from '../../../shared/ui/EntityPill.jsx'
 import { formatDate } from '../../../shared/utils/formatters.js'
+import { isPartyRequest, memberSinceLabel, partyDetailRows, partyLocation } from '../../requests/counterparty.js'
 import { constructionTypeLabel } from '../../../shared/utils/roleLabels.js'
 import { useLanguage } from '../../../i18n/LanguageContext.jsx'
 import { SERVICE_OPTION_KEYS, optionLabel } from '../../../i18n/optionKeys.js'
@@ -164,12 +165,24 @@ export function SupplierRequestsSection({ requestMessage, requestList, viewMode 
                           alt={td(name)}
                           className="h-8 w-8 shrink-0 rounded-full object-cover"
                         />
-                        <p className="truncate font-extrabold text-graphite">{td(name)}</p>
+                        <div className="min-w-0">
+                          <p className="truncate font-extrabold text-graphite">{td(name)}</p>
+                          {/* A builder's request with no project: who the builder is. */}
+                          {isPartyRequest(request) && (
+                            <p className="truncate text-[11px] font-semibold text-graphite/55">
+                              {[
+                                request.profile_title && td(request.profile_title) !== td(name) ? td(request.profile_title) : '',
+                                request.profile_verified ? t('req.party.verifiedYes') : '',
+                                memberSinceLabel(request, t) ? `${t('req.party.memberSince')} ${memberSinceLabel(request, t)}` : '',
+                              ].filter(Boolean).join(' · ')}
+                            </p>
+                          )}
+                        </div>
                       </div>
                     </td>
                     <td className={tdClass}>{CLIENT_ROLE_KEYS[request.sender_role] ? t(CLIENT_ROLE_KEYS[request.sender_role]) : (request.sender_role || '—')}</td>
-                    <td className={tdClass}>{td(request.project_title) || '—'}</td>
-                    <td className={tdClass}>{[request.project_address, request.project_pincode].filter(Boolean).map((value) => td(value)).join(', ') || '—'}</td>
+                    <td className={tdClass}>{(isPartyRequest(request) ? (request.project_id ? td(request.project_title) : '') : td(request.project_title)) || '—'}</td>
+                    <td className={tdClass}>{(isPartyRequest(request) ? partyLocation(request, td) : [request.project_address, request.project_pincode].filter(Boolean).map((value) => td(value)).join(', ')) || '—'}</td>
                     <td className={tdClass}>{statusLine(request)}</td>
                     <td className={`${tdClass} text-end`}>
                       {canOpen ? (
@@ -236,9 +249,28 @@ export function SupplierRequestsSection({ requestMessage, requestList, viewMode 
                 />
                 <div className="min-w-0">
                   <p className="truncate text-sm font-extrabold text-graphite">{td(name)}</p>
-                  <p className="truncate text-xs font-semibold text-graphite/55">{td(request.project_title)}</p>
+                  {isPartyRequest(request) ? (
+                    // A builder's request with no project: the builder's company, not
+                    // the server's "General" stand-in.
+                    request.profile_title && td(request.profile_title) !== td(name) && (
+                      <p className="truncate text-xs font-semibold text-graphite/55">{td(request.profile_title)}</p>
+                    )
+                  ) : (
+                    <p className="truncate text-xs font-semibold text-graphite/55">{td(request.project_title)}</p>
+                  )}
                 </div>
               </div>
+              {isPartyRequest(request) && (
+                // Who the builder is: only the rows that apply, each with a value.
+                <dl className="mt-2.5 space-y-1 text-xs" data-testid="party-details">
+                  {partyDetailRows(request, t, td).filter(([label]) => label !== t('req.party.builderName') && label !== t('req.party.company')).map(([label, value]) => (
+                    <div key={label} className="flex items-start justify-between gap-3">
+                      <dt className="shrink-0 text-graphite/45">{label}</dt>
+                      <dd className="min-w-0 truncate text-right font-semibold text-graphite/80">{value}</dd>
+                    </div>
+                  ))}
+                </dl>
+              )}
               <div className="mt-3 flex items-center justify-between gap-3 border-t border-slate-100 pt-3">
                 <span className="flex min-w-0 items-center gap-1.5 text-xs font-bold text-graphite/60">
                   <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${REQUEST_STATUS_TONE[status] || 'bg-slate-300'}`} />

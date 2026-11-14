@@ -125,6 +125,84 @@ def request_counterparty_profile_payload(display_user: User, can_view_contact: b
     }
 
 
+# The supplier categories, as stored on supplier_profiles.supplier_category.
+MATERIAL_SUPPLIER = "material supplier"
+LABOUR_SUPPLIERS = ("labor supplier", "labour supplier")
+EQUIPMENT_SUPPLIER = "equipment supplier"
+OFFER_CATEGORY_LIMIT = 3
+
+
+def supplier_offer_summary(database: Session, supplier_user: User, category: str | None) -> dict[str, Any]:
+    """What a supplier offers, from its own public catalogue: a Material Supplier's
+    published listing count and up to three catalog categories they fall under, a Labour
+    Supplier's active trades, an Equipment Supplier's active equipment types. Nothing
+    here is private: every buyer can already browse it."""
+    from sqlalchemy import func
+
+    kind = (category or "").strip().casefold()
+    if kind == MATERIAL_SUPPLIER:
+        from app.modules.catalog.models import CatalogCategory, CatalogProduct, CatalogSubcategory
+        from app.modules.marketplace.models import SupplierProduct
+
+        published = and_(SupplierProduct.supplier_id == supplier_user.id, SupplierProduct.is_published.is_(True))
+        count = database.scalar(select(func.count(SupplierProduct.id)).where(published)) or 0
+        rows = database.execute(
+            select(CatalogCategory.name, func.count(SupplierProduct.id))
+            .join(CatalogProduct, CatalogProduct.id == SupplierProduct.master_product_id)
+            .join(CatalogSubcategory, CatalogSubcategory.id == CatalogProduct.subcategory_id)
+            .join(CatalogCategory, CatalogCategory.id == CatalogSubcategory.category_id)
+            .where(published)
+            .group_by(CatalogCategory.name)
+            .order_by(func.count(SupplierProduct.id).desc(), CatalogCategory.name)
+            .limit(OFFER_CATEGORY_LIMIT)
+        ).all()
+        return {"active_listings": int(count), "categories": [name for name, _ in rows]}
+    if kind in LABOUR_SUPPLIERS:
+        from app.modules.labour_supply.models import LaborService
+
+        trades = database.scalars(
+            select(LaborService.trade)
+            .where(LaborService.supplier_id == supplier_user.id, LaborService.is_active.is_(True))
+            .distinct()
+            .order_by(LaborService.trade)
+        ).all()
+        return {"trades": list(trades)}
+    if kind == EQUIPMENT_SUPPLIER:
+        from app.modules.equipment_supply.models import EquipmentItem
+
+        types = database.scalars(
+            select(EquipmentItem.category)
+            .where(EquipmentItem.supplier_id == supplier_user.id, EquipmentItem.is_active.is_(True))
+            .distinct()
+            .order_by(EquipmentItem.category)
+        ).all()
+        return {"equipment_types": list(types)}
+    return {}
+
+
+def request_counterparty_public_details(database: Session, display_user: User) -> dict[str, Any]:
+    """The other party's public business details for a request's card and View details:
+    for a supplier its category, location, verification, how long it has been a member
+    and what it offers; for a builder its location, verification and membership. Never a
+    phone number, an e-mail address or anything else private: contact stays with
+    request_counterparty_profile_payload and its acceptance rule."""
+    from app.core.local_time import local_iso
+    from app.modules.accounts.profile_payloads import is_verified
+
+    if display_user.role not in (ROLE_SUPPLIER, ROLE_BUILDER):
+        return {}
+    details: dict[str, Any] = {
+        "profile_location": display_user.location or "",
+        "profile_verified": is_verified(database, display_user),
+        "profile_member_since": local_iso(display_user.created_at),
+    }
+    if display_user.role == ROLE_SUPPLIER:
+        category = display_user.supplier_profile.supplier_category if display_user.supplier_profile else None
+        details["profile_supplier_category"] = category or ""
+        details["profile_offer"] = supplier_offer_summary(database, display_user, category)
+    return details
+
+
 def engineer_summary_payload(
     engineer_user: User,
     profile: EngineerProfile | None,
