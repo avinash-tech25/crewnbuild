@@ -347,3 +347,21 @@ def test_complete_profile_takes_only_own_uploads(
     own = add_file(database, user)
     accepted = client.patch(COMPLETE, json={**payload, field: own}, headers=headers)
     assert accepted.status_code == 200, accepted.text
+
+
+def test_india_is_stored_as_the_old_app_stored_it_and_counted_by_country(client: TestClient, database: Session) -> None:
+    """users.country_code keeps the old country_of_residence values: the country name
+    as given ("India"), which every reader compares against (the admin By country card
+    and filters, discovery, the phone rules). Not a two-letter code."""
+    from app.modules.admin.overview_service import country_slice
+    from app.modules.identity.models import DEFAULT_COUNTRY
+
+    assert DEFAULT_COUNTRY == "India"
+    before = country_slice(database, "India")["accounts"]
+    user, headers = signed_in(client, database, phone="9876543210")
+    response = client.patch(COMPLETE, json={**BASE, "country_of_residence": "India"}, headers=headers)
+    assert response.status_code == 200, response.text
+    assert response.json()["country_of_residence"] == "India"
+    database.expire_all()
+    assert database.get(User, user.id).country_code == "India"  # type: ignore[union-attr]
+    assert country_slice(database, "India")["accounts"] == before + 1
