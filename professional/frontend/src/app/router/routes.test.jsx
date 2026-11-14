@@ -36,8 +36,9 @@ describe('the route table', () => {
 })
 
 // [address, the role allowed, its home, a role refused and where that one goes]
+// Dashboards still to come show the placeholder; the House Owner's has its own tests
+// (features/owner/ownerDashboard.test.jsx).
 const DASHBOARDS = [
-  ['/owner/projects', OWNER, BUILDER, '/contractor'],
   ['/contractor/projects', BUILDER, OWNER, '/owner'],
   ['/supplier/products', SUPPLIER, OWNER, '/owner'],
   ['/engineer/my-projects', SITE_ENGINEER, STORE_MANAGER, '/store-manager'],
@@ -78,9 +79,11 @@ describe('RequireAccess', () => {
     await waitFor(() => expect(location.current.pathname).toBe('/subscription-checkout'))
   })
 
-  it('opens weather for every signed-in role', async () => {
-    renderApp('/weather', { auth: signedInAs(SUPPLIER) })
-    expect(await screen.findByTestId('planned-page')).toBeInTheDocument()
+  it.each([OWNER, BUILDER, SUPPLIER, SITE_ENGINEER, STORE_MANAGER, ADMIN])('opens weather for every signed-in role (%#)', async (account) => {
+    installFakeServer({ 'GET /weather/projects': { status: 503, data: {} }, 'GET /subscriptions/me': { data: {} } })
+    renderApp('/weather', { auth: signedInAs(account) })
+    expect(await screen.findByText('Site Weather', {}, { timeout: 8000 })).toBeInTheDocument()
+    expect(location.current.pathname).toBe('/weather')
   })
 
   it('answers an unknown address with the not-found page', async () => {

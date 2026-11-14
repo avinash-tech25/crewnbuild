@@ -18,6 +18,8 @@ export default defineConfig({
     globals: true,
     setupFiles: ['./src/test/setup.js'],
     css: false,
+    // The dashboards are large lazy pages; their first load in jsdom takes seconds.
+    testTimeout: 20000,
     env: { VITE_API_BASE_URL: 'http://api.test/api/v1', VITE_PARTNER_URL: 'http://partner.test' },
   },
 })

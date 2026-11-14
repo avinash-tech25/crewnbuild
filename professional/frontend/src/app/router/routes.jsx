@@ -39,6 +39,8 @@ const EngineerCategoryPage = page(() => import('../../features/onboarding/pages/
 const PincodeSetupPage = page(() => import('../../features/onboarding/pages/PincodeSetupPage.jsx'))
 const CompleteProfilePage = page(() => import('../../features/onboarding/pages/CompleteProfilePage.jsx'))
 const SubscriptionCheckoutPage = page(() => import('../../features/billing/pages/SubscriptionCheckoutPage.jsx'))
+const OwnerDashboardPage = page(() => import('../../features/owner/pages/OwnerDashboardPage.jsx'))
+const WeatherPage = page(() => import('../../features/weather/pages/WeatherPage.jsx'))
 
 const ENGINEERS = ['ENGINEER', 'SITE_ENGINEER', 'STORE_MANAGER']
 const MARKETPLACE = ['OWNER', 'BUILDER', 'SUPPLIER', ...ENGINEERS]
@@ -83,8 +85,8 @@ export const routes = [
   { path: '/complete-profile', Component: CompleteProfilePage, access: { roles: MARKETPLACE } },
   { path: SUBSCRIPTION_CHECKOUT_PATH, Component: SubscriptionCheckoutPage, access: { roles: ['BUILDER'] } },
   // ---- dashboards: placeholders until their part ----
-  { path: '/owner/*', Component: planned('House Owner dashboard', 2), access: { roles: ['OWNER'] }, part: 2 },
-  { path: '/weather', Component: planned('Weather', 2), access: { roles: EVERY_SIGNED_IN, checkout: true }, part: 2 },
+  { path: '/owner/*', Component: OwnerDashboardPage, access: { roles: ['OWNER'] } },
+  { path: '/weather', Component: WeatherPage, access: { roles: EVERY_SIGNED_IN, checkout: true } },
   { path: '/contractor/*', Component: planned('Builder dashboard', 3), access: { roles: ['BUILDER'], checkout: true }, part: 3 },
   {
     path: '/contractors/:contractorId',

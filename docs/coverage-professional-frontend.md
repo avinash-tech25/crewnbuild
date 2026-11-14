@@ -9,7 +9,8 @@ Every page and address of the old app (`Kuwait-Version/Octabuild/frontend 7/fron
 | Old top-level routes | 37 (including `/404` and `*`) |
 | Kept in the new route table | 37 |
 | Ported in part 1 | 28 |
-| Placeholders (later parts) | 9 top-level routes, covering the five dashboards, the admin console, weather, live camera and the builder profile |
+| Ported in part 2 (House Owner, weather) | 2 top-level routes (`/owner/*` with all its sections, `/weather`) |
+| Placeholders (later parts) | 7 top-level routes: the Builder, Site Engineer, Store Manager and Supplier dashboards, the admin console, live camera and the builder profile |
 | Old addresses missing | 0 |
 
 ## Part 1: ported
@@ -44,12 +45,29 @@ Every page and address of the old app (`Kuwait-Version/Octabuild/frontend 7/fron
 
 Also in part 1: the Partner hand-off (`features/partner-booking/`, message names `PARTNER_BOOKING_READY` and `OCTABUILD_HOUSE_OWNER_HANDOFF` unchanged) and `<Can>` / `usePermission` for role-aware buttons.
 
+## Part 2: ported (House Owner, weather)
+
+| Old address | New page (src/) | Access |
+| --- | --- | --- |
+| `/owner` (overview: services, technicians, materials, activity, deadlines, project status, budgets, technician payments) | `features/owner/pages/OwnerDashboardPage.jsx` | OWNER |
+| `/owner/projects` (list, create, edit, delete, analysis) | same page, `features/owner/components/OwnerProjectViews.jsx` | OWNER |
+| `/owner/projects/:projectId` and `/dashboard`, `/requests`, `/suppliers`, `/builders`, `/escrow` (find builders, requests, assign builder and negotiation, site activity, project analysis, live camera, overview, escrow, payments, suppliers and material orders, the self-construction site engineer) | same page, `features/owner/components/OwnerProjectWorkspace.jsx` | OWNER |
+| `/owner/buy-sell` | same page, `features/property/components/PropertyBuySellHub.jsx` | OWNER |
+| `/owner/messages` | same page, `features/messaging/components/MessageThread.jsx` | OWNER |
+| `/owner/profile` | same page, `features/owner/components/OwnerSections.jsx` | OWNER |
+| `/weather` | `features/weather/pages/WeatherPage.jsx` | every signed-in role (builders after checkout) |
+
+The owner dashboard brought the shared pieces later dashboards reuse: the dashboard shell
+(`shared/dashboard/`), messaging, notifications and the live-events socket, requests and
+awards, property, shop and cart, catalog, cameras, site work, and the API modules for
+projects, requests, messages, notifications, property, engineers, cameras, cart, catalog,
+supplier products, material requests, the cost tool, labour, equipment and technician
+payments.
+
 ## Later parts: placeholders now
 
 | Old address | Sections the old dashboard had (same URLs) | Access | Part |
 | --- | --- | --- | --- |
-| `/owner/*` | `/owner`, `/owner/projects`, `/owner/projects/:projectId` and `/:section` (`requests`, `suppliers`, `builders`, `escrow`), `/owner/buy-sell`, `/owner/messages`, `/owner/profile` | OWNER | 2 |
-| `/weather` | | every signed-in role (builders after checkout) | 2 |
 | `/contractor/*` | `/contractor`, `/projects`, `/portfolio`, `/subscription`, `/requests`, `/my-site-engineers`, `/find-clients`, `/buy-sell`, `/product-catalog`, `/messages`, `/profile-settings` | BUILDER (after checkout) | 3 |
 | `/contractors/:contractorId` | | OWNER, BUILDER, SUPPLIER | 3 |
 | `/engineer/*` | `/engineer`, `/my-projects`, `/my-supplies`, `/store-requests`, `/find-opportunities`, `/calendar`, `/daily-logs`, `/messages`, `/notifications`, `/profile` | ENGINEER (not Store Manager) | 4 |

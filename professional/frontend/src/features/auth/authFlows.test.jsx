@@ -6,6 +6,7 @@ import { currentCsrfToken } from '../../shared/api/apiClient.js'
 import { signupWithProfile } from '../../shared/auth/authSlice.js'
 import { signupRoleFromLink } from '../billing/subscription/signupPlanFlow.js'
 import { anAccount, installFakeServer } from '../../test/fakeServer.js'
+import { ownerDashboardServer } from '../owner/ownerTestData.js'
 import { location, renderApp, signedInAs, signedOut } from '../../test/renderApp.jsx'
 
 const PASSWORD_LOGIN = { 'GET /auth/phone/config': { data: { enabled: false, login: false, dial_code: '+91', digits: 10 } } }
@@ -18,36 +19,46 @@ async function signInWithPassword(user, email, password) {
 
 describe('the session on load', () => {
   it('asks the server, then opens the dashboard of the account it names', async () => {
-    const server = installFakeServer({ 'GET /auth/session': { data: { user: anAccount(), csrf_token: 'csrf-s' } } })
+    const server = installFakeServer(ownerDashboardServer({ 'GET /auth/session': { data: { user: anAccount(), csrf_token: 'csrf-s' } } }))
     renderApp('/owner', { session: 'live' })
-    expect(await screen.findByTestId('planned-page')).toBeInTheDocument()
+    expect(await screen.findByText('Welcome, Asha Rao!', {}, { timeout: 8000 })).toBeInTheDocument()
     expect(server.calls('GET /auth/session')).toHaveLength(1)
     expect(currentCsrfToken()).toBe('csrf-s')
   })
 
   it('a visitor with no session is signed out without a sign-out round trip', async () => {
     const server = installFakeServer({
-      ...PASSWORD_LOGIN,
       'GET /auth/session': { status: 401, data: { detail: 'Not signed in' } },
       'POST /auth/refresh': { status: 401, data: { detail: 'Session expired. Please sign in again.' } },
     })
-    renderApp('/owner', { session: 'live' })
-    await waitFor(() => expect(location.current.pathname).toBe('/login'))
+    // A public page: opening Login itself signs out on the server (as in the old app).
+    const { store } = renderApp('/about', { session: 'live' })
+    await waitFor(() => expect(store.getState().auth.sessionStatus).toBe('anonymous'))
     expect(server.calls('POST /auth/refresh')).toHaveLength(1)
     expect(globalThis.fetch).not.toHaveBeenCalledWith(expect.stringContaining('/auth/logout'), expect.anything())
   })
 
+  it('a protected page sends a visitor with no session to sign in', async () => {
+    installFakeServer({
+      ...PASSWORD_LOGIN,
+      'GET /auth/session': { status: 401, data: {} },
+      'POST /auth/refresh': { status: 401, data: {} },
+    })
+    renderApp('/owner', { session: 'live' })
+    await waitFor(() => expect(location.current.pathname).toBe('/login'))
+  })
+
   it('an expired access cookie is refreshed once and the session kept', async () => {
     let refreshed = false
-    installFakeServer({
+    installFakeServer(ownerDashboardServer({
       'GET /auth/session': () => (refreshed ? { data: { user: anAccount(), csrf_token: 'c' } } : { status: 401, data: {} }),
       'POST /auth/refresh': () => {
         refreshed = true
         return { data: { user: anAccount(), csrf_token: 'c' } }
       },
-    })
+    }))
     renderApp('/owner', { session: 'live' })
-    expect(await screen.findByTestId('planned-page')).toBeInTheDocument()
+    expect(await screen.findByText('Welcome, Asha Rao!', {}, { timeout: 8000 })).toBeInTheDocument()
   })
 })
 

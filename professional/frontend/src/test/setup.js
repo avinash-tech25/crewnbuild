@@ -31,6 +31,23 @@ for (const name of ['IntersectionObserver', 'ResizeObserver']) {
 }
 window.scrollTo = () => {}
 
+// The live sockets (chat, "something changed") never connect in the tests: they stay
+// CONNECTING, so the screens use the REST calls, as they do while a socket is down.
+window.WebSocket = class {
+  static CONNECTING = 0
+  static OPEN = 1
+  static CLOSING = 2
+  static CLOSED = 3
+  readyState = 0
+  constructor(url) {
+    this.url = url
+  }
+  send() {}
+  close() {
+    this.readyState = 3
+  }
+}
+
 beforeEach(() => {
   // Sign-out ends the session with a keepalive fetch; record it instead.
   globalThis.fetch = vi.fn(() => Promise.resolve(new Response(null, { status: 204 })))

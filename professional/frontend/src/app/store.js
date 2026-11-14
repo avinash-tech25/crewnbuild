@@ -1,9 +1,13 @@
 import { configureStore } from '@reduxjs/toolkit'
+import cartReducer from '../features/shop/cartSlice.js'
+import catalogReducer from '../features/catalog/catalogSlice.js'
+import supplierCatalogReducer from '../features/catalog/supplierCatalogSlice.js'
 import { forgetSavedFeedback } from '../features/support/feedbackStorage.js'
 import { baseApi } from '../shared/api/baseApi.js'
 import { endServerSession } from '../shared/api/apiClient.js'
 import { bindApiDispatch } from '../shared/api/callEndpoint.js'
 import authReducer, { logoutUser } from '../shared/auth/authSlice.js'
+import { noteSignedIn } from '../shared/auth/signedInAccount.js'
 
 // Every way of signing out (Logout buttons, Home, the Login screen, an expired session)
 // dispatches logoutUser. The session lives in HttpOnly cookies, so it also ends on the
@@ -24,6 +28,9 @@ export function createAppStore(preloadedState) {
   const store = configureStore({
     reducer: {
       auth: authReducer,
+      cart: cartReducer,
+      catalog: catalogReducer,
+      supplierCatalog: supplierCatalogReducer,
       [baseApi.reducerPath]: baseApi.reducer,
     },
     preloadedState,
@@ -35,6 +42,9 @@ export function createAppStore(preloadedState) {
       }).concat(baseApi.middleware, endSessionEverywhere),
   })
   bindApiDispatch(store.dispatch)
+  // For the live sockets, which run outside React.
+  noteSignedIn(store.getState().auth.user)
+  store.subscribe(() => noteSignedIn(store.getState().auth.user))
   return store
 }
 

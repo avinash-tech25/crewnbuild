@@ -16,6 +16,9 @@ export const authApi = baseApi.injectEndpoints({
     completeProfile: build.mutation({ query: (body) => ({ url: '/auth/complete-profile', method: 'PATCH', data: body }) }),
     saveSupplierCategory: build.mutation({ query: (body) => ({ url: '/auth/supplier-category', method: 'PATCH', data: body }) }),
     saveEngineerCategory: build.mutation({ query: (body) => ({ url: '/auth/engineer-category', method: 'PATCH', data: body }) }),
+    updateProfileImage: build.mutation({
+      query: (profileImageUrl) => ({ url: '/auth/profile-image', method: 'PATCH', data: { profile_image_url: profileImageUrl } }),
+    }),
     partnerHandoff: build.mutation({ query: () => ({ url: '/auth/partner-handoff', method: 'POST' }) }),
   }),
 })
@@ -72,3 +75,5 @@ export async function requestPartnerHandoffToken() {
     return null
   }
 }
+
+export const updateUserProfileImage = (profileImageUrl) => runMutation(authApi.endpoints.updateProfileImage, profileImageUrl)

@@ -27,6 +27,11 @@ export const subscriptionApi = baseApi.injectEndpoints({
       query: (body) => ({ url: '/subscriptions/mock/checkout', method: 'POST', data: body }),
       invalidatesTags: ['Subscription'],
     }),
+    builderBadges: build.query({ query: (builderIds) => ({ url: '/subscriptions/badges', params: { builder_ids: builderIds.join(',') } }) }),
+    costAdjustments: build.query({ query: (registerId) => ({ url: `/cost-tool/registers/${registerId}/builder-adjustments` }) }),
+    saveCostAdjustment: build.mutation({
+      query: ({ registerId, body }) => ({ url: `/cost-tool/registers/${registerId}/builder-adjustments`, method: 'POST', data: body }),
+    }),
   }),
 })
 
@@ -75,3 +80,50 @@ export const SUBSCRIPTION_CHANGED_EVENT = 'crewnbuild:subscription-changed'
 export function announceSubscriptionChange() {
   window.dispatchEvent(new Event(SUBSCRIPTION_CHANGED_EVENT))
 }
+
+// A builder's plan badge on cards and lists. Many cards ask at once, so the ids are
+// gathered for one tick and fetched together (50 per request), and each answer is kept
+// for a minute.
+const BADGE_TTL_MS = 60 * 1000
+const BADGE_BATCH = 50
+const badgeCache = new Map() // id -> {tier, at}
+let badgeQueue = new Map() // id -> [resolve, reject][]
+let badgeTimer = null
+
+async function flushBadgeQueue() {
+  const queue = badgeQueue
+  badgeQueue = new Map()
+  badgeTimer = null
+  const ids = [...queue.keys()]
+  for (let start = 0; start < ids.length; start += BADGE_BATCH) {
+    const chunk = ids.slice(start, start + BADGE_BATCH)
+    try {
+      const badges = (await runQuery(subscriptionApi.endpoints.builderBadges, chunk))?.badges || {}
+      for (const id of chunk) {
+        const tier = badges[id] || null
+        badgeCache.set(id, { tier, at: Date.now() })
+        queue.get(id).forEach(([resolve]) => resolve(tier))
+      }
+    } catch (error) {
+      chunk.forEach((id) => queue.get(id).forEach(([, reject]) => reject(error)))
+    }
+  }
+}
+
+export function fetchBuilderBadge(builderId) {
+  const cached = badgeCache.get(builderId)
+  if (cached && Date.now() - cached.at < BADGE_TTL_MS) return Promise.resolve(cached.tier)
+  return new Promise((resolve, reject) => {
+    if (!badgeQueue.has(builderId)) badgeQueue.set(builderId, [])
+    badgeQueue.get(builderId).push([resolve, reject])
+    if (!badgeTimer) badgeTimer = window.setTimeout(flushBadgeQueue, 0)
+  })
+}
+
+// A builder's own corrections to a day's cost register (Professional plan).
+export const fetchCostAdjustments = (registerId) => runQuery(subscriptionApi.endpoints.costAdjustments, registerId)
+export const saveCostAdjustment = (registerId, { fieldName, adjustedValue, reason }) =>
+  runMutation(subscriptionApi.endpoints.saveCostAdjustment, {
+    registerId,
+    body: { field_name: fieldName, adjusted_value: Number(adjustedValue), reason },
+  })

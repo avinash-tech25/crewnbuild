@@ -1,0 +1,30 @@
+[
+ {
+  "slug": "plumber",
+  "file": "plumber.png",
+  "source": "Friendly Plumber with Tools and Toolbox.png (supplied by the project owner, 2026-10-04)",
+  "license": "Owned by the project",
+  "changes": "Glow background removed to transparency, resized to 330x495 (the same 2:3 shape as the technicians/ figures)."
+ },
+ {
+  "slug": "electrician",
+  "file": "electrician.png",
+  "source": "Smiling Electrician with Tools and Cable.png (supplied by the project owner, 2026-10-04)",
+  "license": "Owned by the project",
+  "changes": "Glow background removed to transparency, resized to 330x495 (the same 2:3 shape as the technicians/ figures)."
+ },
+ {
+  "slug": "carpenter",
+  "file": "carpenter.png",
+  "source": "Smiling Carpenter with Tools and Lumber.png (supplied by the project owner, 2026-10-04)",
+  "license": "Owned by the project",
+  "changes": "Glow background removed to transparency, resized to 330x495 (the same 2:3 shape as the technicians/ figures)."
+ },
+ {
+  "slug": "painter",
+  "file": "painter.png",
+  "source": "Smiling Painter with Roller and Bucket.png (supplied by the project owner, 2026-10-04)",
+  "license": "Owned by the project",
+  "changes": "Glow background removed to transparency, resized to 330x495 (the same 2:3 shape as the technicians/ figures)."
+ }
+]
