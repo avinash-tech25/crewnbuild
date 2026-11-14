@@ -157,7 +157,8 @@ class Settings(BaseSettings):
     whatsapp_api_url: str = ""
     whatsapp_api_key: SecretStr = Field(default=SecretStr(""), repr=False)
     whatsapp_waba_number: str = ""
-    whatsapp_default_lang: str = "en"
+    # The language the approved templates are registered in (en_US, as the old app sent).
+    whatsapp_default_lang: str = "en_US"
     whatsapp_debug: bool = False
     whatsapp_timeout_seconds: float = 10.0
     # Development only: the code flow runs unchanged but nothing is sent, and the code
