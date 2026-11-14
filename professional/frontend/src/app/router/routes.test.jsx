@@ -35,36 +35,13 @@ describe('the route table', () => {
   })
 })
 
-// [address, the role allowed, its home, a role refused and where that one goes]
-// Dashboards still to come show the placeholder; the ported ones have their own tests
-// (features/owner, features/builder, features/engineer, features/supplier).
-const DASHBOARDS = [
-  ['/admin/users', ADMIN, OWNER, '/owner'],
-]
-
+// Each dashboard's own access tests (role, sign-in and the way back) are with it:
+// features/owner, builder, engineer, supplier and admin.
 describe('RequireAccess', () => {
-  it.each(DASHBOARDS)('%s opens for its role', async (path, allowed) => {
-    renderApp(path, { auth: signedInAs(allowed) })
-    expect(await screen.findByTestId('planned-page')).toBeInTheDocument()
-    expect(location.current.pathname).toBe(path)
-  })
-
-  it.each(DASHBOARDS)('%s sends another role to its own home', async (path, _allowed, other, otherHome) => {
-    renderApp(path, { auth: signedInAs(other) })
-    await waitFor(() => expect(location.current.pathname).toBe(otherHome))
-  })
-
-  it.each(DASHBOARDS)('%s sends a signed-out visitor to sign in, and remembers the way back', async (path) => {
-    installFakeServer({ 'GET /auth/phone/config': { data: { enabled: false, login: false } } })
-    renderApp(`${path}?tab=1`, { auth: signedOut })
-    await waitFor(() => expect(location.current.pathname).toBe('/login'))
-    expect(location.current.state).toEqual({ returnTo: `${path}?tab=1` })
-  })
-
   it('shows only a loader while the server is still confirming the session', async () => {
     renderApp('/owner', { auth: { user: null, sessionStatus: 'verifying' } })
     expect(screen.getByRole('status', { name: 'Loading' })).toBeInTheDocument()
-    expect(screen.queryByTestId('planned-page')).not.toBeInTheDocument()
+    expect(screen.queryByText(/Welcome/)).not.toBeInTheDocument()
     expect(location.current.pathname).toBe('/owner')
   })
 

@@ -6,21 +6,21 @@ import { runMutation, runQuery } from '../../shared/api/callEndpoint.js'
 export const technicianPaymentsApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
     bookingPayments: build.query({ query: () => ({ url: '/payments/technician-bookings' }) }),
-    createOrder: build.mutation({ query: (bookingId) => ({ url: '/payments/orders', method: 'POST', data: { booking_id: bookingId } }) }),
-    verifyPayment: build.mutation({ query: (body) => ({ url: '/payments/verify', method: 'POST', data: body }) }),
-    reportFailure: build.mutation({ query: (body) => ({ url: '/payments/failures', method: 'POST', data: body }) }),
+    bookingPaymentOrder: build.mutation({ query: (bookingId) => ({ url: '/payments/orders', method: 'POST', data: { booking_id: bookingId } }) }),
+    verifyBookingPayment: build.mutation({ query: (body) => ({ url: '/payments/verify', method: 'POST', data: body }) }),
+    reportBookingPaymentFailure: build.mutation({ query: (body) => ({ url: '/payments/failures', method: 'POST', data: body }) }),
     receipt: build.query({ query: (receiptNumber) => ({ url: `/payments/receipts/${encodeURIComponent(receiptNumber)}` }) }),
-    mockCheckout: build.mutation({ query: (body) => ({ url: '/payments/mock/checkout', method: 'POST', data: body }) }),
+    mockBookingCheckout: build.mutation({ query: (body) => ({ url: '/payments/mock/checkout', method: 'POST', data: body }) }),
   }),
 })
 
 const { endpoints } = technicianPaymentsApi
 
 export const fetchTechnicianBookingPayments = () => runQuery(endpoints.bookingPayments)
-export const createPaymentOrder = (bookingId) => runMutation(endpoints.createOrder, bookingId)
+export const createPaymentOrder = (bookingId) => runMutation(endpoints.bookingPaymentOrder, bookingId)
 
 export const verifyPayment = ({ paymentOrderId, razorpayOrderId, razorpayPaymentId, razorpaySignature }) =>
-  runMutation(endpoints.verifyPayment, {
+  runMutation(endpoints.verifyBookingPayment, {
     payment_order_id: paymentOrderId,
     razorpay_order_id: razorpayOrderId,
     razorpay_payment_id: razorpayPaymentId,
@@ -28,7 +28,7 @@ export const verifyPayment = ({ paymentOrderId, razorpayOrderId, razorpayPayment
   })
 
 export const reportPaymentFailure = ({ paymentOrderId, razorpayPaymentId, code, description }) =>
-  runMutation(endpoints.reportFailure, {
+  runMutation(endpoints.reportBookingPaymentFailure, {
     payment_order_id: paymentOrderId,
     razorpay_payment_id: razorpayPaymentId || null,
     code: code || null,
@@ -38,7 +38,7 @@ export const reportPaymentFailure = ({ paymentOrderId, razorpayPaymentId, code, 
 export const fetchPaymentReceipt = (receiptNumber) => runQuery(endpoints.receipt, receiptNumber)
 // Answers only while the server has no Razorpay keys (local mock).
 export const simulateMockCheckout = (paymentOrderId, outcome) =>
-  runMutation(endpoints.mockCheckout, { payment_order_id: paymentOrderId, outcome })
+  runMutation(endpoints.mockBookingCheckout, { payment_order_id: paymentOrderId, outcome })
 
 /** The server's `{detail: {code, message}}`, or a plain fallback. */
 export function paymentErrorMessage(error, fallback) {

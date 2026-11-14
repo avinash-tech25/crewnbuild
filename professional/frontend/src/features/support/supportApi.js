@@ -18,6 +18,13 @@ export const supportApi = baseApi.injectEndpoints({
       query: (reference) => ({ url: `/support/tickets/${encodeURIComponent(reference)}` }),
       providesTags: ['SupportTicket'],
     }),
+    // Staff (admin console, support.view / support.manage). A ticket is personal data:
+    // fetched when opened, not kept once closed.
+    staffTickets: build.query({ query: (params) => ({ url: '/admin/support/tickets', params }), keepUnusedDataFor: 0 }),
+    staffTicket: build.query({ query: (id) => ({ url: `/admin/support/tickets/${id}` }), keepUnusedDataFor: 0 }),
+    replyAsStaff: build.mutation({
+      query: ({ id, body, status }) => ({ url: `/admin/support/tickets/${id}/reply`, method: 'POST', data: { body: body || null, status: status || null } }),
+    }),
     replyToMyTicket: build.mutation({
       query: ({ reference, body }) => ({
         url: `/support/tickets/${encodeURIComponent(reference)}/messages`,
@@ -62,6 +69,17 @@ export async function openAttachment(path) {
 }
 
 export const myAttachmentPath = (reference) => `/support/tickets/${encodeURIComponent(reference)}/attachment`
+
+// --- Staff ---
+export async function fetchStaffTickets({ status = '', q = '' } = {}) {
+  const params = {}
+  if (status) params.status = status
+  if (q) params.q = q
+  return (await runQuery(supportApi.endpoints.staffTickets, params)).tickets
+}
+export const fetchStaffTicket = (id) => runQuery(supportApi.endpoints.staffTicket, id)
+export const replyAsStaff = (id, { body, status }) => runMutation(supportApi.endpoints.replyAsStaff, { id, body, status })
+export const staffAttachmentPath = (id) => `/admin/support/tickets/${id}/attachment`
 
 /** A readable message from any API error shape. */
 export function supportErrorMessage(error, fallback = 'Something went wrong. Please try again.') {

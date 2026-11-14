@@ -1,6 +1,6 @@
 # Coverage: the old Professional web app in the new one (R7)
 
-Every page and address of the old app (`Kuwait-Version/Octabuild/frontend 7/frontend`, read from its `AppRouter.jsx` and from the URL parsers of each dashboard) and where it is now. Addresses are unchanged: `/contractor/*` keeps its path though the role is `BUILDER` now. Every route has an explicit access rule (`src/app/router/routes.jsx`, FE-01, tested); a page not moved yet answers at its address, behind the access rule it will have, with a placeholder naming the part that brings it.
+Every page and address of the old app (`Kuwait-Version/Octabuild/frontend 7/frontend`, read from its `AppRouter.jsx` and from the URL parsers of each dashboard) and where it is now. Addresses are unchanged: `/contractor/*` keeps its path though the role is `BUILDER` now. Every route has an explicit access rule (`src/app/router/routes.jsx`, FE-01, tested). All of them are ported (parts 1 to 6); the placeholder page is gone.
 
 ## Totals
 
@@ -13,7 +13,8 @@ Every page and address of the old app (`Kuwait-Version/Octabuild/frontend 7/fron
 | Ported in part 3 (Builder) | 2 top-level routes (`/contractor/*` with all its sections, `/contractors/:contractorId`) |
 | Ported in part 4 (Site Engineer, live camera, Store Manager) | 3 top-level routes (`/engineer/*`, `/engineer/live-camera`, `/store-manager/*`) |
 | Ported in part 5 (Supplier) | 1 top-level route (`/supplier/*` with all its sections) |
-| Placeholders (later parts) | 1 top-level route: the admin console |
+| Ported in part 6 (admin console) | 1 top-level route (`/admin/*` with all 16 sections) |
+| Placeholders | none: every address of the old app is ported |
 | Old addresses missing | 0 |
 
 ## Part 1: ported
@@ -135,11 +136,38 @@ enforces it.
 | `/supplier/equipment`, `/supplier/equipment-assignments` | same page, `features/equipment/components/SupplierEquipmentSections.jsx` | SUPPLIER (Equipment) |
 | `/supplier/my-projects`, `/find-clients`, `/requests`, `/messages`, `/profile` | same page, `features/supplier/components/` | SUPPLIER |
 
-## Later parts: placeholders now
+## Part 6: ported (admin console)
 
-| Old address | Sections the old dashboard had (same URLs) | Access | Part |
+Every section and every action is shown only to an administrator holding the permission
+the server checks for it (`features/admin/adminAccess.js`, the names in
+`app/modules/admin/admin_identity.py`). A Global or Location Super Admin holds them all; a
+Manager only its grants. A section opened by its address without the permission shows
+"No access" and asks the server for nothing.
+
+| Old address | Section (src/features/admin/) | To open it | Actions and what they need |
 | --- | --- | --- | --- |
-| `/admin/*` | `/admin`, `/users`, `/projects`, `/leads`, `/verification`, `/reports`, `/notifications`, `/admins`, `/ads`, `/audit`, `/catalog`, `/coupons`, `/subscription-payments`, `/account-deletion`, `/support`, `/mobile` | GLOBAL\_SUPER\_ADMIN, LOCATION\_SUPER\_ADMIN, MANAGER | 6 |
+| `/admin` | Dashboard, `components/OverviewSection.jsx` | any administrator | cards only for queues the administrator may open |
+| `/admin/users` | Users, `pages/AdminConsolePage.jsx`, `components/UserDetail.jsx` | users.view | suspend / reactivate: users.suspend |
+| `/admin/projects` | Projects, `components/ProjectDetail.jsx` | projects.view | read only |
+| `/admin/leads` | Leads, `components/LeadsSection.jsx` | projects.view | read only |
+| `/admin/verification` | Verification, `components/ReviewSections.jsx` | verification.view | approve / reject: verification.decide |
+| `/admin/reports` | Reports, `components/ReviewSections.jsx` | reports.view | resolve / reject: reports.resolve |
+| `/admin/notifications` (the bell) | Announcements, `components/NotificationsSection.jsx` | users.view | send an announcement: users.suspend |
+| `/admin/admins` | Administrators, `pages/AdminConsolePage.jsx` | admins.manage | create, edit, deactivate (Global vs Location as the server allows) |
+| `/admin/ads` | Adverts, `components/AdsSection.jsx` | ads.view | create, edit, start / stop: ads.manage |
+| `/admin/audit` | Audit log, `components/AuditSection.jsx` | audit.view | read only |
+| `/admin/catalog` | Master catalog, `components/CatalogSection.jsx`, `CatalogManage.jsx` | catalog.view | brands, categories, subcategories, product details, images, video: catalog.manage (read only without it) |
+| `/admin/coupons` | Coupons, `components/CouponsSection.jsx` | coupons.view | create, edit, activate: coupons.manage |
+| `/admin/subscription-payments` | Subscription payments, `components/SubscriptionPaymentsSection.jsx` | subscriptions.view | read only |
+| `/admin/account-deletion` | Account deletion, `components/AccountDeletionSection.jsx` | deletions.view | read only |
+| `/admin/support` | Support tickets, `components/SupportTicketsSection.jsx` | support.view | reply, change status: support.manage |
+| `/admin/mobile` | Own WhatsApp sign-in number | any administrator | |
+
+Sensitive records (verification documents, deleted accounts, user and project details,
+support tickets and attachments, payment history) are fetched when their screen or row is
+opened and dropped from memory when closed; nothing is put in browser storage. The server
+sends every admin answer, and every file an administrator opens that is not their own,
+with `Cache-Control: no-store`.
 
 ## Access, as before and as now
 

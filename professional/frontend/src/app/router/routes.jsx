@@ -1,15 +1,12 @@
 import { lazy } from 'react'
 import { ADMIN_ROLES, SIGNED_IN_ROLES } from '../../shared/auth/roles.js'
 import { ENGINEER_CATEGORY_PATH, STORE_MANAGER_PATH, SUBSCRIPTION_CHECKOUT_PATH, SUPPLIER_CATEGORY_PATH } from '../../shared/auth/accountPaths.js'
-import PlannedPage from './PlannedPage.jsx'
 
 /**
  * The one route table (technical-architecture.md 8.2). Every address of the old app is
  * here, with its access rule (FE-01: a route without one fails the tests). Pages are
- * lazy-loaded, so one role's code is not downloaded by another (FE-02). Pages not moved
- * yet answer with a placeholder naming the part that brings them, behind the access rule
- * they will have. URLs are as before: /contractor/* keeps its path though the role is
- * BUILDER now.
+ * lazy-loaded, so one role's code is not downloaded by another (FE-02). URLs are as
+ * before: /contractor/* keeps its path though the role is BUILDER now.
  */
 
 const page = (load) => lazy(load)
@@ -48,6 +45,7 @@ const EngineerDashboardPage = page(() => import('../../features/engineer/pages/E
 const EngineerLiveCameraPage = page(() => import('../../features/cameras/pages/EngineerLiveCameraPage.jsx'))
 const StoreManagerDashboardPage = page(() => import('../../features/store/pages/StoreManagerDashboardPage.jsx'))
 const SupplierDashboardPage = page(() => import('../../features/supplier/pages/SupplierDashboardPage.jsx'))
+const AdminConsolePage = page(() => import('../../features/admin/pages/AdminConsolePage.jsx'))
 
 const ENGINEERS = ['ENGINEER', 'SITE_ENGINEER', 'STORE_MANAGER']
 const MARKETPLACE = ['OWNER', 'BUILDER', 'SUPPLIER', ...ENGINEERS]
@@ -56,7 +54,6 @@ const ENGINEER_DASHBOARD = ['ENGINEER', 'SITE_ENGINEER']
 // The routes' roles are the screens' roles (accessRole): every signed-in one.
 const EVERY_SIGNED_IN = [...new Set([...SIGNED_IN_ROLES.filter((role) => role !== 'ENGINEER'), ...ENGINEERS])]
 
-const planned = (title, part) => () => <PlannedPage title={title} part={part} />
 
 export const routes = [
   // ---- public site (ported) ----
@@ -100,7 +97,7 @@ export const routes = [
   { path: '/engineer/*', Component: EngineerDashboardPage, access: { roles: ENGINEER_DASHBOARD } },
   { path: `${STORE_MANAGER_PATH}/*`, Component: StoreManagerDashboardPage, access: { roles: ['STORE_MANAGER'] } },
   { path: '/supplier/*', Component: SupplierDashboardPage, access: { roles: ['SUPPLIER'] } },
-  { path: '/admin/*', Component: planned('Admin console', 6), access: { roles: ADMIN_ROLES }, part: 6 },
+  { path: '/admin/*', Component: AdminConsolePage, access: { roles: ADMIN_ROLES } },
   // ---- not found ----
   { path: '/404', Component: NotFoundPage, access: 'public' },
   { path: '*', Component: NotFoundPage, access: 'public' },
