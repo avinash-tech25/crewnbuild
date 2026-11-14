@@ -26,6 +26,8 @@ import ProfileImageHint from '../../../shared/ui/ProfileImageHint.jsx'
 import { PROFILE_IMAGE_ACCEPT } from '../../../shared/utils/profileImageRules.js'
 import { ratingLabel } from '../../../shared/utils/ratingLabel.js'
 import { BuilderTierBadge } from '../../billing/subscription/TierBadge.jsx'
+import { counterpartyRole, partyHeading, supplierCategoryLabel } from '../../requests/counterparty.js'
+import PartyDetails from '../../requests/components/PartyDetails.jsx'
 
 // Exported so the dashboard's activity list names a request exactly the way the
 // requests table names it, from this one definition.
@@ -159,7 +161,17 @@ export function OwnerRequestsSection({
                 return (
                   <Fragment key={request.id}>
                     <tr className="dash-gold-hover">
-                      <td className="whitespace-nowrap px-4 py-3 font-semibold text-oc-ink">{td(request.sender_name)}</td>
+                      <td className="whitespace-nowrap px-4 py-3 font-semibold text-oc-ink">
+                        {counterpartyRole(request) === 'SUPPLIER' ? (
+                          // A supplier by its store name, with its own name and category under it.
+                          <>
+                            <span className="block">{partyHeading(request, td)}</span>
+                            <span className="block text-[11px] font-semibold text-oc-muted">
+                              {[partyHeading(request, td) !== td(request.sender_name) ? td(request.sender_name) : '', supplierCategoryLabel(request, t)].filter(Boolean).join(' · ')}
+                            </span>
+                          </>
+                        ) : td(request.sender_name)}
+                      </td>
                       <td className="max-w-56 px-4 py-3">
                         <p className="truncate font-semibold text-oc-ink">{td(request.project_title) || t('dash.owner.requests.general')}</p>
                       </td>
@@ -268,7 +280,8 @@ export function OwnerRequestsSection({
               <div className="flex items-start justify-between gap-3 border-b border-slate-100 px-4 py-3 sm:px-6">
                 <div className="min-w-0">
                   <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">{t('dash.common.requestDetails')}</p>
-                  <h3 className="truncate text-slate-950">{td(request.project_title) || t('dash.owner.requests.general')}</h3>
+                  {/* A supplier's request is headed by the supplier's store name. */}
+                  <h3 className="truncate text-slate-950">{counterpartyRole(request) === 'SUPPLIER' ? partyHeading(request, td) : td(request.project_title) || t('dash.owner.requests.general')}</h3>
                   <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-slate-500">
                     <span>{requestTypeLabel(request.request_type, t, td)}</span>
                     <span className="text-slate-300" aria-hidden="true">|</span>
@@ -291,6 +304,12 @@ export function OwnerRequestsSection({
               </div>
 
               <div className="flex-1 space-y-3 overflow-y-auto bg-slate-50/50 p-3 sm:p-5">
+                {counterpartyRole(request) === 'SUPPLIER' ? (
+                  // A supplier: who it is and what it supplies, as on the builder's
+                  // side; the project row names this owner's project.
+                  <PartyDetails request={request} />
+                ) : (
+                <>
                 {/* The sender in one compact row: avatar, name and role on the
                     left; rating, PIN code and phone as small chips on the right
                     (wrapping under the name on a narrow window). A long value is
@@ -321,6 +340,8 @@ export function OwnerRequestsSection({
                     ))}
                   </dl>
                 </div>
+                </>
+                )}
                 {/* A quotation not chosen yet: Negotiate. Assigning is done
                     in the project's Assign Builder tab, never here. Once
                     negotiating, AwardPanel below. */}

@@ -2822,7 +2822,6 @@ const base = {
   'req.party.verifiedNo': 'Not verified yet',
   'req.party.memberSince': 'Member since',
   'req.party.memberSinceValue': '{date}',
-  'req.party.logo': 'Business logo',
   'req.party.phone': 'Phone',
   'req.party.email': 'Email',
   'req.party.contactAfterAccept': 'Phone and email are shared once the request is accepted.',
