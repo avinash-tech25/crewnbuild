@@ -1,0 +1,14 @@
+# Gitleaks: the default rules, plus one narrow exception.
+[extend]
+useDefault = true
+
+# A Fernet test key once written into the Partner settings test (commit 744c589). It was a
+# made-up fixture, used nowhere else; the test now makes a fresh key on each run. The
+# exception covers only this rule, this file and that commit, so a key added later is
+# still caught.
+[[rules]]
+id = "generic-api-key"
+[rules.allowlist]
+condition = "AND"
+commits = ["744c5896180effe6941a0f9601c6e22022c4eaea"]
+paths = ['''^partner/backend/tests/test_settings\.py$''']

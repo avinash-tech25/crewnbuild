@@ -2,6 +2,7 @@
 
 import pytest
 from conftest import make_settings
+from cryptography.fernet import Fernet
 from helpers import key_pair
 
 from app.core.config import InsecureConfigurationError
@@ -20,7 +21,7 @@ PRODUCTION = {
     "frontend_origin": "https://partner.example.in",
     "database_url": "postgresql+psycopg://crewnbuild_partner:a-real-password@db:5432/crewnbuild",
     "professional_schema": "professional",
-    "data_encryption_key": "kQJ3n3QqKq9vV4hYb8bS1oY3m3h3o9Jf0Jz0X8m6m1Y=",
+    "data_encryption_key": Fernet.generate_key().decode(),  # made per run, never a fixed key
 }
 
 
