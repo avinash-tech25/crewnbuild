@@ -37,9 +37,8 @@ describe('the route table', () => {
 
 // [address, the role allowed, its home, a role refused and where that one goes]
 // Dashboards still to come show the placeholder; the ported ones have their own tests
-// (features/owner, features/builder, features/engineer).
+// (features/owner, features/builder, features/engineer, features/supplier).
 const DASHBOARDS = [
-  ['/supplier/products', SUPPLIER, OWNER, '/owner'],
   ['/admin/users', ADMIN, OWNER, '/owner'],
 ]
 

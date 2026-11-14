@@ -12,7 +12,8 @@ Every page and address of the old app (`Kuwait-Version/Octabuild/frontend 7/fron
 | Ported in part 2 (House Owner, weather) | 2 top-level routes (`/owner/*` with all its sections, `/weather`) |
 | Ported in part 3 (Builder) | 2 top-level routes (`/contractor/*` with all its sections, `/contractors/:contractorId`) |
 | Ported in part 4 (Site Engineer, live camera, Store Manager) | 3 top-level routes (`/engineer/*`, `/engineer/live-camera`, `/store-manager/*`) |
-| Placeholders (later parts) | 2 top-level routes: the Supplier dashboard and the admin console |
+| Ported in part 5 (Supplier) | 1 top-level route (`/supplier/*` with all its sections) |
+| Placeholders (later parts) | 1 top-level route: the admin console |
 | Old addresses missing | 0 |
 
 ## Part 1: ported
@@ -116,11 +117,28 @@ from the form after every attempt, and never put in the store, browser storage o
 client; the simulated checkout appears only when the server chooses it, which it does
 only outside production with `RAZORPAY_ALLOW_MOCK=true`.
 
+## Part 5: ported (Supplier)
+
+The sections follow the supplier's category, as before: a Material Supplier has Products
+(the storefront) and Orders; a Labor Supplier has Labor Services and Assignments; an
+Equipment Supplier has Equipment Inventory and Assignments. A section another category
+does not have sends back to the dashboard. Listings and orders are the supplier's own:
+the screens call only the supplier's endpoints and never send a supplier id; the server
+enforces it.
+
+| Old address | New page (src/) | Access |
+| --- | --- | --- |
+| `/supplier` (overview by category) | `features/supplier/pages/SupplierDashboardPage.jsx` | SUPPLIER |
+| `/supplier/products` (storefront: listings, add from the catalog, edit, publish, delete, bulk pricing) | same page, `features/storefront/components/SupplierStorefront.jsx`, `features/supplier/components/SupplierCatalogPicker.jsx` | SUPPLIER (Material) |
+| `/supplier/orders` (Site Engineer, Store Manager and owner orders) | same page, `features/supplier/components/SupplierMaterialRequests.jsx`, `SupplierPurchaseRequests.jsx` | SUPPLIER (Material) |
+| `/supplier/labor-services`, `/supplier/assignments` | same page, `features/labour/components/SupplierLaborSections.jsx` | SUPPLIER (Labor) |
+| `/supplier/equipment`, `/supplier/equipment-assignments` | same page, `features/equipment/components/SupplierEquipmentSections.jsx` | SUPPLIER (Equipment) |
+| `/supplier/my-projects`, `/find-clients`, `/requests`, `/messages`, `/profile` | same page, `features/supplier/components/` | SUPPLIER |
+
 ## Later parts: placeholders now
 
 | Old address | Sections the old dashboard had (same URLs) | Access | Part |
 | --- | --- | --- | --- |
-| `/supplier/*` | `/supplier`, `/my-projects`, `/find-clients`, `/requests`, `/products`, `/orders`, `/messages`, `/profile`, `/labor-services`, `/assignments`, `/equipment`, `/equipment-assignments` (the storefront is a view inside) | SUPPLIER | 5 |
 | `/admin/*` | `/admin`, `/users`, `/projects`, `/leads`, `/verification`, `/reports`, `/notifications`, `/admins`, `/ads`, `/audit`, `/catalog`, `/coupons`, `/subscription-payments`, `/account-deletion`, `/support`, `/mobile` | GLOBAL\_SUPER\_ADMIN, LOCATION\_SUPER\_ADMIN, MANAGER | 6 |
 
 ## Access, as before and as now

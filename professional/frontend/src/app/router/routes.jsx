@@ -47,6 +47,7 @@ const BuilderProfilePage = page(() => import('../../features/builder/components/
 const EngineerDashboardPage = page(() => import('../../features/engineer/pages/EngineerDashboardPage.jsx'))
 const EngineerLiveCameraPage = page(() => import('../../features/cameras/pages/EngineerLiveCameraPage.jsx'))
 const StoreManagerDashboardPage = page(() => import('../../features/store/pages/StoreManagerDashboardPage.jsx'))
+const SupplierDashboardPage = page(() => import('../../features/supplier/pages/SupplierDashboardPage.jsx'))
 
 const ENGINEERS = ['ENGINEER', 'SITE_ENGINEER', 'STORE_MANAGER']
 const MARKETPLACE = ['OWNER', 'BUILDER', 'SUPPLIER', ...ENGINEERS]
@@ -98,7 +99,7 @@ export const routes = [
   { path: '/engineer/live-camera', Component: EngineerLiveCameraPage, access: { roles: ENGINEER_DASHBOARD } },
   { path: '/engineer/*', Component: EngineerDashboardPage, access: { roles: ENGINEER_DASHBOARD } },
   { path: `${STORE_MANAGER_PATH}/*`, Component: StoreManagerDashboardPage, access: { roles: ['STORE_MANAGER'] } },
-  { path: '/supplier/*', Component: planned('Supplier dashboard', 5), access: { roles: ['SUPPLIER'] }, part: 5 },
+  { path: '/supplier/*', Component: SupplierDashboardPage, access: { roles: ['SUPPLIER'] } },
   { path: '/admin/*', Component: planned('Admin console', 6), access: { roles: ADMIN_ROLES }, part: 6 },
   // ---- not found ----
   { path: '/404', Component: NotFoundPage, access: 'public' },

@@ -12,9 +12,13 @@ export const publicProfileApi = baseApi.injectEndpoints({
       }),
     }),
     supplierProfile: build.query({ query: (supplierId) => ({ url: `/suppliers/${supplierId}/profile` }) }),
+    // A supplier's nearby clients (owners and builders).
+    supplierClients: build.query({ query: (params) => ({ url: '/suppliers/find-clients', params }) }),
   }),
 })
 
 export const fetchContractorProfile = (builderId, projectId = null) =>
   runQuery(publicProfileApi.endpoints.builderProfile, { builderId, projectId })
 export const fetchSupplierProfile = (supplierId) => runQuery(publicProfileApi.endpoints.supplierProfile, supplierId)
+export const fetchSupplierClients = (country) =>
+  runQuery(publicProfileApi.endpoints.supplierClients, country ? { country } : {})
