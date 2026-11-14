@@ -1,4 +1,4 @@
-import { screen, waitFor } from '@testing-library/react'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import { anAccount, installFakeServer } from '../../test/fakeServer.js'
@@ -12,6 +12,7 @@ import {
   anOwnerLead,
   anOwnerRequest,
   builderDashboardServer,
+  freePlan,
   planRequired,
   professionalPlan,
 } from './builderTestData.js'
@@ -193,5 +194,60 @@ describe('Builder profile page (/contractors/:contractorId)', () => {
     installFakeServer({})
     renderApp(`/contractors/${BUILDER.id}`, { auth: signedInAs(anAccount({ role: 'ENGINEER', engineer_profile: { specialization: 'Site Engineer' } })) })
     await waitFor(() => expect(location.current.pathname).toBe('/engineer'))
+  })
+})
+
+// ---- as the old app did (checked against Octabuild frontend 7 and its backend) ----
+
+const STEEL = { id: '0190a8b2-4c1e-7aa0-9f00-0000000c0001', name: 'Steel', image_url: null }
+const CEMENT = { id: '0190a8b2-4c1e-7aa0-9f00-0000000c0002', name: 'Cement', image_url: null }
+const TMT_BAR = { id: '0190a8b2-4c1e-7aa0-9f00-0000000a0001', name: 'TMT Bar 12mm', category_id: STEEL.id, subcategory_id: null, image_url: null, variants: [] }
+const catalogRoutes = (suppliers) => ({
+  'GET /catalog/categories': { data: [STEEL, CEMENT] },
+  'GET /catalog/products': { data: [TMT_BAR] },
+  'GET /suppliers/nearby': { data: suppliers },
+})
+
+describe('Builder dashboard: Product Catalog (as the old app)', () => {
+  it("shows the master catalog's categories to a new builder with no suppliers, and no product to buy", async () => {
+    const user = userEvent.setup()
+    const { server } = openBuilder('/contractor/product-catalog', catalogRoutes([]))
+    const strip = await screen.findByRole('list', { name: 'Categories' }, FIND)
+    expect(within(strip).getByText('Steel')).toBeInTheDocument()
+    expect(within(strip).getByText('Cement')).toBeInTheDocument()
+    // The offers come from the nearby-supplier feed, as before: not from partnerships.
+    expect(server.calls('GET /suppliers/nearby').length).toBeGreaterThan(0)
+    await user.click(within(strip).getByText('Steel'))
+    expect(await screen.findByText('None of your suppliers sells a product in this category yet.', {}, FIND)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'View TMT Bar 12mm' })).not.toBeInTheDocument()
+  })
+
+  it("lists a master product only once a nearby supplier sells it, at that supplier's price", async () => {
+    const user = userEvent.setup()
+    const supplier = {
+      user_id: '0190a8b2-4c1e-7aa0-9f00-0000000000d1',
+      store_name: 'Sri Steel Traders',
+      products: [{ id: '0190a8b2-4c1e-7aa0-9f00-0000000b0001', master_product_id: TMT_BAR.id, name: TMT_BAR.name, price: 72, discount_percentage: 0, is_published: true }],
+    }
+    openBuilder('/contractor/product-catalog', catalogRoutes([supplier]))
+    const strip = await screen.findByRole('list', { name: 'Categories' }, FIND)
+    await user.click(within(strip).getByText('Steel'))
+    expect(await screen.findByRole('button', { name: 'View TMT Bar 12mm' }, FIND)).toBeInTheDocument()
+  })
+})
+
+describe('Builder dashboard: the PRO badge (as the old app)', () => {
+  it('shows no badge during the free first month, only the days left of it', async () => {
+    const trial = freePlan({ status: 'TRIAL', free_access_until: new Date(Date.now() + 20 * 86400000).toISOString(), features: professionalPlan().features })
+    openBuilder('/contractor', { 'GET /subscriptions/me': { data: trial } })
+    expect(await screen.findByText('Welcome, Ravi Builders', {}, FIND)).toBeInTheDocument()
+    expect(await screen.findByText(/Free access: \d+ day\(s\) left/, {}, FIND)).toBeInTheDocument()
+    expect(screen.queryByText('PRO')).not.toBeInTheDocument()
+  })
+
+  it('shows PRO once a paid Professional plan is in force', async () => {
+    openBuilder('/contractor', { 'GET /subscriptions/me': { data: professionalPlan() } })
+    expect(await screen.findByText('Welcome, Ravi Builders', {}, FIND)).toBeInTheDocument()
+    expect(await screen.findAllByText('PRO', {}, FIND)).not.toHaveLength(0)
   })
 })
