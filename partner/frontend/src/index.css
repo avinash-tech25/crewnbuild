@@ -1,0 +1,52 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-oc-paper font-sans text-oc-ink antialiased;
+    overflow-x: hidden;
+  }
+  h1, h2, h3, h4 {
+    @apply font-display;
+  }
+  ::selection {
+    @apply bg-oc-amber/40 text-oc-deep;
+  }
+}
+
+@layer components {
+  .container-x {
+    @apply mx-auto w-full max-w-6xl px-5 sm:px-8;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-extrabold transition duration-200 ease-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-oc-amber focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60;
+  }
+  .btn-primary {
+    @apply btn bg-oc-green text-white shadow-lift hover:-translate-y-0.5 hover:bg-oc-deep;
+  }
+  .btn-amber {
+    @apply btn bg-oc-amber text-oc-deep shadow-[0_6px_0_#d2911d] hover:-translate-y-0.5 active:translate-y-0 active:shadow-none;
+  }
+  .btn-ghost {
+    @apply btn border border-oc-line bg-white text-oc-ink hover:border-oc-green hover:text-oc-green;
+  }
+  .btn-danger {
+    @apply btn border border-red-200 bg-white text-red-700 hover:bg-red-50;
+  }
+  .card {
+    @apply rounded-2xl border border-oc-line bg-white shadow-ocsoft;
+  }
+  .field-label {
+    @apply mb-1.5 block text-xs font-bold uppercase tracking-[0.08em] text-oc-muted;
+  }
+  .field-input {
+    @apply w-full rounded-xl border border-oc-line bg-white px-3.5 py-2.5 text-sm text-oc-ink outline-none transition placeholder:text-slate-400 focus:border-oc-green focus:ring-4 focus:ring-oc-green/10;
+  }
+  .eyebrow {
+    @apply inline-flex items-center gap-2 rounded-full border border-oc-line bg-white/80 px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.14em] text-oc-green;
+  }
+}

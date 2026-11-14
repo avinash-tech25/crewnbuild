@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 420" fill="none">
+  <!-- Carpenter: bent over the bench, sawing a clamped plank, head down to the cut. -->
+  <ellipse cx="204" cy="390" rx="146" ry="14" fill="#083e2b" opacity=".12"/>
+
+  <!-- timber stacked under the bench -->
+  <rect x="196" y="352" width="104" height="15" rx="3" fill="#c9954f"/>
+  <rect x="190" y="367" width="110" height="15" rx="3" fill="#ab7b3f"/>
+
+  <!-- workbench -->
+  <rect x="142" y="282" width="20" height="104" rx="4" fill="#9a6c3c"/>
+  <rect x="344" y="282" width="20" height="104" rx="4" fill="#9a6c3c"/>
+  <rect x="150" y="328" width="206" height="12" rx="4" fill="#9a6c3c"/>
+  <rect x="120" y="264" width="274" height="18" rx="4" fill="#a2743f"/>
+  <rect x="120" y="276" width="274" height="6" fill="#845a30"/>
+
+  <!-- clamped plank, sitting proud of the bench top -->
+  <rect x="214" y="238" width="180" height="26" rx="3" fill="#cf9a5f"/>
+  <rect x="214" y="238" width="180" height="7" rx="3" fill="#e4b782"/>
+  <rect x="214" y="258" width="180" height="6" fill="#b5803f"/>
+  <path d="M240 252h44M300 249h58" stroke="#b9874f" stroke-width="3" stroke-linecap="round"/>
+  <rect x="344" y="230" width="32" height="10" rx="3" fill="#7d8b93"/>
+  <rect x="352" y="230" width="14" height="48" rx="4" fill="#5c6a72"/>
+  <circle cx="359" cy="286" r="8" fill="#d1453b"/>
+
+  <!-- far arm, flat hand holding the board down -->
+  <path d="M166 214l56 16" stroke="#8f4a2b" stroke-width="26" stroke-linecap="round"/>
+  <path d="M222 230l74 2" stroke="#d9a578" stroke-width="22" stroke-linecap="round"/>
+  <path d="M218 218l6 24" stroke="#8f4a2b" stroke-width="27" stroke-linecap="round"/>
+  <path d="M292 220h20c9 0 15 5 15 11s-6 11-15 11h-24z" fill="#d9a578"/>
+  <path d="M296 242h14c6 0 8 3 8 6h-22z" fill="#c9905f"/>
+
+  <!-- legs -->
+  <path d="M110 268l-6 52" stroke="#364656" stroke-width="40" stroke-linecap="round"/>
+  <path d="M104 320l-4 50" stroke="#364656" stroke-width="34" stroke-linecap="round"/>
+  <path d="M78 366h26c14 0 23 6 23 14H78z" fill="#2c2721"/>
+  <path d="M120 270l2 50" stroke="#46586b" stroke-width="42" stroke-linecap="round"/>
+  <path d="M122 320l-4 50" stroke="#46586b" stroke-width="36" stroke-linecap="round"/>
+  <path d="M100 364h26c15 0 25 6 25 14h-51z" fill="#3d3229"/>
+
+  <!-- torso folded forward over the bench -->
+  <path d="M112 266l66-58" stroke="#b5623a" stroke-width="68" stroke-linecap="round"/>
+  <!-- leather tool apron -->
+  <path d="M112 248h62l6 36c2 24-6 40-14 44h-46c-10-6-14-24-12-44z" fill="#8a5a33"/>
+  <rect x="118" y="286" width="52" height="30" rx="7" fill="#6d4526"/>
+  <rect x="128" y="270" width="8" height="20" rx="3" fill="#f4b740"/>
+  <rect x="150" y="268" width="10" height="22" rx="3" fill="#9aa7ad"/>
+
+  <!-- head, tilted down to the cut -->
+  <g transform="rotate(18 206 190)">
+    <ellipse cx="206" cy="190" rx="27" ry="29" fill="#f0c39a"/>
+    <path d="M183 186c-6 9-4 19 4 23 6 2 11-2 11-8" fill="#6b4a30"/>
+    <ellipse cx="192" cy="194" rx="5.5" ry="7.5" fill="#d9a578"/>
+    <path d="M190 191c3 1 4 4 2 7" stroke="#c08f5f" stroke-width="2" stroke-linecap="round" fill="none"/>
+    <path d="M209 205c12-2 20 4 20 10-6 8-20 10-30 6-8-4-4-14 10-16z" fill="#6b4a30"/>
+    <path d="M215 201c4.4-2 9.4-1 11.8 2.4-3.6 2-8.6 1.8-11.8-.4z" fill="#8a6440"/>
+    <ellipse cx="211" cy="195" rx="6.6" ry="4.4" fill="#d08a52" opacity=".3"/>
+    <path d="M216 176c4-2 8-2 11 1" stroke="#40301f" stroke-width="3" stroke-linecap="round"/>
+    <ellipse cx="222" cy="185" rx="3.2" ry="4.2" fill="#2a1d16"/>
+    <circle cx="223.3" cy="183.4" r="1.4" fill="#ffffff"/>
+    <path d="M218.4 180.6c2.2-2 5.6-2 7.6.2" stroke="#2a1d16" stroke-width="1.7" stroke-linecap="round" fill="none"/>
+    <path d="M230 185c6 3 7 9 1 11l-6-1z" fill="#d9a578"/>
+    <path d="M230 176h24a10 10 0 0 1 0 20h-24z" fill="#0d5636"/>
+    <path d="M180 178a27 25 0 0 1 52-4l1 8h-53z" fill="#126b45"/>
+  </g>
+
+  <!-- saw, mid-cut: blade crosses the plank and the tip sits behind the far end -->
+  <path d="M176 216l42 38" stroke="#b5623a" stroke-width="27" stroke-linecap="round"/>
+  <path d="M214 242l8 24" stroke="#b5623a" stroke-width="28" stroke-linecap="round"/>
+  <path d="M218 254l34 4" stroke="#f0c39a" stroke-width="23" stroke-linecap="round"/>
+  <path d="M238 238h28c11 0 18 9 18 20s-9 20-20 20h-26c-9 0-15-7-15-15 0-5 2-9 6-12" stroke="#7a4a28" stroke-width="12" stroke-linejoin="round" stroke-linecap="round"/>
+  <circle cx="254" cy="256" r="14" fill="#f0c39a"/>
+  <path d="M268 234l86 22-4 13-86-21z" fill="#9aa7ad"/>
+  <path d="M268 234l86 22-2 6-85-21z" fill="#c2ccd1"/>
+  <path d="M264 248l86 21" stroke="#66727a" stroke-width="3.4" stroke-dasharray="3 4"/>
+  <path d="M330 238h64v26h-64z" fill="#cf9a5f"/>
+  <path d="M330 238h64v7h-64z" fill="#e4b782"/>
+  <path d="M330 258h64v6h-64z" fill="#b5803f"/>
+  <path d="M328 240l7 22" stroke="#b07f4e" stroke-width="4" stroke-linecap="round"/>
+
+  <!-- sawdust -->
+  <path d="M322 286l7 8-9 4z" fill="#f0d0a4"/>
+  <path d="M338 300l8 6-9 5z" fill="#f0d0a4"/>
+  <path d="M312 302l6 7-8 3z" fill="#f0d0a4"/>
+  <ellipse cx="326" cy="382" rx="28" ry="6" fill="#f0d0a4" opacity=".85"/>
+  <path d="M288 264c8-6 16-6 22 2-8 6-16 6-22-2z" fill="#f0d0a4"/>
+</svg>

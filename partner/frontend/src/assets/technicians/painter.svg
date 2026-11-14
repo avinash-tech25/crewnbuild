@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 420" fill="none">
+  <!-- Painter: side profile, up on a step-ladder, rolling a fresh coat onto the wall. -->
+  <ellipse cx="190" cy="390" rx="142" ry="14" fill="#083e2b" opacity=".12"/>
+
+  <!-- wall: unpainted above, fresh coat below the roller -->
+  <rect x="266" y="20" width="134" height="364" fill="#ece5da"/>
+  <rect x="266" y="20" width="10" height="364" fill="#e0d7c8"/>
+  <path d="M266 108c22-10 44 2 66-4s48-10 68 4v276H266z" fill="#2fa36b"/>
+  <path d="M300 126v248" stroke="#49b57f" stroke-width="18" opacity=".45" stroke-linecap="round"/>
+  <path d="M360 140v230" stroke="#49b57f" stroke-width="14" opacity=".3" stroke-linecap="round"/>
+  <path d="M336 118v26c0 6 9 6 9 0v-24z" fill="#2fa36b"/>
+  <rect x="266" y="366" width="134" height="18" fill="#1f7d50"/>
+
+  <!-- paint roller on the wall -->
+  <rect x="282" y="40" width="34" height="66" rx="17" fill="#f2f4f3"/>
+  <rect x="288" y="50" width="22" height="46" rx="11" fill="#2fa36b" opacity=".55"/>
+  <path d="M282 73h-18" stroke="#8b958f" stroke-width="8" stroke-linecap="round"/>
+  <path d="M264 73h-6" stroke="#8b958f" stroke-width="9" stroke-linecap="round"/>
+
+  <!-- drop cloth, then the ladder standing on it -->
+  <path d="M78 370c42-11 122-11 172 2 11 2 9 12-4 12H86c-13 0-17-9-8-14z" fill="#f0ebe0" opacity=".92"/>
+  <path d="M152 230L92 382" stroke="#a97b42" stroke-width="12" stroke-linecap="round"/>
+  <rect x="112" y="334" width="122" height="12" rx="4" fill="#c99a5c"/>
+  <rect x="122" y="284" width="102" height="12" rx="4" fill="#c99a5c"/>
+  <path d="M140 226l-34 158" stroke="#c99a5c" stroke-width="14" stroke-linecap="round"/>
+  <path d="M208 226l30 158" stroke="#c99a5c" stroke-width="14" stroke-linecap="round"/>
+  <rect x="128" y="220" width="92" height="13" rx="4" fill="#d9a866"/>
+  <!-- paint tray on the middle step -->
+  <path d="M138 266h74l-9 18h-56z" fill="#c9d2cd"/>
+  <path d="M148 272h54l-5 10h-44z" fill="#2fa36b"/>
+
+  <!-- far arm, swung clear of the body, holding a paint kettle -->
+  <path d="M182 104l-42 22" stroke="#e3d9c6" stroke-width="25" stroke-linecap="round"/>
+  <path d="M140 126l4 34" stroke="#d99b6e" stroke-width="21" stroke-linecap="round"/>
+  <circle cx="145" cy="162" r="13" fill="#d99b6e"/>
+  <path d="M126 168h38l-5 32h-28z" fill="#dfe6e2"/>
+  <path d="M127 174h36l-1 9h-34z" fill="#2fa36b"/>
+  <path d="M128 168c2-10 32-10 34 0" stroke="#b9c2be" stroke-width="4" fill="none"/>
+
+  <!-- legs, standing on the platform -->
+  <path d="M176 148l-6 38" stroke="#e3d9c6" stroke-width="36" stroke-linecap="round"/>
+  <path d="M170 186l-4 22" stroke="#e3d9c6" stroke-width="32" stroke-linecap="round"/>
+  <path d="M152 206h22c12 0 20 6 20 12h-42z" fill="#36463f"/>
+  <path d="M182 150l4 36" stroke="#f5efe3" stroke-width="38" stroke-linecap="round"/>
+  <path d="M186 186l-4 22" stroke="#f5efe3" stroke-width="34" stroke-linecap="round"/>
+  <path d="M164 206h16c13 0 22 6 22 12h-38z" fill="#40514a"/>
+
+  <!-- torso -->
+  <path d="M180 150l12-54" stroke="#f5efe3" stroke-width="62" stroke-linecap="round"/>
+  <path d="M164 148h34" stroke="#d9cfba" stroke-width="7" stroke-linecap="round"/>
+  <rect x="186" y="106" width="26" height="22" rx="4" fill="#e9e0cd"/>
+  <rect x="194" y="92" width="7" height="18" rx="3" fill="#8a6a3f"/>
+  <rect x="194" y="86" width="7" height="8" rx="2" fill="#2a1d16"/>
+  <circle cx="170" cy="130" r="5" fill="#2fa36b" opacity=".65"/>
+  <circle cx="197" cy="166" r="6" fill="#2fa36b" opacity=".55"/>
+  <circle cx="176" cy="172" r="4" fill="#f4b740" opacity=".8"/>
+  <circle cx="186" cy="118" r="4" fill="#49b57f" opacity=".7"/>
+  <circle cx="168" cy="196" r="5" fill="#2fa36b" opacity=".45"/>
+
+  <!-- head in profile, hair tied back under a bandana -->
+  <path d="M182 60c-15-4-26 4-26 17 0 10 9 17 17 14 7-2 9-8 7-15" fill="#3b2a20"/>
+  <ellipse cx="202" cy="70" rx="26" ry="28" fill="#e8b184"/>
+  <path d="M177 68a26 28 0 0 1 49-10c-7-8-21-13-33-9-11 4-17 11-16 19z" fill="#3b2a20"/>
+  <path d="M178 58a26 26 0 0 1 50 4l-3 6c-16-7-33-6-47 2z" fill="#f4b740"/>
+  <path d="M179 62l-13-5 4 13z" fill="#f4b740"/>
+  <ellipse cx="190" cy="76" rx="5" ry="7" fill="#d99b6e"/>
+  <path d="M188 73c3 1 4 4 2 7" stroke="#c4885c" stroke-width="2" stroke-linecap="round" fill="none"/>
+  <path d="M213 62c3-2 7-2 9 1" stroke="#2a1d16" stroke-width="2.8" stroke-linecap="round"/>
+  <ellipse cx="218" cy="69" rx="3.2" ry="4.2" fill="#2a1d16"/>
+  <circle cx="219.3" cy="67.4" r="1.4" fill="#ffffff"/>
+  <path d="M214.4 64.6c2.2-2 5.6-2 7.6.2" stroke="#2a1d16" stroke-width="1.7" stroke-linecap="round" fill="none"/>
+  <path d="M227 68c6 3 7 9 1 11l-6-1z" fill="#d99b6e"/>
+  <circle cx="227.4" cy="77.6" r="1.3" fill="#c4885c"/>
+  <ellipse cx="208" cy="80" rx="6.5" ry="4.4" fill="#dd9163" opacity=".32"/>
+  <path d="M216 86c5 2 9 1 11-2" stroke="#b9714a" stroke-width="3.2" stroke-linecap="round"/>
+
+  <!-- near arm, raised to the roller -->
+  <path d="M196 108l40-14" stroke="#f5efe3" stroke-width="25" stroke-linecap="round"/>
+  <path d="M236 94l18-16" stroke="#e8b184" stroke-width="21" stroke-linecap="round"/>
+  <circle cx="255" cy="74" r="13" fill="#e8b184"/>
+</svg>

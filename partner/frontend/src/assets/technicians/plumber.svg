@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 420" fill="none">
+  <!-- Plumber: kneeling under a basin, tightening the trap nut with a pipe wrench.
+       Canvas 400x420 matches the 0.952 aspect of the artwork it replaces. -->
+  <ellipse cx="200" cy="390" rx="142" ry="14" fill="#083e2b" opacity=".12"/>
+
+  <!-- basin and tap -->
+  <path d="M214 84h162a10 10 0 0 1 10 10v10c0 30-24 54-54 54h-74c-30 0-54-24-54-54V94a10 10 0 0 1 10-10z" fill="#ffffff" stroke="#dbe4e8" stroke-width="3"/>
+  <path d="M208 118h184c-6 24-28 40-52 40h-78c-25 0-48-16-54-40z" fill="#eaf0f2"/>
+  <rect x="204" y="82" width="182" height="15" rx="7" fill="#e5ecef"/>
+  <path d="M344 86V66a14 14 0 0 0-14-14h-18" stroke="#c3ced3" stroke-width="11" stroke-linecap="round"/>
+  <circle cx="358" cy="72" r="9" fill="#b0bcc2"/>
+
+  <!-- trap pipework into the wall -->
+  <path d="M300 148v56a28 28 0 0 0 56 0v-22h28" stroke="#b9c4c9" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M300 152v52a28 28 0 0 0 56 0v-22" stroke="#cfd8dc" stroke-width="7" stroke-linecap="round" opacity=".6"/>
+  <rect x="344" y="175" width="28" height="15" rx="4" fill="#98a5ab"/>
+  <rect x="374" y="168" width="16" height="30" rx="4" fill="#8d9aa0"/>
+  <path d="M379 236c0 7-5 12-11 12s-11-5-11-12 11-20 11-20 11 13 11 20z" fill="#4aa8e0"/>
+
+  <!-- toolbox -->
+  <rect x="256" y="316" width="10" height="30" rx="5" fill="#f4b740"/>
+  <rect x="332" y="312" width="12" height="34" rx="6" fill="#2c6ca6"/>
+  <path d="M284 346v-6a16 16 0 0 1 32 0v6" stroke="#93302a" stroke-width="7" stroke-linecap="round"/>
+  <rect x="248" y="344" width="104" height="40" rx="8" fill="#d1453b"/>
+  <rect x="248" y="344" width="104" height="11" rx="5" fill="#b3352d"/>
+
+  <!-- far arm, steadying the pipe under the basin -->
+  <path d="M198 252l48 10" stroke="#dbe3e8" stroke-width="25" stroke-linecap="round"/>
+  <path d="M246 262l72-12" stroke="#a26841" stroke-width="21" stroke-linecap="round"/>
+  <circle cx="324" cy="247" r="14" fill="#a26841"/>
+
+  <!-- kneeling back leg -->
+  <path d="M146 316l-12 48" stroke="#1f4f7c" stroke-width="42" stroke-linecap="round"/>
+  <path d="M134 366l-50 8" stroke="#1f4f7c" stroke-width="38" stroke-linecap="round"/>
+  <path d="M110 358H80c-11 0-21 6-21 14s9 12 19 12h32z" fill="#5b3e29"/>
+  <!-- forward leg -->
+  <path d="M154 318l60 16" stroke="#2c6ca6" stroke-width="44" stroke-linecap="round"/>
+  <path d="M214 334l6 38" stroke="#2c6ca6" stroke-width="40" stroke-linecap="round"/>
+  <path d="M202 360h34c13 0 23 6 23 14 0 6-4 10-13 10h-44z" fill="#5b3e29"/>
+
+  <!-- torso: dungarees over a tee -->
+  <path d="M150 316l36-54" stroke="#2c6ca6" stroke-width="68" stroke-linecap="round"/>
+  <path d="M184 270l22-32" stroke="#eef3f6" stroke-width="62" stroke-linecap="round"/>
+  <path d="M170 290l26-46" stroke="#2c6ca6" stroke-width="11" stroke-linecap="round"/>
+  <rect x="146" y="286" width="36" height="28" rx="6" fill="#1f4f7c" transform="rotate(-24 164 300)"/>
+
+  <!-- head, turned up to the work -->
+  <ellipse cx="230" cy="206" rx="32" ry="34" fill="#b97a52"/>
+  <ellipse cx="216" cy="212" rx="7" ry="9" fill="#a26841"/>
+  <path d="M213 208c4 1 5 5 3 8" stroke="#8a5735" stroke-width="2.4" stroke-linecap="round" fill="none"/>
+  <path d="M201 194c-3 8-2 15 3 18" stroke="#241a14" stroke-width="7" stroke-linecap="round" fill="none"/>
+  <path d="M203 184h-24a12 12 0 0 0 0 24h24z" fill="#2c6ca6"/>
+  <path d="M199 192a32 30 0 0 1 61-6l1 8h-62z" fill="#1f4f7c"/>
+  <path d="M245 190c4-2 8-2 11 1" stroke="#241a14" stroke-width="3.4" stroke-linecap="round"/>
+  <ellipse cx="250" cy="200" rx="3.6" ry="4.6" fill="#241a14"/>
+  <circle cx="251.6" cy="198.2" r="1.6" fill="#ffffff"/>
+  <path d="M245.5 194.6c2.6-2.4 6.6-2.4 9 .2" stroke="#241a14" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+  <path d="M259 198c7 3 9 9 3 12l-7-1z" fill="#a26841"/>
+  <circle cx="259.6" cy="208.4" r="1.5" fill="#8a5735"/>
+  <ellipse cx="238" cy="214" rx="7.5" ry="5" fill="#a85f36" opacity=".3"/>
+  <path d="M248 220c5 2 9 1 12-2" stroke="#7d4b2c" stroke-width="3.4" stroke-linecap="round"/>
+
+  <!-- pipe wrench clamped on the trap nut -->
+  <g transform="translate(300 200) rotate(27)">
+    <rect x="-10" y="16" width="20" height="80" rx="10" fill="#d1453b"/>
+    <rect x="-10" y="52" width="20" height="34" rx="9" fill="#93302a"/>
+    <path d="M-11-42h14a9 9 0 0 1 9 9v52h-23z" fill="#b6c0c5"/>
+    <path d="M-34-42h25v17h-25z" fill="#8d9aa0"/>
+    <path d="M-34-42h25v6h-25z" fill="#aeb9be"/>
+    <rect x="-33" y="-10" width="45" height="15" rx="6" fill="#7f8b91"/>
+    <rect x="-33" y="-12" width="19" height="19" rx="4" fill="#98a5ab"/>
+  </g>
+
+  <!-- near arm on the wrench -->
+  <path d="M204 250l30 40" stroke="#eef3f6" stroke-width="27" stroke-linecap="round"/>
+  <path d="M234 290l34-32" stroke="#b97a52" stroke-width="22" stroke-linecap="round"/>
+  <circle cx="272" cy="253" r="14" fill="#b97a52"/>
+</svg>

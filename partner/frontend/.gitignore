@@ -1,0 +1,9 @@
+node_modules/
+dist/
+coverage/
+.env
+.env.*
+!.env.example
+
+# Development HTTPS certificate (npm run dev:cert), never committed
+.certs/

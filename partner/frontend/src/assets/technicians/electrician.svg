@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 420" fill="none">
+  <!-- Electrician: seen from behind, testing a live breaker at an open consumer unit. -->
+  <ellipse cx="196" cy="390" rx="142" ry="14" fill="#083e2b" opacity=".12"/>
+
+  <!-- consumer unit, door swung open -->
+  <rect x="384" y="78" width="22" height="142" rx="6" fill="#eef2f3"/>
+  <rect x="250" y="78" width="134" height="142" rx="8" fill="#d9e0e2"/>
+  <rect x="262" y="90" width="110" height="118" rx="5" fill="#eef2f3"/>
+  <rect x="270" y="112" width="96" height="42" rx="4" fill="#ffffff"/>
+  <g fill="#2e3a36">
+    <rect x="276" y="118" width="11" height="24" rx="3"/>
+    <rect x="293" y="118" width="11" height="24" rx="3"/>
+    <rect x="310" y="118" width="11" height="24" rx="3"/>
+    <rect x="327" y="118" width="11" height="24" rx="3"/>
+    <rect x="344" y="118" width="11" height="24" rx="3"/>
+  </g>
+  <path d="M296 154c-2 22 4 32 8 46M318 154c0 24 6 34 10 46M340 154c4 22 0 34-4 44" stroke="#d1453b" stroke-width="6" stroke-linecap="round"/>
+  <path d="M286 154c-2 26 6 34 10 54" stroke="#2c6ca6" stroke-width="6" stroke-linecap="round"/>
+  <path d="M330 154c2 24-2 34-6 50" stroke="#f4b740" stroke-width="6" stroke-linecap="round"/>
+  <rect x="284" y="196" width="52" height="22" rx="7" fill="#b9c4c9"/>
+  <path d="M364 178l12 22h-24z" fill="#f4b740"/>
+  <path d="M364 186v8" stroke="#2e3a36" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- coiled cable on the floor, with a loose tail -->
+  <path d="M104 330c22-10 40-4 44 10" stroke="#2c6ca6" stroke-width="10" fill="none" stroke-linecap="round"/>
+  <ellipse cx="78" cy="344" rx="40" ry="25" stroke="#2c6ca6" stroke-width="11" fill="none"/>
+  <ellipse cx="72" cy="352" rx="26" ry="16" stroke="#d1453b" stroke-width="10" fill="none"/>
+  <ellipse cx="80" cy="358" rx="14" ry="8" stroke="#f4b740" stroke-width="8" fill="none"/>
+
+  <!-- legs -->
+  <path d="M162 258l-8 60" stroke="#3a4750" stroke-width="40" stroke-linecap="round"/>
+  <path d="M154 318l-4 54" stroke="#3a4750" stroke-width="34" stroke-linecap="round"/>
+  <path d="M132 368h26c14 0 24 6 24 14h-50z" fill="#232b29"/>
+  <path d="M172 260l8 58" stroke="#4a5a63" stroke-width="42" stroke-linecap="round"/>
+  <path d="M180 318l-4 54" stroke="#4a5a63" stroke-width="36" stroke-linecap="round"/>
+  <path d="M156 368h28c15 0 25 6 25 14h-53z" fill="#2a3330"/>
+
+  <!-- back and shoulders -->
+  <path d="M168 258l10-94" stroke="#2f4f4a" stroke-width="74" stroke-linecap="round"/>
+  <path d="M146 198h62" stroke="#26423e" stroke-width="5" stroke-linecap="round"/>
+  <!-- tool belt -->
+  <rect x="132" y="246" width="80" height="17" rx="8" fill="#5a4632"/>
+  <rect x="168" y="256" width="36" height="36" rx="7" fill="#7a5d3f"/>
+  <rect x="176" y="240" width="8" height="20" rx="4" fill="#f4b740"/>
+  <rect x="190" y="238" width="8" height="22" rx="4" fill="#d1453b"/>
+
+  <!-- head, turned to the panel, under a hard hat -->
+  <ellipse cx="190" cy="128" rx="29" ry="31" fill="#8a5433"/>
+  <path d="M163 126a29 31 0 0 1 50-18c-11-7-27-6-39 2-7 6-11 11-11 16z" fill="#8d9691"/>
+  <ellipse cx="176" cy="133" rx="6" ry="8" fill="#6f4126"/>
+  <path d="M174 130c3 1 4 4 2 7" stroke="#57321d" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+  <path d="M196 146c10-3 21 1 23 9-5 9-18 13-28 9-8-4-5-15 5-18z" fill="#cfd6d2"/>
+  <path d="M203 140.5c5.5-2.6 12-1.6 15.4 2.6-4.6 2.8-11 2.8-15.4 0z" fill="#dde3e0"/>
+  <ellipse cx="198" cy="136" rx="7" ry="4.6" fill="#7d4a2a" opacity=".3"/>
+  <path d="M205 117c4-2 8-2 10 1" stroke="#3a2a1e" stroke-width="3" stroke-linecap="round"/>
+  <ellipse cx="211" cy="125" rx="3.4" ry="4.4" fill="#2a1d16"/>
+  <circle cx="212.4" cy="123.3" r="1.5" fill="#ffffff"/>
+  <path d="M206.8 120.4c2.4-2.2 6.2-2.2 8.4.2" stroke="#2a1d16" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+  <path d="M219 125c7 3 8 9 2 11l-6-1z" fill="#6f4126"/>
+  <path d="M159 114a32 36 0 0 1 64 0z" fill="#f4b740"/>
+  <path d="M191 80v34" stroke="#d99f2e" stroke-width="5" stroke-linecap="round"/>
+  <path d="M155 112h72c5 0 8 2 8 5s-3 6-8 6h-72c-5 0-8-2-8-6s3-5 8-5z" fill="#ffca63"/>
+  <path d="M223 111h12c7 0 11 3 11 6s-4 6-11 6h-12z" fill="#ffd489"/>
+
+  <!-- far arm, swung clear of the body, reading the multimeter -->
+  <path d="M158 180l-40 18" stroke="#26423e" stroke-width="26" stroke-linecap="round"/>
+  <path d="M118 198l12 30" stroke="#6f4126" stroke-width="22" stroke-linecap="round"/>
+  <circle cx="131" cy="231" r="13" fill="#6f4126"/>
+  <rect x="94" y="232" width="48" height="38" rx="6" fill="#f4b740"/>
+  <rect x="100" y="238" width="36" height="15" rx="3" fill="#1f2a26"/>
+  <circle cx="118" cy="261" r="5" fill="#d99f2e"/>
+  <path d="M138 236c56 18 106-4 130-80" stroke="#d1453b" stroke-width="5" stroke-linecap="round"/>
+
+  <!-- near arm, gloved, probing a terminal -->
+  <path d="M192 170l40 16" stroke="#2f4f4a" stroke-width="27" stroke-linecap="round"/>
+  <path d="M232 186l30-26" stroke="#8a5433" stroke-width="23" stroke-linecap="round"/>
+  <circle cx="266" cy="156" r="14" fill="#e2703a"/>
+  <path d="M272 150l20-18" stroke="#d1453b" stroke-width="8" stroke-linecap="round"/>
+  <path d="M292 132l9-9" stroke="#9aa7ad" stroke-width="5" stroke-linecap="round"/>
+  <path d="M306 116l7-7M310 128h9M300 108v-9" stroke="#f4b740" stroke-width="4" stroke-linecap="round"/>
+</svg>
