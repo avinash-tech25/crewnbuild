@@ -2,7 +2,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { ArrowRight, ChevronRight } from "lucide-react";
 import { buttonClass, creamButtonClass } from "./shared.jsx";
-import ConstructionVilla from "./ConstructionVilla.jsx";
+import ConstructionVilla from "./LazyConstructionVilla.jsx";
 import { letterStaggerGroup, popIn, useScrollReveal } from "./scrollReveal.js";
 
 // Stacked shadows extrude the wordmark into a solid block. The offsets use em so the

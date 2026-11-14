@@ -107,6 +107,22 @@ describe('House Owner dashboard: projects', () => {
   })
 })
 
+describe('House Owner dashboard: live camera', () => {
+  it('opens the project camera panel when its tab is chosen (downloaded only then)', async () => {
+    const user = userEvent.setup()
+    const { server } = openOwner(`/owner/projects/${PROJECT_ID}/requests`, {
+      'GET /owners/projects': { data: [aProject()] },
+      [`GET /projects/${PROJECT_ID}/award`]: { data: { award: null } },
+      [`GET /projects/${PROJECT_ID}/photos`]: { data: [] },
+      'GET /contractors/nearby': { data: [] },
+      'GET /project-requests/incoming': { data: [aQuotation()] },
+      [`GET /cctv/projects/${PROJECT_ID}/camera-setup`]: { data: { configured: false, verified: false, project_title: 'Rao Family Home' } },
+    })
+    await user.click(await screen.findByRole('tab', { name: 'Live Camera' }, FIND))
+    await waitFor(() => expect(server.calls(`GET /cctv/projects/${PROJECT_ID}/camera-setup`)).toHaveLength(1), FIND)
+  })
+})
+
 describe('House Owner dashboard: messages', () => {
   it('opens a conversation and sends a message', async () => {
     const user = userEvent.setup()

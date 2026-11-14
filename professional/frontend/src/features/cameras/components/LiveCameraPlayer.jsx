@@ -24,7 +24,10 @@
  * LIVE is shown only once the <video> element is actually playing frames.
  */
 import { useEffect, useRef, useState } from 'react'
-import Hls from 'hls.js'
+import { loadHls } from '../loadHls.js'
+
+// Set by loadHls() when the first stream starts.
+let Hls = null
 import { Maximize2, Minimize2, RefreshCw, X } from 'lucide-react'
 import { useLanguage } from '../../../i18n/LanguageContext.jsx'
 import {
@@ -245,11 +248,12 @@ export default function LiveCameraPlayer({ channel, streamVariant, title, subtit
       }, delay)
     }
 
-    const MANIFEST_ERRORS = new Set([
+    // Read once hls.js is loaded (it is, before any stream can fail).
+    const isManifestError = (details) => [
       Hls.ErrorDetails.MANIFEST_LOAD_ERROR,
       Hls.ErrorDetails.MANIFEST_LOAD_TIMEOUT,
       Hls.ErrorDetails.MANIFEST_PARSING_ERROR,
-    ])
+    ].includes(details)
 
     const recoverNetwork = async (data) => {
       if (networkRecoveries >= MAX_NETWORK_RECOVERIES) {
@@ -272,7 +276,7 @@ export default function LiveCameraPlayer({ channel, streamVariant, title, subtit
       report(stateRef.current === 'live' ? 'reconnecting' : 'connecting')
       window.setTimeout(() => {
         if (cancelled || !hls) return
-        if (MANIFEST_ERRORS.has(data.details)) hls.loadSource(playbackUrl)
+        if (isManifestError(data.details)) hls.loadSource(playbackUrl)
         else hls.startLoad()
       }, NETWORK_RETRY_MS)
     }
@@ -280,6 +284,14 @@ export default function LiveCameraPlayer({ channel, streamVariant, title, subtit
     const start = async () => {
       report('connecting')
       if (!video) return
+      // Downloaded on first playback (see loadHls).
+      try {
+        Hls = await loadHls()
+      } catch {
+        report('failed')
+        return
+      }
+      if (cancelled) return
       if (!Hls.isSupported()) {
         report('unsupported')
         return

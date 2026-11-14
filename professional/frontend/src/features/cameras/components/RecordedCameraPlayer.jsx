@@ -17,7 +17,10 @@
  * or a log line. Cleanup ends the session exactly like the live player.
  */
 import { useEffect, useRef, useState } from 'react'
-import Hls from 'hls.js'
+import { loadHls } from '../loadHls.js'
+
+// Set by loadHls() when the first recording plays.
+let Hls = null
 import { Pause, Play, RotateCcw, X } from 'lucide-react'
 import { useLanguage } from '../../../i18n/LanguageContext.jsx'
 import { StatusPill } from './LiveCameraPlayer.jsx'
@@ -116,6 +119,14 @@ export default function RecordedCameraPlayer({ channel, segment, title, subtitle
       report('connecting')
       setPaused(false)
       if (!video) return
+      // Downloaded on first playback (see loadHls).
+      try {
+        Hls = await loadHls()
+      } catch {
+        report('failed')
+        return
+      }
+      if (cancelled) return
       if (!Hls.isSupported()) { report('unsupported'); return }
       const effectiveStart = new Date(windowStart.getTime() + baseOffset * 1000)
       let session
