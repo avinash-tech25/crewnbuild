@@ -4,6 +4,7 @@ import {
 } from 'lucide-react'
 
 import { useLanguage } from '../../../i18n/LanguageContext.jsx'
+import { FEEDBACK_STORAGE_KEY } from '../feedbackStorage.js'
 
 function ModalOverlay({ onClose, children, maxWidth = 'max-w-2xl' }) {
   return (
@@ -125,8 +126,8 @@ export function FeedbackModal({ onClose }) {
         createdAt: new Date().toISOString(),
         role: 'BUILDER',
       }
-      const existingEntries = JSON.parse(localStorage.getItem('crewnbuild_feedback') || '[]')
-      localStorage.setItem('crewnbuild_feedback', JSON.stringify([entry, ...existingEntries].slice(0, 100)))
+      const existingEntries = JSON.parse(localStorage.getItem(FEEDBACK_STORAGE_KEY) || '[]')
+      localStorage.setItem(FEEDBACK_STORAGE_KEY, JSON.stringify([entry, ...existingEntries].slice(0, 100)))
       setSubmitted(true)
     } catch {
       setError(t('feedback.err.save'))
