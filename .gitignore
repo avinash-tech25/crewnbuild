@@ -25,6 +25,7 @@ playwright-report/
 test-results/
 
 # ---- Runtime files (files go to S3; never committed) ----
+.dev/
 uploads/
 logs/
 *.log

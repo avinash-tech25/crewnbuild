@@ -1,8 +1,11 @@
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [react()],
+  // Tests read no .env files (src/test has none): a developer's .env.local must not change
+  // what the tests see. Their values are the `test.env` below.
+  envDir: mode === 'test' ? 'src/test' : '.',
   // strictPort: Vite fails instead of quietly moving to another port. The API accepts only
   // the origin it is configured with, so a changed port would surface as a CORS error.
   server: {
@@ -22,4 +25,4 @@ export default defineConfig({
     testTimeout: 20000,
     env: { VITE_API_BASE_URL: 'http://api.test/api/v1', VITE_PARTNER_URL: 'http://partner.test' },
   },
-})
+}))

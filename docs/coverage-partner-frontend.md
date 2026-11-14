@@ -90,7 +90,7 @@ The two principals never mix: technician pages are guarded by `RequireTechnician
 | `booking/StartWorkOtpCard.jsx` | `booking/components/StartWorkOtpCard.jsx` | ported |
 | `booking/RateTechnicianCard.jsx` | `booking/components/RateTechnicianCard.jsx` | ported |
 
-## Tests (`npx vitest run`: 6 files, 47 tests)
+## Tests (`npx vitest run`: 7 files, 61 tests)
 
 | File | What it covers |
 | --- | --- |
@@ -100,3 +100,4 @@ The two principals never mix: technician pages are guarded by `RequireTechnician
 | `features/onboarding/onboarding.test.jsx` | camera asked only on Start after consent; face capture sent once with consent, nothing stored; Aadhaar sent once in the body then cleared, checksum refusal; password reset |
 | `features/technician/dashboard.test.jsx` | live location only while available, never offline, stopped and forgotten on going offline and on sign-out; job requests (no customer detail, accept, decline, nothing before the server says reachable); start with the customer's code in the body, wrong code; before photo upload in the body, shown from memory; bank account masked, new number sent once; earnings from the server |
 | `features/booking/booking.test.jsx` | hand-off by postMessage from the opener only (other origin/window ignored), refused hand-off; booking with the service id and pin, no price; Start Work code and new code; rating; no booking session |
+| `features/technician/jobWorkAndProfile.test.jsx` | checklist step and service notes saved on the server; work bill line added, totals from the server, submit and remove only after confirming; work preferences saved as one replacement, none ticked refused; change password sent once and cleared, wrong current password, mismatch checked first; weather page (job location, current, next hours, alerts of WATCH and above; asks for a place without a job location); new-request sound (unavailable, Enable sound then rings for a waiting request, silent with none) |

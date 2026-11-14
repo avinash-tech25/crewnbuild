@@ -1,76 +1,11 @@
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { aSession, aTechnician, installFakeServer } from '../../test/fakeServer.js'
-import { location, renderApp, technicianSignedIn } from '../../test/renderApp.jsx'
+import { describe, expect, it, vi } from 'vitest'
+import { aTechnician } from '../../test/fakeServer.js'
+import { location } from '../../test/renderApp.jsx'
+import { AVAILABLE, FIND, JOB_ID, aJob, anOffer, execution, openDashboard, soon, summary, withDeviceStandIns } from '../../test/technicianDashboard.js'
 
-const FIND = { timeout: 8000 }
-const JOB_ID = '0190a8b2-4c1e-7aa0-9f00-00000000b001'
-const AVAILABLE = aTechnician({ work_status: 'AVAILABLE', is_available: true })
-
-const summary = (overrides = {}) => ({
-  new_requests: 0, accepted_jobs: 0, active_jobs: 0, completed_jobs: 0, cancelled_jobs: 0,
-  work_status: 'AVAILABLE', is_available: true, can_receive_jobs: true, pending_requirements: [], ...overrides,
-})
-const soon = (seconds) => new Date(Date.now() + seconds * 1000).toISOString()
-const anOffer = (overrides = {}) => ({
-  booking_id: JOB_ID, technician_type: 'PLUMBER', work_area: 'Kitchen', distance_meters: 1200, service_name: 'Pipe Leakage Repair',
-  quoted_amount: '499.00', estimated_net_amount: '449.10', offered_at: soon(-5), expires_at: soon(60), ...overrides,
-})
-const aJob = (status, overrides = {}) => ({
-  id: JOB_ID, status, technician_type: 'PLUMBER', requester_type: 'OWNER', requester_type_label: 'House Owner', service_area: null, pincode: '560001',
-  service_address: '1 Test Road', service_latitude: 12.97, service_longitude: 77.59, description: 'Kitchen', service_name: 'Pipe Leakage Repair',
-  service_kind: 'SERVICE', quoted_amount: '499.00', currency: 'INR', requested_at: soon(-900), offer_expires_at: null, match_label: '1 km away',
-  requester_name: 'Asha Rao', requester_phone: '9000000001',
-  next_actions: { ACCEPTED: ['en-route'], ARRIVED: ['start'], IN_PROGRESS: ['complete'] }[status] || [],
-  accepted_at: soon(-800), en_route_at: soon(-700), arrived_at: status === 'ARRIVED' || status === 'IN_PROGRESS' ? soon(-600) : null,
-  started_at: status === 'IN_PROGRESS' ? soon(-300) : null, completed_at: null, cancelled_at: null, ...overrides,
-})
-const execution = (status, media = []) => ({
-  booking_id: JOB_ID, status, steps: [], steps_total: 0, steps_completed: 0, service_notes: null, service_notes_updated_at: null,
-  media, can_edit_steps: status === 'IN_PROGRESS', can_edit_notes: status === 'IN_PROGRESS',
-  can_upload: status === 'ARRIVED' ? ['BEFORE'] : ['BEFORE', 'AFTER'], media_limits: { CUSTOMER: 5, BEFORE: 6, AFTER: 6 },
-})
-
-// Answers for everything the dashboard asks for on load; tests override what they look at.
-function dashboardRoutes(user, overrides = {}) {
-  return {
-    'GET /auth/me': { data: aSession(user) },
-    'GET /technicians/me/dashboard': { data: summary({ work_status: user.work_status }) },
-    'GET /technicians/me/earnings/summary': { data: { currency: 'INR', today_net: '0.00', week_net: '0.00', month_net: '0.00', total_net: '0.00', total_gross: '0.00', total_commission: '0.00', earnings_count: 0 } },
-    'GET /technicians/me/weather': { data: { location_required: true, status: { available: false }, hourly: [], daily: [], alerts: [] } },
-    'GET /technicians/me/jobs': { data: [] },
-    'GET /technicians/me/offers': { data: [] },
-    'GET /technicians/me/presence': { data: { ready_for_nearby_jobs: true, update_interval_seconds: 3 } },
-    'POST /technicians/me/location': { data: { ready_for_nearby_jobs: true, update_interval_seconds: 3, active_job: null } },
-    'DELETE /technicians/me/location': { data: { ready_for_nearby_jobs: false } },
-    ...overrides,
-  }
-}
-
-function openDashboard(user, overrides) {
-  const server = installFakeServer(dashboardRoutes(user, overrides))
-  const view = renderApp('/dashboard', { auth: technicianSignedIn(user) })
-  return { server, ...view }
-}
-
-let geolocation
-beforeEach(() => {
-  // A device that knows where it is, on a secure page.
-  geolocation = {
-    getCurrentPosition: vi.fn((ok) => ok({ coords: { latitude: 12.97, longitude: 77.59, accuracy: 10 }, timestamp: Date.now() })),
-    watchPosition: vi.fn(() => 7),
-    clearWatch: vi.fn(),
-  }
-  Object.defineProperty(navigator, 'geolocation', { value: geolocation, configurable: true })
-  Object.defineProperty(window, 'isSecureContext', { value: true, configurable: true })
-})
-
-afterEach(() => {
-  delete navigator.geolocation
-  delete window.isSecureContext
-  vi.restoreAllMocks()
-})
+const device = withDeviceStandIns()
 
 describe('live location', () => {
   it('asks for the position and sends it only while the technician is available', async () => {
@@ -85,8 +20,8 @@ describe('live location', () => {
     const { server } = openDashboard(aTechnician({ work_status: 'OFFLINE' }))
     expect(await screen.findByText('Welcome, Ramesh', {}, FIND)).toBeInTheDocument()
     await waitFor(() => expect(server.calls('GET /technicians/me/dashboard').length).toBeGreaterThan(0))
-    expect(geolocation.getCurrentPosition).not.toHaveBeenCalled()
-    expect(geolocation.watchPosition).not.toHaveBeenCalled()
+    expect(device.geolocation.getCurrentPosition).not.toHaveBeenCalled()
+    expect(device.geolocation.watchPosition).not.toHaveBeenCalled()
     expect(server.calls('POST /technicians/me/location')).toHaveLength(0)
   })
 
@@ -95,19 +30,19 @@ describe('live location', () => {
     const { server } = openDashboard(AVAILABLE, {
       'PATCH /technicians/me/availability': { data: aTechnician({ work_status: 'OFFLINE', is_available: false }) },
     })
-    await waitFor(() => expect(geolocation.watchPosition).toHaveBeenCalled(), FIND)
+    await waitFor(() => expect(device.geolocation.watchPosition).toHaveBeenCalled(), FIND)
     await user.click(screen.getByTestId('work-status-offline'))
-    await waitFor(() => expect(geolocation.clearWatch).toHaveBeenCalledWith(7))
+    await waitFor(() => expect(device.geolocation.clearWatch).toHaveBeenCalledWith(7))
     expect(JSON.parse(server.calls('PATCH /technicians/me/availability')[0].data)).toEqual({ status: 'OFFLINE' })
   })
 
   it('signing out stops the location first, then ends the session', async () => {
     const user = userEvent.setup()
     const { server } = openDashboard(AVAILABLE)
-    await waitFor(() => expect(geolocation.watchPosition).toHaveBeenCalled(), FIND)
+    await waitFor(() => expect(device.geolocation.watchPosition).toHaveBeenCalled(), FIND)
     await user.click(screen.getByRole('button', { name: /Logout/ }))
     await waitFor(() => expect(location.current.pathname).toBe('/login'))
-    expect(geolocation.clearWatch).toHaveBeenCalled()
+    expect(device.geolocation.clearWatch).toHaveBeenCalled()
     expect(server.calls('DELETE /technicians/me/location')).toHaveLength(1)
   })
 })

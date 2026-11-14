@@ -26,6 +26,9 @@ function devHttpsOptions() {
 // Port 5373 (the Professional app uses 5173). strictPort, so a busy port fails loudly: the
 // Professional Book Technician button and the backend's CORS list both name this port.
 export default defineConfig(({ command, mode }) => ({
+  // Tests read no .env files (src/test has none): a developer's .env.local must not change
+  // what the tests see. Their values are the `test.env` below.
+  envDir: mode === 'test' ? 'src/test' : '.',
   plugins: [react()],
   server: {
     host: true,

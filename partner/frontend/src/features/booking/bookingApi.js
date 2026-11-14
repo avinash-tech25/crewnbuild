@@ -3,9 +3,7 @@ import { baseApi } from '../../shared/api/baseApi.js'
 import { runMutation, runQuery } from '../../shared/api/callEndpoint.js'
 
 // The Professional origins allowed to hand a requester over; anything else is ignored.
-// VITE_OCTABUILD_ORIGIN is the setting's old name, read as a fallback for one release
-// (.env.example).
-export const PROFESSIONAL_ORIGINS = String(import.meta.env.VITE_PROFESSIONAL_ORIGIN || import.meta.env.VITE_OCTABUILD_ORIGIN || '')
+export const PROFESSIONAL_ORIGINS = String(import.meta.env.VITE_PROFESSIONAL_ORIGIN || '')
   .split(',')
   .map((origin) => origin.trim().replace(/\/+$/, ''))
   .filter(Boolean)
