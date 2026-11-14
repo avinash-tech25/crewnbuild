@@ -19,7 +19,7 @@ export function roleDestination(key) {
 }
 
 // The landing copy that used to live here (an `english` and an `arabic`
-// object behind a `translations` map) now lives in src/i18n/translations.js
+// object behind a `translations` map) now lives in src/i18n/locales/ (one file per language)
 // under `landing.*`, alongside the rest of the application's copy, so all
 // seven supported languages are covered rather than only two. What remains
 // above is configuration -- icons, sprite paths, animations and routes --

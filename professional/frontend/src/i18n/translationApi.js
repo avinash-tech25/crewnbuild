@@ -2,7 +2,7 @@ import { baseApi } from '../shared/api/baseApi.js'
 import { runMutation } from '../shared/api/callEndpoint.js'
 
 // Display translation of text people typed (project descriptions, names, company details).
-// The interface's own words come from translations.js and never pass through here. The
+// The interface's own words come from i18n/locales/ and never pass through here. The
 // server answers source string -> string to display; `configured` false means no provider
 // key is set, the signal to stop asking.
 export const translationApi = baseApi.injectEndpoints({

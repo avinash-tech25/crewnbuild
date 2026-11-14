@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
-import { LANGUAGES, TRANSLATIONS } from './translations.js'
+import { LANGUAGES } from './languages.js'
+import { isLanguageLoaded, loadLanguage, lookup } from './dictionaries.js'
 import { COUNTRY_CONFIG } from '../shared/utils/countryConfig.js'
 import { BATCH_DELAY, cachedTranslation, fetchTranslations, isTranslatableText } from './dynamicTranslation.js'
 import { setActiveLanguage } from './activeLanguage.js'
@@ -28,6 +29,21 @@ function getInitialLanguage() {
   return SUPPORTED_CODES.has(storedLanguage) ? storedLanguage : 'en'
 }
 
+/**
+ * Downloads the saved language before the first render (main.jsx), so a returning
+ * visitor never sees the page in English first. A failure is not fatal: the page opens
+ * with English text and the provider tries again.
+ */
+export function preloadSavedLanguage() {
+  let saved = 'en'
+  try {
+    saved = getInitialLanguage()
+  } catch {
+    /* storage unavailable: English */
+  }
+  return loadLanguage(saved).catch(() => undefined)
+}
+
 function getInitialCountry() {
   const storedCountry = window.localStorage.getItem(COUNTRY_STORAGE_KEY)
   return COUNTRY_CONFIG[storedCountry] ? storedCountry : ''
@@ -43,13 +59,31 @@ export function LanguageProvider({ children }) {
   // reload in English regardless of the saved selection.
   setActiveLanguage(language)
 
+  // A language's text is downloaded when it is first used. Until it arrives the page
+  // keeps the language it shows; `loadedVersion` re-renders once it is here.
+  const [loadedVersion, setLoadedVersion] = useState(0)
+  const requestedRef = useRef(language)
+
+  useEffect(() => {
+    if (isLanguageLoaded(language)) return
+    loadLanguage(language).then(() => setLoadedVersion((version) => version + 1)).catch(() => {})
+  }, [language])
+
   // setLanguage is only ever called by the user picking a language in the
   // selector. Record that this was a deliberate choice so it persists and
-  // overrides the English default.
+  // overrides the English default. The page switches once that language's text has
+  // been downloaded (at once if it already was); the last pick wins.
   const setLanguage = useCallback((value) => {
     if (!SUPPORTED_CODES.has(value)) return
     window.localStorage.setItem(MANUAL_STORAGE_KEY, '1')
-    setLanguageState(value)
+    requestedRef.current = value
+    loadLanguage(value)
+      .then(() => {
+        if (requestedRef.current === value) setLanguageState(value)
+      })
+      .catch(() => {
+        /* not downloaded (offline): stay on the current language */
+      })
   }, [])
 
   useEffect(() => {
@@ -67,12 +101,14 @@ export function LanguageProvider({ children }) {
   }, [])
 
   const t = useCallback((key, values = {}) => {
-    const template = TRANSLATIONS[language]?.[key] ?? TRANSLATIONS.en[key] ?? key
+    const template = lookup(language, key)
     return Object.entries(values).reduce(
       (translatedText, [name, value]) => translatedText.replaceAll(`{${name}}`, String(value)),
       template,
     )
-  }, [language])
+    // loadedVersion: re-run once the language's dictionary has arrived.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [language, loadedVersion])
 
   const translateMessage = useCallback((message) => {
     if (!message) return ''

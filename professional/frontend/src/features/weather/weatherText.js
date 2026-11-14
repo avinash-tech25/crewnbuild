@@ -1,7 +1,7 @@
 import { useCallback } from 'react'
 import { useLanguage } from '../../i18n/LanguageContext.jsx'
 
-// The Weather page's wording, kept with the page so translations.js is not
+// The Weather page's wording, kept with the page so the language files (i18n/locales/) are not
 // touched. English is the source; every other language is translated through
 // the app's own `td` (the same runtime translation used for project names and
 // server messages), so the page follows the language selector everywhere.

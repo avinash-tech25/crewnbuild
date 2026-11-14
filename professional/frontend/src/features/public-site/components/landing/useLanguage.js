@@ -7,7 +7,7 @@
  * running a second, competing copy. The returned shape is unchanged, so every
  * ported landing component works without edits.
  *
- * The copy itself now comes from the shared key table in src/i18n/translations.js
+ * The copy itself now comes from the shared key tables in src/i18n/locales/
  * under `landing.*`, the same table the rest of the application reads through
  * `t()`. It previously came from a second table in ./content.js that held only
  * English and Arabic, so Telugu, Hindi, Tamil, Kannada and Malayalam silently
@@ -16,13 +16,13 @@
  */
 import { useMemo } from 'react'
 import { useLanguage as useApplicationLanguage } from '../../../../i18n/LanguageContext.jsx'
-import { TRANSLATIONS } from '../../../../i18n/translations.js'
+import { ENGLISH } from '../../../../i18n/dictionaries.js'
 
 const PREFIX = 'landing.'
 
 // The key list is taken from English, which is the table guaranteed to be
 // complete; `t()` then resolves each one in the selected language.
-const LANDING_KEYS = Object.keys(TRANSLATIONS.en).filter((key) => key.startsWith(PREFIX))
+const LANDING_KEYS = Object.keys(ENGLISH).filter((key) => key.startsWith(PREFIX))
 
 /**
  * Rebuilds `landing.a.b.0.c` keys into the nested object the landing components

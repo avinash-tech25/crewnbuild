@@ -15,11 +15,11 @@
  * language, then English, then the key itself.
  */
 
-import { TRANSLATIONS } from './translations.js'
+import { lookup } from './dictionaries.js'
 import { getActiveLanguage } from './activeLanguage.js'
 
 export function translate(key, values = {}) {
-  const template = TRANSLATIONS[getActiveLanguage()]?.[key] ?? TRANSLATIONS.en[key] ?? key
+  const template = lookup(getActiveLanguage(), key)
   return Object.entries(values).reduce(
     (translatedText, [name, value]) => translatedText.replaceAll(`{${name}}`, String(value)),
     template,
