@@ -1,6 +1,7 @@
 """The required-field rules of the complete-profile save (ported from the old
 profile_service.profile_field_errors), per role and per country."""
 
+from app.core.display_names import COMPANY_IS_PHONE, NAME_IS_PHONE, STORE_IS_PHONE, looks_like_phone
 from app.modules.accounts.models import STORE_MANAGER_SPECIALIZATION
 from app.modules.accounts.profile_lists import split_profile_list
 from app.modules.accounts.schemas import CompleteProfileRequest
@@ -68,9 +69,15 @@ def profile_field_errors(payload: CompleteProfileRequest, user: User) -> dict[st
     elif not is_india and (len(pincode_digits) < 3 or len(pincode_digits) > 10):
         errors["pincode"] = "Enter a valid postal code for your country."
 
+    # A name shown on cards, lists, chats and profiles is never a phone number.
+    if looks_like_phone(payload.name):
+        errors["name"] = NAME_IS_PHONE
+
     if role == ROLE_BUILDER:
         if not (payload.company_name or "").strip():
             errors["company_name"] = "Company name is required."
+        elif looks_like_phone(payload.company_name):
+            errors["company_name"] = COMPANY_IS_PHONE
         if not (payload.license_number or "").strip():
             errors["license_number"] = "License number is required."
         if not payload.experience_years or payload.experience_years < 1:
@@ -88,6 +95,8 @@ def profile_field_errors(payload: CompleteProfileRequest, user: User) -> dict[st
         )
         if not (payload.store_name or "").strip():
             errors["store_name"] = messages["store_name"]
+        elif looks_like_phone(payload.store_name):
+            errors["store_name"] = STORE_IS_PHONE
         if not (payload.about or "").strip():
             errors["about"] = messages["about"]
         if not split_profile_list(payload.service_locations):

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { displayName } from '../../../shared/utils/displayName.js'
 import {
   ArrowRight,
   ArrowUpRight,
@@ -395,10 +396,10 @@ export function EngineerContractorsSection({ contractors, teamStatusByContractor
                       avatar instead of a generic icon. */
                   <EntityAvatar
                     src={contractor.company_logo_url ? imageUrl(contractor.company_logo_url) : userAvatarSrc(contractor, 'BUILDER')}
-                    alt={td(contractor.company_name)}
+                    alt={td(displayName(contractor.company_name, contractor.name))}
                   />
                 }
-                title={<span className="inline-flex max-w-full items-center gap-1.5"><span className="truncate">{td(contractor.company_name)}</span><BuilderTierBadge builderId={contractor.user_id} /></span>}
+                title={<span className="inline-flex max-w-full items-center gap-1.5"><span className="truncate">{td(displayName(contractor.company_name, contractor.name)) || t('role.builder')}</span><BuilderTierBadge builderId={contractor.user_id} /></span>}
                 subtitle={`${contractor.completed_projects || 0} ${t('dash.supplier.projects')}`}
                 pills={[
                   { key: 'pincode', text: `${t('dash.common.pincode')} ${contractor.pincode || '—'}`, icon: MapPin },

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { displayName } from '../../../shared/utils/displayName.js'
 import {
   AlertTriangle, ArrowLeft, Boxes, BriefcaseBusiness, CheckCircle2, ExternalLink,
   FileText, GalleryVerticalEnd, HardHat, ImagePlus, Images, Info, Loader2, MapPin, Pencil, Plus, Save, ShieldCheck, Trash2, UserRound, X,
@@ -515,12 +516,12 @@ export default function ContractorProfileSettings({
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-[96px_minmax(0,1fr)] lg:items-center">
           <SmartImage
             src={avatarFromPath(profileHeroImage, 'BUILDER')}
-            alt={profile.company_name || profile.name}
+            alt={displayName(profile.company_name, profile.name)}
             className="h-20 w-20 rounded-xl object-cover shadow-[0_18px_45px_-28px_rgba(15,23,42,0.9)] ring-1 ring-slate-200"
           />
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <h2 className="font-display text-lg font-extrabold text-slate-950">{td(profile.company_name || profile.name) || t('role.builder')}</h2>
+              <h2 className="font-display text-lg font-extrabold text-slate-950">{td(displayName(profile.company_name, profile.name)) || t('role.builder')}</h2>
               {/* Only a live verification decision from the backend earns the badge. */}
               {profile.is_verified === true && (
                 <span data-testid="verified-partner-badge" className="inline-flex rounded-full border border-brand-200 bg-brand-50 px-2.5 py-0.5 text-xs font-extrabold text-brand-800">{t('cps.verifiedPartner')}</span>

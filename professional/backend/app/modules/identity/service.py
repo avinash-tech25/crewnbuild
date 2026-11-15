@@ -23,6 +23,7 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.core.config import Settings
+from app.core.display_names import COMPANY_IS_PHONE, NAME_IS_PHONE, STORE_IS_PHONE, looks_like_phone
 from app.core.security.password_hashing import (
     hash_secret,
     needs_rehash,
@@ -201,6 +202,13 @@ class AuthService:
             raise HTTPException(status_code=400, detail="Choose a valid account role.")
         if len(name) < 2 or len(name) > 120:
             raise HTTPException(status_code=422, detail="Enter a name between 2 and 120 characters.")
+        # Shown on every card, list and chat: never a phone number (core/display_names.py).
+        if looks_like_phone(name):
+            raise HTTPException(status_code=422, detail=NAME_IS_PHONE)
+        if role == ROLE_BUILDER and looks_like_phone(payload.company_name):
+            raise HTTPException(status_code=422, detail=COMPANY_IS_PHONE)
+        if role == ROLE_SUPPLIER and looks_like_phone(payload.store_name):
+            raise HTTPException(status_code=422, detail=STORE_IS_PHONE)
         if address and (len(address) < 5 or len(address) > 500):
             raise HTTPException(status_code=422, detail="Enter a complete address (5 to 500 characters).")
         if not phone_first:
