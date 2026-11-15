@@ -23,3 +23,19 @@ export function takenProjectIdsFor({ supplier, projectList = [], contractorSuppl
       .map((project) => String(project.id)),
   ])
 }
+
+/**
+ * How much of the builder's project list this supplier is on, for its card: 'none',
+ * 'some' or 'all' of the `total` projects, the projects it is on (by title), and how many
+ * are still open to it. The same projects the Assign drawer leaves out
+ * (takenProjectIdsFor), so the card and the drawer never disagree. With no projects at
+ * all the state is 'none': Assign then says there is nothing to assign yet, as before.
+ */
+export function assignmentCoverage({ supplier, projectList = [], contractorSuppliers = [] }) {
+  const taken = takenProjectIdsFor({ supplier, projectList, contractorSuppliers })
+  const onList = projectList.filter((project) => taken.has(String(project.id)))
+  const total = projectList.length
+  const assigned = onList.length
+  const state = total === 0 || assigned === 0 ? 'none' : assigned >= total ? 'all' : 'some'
+  return { state, assigned, total, remaining: total - assigned, projects: onList }
+}

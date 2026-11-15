@@ -3222,6 +3222,8 @@ const base = {
   'ce.yearsCount': '{years} Years',
   'ce.viewProfile': 'View Profile',
   'ce.unassign': 'Unassign',
+  'ce.assignedAllProjects': 'Assigned to all projects',
+  'ce.assignedNofM': 'Assigned to {count} of {total} projects',
   'ce.noActiveEngineers': 'No active engineers yet. Invite an engineer or accept a join request to build your team.',
   'ce.accept': 'Accept',
   'ce.reject': 'Reject',

@@ -23,6 +23,10 @@ export default defineConfig(({ mode }) => ({
     css: false,
     // The dashboards are large lazy pages; their first load in jsdom takes seconds.
     testTimeout: 20000,
+    // Each test file renders whole dashboards in its own jsdom; with one worker per core
+    // (16 here) the files ran out of memory together and first renders overran their
+    // waits. Four workers keep the suite at about two minutes and steady.
+    maxWorkers: 4,
     env: { VITE_API_BASE_URL: 'http://api.test/api/v1', VITE_PARTNER_URL: 'http://partner.test' },
   },
 }))

@@ -34,6 +34,7 @@ import { optionLabel, SUPPLIER_CATEGORY_KEYS } from '../../../i18n/optionKeys.js
 import { ENGINEER_CATEGORY_LABEL_KEYS, isStoreManagerCategory } from '../../onboarding/profileConstants.js'
 import { formatDate } from '../../../shared/utils/formatters.js'
 import { projectStatusText } from '../builderHelpers.js'
+import { assignmentCoverage } from '../supplierAssignment.js'
 
 function CopyButton({ text, label }) {
   const { t } = useLanguage()
@@ -533,7 +534,7 @@ const SUPPLIER_STRIPES = {
  * as cards or a list. Assign Project and Unassign are the same actions the old
  * cards used; a click on the card opens the supplier's profile.
  */
-function MySuppliers({ suppliers, onOpenSupplierProfile, onAssignSupplier, onUnassignSupplier, search: sharedSearch, onSearchChange }) {
+function MySuppliers({ suppliers, projectList = [], onOpenSupplierProfile, onAssignSupplier, onUnassignSupplier, search: sharedSearch, onSearchChange }) {
   const { t, td } = useLanguage()
   const [localSearch, setLocalSearch] = useState('')
   const search = sharedSearch ?? localSearch
@@ -571,8 +572,16 @@ function MySuppliers({ suppliers, onOpenSupplierProfile, onAssignSupplier, onUna
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [list, search, location, service, ratingOrder])
 
+  // Which of this builder's projects the supplier is already on: the same rule the
+  // Assign drawer uses, so the card never offers a choice the drawer then refuses.
+  const coverageOf = (supplier) => assignmentCoverage({ supplier, projectList, contractorSuppliers: list })
+  const coverageText = (coverage) => (coverage.state === 'all'
+    ? t('ce.assignedAllProjects')
+    : t('ce.assignedNofM', { count: coverage.assigned, total: coverage.total }))
+
   const buttons = (supplier, compact = false) => {
     const assignments = supplier.assigned_projects || []
+    const coverage = coverageOf(supplier)
     return (
       <div className={`flex items-center gap-2 ${compact ? 'justify-end' : ''}`}>
         {assignments.length > 0 && (
@@ -584,13 +593,25 @@ function MySuppliers({ suppliers, onOpenSupplierProfile, onAssignSupplier, onUna
             <X className="h-3.5 w-3.5" /> {t('ce.unassign')}
           </button>
         )}
-        <button
-          type="button"
-          onClick={(event) => { event.stopPropagation(); onAssignSupplier?.(supplier) }}
-          className={`inline-flex h-8 items-center justify-center gap-1 rounded-lg bg-brand-800 px-3 text-xs font-extrabold text-white transition hover:bg-brand-900 ${compact ? '' : 'flex-[1.4]'}`}
-        >
-          <BriefcaseBusiness className="h-3.5 w-3.5" /> {t('ce.assignProject')}
-        </button>
+        {coverage.state === 'all' ? (
+          // On every project already: nothing left to assign, so no active button.
+          <button
+            type="button"
+            disabled
+            onClick={(event) => event.stopPropagation()}
+            className={`inline-flex h-8 cursor-not-allowed items-center justify-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 px-3 text-xs font-extrabold text-emerald-800 ${compact ? '' : 'flex-[1.4]'}`}
+          >
+            <CheckCircle2 className="h-3.5 w-3.5" /> {t('ce.assignedAllProjects')}
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={(event) => { event.stopPropagation(); onAssignSupplier?.(supplier) }}
+            className={`inline-flex h-8 items-center justify-center gap-1 rounded-lg bg-brand-800 px-3 text-xs font-extrabold text-white transition hover:bg-brand-900 ${compact ? '' : 'flex-[1.4]'}`}
+          >
+            <BriefcaseBusiness className="h-3.5 w-3.5" /> {t('ce.assignProject')}
+          </button>
+        )}
       </div>
     )
   }
@@ -680,7 +701,9 @@ function MySuppliers({ suppliers, onOpenSupplierProfile, onAssignSupplier, onUna
                   </td>
                   <td className="px-3 py-2"><span className="font-bold text-slate-800">{supplier.pincode || '—'}</span><span className="block text-[11px] text-slate-500">{td(cityOf(supplier.address))}</span></td>
                   <td className="px-3 py-2 text-slate-700">{Number(supplier.rating || 0).toFixed(1)}</td>
-                  <td className="px-3 py-2 text-slate-700">{(supplier.assigned_projects || []).length}</td>
+                  <td className="px-3 py-2 text-slate-700" data-testid="supplier-coverage">
+                    {coverageOf(supplier).total > 0 ? `${coverageOf(supplier).assigned} / ${coverageOf(supplier).total}` : (supplier.assigned_projects || []).length}
+                  </td>
                   <td className="px-3 py-2">{acceptedPill}</td>
                   <td className="px-3 py-2">{buttons(supplier, true)}</td>
                 </tr>
@@ -725,13 +748,24 @@ function MySuppliers({ suppliers, onOpenSupplierProfile, onAssignSupplier, onUna
                     <div className="min-w-0"><p className="truncate font-extrabold text-slate-900">{assignments.length}</p><p className="truncate text-slate-500">{t('ce.filter.projects')}</p></div>
                   </div>
                 </div>
-                {/* The project(s) this supplier is assigned to, from assigned_projects. */}
-                {assignments.length > 0 && (
-                  <p className="mt-2 flex min-w-0 items-center gap-1.5 text-[11px] text-slate-600" title={assignments.map((project) => td(project.project_title)).join(', ')}>
-                    <Home className="h-3.5 w-3.5 shrink-0 text-slate-500" />
-                    <span className="truncate">{assignments.map((project) => td(project.project_title)).join(', ')}</span>
-                  </p>
-                )}
+                {/* How many of the builder's projects this supplier is on, and which. */}
+                {(() => {
+                  const coverage = coverageOf(supplier)
+                  const titles = (coverage.projects.length ? coverage.projects.map((project) => project.title) : assignments.map((project) => project.project_title))
+                    .map((title) => td(title)).filter(Boolean)
+                  if (!titles.length) return null
+                  return (
+                    <div className="mt-2 min-w-0 text-[11px]" data-testid="supplier-coverage">
+                      {coverage.total > 0 && (
+                        <p className={`font-extrabold ${coverage.state === 'all' ? 'text-emerald-800' : 'text-slate-800'}`}>{coverageText(coverage)}</p>
+                      )}
+                      <p className="mt-0.5 flex min-w-0 items-center gap-1.5 text-slate-600" title={titles.join(', ')}>
+                        <Home className="h-3.5 w-3.5 shrink-0 text-slate-500" />
+                        <span className="truncate">{titles.join(', ')}</span>
+                      </p>
+                    </div>
+                  )
+                })()}
                 <div className="mt-auto pt-2.5">{buttons(supplier)}</div>
               </article>
             )
@@ -955,6 +989,8 @@ export function MySiteEngineersSection({
   onRefreshNearbyEngineers,
   // Supplier props
   contractorSuppliers,
+  // The builder's projects, for each supplier card's 'N of M projects'.
+  projectList = [],
   onOpenSupplierProfile,
   onAssignSupplier,
   onUnassignSupplier,
@@ -1040,6 +1076,7 @@ export function MySiteEngineersSection({
       {activeTab === 'suppliers' && (
         <MySuppliers
           suppliers={contractorSuppliers}
+          projectList={projectList}
           onOpenSupplierProfile={onOpenSupplierProfile}
           onAssignSupplier={onAssignSupplier}
           onUnassignSupplier={onUnassignSupplier}

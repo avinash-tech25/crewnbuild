@@ -1345,6 +1345,7 @@ export default function ContractorDashboard() {
             onRefreshNearbyEngineers={() => refreshNearbyEngineers()}
             acceptedSuppliers={acceptedSuppliers}
             contractorSuppliers={contractorSuppliers}
+            projectList={projectList}
             onOpenSupplierProfile={openSupplierProfile}
             onAssignSupplier={openAssignSupplier}
             onUnassignSupplier={openUnassignSupplier}
