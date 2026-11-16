@@ -151,8 +151,6 @@ function HomeownerLeadList({ clientList, clientRequestState, findClientRequest, 
           return (
             <ListCard
               key={project.id}
-              // The quotation field stays usable while it is open.
-              expanded={!accepted && incomingPending && Boolean(quoteError || quoting)}
               // The whole card opens the owner's details, as before; a click on
               // one of its own buttons or the quotation field does not.
               onClick={() => onSelectClient(project)}

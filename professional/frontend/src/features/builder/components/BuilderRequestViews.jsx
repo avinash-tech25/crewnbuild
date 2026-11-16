@@ -826,8 +826,6 @@ export function ContractorRequestsBoard({ requestList, onAccept, onReject, onWit
                 return (
                   <ListCard
                     key={request.id}
-                    // The quotation field stays usable while it is open.
-                    expanded={Boolean(pendingIncoming && board.quoteOnAccept && isQuoting)}
                     avatar={<CardAvatar fallback={<HomeownerAvatar name={ownerName} request={request} role={board.role} size="h-full w-full" />} />}
                     title={cardTitle}
                     subtitle={subtitle || null}

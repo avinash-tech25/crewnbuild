@@ -1353,9 +1353,3 @@ html.dark .dash-canvas .list-card.list-card:is(:hover, :focus-within) :is(.text-
     transform: none;
   }
 }
-
-/* Every list card is this tall, on every screen and at every width (ListCard.jsx):
-   the compact Builder project card. Content past it is hidden, never scrolled. */
-:root {
-  --list-card-height: 315px;
-}

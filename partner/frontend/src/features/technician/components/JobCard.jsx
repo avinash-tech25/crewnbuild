@@ -252,8 +252,6 @@ export default function JobCard({ job, onAction, onStarted, location }) {
   return (
     <ListCard
       testId="job-card"
-      // The map, checklist, work bill, start code and confirmations stay usable.
-      expanded={showsMap || showsExecution || asksForCode || handingBack || confirmingComplete}
       dataStatus={job.status}
       title={job.service_name || `${tradeLabel} job`}
       subtitle={`${job.requester_type_label} booking · ${formatDate(job.requested_at)}`}

@@ -14,12 +14,14 @@ export function expectUniformCards(grid) {
     // A card with no actions has no footer; the parts before it are the same on every card.
     parts: [...card.children].map((part) => part.getAttribute('data-card-part')).filter((part) => part !== 'footer'),
     avatar: Boolean(card.querySelector('[data-card-part="header"] > [data-card-part="avatar"]')),
-    // The one standard height (or, while it shows a form or a map, at least that height).
-    fills: (card.classList.contains('h-[var(--list-card-height)]') || card.classList.contains('min-h-[var(--list-card-height)]')) && card.classList.contains('w-full'),
+    // The grid column's full width; no set height, so the card is as tall as its content.
+    fills: card.classList.contains('w-full'),
+    forced: [card, card.querySelector('[data-card-part="body"]')].some((node) => /(^|\s)(h-\[|min-h-|h-full|flex-1|grow)/.test(node.className)),
   })
   const first = shape(cards[0])
   expect(first.parts.slice(0, 2)).toEqual(['header', 'body'])
   expect(first.fills).toBe(true)
+  expect(first.forced).toBe(false)
   cards.slice(1).forEach((card) => expect(shape(card)).toEqual(first))
   // Never a scrollbar inside a card: nothing in it scrolls (overflow auto / scroll).
   cards.forEach((card) => {

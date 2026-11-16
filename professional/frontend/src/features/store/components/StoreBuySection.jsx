@@ -441,8 +441,6 @@ export default function StoreBuySection({ projects, purchases, purchasesFailed =
             {purchases.map((order) => (
               <ListCard
                 key={order.request_code}
-                // The received-quantity fields stay usable while any line can be received.
-                expanded={order.lines.some((line) => line.can_receive)}
                 avatar={<CardAvatar fallback={<ShoppingBag aria-hidden="true" className="h-5 w-5" />} />}
                 title={t('store.buy.purchaseId', { id: purchaseRef(order) })}
                 subtitle={`${td(order.supplier_name)} · ${td(order.project_name)}`}

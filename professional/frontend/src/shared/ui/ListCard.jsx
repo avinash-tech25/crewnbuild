@@ -3,9 +3,9 @@
  * requests of every type, partners, site engineers, suppliers, listings, orders,
  * bookings, jobs, admin records.
  *
- * One compact size for every card in the application: the same width (the grid column)
- * and the same height (--list-card-height in index.css). The parts stack tightly in
- * this order, and a card simply leaves out the ones it has nothing for:
+ * One compact anatomy for every card in the application: the same width (the grid
+ * column), no set height. The parts stack tightly in this order, a card simply leaves
+ * out the ones it has nothing for, and its height is its content plus the padding:
  *
  *   header       48px thumbnail · bold title (one line) · grey subtitle (location + PIN)
  *   chips        the status chip first (with its icon), then size, type and the rest
@@ -15,11 +15,9 @@
  *   meta         a small line left ("Schedule: ..."), a link on the right (View Analysis)
  *   footer       secondary actions left (outlined / red outline), the main one right
  *
- * Content never makes a card taller and never scrolls inside it: titles, subtitles, chips
+ * Long text never grows a card and nothing scrolls inside it: titles, subtitles, chips
  * and values are cut with an ellipsis and kept whole as a tooltip; at most four detail
- * rows; anything past the card's height is hidden. The footer sits at the bottom edge.
- * Only a card showing something to work with right there (an open form, a map, a work
- * bill) passes `expanded`, and then grows from that height instead of hiding it.
+ * rows. Cards in a row are never stretched to match: no blank space is added.
  * Hovering or focusing anything in a card turns it the brand's warm yellow (the
  * `list-card` rules in index.css), with the text kept readable.
  *
@@ -145,8 +143,6 @@ export function CardAvatar({ src, alt = '', fallback = null }) {
  * @param meta       { text, action }: a small line left, a link / button right
  * @param secondary  footer actions on the left (outlined / red text)
  * @param primary    footer actions on the right (filled)
- * @param expanded   the card is showing content to act on (a form, a map) that must not be
- *                   hidden: it may grow taller than the standard height while it does
  * @param onClick    opens the card; buttons and links inside keep their own clicks.
  *                   The title becomes a button, the card's keyboard target.
  * @param children   extra body content, for what is neither a row nor a chip
@@ -167,7 +163,6 @@ export function ListCard({
   highlighted = false,
   // Shown but not available (busy elsewhere, say): the body is dimmed, the actions are not.
   dimmed = false,
-  expanded = false,
   label,
   testId,
   children,
@@ -184,7 +179,7 @@ export function ListCard({
       // it. Keyboard and screen-reader users open it with the title's button.
       onClick={interactive ? (event) => { if (!event.target.closest('button, a, input, select, textarea, label')) onClick(event) } : undefined}
       // `list-card`: the warm hover / focus surface (index.css), the same on every card.
-      className={`list-card flex w-full min-w-0 flex-col overflow-hidden rounded-2xl border p-4 shadow-ocsoft ${expanded ? 'min-h-[var(--list-card-height)]' : 'h-[var(--list-card-height)]'}
+      className={`list-card flex w-full min-w-0 flex-col overflow-hidden rounded-2xl border p-4 shadow-ocsoft
         ${highlighted ? 'border-oc-green bg-ocbrand-50' : 'border-oc-line bg-white'}
         ${interactive ? 'cursor-pointer' : ''}`}
     >
@@ -207,7 +202,7 @@ export function ListCard({
         </div>
       </header>
 
-      <div data-card-part="body" className={`mt-3 flex min-h-0 min-w-0 flex-1 flex-col gap-2 ${expanded ? '' : 'overflow-hidden'} ${dimmed ? 'opacity-50 blur-[0.5px]' : ''}`}>
+      <div data-card-part="body" className={`mt-3 flex min-w-0 flex-col gap-2 ${dimmed ? 'opacity-50 blur-[0.5px]' : ''}`}>
         {(status || shownChips.length > 0) && (
           // One line; a chip that does not fit is cut, its full text on hover.
           <div data-card-part="chips" className="flex min-w-0 shrink-0 flex-nowrap gap-1.5 overflow-hidden">{status}{shownChips}</div>
@@ -246,7 +241,7 @@ export function ListCard({
       </div>
 
       {(secondary || primary) && (
-        // At the bottom edge, never scrolling: several actions wrap instead.
+        // Right under the content, never scrolling: several actions wrap instead.
         <footer data-card-part="footer" className="mt-3 flex min-w-0 shrink-0 flex-wrap items-center justify-between gap-2 overflow-hidden border-t border-oc-line pt-3">
           <div className="flex min-w-0 flex-wrap items-center gap-2">{secondary}</div>
           <div className="ms-auto flex min-w-0 flex-wrap items-center justify-end gap-2">{primary}</div>
@@ -258,14 +253,14 @@ export function ListCard({
 
 /**
  * The grid every card list uses: one column on a phone, two from 768px, three from
- * 1280px, 20px apart; equal widths, every card the same fixed height.
+ * 1280px, 20px apart; equal widths, each card as tall as its own content.
  */
 export function CardGrid({ children, label, testId }) {
   const items = Children.toArray(children).filter(isValidElement)
   return (
-    <ul data-card-grid="" data-testid={testId} aria-label={label} className="grid grid-cols-1 items-stretch gap-5 md:grid-cols-2 xl:grid-cols-3">
+    <ul data-card-grid="" data-testid={testId} aria-label={label} className="grid grid-cols-1 items-start gap-5 md:grid-cols-2 xl:grid-cols-3">
       {items.map((child) => (
-        <li key={child.key} className="flex min-w-0">{child}</li>
+        <li key={child.key} className="min-w-0">{child}</li>
       ))}
     </ul>
   )

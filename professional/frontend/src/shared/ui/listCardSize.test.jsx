@@ -1,14 +1,16 @@
 /**
- * Every list card is the same compact size: cards of different kinds (a project with progress, a
- * request with rows and actions, a bare record, a tile with a picture) all carry the one
- * fixed-height class, the same slots in the same order, and a footer pinned to the bottom.
+ * Every list card is as tall as its content: cards of different kinds (a project with
+ * progress, a request with rows and actions, a bare record, a tile with a picture) carry
+ * no set height, no stretching part and no scrolling part, and the grid never stretches
+ * them to match.
  */
 import { readFileSync } from 'node:fs'
 import { render } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
-import { CardChip, CardStatus, ListCard, cardButtonClass } from './ListCard.jsx'
+import { CardChip, CardGrid, CardStatus, ListCard, cardButtonClass } from './ListCard.jsx'
 
-const HEIGHT = 'h-[var(--list-card-height)]'
+const FORCED = /(^|\s)(h-\[|min-h-|h-full|flex-1|grow)/
+
 const KINDS = {
   project: (
     <ListCard
@@ -46,38 +48,40 @@ const cardOf = (element) => {
 }
 
 describe('list card size', () => {
-  it('renders every kind of card with the same compact height class', () => {
+  it('sets no height on any kind of card: it is as tall as its content', () => {
     Object.entries(KINDS).forEach(([kind, element]) => {
       const card = cardOf(element)
-      expect(card, kind).toHaveClass(HEIGHT)
+      expect(card, kind).toHaveClass('w-full')
+      ;[card, card.querySelector('[data-card-part="body"]')].forEach((node) => {
+        expect(node.className, kind).not.toMatch(FORCED)
+      })
       expect([...card.children].map((part) => part.getAttribute('data-card-part')).slice(0, 2), kind).toEqual(['header', 'body'])
     })
   })
 
-  it('never scrolls inside a card: no overflow auto / scroll anywhere, hidden instead', () => {
+  it('never stretches cards in a row to match: the grid aligns them to the top', () => {
+    const { container } = render(<CardGrid>{[<ListCard key="a" title="A" />, <ListCard key="b" title="B" rows={[{ key: 'r', label: 'Row', value: '1' }]} />]}</CardGrid>)
+    const grid = container.querySelector('[data-card-grid]')
+    expect(grid).toHaveClass('items-start')
+    expect(grid).not.toHaveClass('items-stretch')
+    grid.querySelectorAll(':scope > li').forEach((item) => expect(item).not.toHaveClass('flex'))
+  })
+
+  it('never scrolls inside a card: no overflow auto / scroll anywhere', () => {
     Object.entries(KINDS).forEach(([kind, element]) => {
       const card = cardOf(element)
-      expect(card, kind).toHaveClass('overflow-hidden')
       ;[card, ...card.querySelectorAll('*')].forEach((node) => {
         expect(String(node.getAttribute('class') || ''), `${kind}: ${node.tagName}`).not.toMatch(SCROLLING)
       })
-      const footer = card.querySelector('[data-card-part="footer"]')
-      if (footer) expect(footer).toHaveClass('overflow-hidden')
     })
   })
 
-  it('draws a footer only for a card with actions, and stacks no empty slots', () => {
+  it('draws a footer only for a card with actions, and no empty parts', () => {
     expect(cardOf(KINDS.request).querySelector('[data-card-part="footer"]')).not.toBeNull()
     const bare = cardOf(KINDS.bare)
     expect(bare.querySelector('[data-card-part="footer"]')).toBeNull()
     expect(bare.querySelector('[data-card-part="chips"]')).toBeNull()
     expect(bare.querySelector('[data-card-part="progress"]')).toBeNull()
-  })
-
-  it('lets only a card showing a form or a map grow past the standard height', () => {
-    const card = cardOf(<ListCard title="Job" expanded><input aria-label="Code" /></ListCard>)
-    expect(card).toHaveClass('min-h-[var(--list-card-height)]')
-    expect(card).not.toHaveClass(HEIGHT)
   })
 
   it('never shows more than four detail rows, and keeps long text to one line with a tooltip', () => {
@@ -89,8 +93,8 @@ describe('list card size', () => {
     expect(card.querySelector('[data-card-part="header"] p')).toHaveClass('truncate')
   })
 
-  it('takes its compact height from one shared variable', () => {
+  it('has no shared height variable any more', () => {
     const css = readFileSync(`${process.cwd()}/src/index.css`, 'utf8')
-    expect(css).toMatch(/--list-card-height:\s*315px/)
+    expect(css).not.toMatch(/--list-card-height/)
   })
 })
