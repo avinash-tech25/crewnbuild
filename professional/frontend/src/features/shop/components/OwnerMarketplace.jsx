@@ -34,8 +34,8 @@ import { SearchOverlay } from '../../storefront/components/SearchOverlay.jsx'
 import { imageUrl } from '../../../shared/api/apiClient.js'
 import { loadCart, selectCartCount } from '../cartSlice.js'
 import { BrandLogo } from '../../catalog/components/BrandPicker.jsx'
-import { stockState } from '../../catalog/components/StockBadge.jsx'
-import { CardAvatar, CardChip, CardGrid, CardStatus, ListCard } from '../../../shared/ui/ListCard.jsx'
+import { StockCardStatus } from '../../catalog/components/StockBadge.jsx'
+import { CardAvatar, CardChip, CardGrid, ListCard } from '../../../shared/ui/ListCard.jsx'
 import { discountedPrice } from '../../catalog/components/PriceTag.jsx'
 import { ProductDetailView } from '../../catalog/components/ProductDetailView.jsx'
 import { CartStepper } from './CartStepper.jsx'
@@ -68,15 +68,6 @@ function CardImage({ src, alt }) {
   return <img src={imageUrl(src)} alt={alt} onError={() => setBroken(true)} className="h-full w-full object-contain p-2.5" />
 }
 
-// The stock word StockBadge shows, as the card's status pill.
-const STOCK_WORDS = { in: 'In stock', low: 'Low stock', out: 'Out of stock' }
-const STOCK_TONES = { in: 'green', low: 'amber', out: 'red' }
-function stockStatus(listing) {
-  const state = stockState(listing.quantity, listing.low_stock_threshold)
-  const detail = state === 'low' ? ` · only ${Number(listing.quantity || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })} left` : ''
-  return <CardStatus tone={STOCK_TONES[state]}>{`${STOCK_WORDS[state]}${detail}`}</CardStatus>
-}
-
 function ListingCard({ listing, country, projectId, onOpen, onMessage }) {
   const discount = Number(listing.discount_percentage || 0)
   return (
@@ -85,7 +76,7 @@ function ListingCard({ listing, country, projectId, onOpen, onMessage }) {
       avatar={<CardAvatar src={listing.image_url ? imageUrl(listing.image_url) : null} alt="" fallback={<ImageOff aria-hidden="true" className="h-5 w-5" />} />}
       title={listing.name}
       subtitle={`Sold by ${listing.supplier_name}`}
-      status={stockStatus(listing)}
+      status={<StockCardStatus quantity={listing.quantity} threshold={listing.low_stock_threshold} />}
       chips={[
         <CardChip key="brand" tone="green">{listing.brand || 'Generic'}</CardChip>,
         [listing.subcategory_name, listing.size].filter(Boolean).length > 0 && (

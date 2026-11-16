@@ -21,7 +21,7 @@ import {
   cancelLaborRequest, completeLaborRequest, createLaborRequest, fetchLaborDailyRecords, fetchLaborTrades,
   fetchProjectLaborRequests, fetchProjectLaborSupplierServices, LABOR_SUPPLIER_CATEGORY, laborErrorMessage, localIsoDate, saveLaborDailyRecord,
 } from '../../labour/labourApi.js'
-import { formatLaborDate, LaborDailyRecordsTable, LaborDialog } from '../../labour/components/SupplierLaborSections.jsx'
+import { formatLaborDate, LaborCardStatus, LaborDailyRecordsTable, LaborDialog } from '../../labour/components/SupplierLaborSections.jsx'
 import { allocationSummary, availableCount, MAX_WORKERS, offeredServices, workersRequestError } from '../../labour/laborRequestRules.js'
 import { useLatestOnly, useLiveRefresh } from '../../../shared/hooks/useLiveRefresh.js'
 
@@ -346,7 +346,7 @@ function RequestCard({ request, open, onToggle, onChanged, setNotice }) {
       avatar={<CardAvatar fallback={<HardHat aria-hidden="true" className="h-5 w-5" />} />}
       title={`${request.trade} · ${request.supplier_name}`}
       subtitle={heading}
-      status={<CardStatus status={request.status}>{laborStatusWord(request.status, t)}</CardStatus>}
+      status={<LaborCardStatus status={request.status} />}
       rows={[
         { key: 'required', label: t('labor.field.workersRequired'), value: request.workers_required },
         { key: 'allocated', label: t('labor.field.allocatedWorkers'), value: request.workers_allocated ?? '—' },
@@ -354,9 +354,10 @@ function RequestCard({ request, open, onToggle, onChanged, setNotice }) {
         { key: 'end', label: t('labor.field.endDate'), value: formatLaborDate(request.end_date) },
       ]}
       secondary={(cancel || records) ? <>{cancel}{records}</> : null}
+      primary={complete}
       // A request with no action still draws the footer, so every card in the list
       // keeps the same shape.
-      primary={complete || ((cancel || records) ? null : <span aria-hidden="true" className="h-9" />)}
+      footer="always"
     >
       {allocation.partial && (
         <p className="rounded-xl bg-amber-50 px-3 py-2 text-xs font-bold text-amber-800">
@@ -377,10 +378,6 @@ function RequestCard({ request, open, onToggle, onChanged, setNotice }) {
     </ListCard>
   )
 }
-
-// The word for a labor request's status, as LaborStatusBadge names it.
-const LABOR_STATUSES = ['PENDING', 'ACCEPTED', 'REJECTED', 'CANCELLED', 'COMPLETED']
-const laborStatusWord = (status, t) => (LABOR_STATUSES.includes(status) ? t(`labor.status.${status}`) : status)
 
 // ------------------------------------------------------------------ panel
 

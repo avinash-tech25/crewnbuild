@@ -28,24 +28,43 @@ describe('list cards', () => {
     const cards = expectUniformCards(grid)
     // A long title is cut with an ellipsis and kept whole as its tooltip.
     const long = cards.find((card) => card.textContent.includes('A very long project'))
-    const title = long.querySelector('[data-card-part="header"] p')
+    const title = long.querySelector('[data-card-part="header"] h3')
     expect(title).toHaveClass('truncate')
     expect(title).toHaveAttribute('title', expect.stringContaining('A very long project'))
   })
 })
 
 describe('list card keyboard', () => {
-  it('a card that opens is focusable and opens with Enter, as a click does', async () => {
+  it("a card that opens has its title as a button, and a footer button's click stays the button's", async () => {
     const { render, fireEvent } = await import('@testing-library/react')
     const { ListCard } = await import('./ListCard.jsx')
     let opened = 0
-    const view = render(<ListCard title="Card" onClick={() => { opened += 1 }} primary={<button type="button">Act</button>} />)
+    let acted = 0
+    const view = render(<ListCard title="Card" onClick={() => { opened += 1 }} primary={<button type="button" onClick={() => { acted += 1 }}>Act</button>} />)
     const card = view.container.querySelector('[data-card="list"]')
-    expect(card).toHaveAttribute('tabindex', '0')
-    fireEvent.keyDown(card, { key: 'Enter' })
+    // The card itself is not a tab stop; its title, in a heading, is the button.
+    expect(card).not.toHaveAttribute('tabindex')
+    const heading = view.getByRole('heading', { level: 3, name: 'Card' })
+    const open = view.getByRole('button', { name: 'Card' })
+    expect(heading).toContainElement(open)
+    expect(open).toHaveAttribute('type', 'button')
+    fireEvent.click(open)
     expect(opened).toBe(1)
-    // Enter on the button inside stays the button's.
-    fireEvent.keyDown(view.getByRole('button', { name: 'Act' }), { key: 'Enter' })
-    expect(opened).toBe(1)
+    // A click on the card body still opens it.
+    fireEvent.click(card)
+    expect(opened).toBe(2)
+    // A footer button does its own work and does not also open the card.
+    fireEvent.click(view.getByRole('button', { name: 'Act' }))
+    expect(acted).toBe(1)
+    expect(opened).toBe(2)
+  })
+
+  it('a card that does not open has a plain heading title, and footer="always" keeps an empty footer', async () => {
+    const { render } = await import('@testing-library/react')
+    const { ListCard } = await import('./ListCard.jsx')
+    const view = render(<ListCard title="Static" footer="always" />)
+    expect(view.getByRole('heading', { level: 3, name: 'Static' })).toBeInTheDocument()
+    expect(view.queryByRole('button')).not.toBeInTheDocument()
+    expect(view.container.querySelector('[data-card-part="footer"]')).toBeInTheDocument()
   })
 })

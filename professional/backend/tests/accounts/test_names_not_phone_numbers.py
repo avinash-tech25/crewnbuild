@@ -3,7 +3,9 @@ supplier's store name. Sign-up and complete-profile refuse one, and migration 00
 corrected the rows saved before (from the person's real name, or back the other way)."""
 
 import importlib.util
+from collections.abc import Callable, Iterator
 from pathlib import Path
+from types import ModuleType
 
 import pytest
 from alembic.migration import MigrationContext
@@ -11,9 +13,10 @@ from alembic.operations import Operations
 from conftest import ClientFactory
 from fastapi.testclient import TestClient
 from identity.helpers import FakeEmailSender, create_user, service_overrides, sign_in
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from app.core.display_names import COMPANY_IS_PHONE, NAME_IS_PHONE, STORE_IS_PHONE, looks_like_phone
+from app.core.display_names import COMPANY_IS_PHONE, NAME_IS_PHONE, STORE_IS_PHONE, looks_like_phone, public_name
 from app.modules.accounts.models import SupplierProfile
 from app.modules.identity.models import ROLE_BUILDER, ROLE_ENGINEER, ROLE_OWNER, ROLE_SUPPLIER, User
 
@@ -33,12 +36,18 @@ MIGRATION = Path(__file__).resolve().parents[2] / "alembic" / "versions" / "2026
         ("Builders 24x7", False),
         ("A1 Constructions", False),
         ("12345", False),  # too short to be a number anyone dials
+        ("١٢٣٤٥٦٧", False),  # ASCII digits only, as the SQL and the frontend
         ("", False),
         (None, False),
     ],
 )
 def test_what_counts_as_a_phone_number(value: str | None, phone_like: bool) -> None:
     assert looks_like_phone(value) is phone_like
+
+
+@pytest.mark.parametrize(("value", "shown"), [("+91 96406 77606", ""), ("Builders 24x7", "Builders 24x7"), (None, "")])
+def test_a_public_name_is_never_a_phone_number(value: str | None, shown: str) -> None:
+    assert public_name(value) == shown
 
 
 # ---- sign-up ----
@@ -102,19 +111,31 @@ def test_complete_profile_refuses_a_phone_number_as_the_business_name(
 # ---- migration 0004 ----
 
 
-def run_migration(database: Session) -> None:
+BACKUP_TABLE = "professional.migration_0004_names_backup"
+
+
+@pytest.fixture
+def migration(database: Session) -> Iterator[ModuleType]:
+    """Migration 0004, its backup table dropped afterwards (it is not one of the models,
+    so the test database's cleanup does not know it)."""
     spec = importlib.util.spec_from_file_location("names_not_phone_numbers", MIGRATION)
     assert spec and spec.loader
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
-    context = MigrationContext.configure(database.connection())
-    with Operations.context(context):
-        module.upgrade()
+    yield module
+    database.rollback()
+    database.execute(text(f"DROP TABLE IF EXISTS {BACKUP_TABLE}"))
+    database.commit()
+
+
+def run(database: Session, step: Callable[[], None]) -> None:
+    with Operations.context(MigrationContext.configure(database.connection())):
+        step()
     database.commit()
     database.expire_all()
 
 
-def test_the_migration_corrects_names_saved_as_phone_numbers(database: Session) -> None:
+def test_the_migration_corrects_names_saved_as_phone_numbers(database: Session, migration: ModuleType) -> None:
     # A builder whose company name is his phone number: it takes his name.
     shakra = create_user(database, role=ROLE_BUILDER, name="Shakra", email="shakra@example.in", phone="9640677606")
     shakra.contractor_profile.company_name = "9640677606"
@@ -130,9 +151,12 @@ def test_the_migration_corrects_names_saved_as_phone_numbers(database: Session) 
     # A real name with digits is not touched.
     fine = create_user(database, role=ROLE_BUILDER, name="Ravi", email="ravi@example.in", phone="9876500005")
     fine.contractor_profile.company_name = "Builders 24x7"
+    # A company name longer than a person's name may be (160 against 150): cut to fit.
+    long = create_user(database, role=ROLE_BUILDER, name="9876500006", email="long@example.in", phone="9876500006")
+    long.contractor_profile.company_name = "L" * 155
     database.commit()
 
-    run_migration(database)
+    run(database, migration.upgrade)
 
     assert (database.get(User, shakra.id).name, database.get(User, shakra.id).contractor_profile.company_name) == (
         "Shakra",
@@ -144,5 +168,29 @@ def test_the_migration_corrects_names_saved_as_phone_numbers(database: Session) 
     assert database.get(User, lost.id).name == "9876500004"
     assert database.get(User, lost.id).contractor_profile.company_name == "9876500004"
     assert database.get(User, fine.id).contractor_profile.company_name == "Builders 24x7"
+    assert database.get(User, long.id).name == "L" * 150
     # Phone numbers themselves are left alone.
     assert database.get(User, shakra.id).phone == "9640677606"
+
+
+def test_the_migration_runs_twice_and_downgrade_restores_the_old_values(
+    database: Session, migration: ModuleType
+) -> None:
+    shakra = create_user(database, role=ROLE_BUILDER, name="Shakra", email="shakra@example.in", phone="9640677606")
+    shakra.contractor_profile.company_name = "9640677606"
+    rao = create_user(database, role=ROLE_BUILDER, name="+91 98765 00002", email="rao@example.in", phone="9876500002")
+    rao.contractor_profile.company_name = "Rao Constructions"
+    indra = create_user(database, role=ROLE_SUPPLIER, name="Indra", email="indra@example.in", phone="9876500003")
+    database.add(SupplierProfile(user_id=indra.id, store_name="98765 00003", supplier_category="Material Supplier"))
+    database.commit()
+
+    run(database, migration.upgrade)
+    run(database, migration.upgrade)
+    assert database.execute(text(f"SELECT count(*) FROM {BACKUP_TABLE}")).scalar()  # noqa: S608 - a constant == 3
+    assert database.get(User, rao.id).name == "Rao Constructions"
+
+    run(database, migration.downgrade)
+    assert database.get(User, shakra.id).contractor_profile.company_name == "9640677606"
+    assert database.get(User, rao.id).name == "+91 98765 00002"
+    assert database.get(User, indra.id).supplier_profile.store_name == "98765 00003"
+    assert database.execute(text("SELECT to_regclass(:table)"), {"table": BACKUP_TABLE}).scalar() is None

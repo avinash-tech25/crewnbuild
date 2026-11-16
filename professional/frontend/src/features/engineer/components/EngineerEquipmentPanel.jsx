@@ -26,7 +26,7 @@ import {
 import { localIsoDate } from '../../labour/labourApi.js'
 import { formatLaborDate as formatDate, LaborDialog as Dialog } from '../../labour/components/SupplierLaborSections.jsx'
 import {
-  conditionLabel, EquipmentImage, EquipmentPrices, EquipmentRequestFacts, EquipmentUsageHistory, MoneyCountryContext, useMoney,
+  conditionLabel, EquipmentCardStatus, EquipmentImage, EquipmentPrices, EquipmentRequestFacts, EquipmentUsageHistory, MoneyCountryContext, useMoney,
 } from '../../equipment/components/SupplierEquipmentSections.jsx'
 import { useLatestOnly, useLiveRefresh } from '../../../shared/hooks/useLiveRefresh.js'
 
@@ -316,11 +316,11 @@ function RequestCard({ request, open, onToggle, onChanged, setNotice }) {
       avatar={<CardAvatar fallback={<KindIcon aria-hidden="true" className="h-5 w-5" />} />}
       title={`${request.item_name} · ${request.supplier_name}`}
       subtitle={heading}
-      status={<CardStatus status={request.status}>{equipmentStatusWord(request.status, t)}</CardStatus>}
+      status={<EquipmentCardStatus status={request.status} />}
       secondary={(cancelButton || usageButton) ? <>{cancelButton}{usageButton}</> : null}
       // A request with no action still draws the footer, so every card in the list
       // keeps the same shape.
-      primary={(cancelButton || usageButton) ? null : <span aria-hidden="true" className="h-9" />}
+      footer="always"
     >
       {/* The request's facts (equipment, type, quantity, period / price). */}
       <EquipmentRequestFacts request={request} />
@@ -337,10 +337,6 @@ function RequestCard({ request, open, onToggle, onChanged, setNotice }) {
     </ListCard>
   )
 }
-
-// The word for a request's status, as the labor status badge names it.
-const REQUEST_STATUSES = ['PENDING', 'ACCEPTED', 'REJECTED', 'CANCELLED', 'COMPLETED']
-const equipmentStatusWord = (status, t) => (REQUEST_STATUSES.includes(status) ? t(`labor.status.${status}`) : status)
 
 // ------------------------------------------------------------------- panel
 
@@ -501,7 +497,8 @@ export default function EngineerEquipmentPanel({ projects = [], activeProjectId 
                               <CardChip key="mode" tone="green">{modeLabel(item.mode)}</CardChip>,
                             ]}
                             secondary={rentButton ? buyButton : null}
-                            primary={rentButton || buyButton || <span aria-hidden="true" className="h-9" />}
+                            primary={rentButton || buyButton}
+                            footer="always"
                           >
                             {/* The photo, shown whole at a fixed height so every tile is the same size. */}
                             <EquipmentImage src={item.image_url} className="h-32 w-full" />

@@ -529,7 +529,7 @@ export default function TechnicianDashboard() {
             {dispatchOffers.offers.length === 0 ? (
               <EmptyState icon={Inbox} title={activeTab.empty}>{activeTab.emptyBody}</EmptyState>
             ) : (
-              <CardGrid label="New job requests" testId="offer-list">
+              <CardGrid label="New job requests" testId="offer-list" columns={1}>
                 {dispatchOffers.offers.map((offer) => (
                   <OfferCard
                     key={offer.booking_id}
@@ -546,7 +546,7 @@ export default function TechnicianDashboard() {
         ) : jobs.length === 0 ? (
           <EmptyState icon={activeTab.icon} title={activeTab.empty}>{activeTab.emptyBody}</EmptyState>
         ) : (
-          <CardGrid label={activeTab.label} testId="job-list">
+          <CardGrid label={activeTab.label} testId="job-list" columns={1}>
             {jobs.map((job) => (
               <JobCard
                 key={job.id}

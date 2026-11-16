@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useLanguage } from '../../../i18n/LanguageContext.jsx'
 import { defaultAvatarFor, userAvatarSrc } from '../../../shared/ui/avatars.js'
+import { displayName } from '../../../shared/utils/displayName.js'
 import { counterpartyRole, partyDetailRows, partyHeading, supplierCategoryLabel } from '../counterparty.js'
 
 /**
@@ -12,7 +13,7 @@ import { counterpartyRole, partyDetailRows, partyHeading, supplierCategoryLabel 
 export default function PartyDetails({ request }) {
   const { t, td } = useLanguage()
   const [imageFailed, setImageFailed] = useState(false)
-  const name = td(request.sender_name || request.profile_name) || ''
+  const name = td(displayName(request.sender_name, request.profile_name)) || ''
   const role = counterpartyRole(request)
   const category = supplierCategoryLabel(request, t)
   return (

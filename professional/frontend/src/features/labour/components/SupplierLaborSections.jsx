@@ -24,28 +24,6 @@ import {
 import { allocationSummary } from '../laborRequestRules.js'
 import { CardAvatar, CardChip, CardGrid, CardStatus, ListCard, cardButtonClass } from '../../../shared/ui/ListCard.jsx'
 
-// An empty footer for a card with nothing to do, so every card in a list that
-// has actions keeps the same footer edge.
-const NO_ACTIONS = <span aria-hidden="true" />
-
-export const LABOR_STATUS_STYLE = {
-  PENDING: 'bg-amber-100 text-amber-800',
-  ACCEPTED: 'bg-emerald-100 text-emerald-800',
-  REJECTED: 'bg-rose-100 text-rose-700',
-  CANCELLED: 'bg-slate-100 text-slate-600',
-  COMPLETED: 'bg-sky-100 text-sky-800',
-}
-const STATUS_KEYS = ['PENDING', 'ACCEPTED', 'REJECTED', 'CANCELLED', 'COMPLETED']
-
-export function LaborStatusBadge({ status }) {
-  const { t } = useLanguage()
-  return (
-    <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-extrabold ${LABOR_STATUS_STYLE[status] || 'bg-slate-100 text-slate-600'}`}>
-      {STATUS_KEYS.includes(status) ? t(`labor.status.${status}`) : status}
-    </span>
-  )
-}
-
 // A calendar date (or the date part of a timestamp) in the selected language.
 export const formatLaborDate = (value) => (value ? formatCalendarDate(String(value).slice(0, 10), '—') : '—')
 
@@ -314,8 +292,10 @@ function requestFactRows(request, t, showAllocated = false) {
 
 const tradeChip = (request, t) => <CardChip key="trade" tone="blue" icon={HardHat}>{`${t('labor.field.trade')}: ${request.trade}`}</CardChip>
 
-// A labor request's status pill, in the word LaborStatusBadge shows.
-function LaborCardStatus({ status }) {
+// A labor request's status pill (supplier and site engineer cards): the translated
+// status word, coloured by the shared card tones.
+const STATUS_KEYS = ['PENDING', 'ACCEPTED', 'REJECTED', 'CANCELLED', 'COMPLETED']
+export function LaborCardStatus({ status }) {
   const { t } = useLanguage()
   return <CardStatus status={status}>{STATUS_KEYS.includes(status) ? t(`labor.status.${status}`) : status}</CardStatus>
 }
@@ -487,6 +467,7 @@ export function LaborRequestsSection({ requests, services, onChanged, compact = 
             return (
               <ListCard
                 key={request.id}
+                footer="always"
                 highlighted={pending}
                 avatar={<CardAvatar fallback={<HardHat aria-hidden="true" className="h-5 w-5" />} />}
                 title={request.project_title || t('labor.project')}
@@ -501,7 +482,7 @@ export function LaborRequestsSection({ requests, services, onChanged, compact = 
                   <button type="button" onClick={() => { setNotice({ tone: '', text: '' }); setRejecting(request) }} className={cardButtonClass('danger')}>
                     <XCircle className="h-3.5 w-3.5" /> {t('labor.action.reject')}
                   </button>
-                ) : NO_ACTIONS}
+                ) : null}
                 primary={pending ? (
                   <button type="button" onClick={() => { setNotice({ tone: '', text: '' }); setAccepting(request) }} className={cardButtonClass('primary')}>
                     <CheckCircle2 className="h-3.5 w-3.5" /> {t('labor.action.accept')}

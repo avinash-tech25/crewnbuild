@@ -1,6 +1,6 @@
 import { avatarSrc, userAvatarSrc } from './avatars.js'
 /**
- * The chip used inside EntityCard.
+ * A status or category chip (EntityPill) and a round avatar (EntityAvatar).
  *
  * Same tones and shape as the landing page's Pill, so a status chip reads the
  * same on a dashboard as it does on the marketing site. Amber marks a state,

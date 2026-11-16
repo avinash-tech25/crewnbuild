@@ -24,7 +24,7 @@ import { supplierTypeOptions } from '../../onboarding/profileConstants.js'
 import { optionLabel, SUPPLIER_TYPE_KEYS } from '../../../i18n/optionKeys.js'
 
 // The builder's projects as cards, in the House Owner Projects layout: the same
-// EntityCard, avatar, grid and row heights. The fields are the builder's own
+// ListCard, avatar, grid and row heights. The fields are the builder's own
 // (house owner, type, floors, budget, progress, Site Engineer, status), and a
 // click opens the project exactly as the table row did.
 export function ContractorProjectsTable({ projectList, onSelect }) {
@@ -69,8 +69,13 @@ export function ContractorProjectsTable({ projectList, onSelect }) {
                 // The engineer's name once assigned, else "Assignment required".
                 value: project.assigned_engineer ? td(project.assigned_engineer.name) : t('dash.contractor.assignmentRequired'),
               },
-              // The confirmed contract once there is one, else the owner's budget.
-              { key: 'amount', label: t('dash.common.budget'), value: inr(project.contract_amount ?? project.awarded_amount ?? project.budget, project.project_country) },
+              // The confirmed contract once there is one, else the awarded quotation, else
+              // the owner's budget; labelled by the amount shown (as the project details are).
+              {
+                key: 'amount',
+                label: t(project.contract_amount != null ? 'dash.common.contractValue' : project.awarded_amount != null ? 'request.flow.builderQuotation' : 'dash.common.budget'),
+                value: inr(project.contract_amount ?? project.awarded_amount ?? project.budget, project.project_country),
+              },
             ]}
             // Who the project is for, its land area and building type.
             chips={[

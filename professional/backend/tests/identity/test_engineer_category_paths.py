@@ -5,7 +5,9 @@ readers -- the project Site Engineer assignment, Book Technician and the Partner
 requester view -- agree; and migration 0005 fixed rows written otherwise."""
 
 import importlib.util
+from collections.abc import Callable, Iterator
 from pathlib import Path
+from types import ModuleType
 
 import pytest
 from alembic.migration import MigrationContext
@@ -153,21 +155,35 @@ def test_assignment_book_technician_and_the_partner_view_agree(client: TestClien
 # ---- migration 0005 ----
 
 
-def run_migration(database: Session) -> None:
+BACKUP_TABLE = "professional.migration_0005_engineer_category_backup"
+
+
+@pytest.fixture
+def migration(database: Session) -> Iterator[ModuleType]:
+    """Migration 0005, its backup table dropped afterwards (it is not one of the models,
+    so the test database's cleanup does not know it)."""
     spec = importlib.util.spec_from_file_location("engineer_category_from_specialization", MIGRATION)
     assert spec and spec.loader
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
+    yield module
+    database.rollback()
+    database.execute(text(f"DROP TABLE IF EXISTS {BACKUP_TABLE}"))
+    database.commit()
+
+
+def run(database: Session, step: Callable[[], None]) -> None:
     with Operations.context(MigrationContext.configure(database.connection())):
-        module.upgrade()
+        step()
     database.commit()
     database.expire_all()
 
 
-def test_the_migration_fills_the_category_from_the_specialization(database: Session) -> None:
+def test_the_migration_fills_the_category_from_the_specialization(database: Session, migration: ModuleType) -> None:
     rows = {
         "site@example.in": ("Site Engineer", None),  # missing -> SITE_ENGINEER
         "padded@example.in": (" Site Engineer ", None),  # trimmed, as the old rule
+        "tabbed@example.in": ("\tStore Manager\r\n", None),  # tabs and line breaks too, as str.strip()
         "store@example.in": ("store manager", None),  # any case -> STORE_MANAGER
         "civil@example.in": ("Civil Engineer", "SITE_ENGINEER"),  # wrong -> cleared
         "lower@example.in": ("site engineer", "SITE_ENGINEER"),  # not exact -> cleared
@@ -183,11 +199,12 @@ def test_the_migration_fills_the_category_from_the_specialization(database: Sess
         )
     database.commit()
 
-    run_migration(database)
+    run(database, migration.upgrade)
 
     expected = {
         "site@example.in": "SITE_ENGINEER",
         "padded@example.in": "SITE_ENGINEER",
+        "tabbed@example.in": "STORE_MANAGER",
         "store@example.in": "STORE_MANAGER",
         "civil@example.in": None,
         "lower@example.in": None,
@@ -195,3 +212,27 @@ def test_the_migration_fills_the_category_from_the_specialization(database: Sess
     }
     for email, category in expected.items():
         assert profile_of(database, email=email).category == category, email
+
+
+def test_the_migration_runs_twice_and_downgrade_restores_the_old_categories(
+    database: Session, migration: ModuleType
+) -> None:
+    rows = {"site@example.in": ("Site Engineer", None), "civil@example.in": ("Civil Engineer", "SITE_ENGINEER")}
+    for index, (email, (specialization, category)) in enumerate(rows.items()):
+        user = create_user(database, role=ROLE_ENGINEER, email=email, phone=f"98765002{index:02d}")
+        database.execute(
+            update(EngineerProfile)
+            .where(EngineerProfile.user_id == user.id)
+            .values(specialization=specialization, category=category)
+        )
+    database.commit()
+
+    run(database, migration.upgrade)
+    run(database, migration.upgrade)
+    assert database.execute(text(f"SELECT count(*) FROM {BACKUP_TABLE}")).scalar()  # noqa: S608 - a constant == 2
+    assert profile_of(database, email="civil@example.in").category is None
+
+    run(database, migration.downgrade)
+    for email, (_, category) in rows.items():
+        assert profile_of(database, email=email).category == category, email
+    assert database.execute(text("SELECT to_regclass(:table)"), {"table": BACKUP_TABLE}).scalar() is None

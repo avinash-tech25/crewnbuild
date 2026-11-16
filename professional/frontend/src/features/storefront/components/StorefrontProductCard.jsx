@@ -12,8 +12,8 @@ import { useEffect, useState } from 'react'
 import { Eye, EyeOff, ImageOff, Pencil, Trash2 } from 'lucide-react'
 import { imageUrl } from '../../../shared/api/apiClient.js'
 import { BrandLogo } from '../../catalog/components/BrandPicker.jsx'
-import { stockState } from '../../catalog/components/StockBadge.jsx'
-import { CardAvatar, CardChip, CardStatus, ListCard, cardButtonClass } from '../../../shared/ui/ListCard.jsx'
+import { StockCardStatus } from '../../catalog/components/StockBadge.jsx'
+import { CardAvatar, CardChip, ListCard, cardButtonClass } from '../../../shared/ui/ListCard.jsx'
 import { ProductServiceBadges } from '../../catalog/components/ProductServiceBadges.jsx'
 import { BulkPricingList } from '../../catalog/components/BulkPricing.jsx'
 import { discountOf, money, sellingPrice, sizeOf } from '../storefrontShared.js'
@@ -43,15 +43,6 @@ const BrandRow = ({ listing }) => (
   </span>
 )
 
-// The stock word StockBadge shows, as the card's status pill.
-const STOCK_WORDS = { in: 'In stock', low: 'Low stock', out: 'Out of stock' }
-const STOCK_TONES = { in: 'green', low: 'amber', out: 'red' }
-function StockStatus({ listing }) {
-  const state = stockState(listing.quantity, listing.low_stock_threshold)
-  const detail = state === 'low' ? ` · only ${Number(listing.quantity || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })} left` : ''
-  return <CardStatus tone={STOCK_TONES[state]}>{`${STOCK_WORDS[state]}${detail}`}</CardStatus>
-}
-
 export function StorefrontProductCard({ listing, country, onOpen, onEdit, onTogglePublish, onDelete, showControls = true, layout = 'grid' }) {
   const discount = discountOf(listing)
   const unpublished = listing.is_published === false
@@ -65,7 +56,7 @@ export function StorefrontProductCard({ listing, country, onOpen, onEdit, onTogg
       avatar={<CardAvatar src={listing.image_url ? imageUrl(listing.image_url) : null} alt="" fallback={<ImageOff aria-hidden="true" className="h-5 w-5" />} />}
       title={listing.name}
       subtitle={sizeOf(listing) || null}
-      status={full ? <StockStatus listing={listing} /> : null}
+      status={full ? <StockCardStatus quantity={listing.quantity} threshold={listing.low_stock_threshold} /> : null}
       chips={[
         unpublished && <CardChip key="hidden" icon={EyeOff}>Hidden</CardChip>,
       ]}

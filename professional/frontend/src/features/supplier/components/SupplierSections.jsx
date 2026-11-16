@@ -84,9 +84,6 @@ const CLIENT_ROLE_KEYS = {
   ENGINEER: 'role.engineer',
   SUPPLIER: 'role.supplier',
 }
-// An empty footer for a card with nothing to do, so every card in a list that
-// has actions keeps the same footer edge.
-const NO_ACTIONS = <span aria-hidden="true" />
 const REQUEST_STATUS_TONE = {
   pending: 'bg-amber-400',
   accepted: 'bg-emerald-500',
@@ -234,6 +231,7 @@ export function SupplierRequestsSection({ requestMessage, requestList, viewMode 
             return (
               <ListCard
                 key={request.id}
+                footer="always"
                 onClick={canOpen ? () => onOpen(request) : undefined}
                 avatar={<CardAvatar src={userAvatarSrc(request)} alt={td(name)} />}
                 title={td(name)}
@@ -262,7 +260,7 @@ export function SupplierRequestsSection({ requestMessage, requestList, viewMode 
                   >
                     {t('property.action.withdraw')}
                   </button>
-                ) : NO_ACTIONS}
+                ) : null}
                 primary={canAct ? (
                   <button type="button" onClick={() => onAccept(request.id)} className={cardButtonClass('primary')}>
                     {t('dash.common.accept')}
@@ -311,6 +309,7 @@ export function SupplierFindClientsSection({ clientList, requestList = [], reque
   const renderIncomingRequest = (request) => (
     <ListCard
       key={`req-${request.id}`}
+      footer="always"
       avatar={<CardAvatar src={userAvatarSrc(request)} alt={td(request.sender_name)} />}
       title={request.sender_name ? td(request.sender_name) : t('dash.supplier.nearbyClient')}
       subtitle={td(request.project_title || '')}
@@ -328,7 +327,7 @@ export function SupplierFindClientsSection({ clientList, requestList = [], reque
         <button type="button" onClick={() => onRejectRequest(request.id)} className={cardButtonClass('danger')}>
           {t('ce.reject')}
         </button>
-      ) : NO_ACTIONS}
+      ) : null}
       primary={request.status === 'pending' ? (
         <button type="button" onClick={() => onAcceptRequest(request.id)} className={cardButtonClass('primary')}>
           <CheckCircle2 className="h-3.5 w-3.5" /> {t('ce.accept')}

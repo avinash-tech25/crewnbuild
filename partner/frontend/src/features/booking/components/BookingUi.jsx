@@ -1,35 +1,34 @@
-import { statusTone } from '../../../shared/ui/ListCard.jsx'
+import { TONE_CLASSES, statusTone } from '../../../shared/ui/ListCard.jsx'
 
 /**
- * Small presentation pieces for the requester's booking pages only. The
- * technician screens and the landing page keep their own StatusPill and
- * CategoryCard; nothing here changes what a booking is or does.
+ * Small presentation pieces for the requester's booking pages only. Nothing here
+ * changes what a booking is or does.
  */
 
-// The same colour scheme as every card (shared/ui/ListCard.jsx): waiting amber, under way
-// blue, done green, refused or failed red, ended grey. Labels come from the API.
-const BADGE_TONES = {
-  amber: ['bg-amber-50 text-amber-800 ring-amber-200', 'bg-amber-500'],
-  green: ['bg-emerald-50 text-emerald-800 ring-emerald-200', 'bg-emerald-500'],
-  blue: ['bg-sky-50 text-sky-800 ring-sky-200', 'bg-sky-500'],
-  red: ['bg-rose-50 text-rose-700 ring-rose-200', 'bg-rose-500'],
-  grey: ['bg-slate-100 text-slate-700 ring-slate-200', 'bg-slate-400'],
-  violet: ['bg-violet-50 text-violet-800 ring-violet-200', 'bg-violet-500'],
+// The badge's dot, in the card colours (TONE_CLASSES in shared/ui/ListCard.jsx):
+// waiting amber, under way blue, done green, refused or failed red, ended grey.
+const DOT_TONES = {
+  amber: 'bg-amber-500',
+  green: 'bg-emerald-500',
+  blue: 'bg-sky-500',
+  red: 'bg-rose-500',
+  grey: 'bg-slate-400',
+  violet: 'bg-violet-500',
 }
-const badgeTone = (status) => BADGE_TONES[statusTone(status)] || BADGE_TONES.grey
-const dotFor = (status) => badgeTone(status)[1]
 
-function sentence(text) {
+/** A status code or the API's label, in sentence case ("En route"). */
+export function statusSentence(text) {
   const value = String(text || '').replaceAll('_', ' ').toLowerCase()
   return value.charAt(0).toUpperCase() + value.slice(1)
 }
 
 /** A compact status badge: a coloured dot and the API's own label. */
 export function BookingStatusBadge({ status, label }) {
+  const tone = statusTone(status)
   return (
-    <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-bold ring-1 ${badgeTone(status)[0]}`}>
-      <span className={`h-1.5 w-1.5 rounded-full ${dotFor(status)}`} aria-hidden="true" />
-      {sentence(label || status)}
+    <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2 py-px text-[11px] font-bold ${TONE_CLASSES[tone] || TONE_CLASSES.grey}`}>
+      <span className={`h-1.5 w-1.5 rounded-full ${DOT_TONES[tone] || DOT_TONES.grey}`} aria-hidden="true" />
+      {statusSentence(label || status)}
     </span>
   )
 }

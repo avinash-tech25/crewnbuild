@@ -6,7 +6,7 @@ import { technicianTypeByCode } from '../../../shared/constants/technicianTypes.
 import { apiErrorMessage } from '../../../shared/api/apiClient.js'
 import { fetchMyBookings } from '../bookingApi.js'
 import { CardAvatar, CardGrid, CardStatus, ListCard, cardButtonClass } from '../../../shared/ui/ListCard.jsx'
-import { TradeThumb } from './BookingUi.jsx'
+import { TradeThumb, statusSentence } from './BookingUi.jsx'
 
 // "Oct 1, 9:56 AM". The API sends UTC timestamps without a zone suffix, the
 // same rule formatDate in ui.jsx applies.
@@ -14,12 +14,6 @@ function bookingTime(value) {
   if (!value) return ''
   const date = new Date(/[zZ]|[+-]\d\d:?\d\d$/.test(value) ? value : `${value}Z`)
   return date.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
-}
-
-// The status word as the badge always said it: the API's own label, in sentence case.
-function statusText(text) {
-  const value = String(text || '').replaceAll('_', ' ').toLowerCase()
-  return value.charAt(0).toUpperCase() + value.slice(1)
 }
 
 // The filter only narrows the list already loaded; it asks the server nothing.
@@ -104,7 +98,7 @@ export default function MyBookings() {
                 avatar={<CardAvatar fallback={<TradeThumb type={type} size="h-12 w-12" />} />}
                 title={type?.label}
                 subtitle={bookingTime(booking.created_at)}
-                status={<CardStatus status={booking.status}>{statusText(booking.status_label || booking.status)}</CardStatus>}
+                status={<CardStatus status={booking.status}>{statusSentence(booking.status_label || booking.status)}</CardStatus>}
                 rows={[
                   { key: 'technician', label: 'Technician', value: booking.technician?.name },
                   {

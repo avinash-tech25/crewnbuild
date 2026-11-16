@@ -70,6 +70,15 @@ export const FLOW_TONES = {
   closed: 'bg-slate-100 text-slate-700 ring-slate-200',
 }
 
+// The same workflow tones as a list card's status tone (CardStatus in shared/ui/ListCard.jsx).
+export const FLOW_CARD_TONES = {
+  action: 'red',
+  waiting: 'amber',
+  negotiating: 'blue',
+  confirmed: 'green',
+  closed: 'grey',
+}
+
 /**
  * The request's workflow status for this viewer ('builder' | 'owner'), or null
  * when the request has not reached a quotation yet (the caller keeps its own

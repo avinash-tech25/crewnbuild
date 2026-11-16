@@ -217,6 +217,9 @@ export default function ContractorDashboard() {
   // kept beside it: a refresh, Back / Forward and a bookmark show the same project.
   const projectLocation = useMemo(() => parseProjectLocation(location.pathname), [location.pathname])
   const [projectsLoaded, setProjectsLoaded] = useState(false)
+  // The latest project load failed: the projects section says so instead of showing
+  // an empty list or calling a deep-linked project not found.
+  const [projectsLoadFailed, setProjectsLoadFailed] = useState(false)
   const selectedProject = useMemo(
     () => (projectLocation.projectId ? projectList.find((project) => String(project.id) === projectLocation.projectId) || null : null),
     [projectLocation.projectId, projectList],
@@ -363,6 +366,12 @@ export default function ContractorDashboard() {
       if (!isLatest()) return
       setProjectList(projectsWithAssignments)
       setProjectsLoaded(true)
+      setProjectsLoadFailed(false)
+    }).catch(() => {
+      if (!isLatest()) return
+      setProjectList([])
+      setProjectsLoaded(true)
+      setProjectsLoadFailed(true)
     })
     fetchEngineerTeam()
       .then((data) => {
@@ -718,7 +727,8 @@ export default function ContractorDashboard() {
     locationPrompt.finishPrompt()
     const discoveryCountry = activeContractorProject?.project_country || updatedUser?.country_of_residence || 'India'
     await fetchNearbyProjects(discoveryCountry).then(setNearbyProjectList).catch(() => setNearbyProjectList([]))
-    setActiveFindClientTab('houseowners')
+    // Houseowners is Find Clients' default tab, so the section's own address (no
+    // ?tab=) opens it: one navigation, one history entry.
     selectDashboardSection('findClients')
   }
 
@@ -1312,7 +1322,10 @@ export default function ContractorDashboard() {
           />
         )}
 
-        {activeId === 'projects' && (
+        {activeId === 'projects' && projectsLoadFailed && (
+          <p className="py-10 text-center text-sm font-semibold text-rose-600" role="alert">{t('dash.engineer.liveCamera.projectsError')}</p>
+        )}
+        {activeId === 'projects' && !projectsLoadFailed && (
           <ContractorProjectsSection
             selectedProject={selectedProject}
             projectList={projectList}

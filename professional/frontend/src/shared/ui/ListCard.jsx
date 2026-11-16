@@ -116,7 +116,10 @@ export function CardAvatar({ src, alt = '', fallback = null }) {
  * @param chips      nodes for the chip row
  * @param secondary  footer actions on the left (outlined / red text)
  * @param primary    footer actions on the right (filled)
- * @param onClick    opens the card; buttons and links inside keep their own clicks
+ * @param footer     'always': draw the footer even with no actions, as tall as one with
+ *                   a button, so every card in a list keeps the same anatomy
+ * @param onClick    opens the card; buttons and links inside keep their own clicks.
+ *                   The title becomes a button, the card's keyboard target.
  * @param children   extra body content, for what is neither a row nor a chip
  */
 export function ListCard({
@@ -134,35 +137,41 @@ export function ListCard({
   dimmed = false,
   label,
   testId,
+  footer,
   children,
 }) {
   const interactive = typeof onClick === 'function'
   const shownRows = rows.filter(Boolean).slice(0, 4)
   const shownChips = Children.toArray(chips).filter(Boolean)
-  const hasFooter = Boolean(secondary || primary)
+  const hasFooter = footer === 'always' || Boolean(secondary || primary)
   return (
     <article
       data-card="list"
       data-testid={testId}
       aria-label={label || textOf(title)}
+      // A click anywhere on the card opens it, except on a button, link or field inside
+      // it. Keyboard and screen-reader users open it with the title's button.
       onClick={interactive ? (event) => { if (!event.target.closest('button, a, input, select, textarea, label')) onClick(event) } : undefined}
-      // A card that opens is reachable with Tab and opens with Enter or Space, as a
-      // click does; keys pressed on a button inside it stay that button's.
-      tabIndex={interactive ? 0 : undefined}
-      onKeyDown={interactive ? (event) => {
-        if (event.target !== event.currentTarget || (event.key !== 'Enter' && event.key !== ' ')) return
-        event.preventDefault()
-        onClick(event)
-      } : undefined}
-      className={`oc-list-card flex h-full w-full min-w-0 flex-col rounded-[18px] border p-4 shadow-ocsoft transition-[border-color,box-shadow,transform] duration-200
-        hover:-translate-y-0.5 hover:border-[rgba(8,62,43,.28)] hover:shadow-[0_18px_40px_-24px_rgba(23,32,28,0.35)]
+      className={`flex h-full w-full min-w-0 flex-col rounded-[18px] border p-4 shadow-ocsoft transition-[border-color,box-shadow,transform] duration-200
+        hover:border-[rgba(8,62,43,.28)] hover:shadow-[0_18px_40px_-24px_rgba(23,32,28,0.35)]
         ${highlighted ? 'border-oc-green bg-ocbrand-50' : 'border-oc-line bg-white'}
-        ${interactive ? 'cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oc-green focus-visible:ring-offset-2' : ''}`}
+        ${interactive ? 'cursor-pointer hover:-translate-y-0.5' : ''}`}
     >
       <header data-card-part="header" className="flex min-w-0 items-start gap-3">
         {avatar}
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[15px] font-extrabold leading-snug text-oc-ink" title={textOf(title)}>{title}</p>
+          <h3 className="truncate text-[15px] font-extrabold leading-snug text-oc-ink" title={textOf(title)}>
+            {interactive ? (
+              // The card's keyboard and screen-reader target; looks like the plain title.
+              <button
+                type="button"
+                onClick={onClick}
+                className="max-w-full truncate rounded text-start align-top focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oc-green focus-visible:ring-offset-2"
+              >
+                {title}
+              </button>
+            ) : title}
+          </h3>
           {subtitle && <p className="mt-0.5 truncate text-xs text-oc-muted" title={textOf(subtitle)}>{subtitle}</p>}
         </div>
         {status}
@@ -185,8 +194,9 @@ export function ListCard({
 
       {hasFooter && (
         <footer data-card-part="footer" className="mt-4 flex min-w-0 flex-wrap items-center justify-between gap-2 border-t border-oc-line pt-3">
-          <div className="flex min-w-0 flex-wrap items-center gap-2">{secondary}</div>
-          <div className="ms-auto flex min-w-0 flex-wrap items-center justify-end gap-2">{primary}</div>
+          {/* min-h-9: an empty footer is as tall as one with a button. */}
+          <div className="flex min-h-9 min-w-0 flex-wrap items-center gap-2">{secondary}</div>
+          <div className="ms-auto flex min-h-9 min-w-0 flex-wrap items-center justify-end gap-2">{primary}</div>
         </footer>
       )}
     </article>

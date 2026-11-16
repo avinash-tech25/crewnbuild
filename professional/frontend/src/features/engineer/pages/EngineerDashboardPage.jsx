@@ -5,7 +5,7 @@ import {
   Bell, Briefcase, Building2, CalendarDays, Camera, ClipboardList, LayoutGrid, LifeBuoy, MessageSquare, PackageSearch, Settings, ShoppingCart, Truck, Users, Wrench,
 } from 'lucide-react'
 import { CART_GATED_ACTIONS, pendingActionIs, useProfileGate, useResumeGatedAction } from '../../../shared/hooks/useProfileGate.js'
-import useUrlState from '../../../shared/hooks/useUrlState.js'
+import useUrlState, { useUrlParams } from '../../../shared/hooks/useUrlState.js'
 import NotFoundPanel from '../../../shared/dashboard/NotFoundPanel.jsx'
 import { canBookPartner, openPartnerBooking } from '../../partner-booking/partnerBooking.js'
 import DashboardShell from '../../../shared/dashboard/DashboardShell.jsx'
@@ -146,7 +146,13 @@ export default function EngineerDashboard() {
   // notification links straight to it. Without one it opens on the supplier-type choice,
   // or on the cart when coming back from Complete Profile with a Buy waiting.
   const [supplierTabFallback] = useState(() => (pendingActionIs(CART_GATED_ACTIONS) ? 'cart' : 'home'))
-  const [supplierTab, setSupplierTab] = useUrlState('tab', supplierTabFallback, SUPPLIER_HUB_TABS)
+  const [supplierTab] = useUrlState('tab', supplierTabFallback, SUPPLIER_HUB_TABS)
+  const [, patchUrl] = useUrlParams()
+  // A hub tab change is one address change that also drops the previous tab's own
+  // list and view (?list=, ?view=), so Labor's ?list=pending never leaks into Equipment.
+  const setSupplierTab = useCallback((tab) => {
+    patchUrl({ tab: tab === supplierTabFallback ? null : tab, list: null, view: null })
+  }, [patchUrl, supplierTabFallback])
 
   const navigate = useNavigate()
   const location = useLocation()
@@ -159,6 +165,12 @@ export default function EngineerDashboard() {
   const setActiveId = useCallback((sectionId) => {
     navigate(NAV_PATHS[sectionId] || NAV_PATHS.dashboard)
   }, [navigate])
+  // A section opened on one of its tabs, as a single move: setting ?tab= and then
+  // navigating would push two entries and the navigation would drop the tab.
+  // The section's default tab keeps the short address.
+  const sectionAddress = (sectionId, tab, defaultTab) => (
+    tab && tab !== defaultTab ? `${NAV_PATHS[sectionId]}?tab=${encodeURIComponent(tab)}` : NAV_PATHS[sectionId]
+  )
   const [searchQuery, setSearchQuery] = useState('')
   const [projectList, setProjectList] = useState([])
   // My Projects badge: the projects of the last SUCCESSFUL load, by key, and
@@ -456,8 +468,7 @@ export default function EngineerDashboard() {
   const openRequestsFromToast = () => {
     const tab = requestInbox.unreadIn('requests') ? 'requests' : requestInbox.unreadIn('joinTeam') ? 'joinTeam' : 'requests'
     if (activeId === 'findOpportunities' && findOppTab === tab) requestInbox.markSeen(inboxKeysIn(tab))
-    setFindOppTab(tab)
-    setActiveId('findOpportunities')
+    navigate(sectionAddress('findOpportunities', tab, 'joinTeam'))
   }
 
   // My Projects: the assigned projects not yet viewed, kept per user in this
@@ -545,8 +556,8 @@ export default function EngineerDashboard() {
       // A Site Engineer's material is requested from the builder's Store Manager
       // (Store), never bought from a supplier; Store says so if there is none.
       onClick: () => {
-        setSupplierTab('store')
-        navigateToSection('suppliers')
+        navigate(sectionAddress('suppliers', 'store', supplierTabFallback))
+        window.scrollTo({ top: 0, behavior: 'auto' })
       },
     },
     bookTechnician && {
@@ -564,7 +575,10 @@ export default function EngineerDashboard() {
       label: t('dash.eng.viewSuppliers'),
       hint: t('dash.eng.viewSuppliersSub'),
       icon: PackageSearch,
-      onClick: () => { setSupplierTab('home'); navigateToSection('suppliers') },
+      onClick: () => {
+        navigate(sectionAddress('suppliers', 'home', supplierTabFallback))
+        window.scrollTo({ top: 0, behavior: 'auto' })
+      },
     },
     {
       id: 'opportunities',
@@ -600,16 +614,18 @@ export default function EngineerDashboard() {
   }
   // A site-log address naming a project this engineer is not on: the not-found panel.
   const siteLogProjectId = new URLSearchParams(location.search).get('project') || ''
-  const siteLogProjectNotFound = Boolean(siteLogProjectId) && projectLoad.ok
-    && !projectList.some((item) => String(item.id) === siteLogProjectId)
+  const siteLogProjectListed = projectList.some((item) => String(item.id) === siteLogProjectId)
+  const siteLogProjectNotFound = Boolean(siteLogProjectId) && projectLoad.ok && !siteLogProjectListed
+  // The project list could not be loaded, so a named project cannot be checked: an
+  // error, never a request for an unchecked id.
+  const siteLogProjectsFailed = Boolean(siteLogProjectId) && projectLoad.settled && !projectLoad.ok
   // The location prompt saved a pincode: adopt the updated account and open the
   // opportunities. The data refresh keyed on user.pincode reloads them for the
   // new pincode through the existing opportunities request.
   const saveLeadLocation = async (updatedUser) => {
     dispatch(setAuthenticatedUser({ user: updatedUser }))
     locationPrompt.finishPrompt()
-    setFindOppTab('opportunities')
-    setActiveId('findOpportunities')
+    navigate(sectionAddress('findOpportunities', 'opportunities', 'joinTeam'))
   }
   const selectedContractorState = selectedContractor ? teamStatusByContractor(selectedContractor.user_id || selectedContractor.id) : 'none'
 
@@ -633,7 +649,7 @@ export default function EngineerDashboard() {
         sidebarItems={nav}
         activeId={activeId}
         // Opening Suppliers from the navigation starts at the supplier-type choice.
-        onNav={(sectionId) => { if (sectionId === 'suppliers') setSupplierTab('home'); setActiveId(sectionId) }}
+        onNav={(sectionId) => (sectionId === 'suppliers' ? navigate(sectionAddress('suppliers', 'home', supplierTabFallback)) : setActiveId(sectionId))}
         user={userShell}
         roleLabel={t('role.engineer')}
         onLogout={logout}
@@ -742,7 +758,7 @@ export default function EngineerDashboard() {
               // each opening the same place it did before.
               activityTiles={[
                 { id: 'projects', icon: Building2, label: t('ui.myProjects'), value: projectList.length, tone: { card: 'border-sky-100 bg-sky-50/60', chip: 'bg-sky-100 text-sky-700' }, onClick: () => navigateToSection('projects') },
-                { id: 'invitations', icon: Users, label: t('dash.pendingTeamInvitations'), value: pendingTeamInvitationCount, note: t('dash.eng.pending'), tone: { card: 'border-orange-100 bg-orange-50/60', chip: 'bg-orange-100 text-orange-600' }, onClick: () => { setFindOppTab('joinTeam'); navigateToSection('findOpportunities') } },
+                { id: 'invitations', icon: Users, label: t('dash.pendingTeamInvitations'), value: pendingTeamInvitationCount, note: t('dash.eng.pending'), tone: { card: 'border-orange-100 bg-orange-50/60', chip: 'bg-orange-100 text-orange-600' }, onClick: () => navigateToSection('findOpportunities') },
                 { id: 'supplierRequests', icon: Truck, label: t('dash.pendingSupplierRequests'), value: pendingSupplierRequestCount, note: t('dash.eng.pending'), tone: { card: 'border-violet-100 bg-violet-50/60', chip: 'bg-violet-100 text-violet-700' }, onClick: () => navigateToSection('suppliers') },
                 { id: 'unread', icon: Bell, label: t('dash.unreadActivity'), value: unreadActivityCount, note: t('dash.eng.notifications'), tone: { card: 'border-amber-100 bg-amber-50/60', chip: 'bg-amber-100 text-amber-600' }, onClick: () => navigateToSection('notifications') },
               ]}
@@ -858,8 +874,11 @@ export default function EngineerDashboard() {
         {(activeId === 'calendar' || activeId === 'dailyLogs') && siteLogProjectId && !projectLoad.settled && (
           <p className="py-10 text-center text-sm font-semibold text-slate-500" role="status">{t('dash.engineer.liveCamera.loadingProjects')}</p>
         )}
+        {(activeId === 'calendar' || activeId === 'dailyLogs') && siteLogProjectsFailed && (
+          <p className="py-10 text-center text-sm font-semibold text-rose-600" role="alert">{t('dash.engineer.liveCamera.projectsError')}</p>
+        )}
         {/* A named project is shown only once it is known to be this engineer's. */}
-        {(activeId === 'calendar' || activeId === 'dailyLogs') && (!siteLogProjectId || projectLoad.settled) && !siteLogProjectNotFound && (
+        {(activeId === 'calendar' || activeId === 'dailyLogs') && (!siteLogProjectId || (projectLoad.ok && siteLogProjectListed)) && (
           <div className="site-calendar-dark">
             <SiteEngineerDashboard
               inAddress

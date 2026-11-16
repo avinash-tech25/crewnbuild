@@ -18,6 +18,7 @@ from fastapi import HTTPException
 from sqlalchemy import desc, or_, select, update
 from sqlalchemy.orm import Session, selectinload
 
+from app.core.display_names import public_name
 from app.core.local_time import local_iso
 from app.database.types import naive_utc_now
 from app.modules.accounts.profile_lists import split_profile_list
@@ -487,20 +488,22 @@ class MessageService:
         }
 
     def _profile_payload(self, user: User, contact_visible: bool = False) -> dict[str, Any]:
+        # Contact details (phone, e-mail, street address) only once the request is accepted;
+        # a phone number saved as a name is never shown as one.
         if user.role == ROLE_BUILDER and user.contractor_profile:
             profile = user.contractor_profile
             return {
                 "profile_user_id": str(user.id),
                 "profile_role": user.role,
-                "profile_name": user.name,
+                "profile_name": public_name(user.name),
                 "profile_image_url": user.profile_image_url,
-                "profile_title": profile.company_name,
+                "profile_title": public_name(profile.company_name),
                 "profile_subtitle": "Contractor",
                 "profile_about": profile.about,
                 "profile_rating": user.rating,
-                "profile_phone": user.phone,
-                "profile_email": user.email,
-                "profile_address": user.address,
+                "profile_phone": user.phone if contact_visible else "",
+                "profile_email": user.email if contact_visible else "",
+                "profile_address": user.address if contact_visible else "",
                 "profile_pincode": user.pincode,
                 "profile_experience_years": profile.experience_years,
                 "profile_completed_projects": profile.completed_projects,
@@ -515,15 +518,15 @@ class MessageService:
             return {
                 "profile_user_id": str(user.id),
                 "profile_role": user.role,
-                "profile_name": user.name,
+                "profile_name": public_name(user.name),
                 "profile_image_url": profile.store_logo_url or user.profile_image_url,
-                "profile_title": profile.store_name,
+                "profile_title": public_name(profile.store_name),
                 "profile_subtitle": "Supplier",
                 "profile_about": profile.about,
                 "profile_rating": user.rating,
-                "profile_phone": user.phone,
-                "profile_email": user.email,
-                "profile_address": user.address,
+                "profile_phone": user.phone if contact_visible else "",
+                "profile_email": user.email if contact_visible else "",
+                "profile_address": user.address if contact_visible else "",
                 "profile_pincode": user.pincode,
                 "profile_categories": split_profile_list(profile.categories),
                 "profile_locations": split_profile_list(profile.delivery_locations),
@@ -541,14 +544,14 @@ class MessageService:
         return {
             "profile_user_id": str(user.id),
             "profile_role": user.role,
-            "profile_name": user.name,
+            "profile_name": public_name(user.name),
             "profile_image_url": user.profile_image_url,
-            "profile_title": user.name,
+            "profile_title": public_name(user.name),
             "profile_subtitle": user.role.title(),
             "profile_rating": user.rating,
-            "profile_phone": user.phone,
-            "profile_email": user.email,
-            "profile_address": user.address,
+            "profile_phone": user.phone if contact_visible else "",
+            "profile_email": user.email if contact_visible else "",
+            "profile_address": user.address if contact_visible else "",
             "profile_pincode": user.pincode,
         }
 

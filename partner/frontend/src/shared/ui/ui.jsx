@@ -59,37 +59,6 @@ export function EmptyState({ icon: Icon = Info, title, children }) {
   )
 }
 
-// Every service request status (partner.service_requests.status), in the colour scheme
-// every card uses (see ListCard's STATUS_TONES): waiting amber, agreed or done green,
-// under way blue, refused or failed red, ended grey. AA on white: 700/800 text on a 50.
-const PILL_TONES = {
-  amber: 'border-amber-200 bg-amber-50 text-amber-800',
-  green: 'border-emerald-200 bg-emerald-50 text-emerald-800',
-  blue: 'border-sky-200 bg-sky-50 text-sky-800',
-  red: 'border-rose-200 bg-rose-50 text-rose-700',
-  grey: 'border-slate-200 bg-slate-100 text-slate-700',
-}
-const STATUS_STYLES = {
-  SEARCHING: PILL_TONES.amber,
-  OFFERED: PILL_TONES.amber,
-  ACCEPTED: PILL_TONES.green,
-  EN_ROUTE: PILL_TONES.blue,
-  ARRIVED: PILL_TONES.blue,
-  IN_PROGRESS: PILL_TONES.blue,
-  COMPLETED: PILL_TONES.green,
-  NO_TECHNICIAN_FOUND: PILL_TONES.red,
-  EXPIRED: PILL_TONES.red,
-  CANCELLED: PILL_TONES.grey,
-}
-
-export function StatusPill({ status, label }) {
-  return (
-    <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-extrabold uppercase tracking-wide ${STATUS_STYLES[status] || STATUS_STYLES.CANCELLED}`}>
-      {label || String(status || '').replaceAll('_', ' ').toLowerCase()}
-    </span>
-  )
-}
-
 export function formatDate(value) {
   if (!value) return ''
   // The API sends UTC timestamps without a zone suffix.

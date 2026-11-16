@@ -8,7 +8,7 @@ import BudgetInWords from '../../../shared/ui/BudgetInWords.jsx'
 import { defaultAvatarFor, userAvatarSrc } from '../../../shared/ui/avatars.js'
 import { useLanguage } from '../../../i18n/LanguageContext.jsx'
 import AwardPanel from '../../requests/components/AwardPanel.jsx'
-import { FLOW_TONES, hasAssignmentFlow, requestFlowStatus, useRequestAwards } from '../../requests/requestAwards.js'
+import { FLOW_CARD_TONES, FLOW_TONES, hasAssignmentFlow, requestFlowStatus, useRequestAwards } from '../../requests/requestAwards.js'
 import { formatDate } from '../../../shared/utils/formatters.js'
 import { isPartyRequest, offerSummary, partyHeading, partyLocation, supplierCategoryLabel } from '../../requests/counterparty.js'
 import PartyDetails from '../../requests/components/PartyDetails.jsx'
@@ -24,15 +24,6 @@ function RequestFlowBadge({ flow }) {
       {t(flow.key)}
     </span>
   )
-}
-
-// A workflow status's tone on a card's status pill (FLOW_TONES, in the shared card colours).
-const FLOW_CARD_TONES = {
-  action: 'red',
-  waiting: 'amber',
-  negotiating: 'blue',
-  confirmed: 'green',
-  closed: 'grey',
 }
 
 const STATUS_TONES = {

@@ -1,6 +1,7 @@
 """The other party's public business details on /project-requests/incoming: what a
 supplier offers and who it is, for the builder; who the builder is, for the supplier.
-Contact (phone, e-mail) stays withheld until the request is accepted, as before."""
+Contact (phone, e-mail, street address) stays withheld until the request is accepted,
+and a name that is really a phone number is never shown."""
 
 from decimal import Decimal
 from typing import Any
@@ -10,8 +11,9 @@ from marketplace.test_marketplace import list_product, make_catalog
 from sqlalchemy.orm import Session
 
 from app.modules.equipment_supply.models import EquipmentItem
-from app.modules.identity.models import ROLE_SUPPLIER
+from app.modules.identity.models import ROLE_ENGINEER, ROLE_SUPPLIER, User
 from app.modules.labour_supply.models import LaborService
+from app.modules.projects.people import engineer_summary_payload
 from projects.helpers import Person, builder, person
 
 PUBLIC_FIELDS = {"profile_location", "profile_verified", "profile_member_since"}
@@ -105,3 +107,52 @@ def test_the_supplier_sees_the_builder_public_details_and_no_contact(client: Tes
     assert row["profile_verified"] is False and row["profile_member_since"]
     assert (row["profile_phone"], row["profile_email"]) == ("", "")
     assert house_builder.user.phone not in str(row)
+
+
+# ---- street address: contact, so withheld until the request is accepted ----
+
+
+def test_the_street_address_waits_for_acceptance(client: TestClient, database: Session) -> None:
+    house_builder = builder(client, database)
+    supplier = a_supplier(client, database, "Material Supplier", "material@example.in", "9876500011")
+    supplier.user.address = "7 Supplier Lane, Bengaluru"
+    house_builder.user.address = "9 Builder Street, Bengaluru"
+    database.commit()
+    request_id = request_from(supplier, house_builder)
+
+    builder_row, supplier_row = row_for(house_builder, request_id), row_for(supplier, request_id)
+    assert (builder_row["sender_address"], builder_row["profile_address"]) == ("", "")
+    assert "7 Supplier Lane" not in str(builder_row)
+    assert (supplier_row["sender_address"], supplier_row["profile_address"]) == ("", "")
+    assert "9 Builder Street" not in str(supplier_row)
+    # Area-level details stay for discovery.
+    assert (builder_row["profile_pincode"], builder_row["profile_location"]) == ("560001", "Bengaluru")
+
+    assert house_builder.post("/project-requests/accept", json={"request_id": request_id}).status_code == 200
+    builder_row, supplier_row = row_for(house_builder, request_id), row_for(supplier, request_id)
+    assert builder_row["sender_address"] == builder_row["profile_address"] == "7 Supplier Lane, Bengaluru"
+    assert supplier_row["sender_address"] == supplier_row["profile_address"] == "9 Builder Street, Bengaluru"
+
+
+# ---- a name that is really a phone number is never shown ----
+
+
+def test_a_phone_number_saved_as_a_name_is_not_shown(client: TestClient, database: Session) -> None:
+    house_builder = builder(client, database)
+    supplier = a_supplier(client, database, "Material Supplier", "material@example.in", "9876500011")
+    request_id = request_from(supplier, house_builder)
+    # Saved before saves refused one, and with nothing for migration 0004 to recover.
+    supplier.user.name = "+91 96406 77606"
+    supplier.user.supplier_profile.store_name = "96406 77606"
+    database.commit()
+
+    row = row_for(house_builder, request_id)
+    assert (row["sender_name"], row["profile_name"], row["profile_title"]) == ("", "", "")
+    assert "77606" not in str(row)
+
+
+def test_an_engineer_summary_withholds_the_street_address_and_a_phone_number_name() -> None:
+    engineer = User(name="9640677606", role=ROLE_ENGINEER, address="3 Site Road, Bengaluru", pincode="560001")
+    hidden = engineer_summary_payload(engineer, None, can_view_contact=False)
+    assert (hidden["name"], hidden["address"], hidden["pincode"]) == ("", "", "560001")
+    assert engineer_summary_payload(engineer, None, can_view_contact=True)["address"] == "3 Site Road, Bengaluru"

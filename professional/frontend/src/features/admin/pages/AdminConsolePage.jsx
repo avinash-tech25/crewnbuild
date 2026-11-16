@@ -249,6 +249,13 @@ function UsersPage({ identity }) {
     else next.delete('role')
     return next
   })
+  // One filter word changed in place; the others (?role=, ?status=, ?country=) stay.
+  const setFilterParam = (key, value) => setSearchParams((current) => {
+    const next = new URLSearchParams(current)
+    if (value) next.set(key, value)
+    else next.delete(key)
+    return next
+  }, { replace: true })
   const [search, setSearch] = useState('')
   const [query, setQuery] = useState('')
   const [offset, setOffset] = useState(0)
@@ -341,7 +348,7 @@ function UsersPage({ identity }) {
               type="button"
               onClick={() => {
                 setOffset(0)
-                setSearchParams(country ? { country } : {}, { replace: true })
+                setFilterParam('status', '')
               }}
               className="h-9 rounded-lg border border-amber-200 bg-amber-50 px-3 text-xs font-extrabold text-amber-800 hover:bg-amber-100"
             >
@@ -353,8 +360,7 @@ function UsersPage({ identity }) {
               value={country}
               onChange={(event) => {
                 setOffset(0)
-                const next = event.target.value
-                setSearchParams(next ? { country: next } : {}, { replace: true })
+                setFilterParam('country', event.target.value)
               }}
               className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-graphite"
             >

@@ -2,7 +2,9 @@
  * The one card every list in the Partner app draws, whatever it lists: job requests,
  * a technician's jobs, a requester's bookings. The same anatomy, classes and data-card
  * attributes as the Professional app's ListCard (the two apps share no code, so this is
- * a copy kept in step by hand; only the Tailwind tokens differ).
+ * a copy kept in step by hand). It differs in three ways only: a highlighted card's
+ * background (bg-oc-mint/40; Professional uses its bg-ocbrand-50 token), the extra
+ * `dataStatus` prop (written as data-status) and CardGrid's `columns` prop.
  *
  * Fixed anatomy, so cards in a list line up and read the same everywhere:
  *
@@ -21,7 +23,8 @@ import { Children, isValidElement } from 'react'
 
 // ---- status: one colour scheme for every card ------------------------------------
 
-const TONE_CLASSES = {
+// The status colours, shared with the booking badge (BookingUi.jsx).
+export const TONE_CLASSES = {
   // AA on white: every text colour is a 700/800 shade on a 50 background.
   amber: 'border-amber-200 bg-amber-50 text-amber-800',
   green: 'border-emerald-200 bg-emerald-50 text-emerald-800',
@@ -117,7 +120,10 @@ export function CardAvatar({ src, alt = '', fallback = null }) {
  * @param chips      nodes for the chip row
  * @param secondary  footer actions on the left (outlined / red text)
  * @param primary    footer actions on the right (filled)
- * @param onClick    opens the card; buttons and links inside keep their own clicks
+ * @param footer     'always': draw the footer even with no actions, as tall as one with
+ *                   a button, so every card in a list keeps the same anatomy
+ * @param onClick    opens the card; buttons and links inside keep their own clicks.
+ *                   The title becomes a button, the card's keyboard target.
  * @param children   extra body content, for what is neither a row nor a chip
  * @param dataStatus the record's stored status, as data-status (for tests and styling)
  */
@@ -136,37 +142,43 @@ export function ListCard({
   dimmed = false,
   label,
   testId,
+  footer,
   dataStatus,
   children,
 }) {
   const interactive = typeof onClick === 'function'
   const shownRows = rows.filter(Boolean).slice(0, 4)
   const shownChips = Children.toArray(chips).filter(Boolean)
-  const hasFooter = Boolean(secondary || primary)
+  const hasFooter = footer === 'always' || Boolean(secondary || primary)
   return (
     <article
       data-card="list"
       data-testid={testId}
       data-status={dataStatus}
       aria-label={label || textOf(title)}
+      // A click anywhere on the card opens it, except on a button, link or field inside
+      // it. Keyboard and screen-reader users open it with the title's button.
       onClick={interactive ? (event) => { if (!event.target.closest('button, a, input, select, textarea, label')) onClick(event) } : undefined}
-      // A card that opens is reachable with Tab and opens with Enter or Space, as a
-      // click does; keys pressed on a button inside it stay that button's.
-      tabIndex={interactive ? 0 : undefined}
-      onKeyDown={interactive ? (event) => {
-        if (event.target !== event.currentTarget || (event.key !== 'Enter' && event.key !== ' ')) return
-        event.preventDefault()
-        onClick(event)
-      } : undefined}
-      className={`oc-list-card flex h-full w-full min-w-0 flex-col rounded-[18px] border p-4 shadow-ocsoft transition-[border-color,box-shadow,transform] duration-200
-        hover:-translate-y-0.5 hover:border-[rgba(8,62,43,.28)] hover:shadow-[0_18px_40px_-24px_rgba(23,32,28,0.35)]
+      className={`flex h-full w-full min-w-0 flex-col rounded-[18px] border p-4 shadow-ocsoft transition-[border-color,box-shadow,transform] duration-200
+        hover:border-[rgba(8,62,43,.28)] hover:shadow-[0_18px_40px_-24px_rgba(23,32,28,0.35)]
         ${highlighted ? 'border-oc-green bg-oc-mint/40' : 'border-oc-line bg-white'}
-        ${interactive ? 'cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oc-green focus-visible:ring-offset-2' : ''}`}
+        ${interactive ? 'cursor-pointer hover:-translate-y-0.5' : ''}`}
     >
       <header data-card-part="header" className="flex min-w-0 items-start gap-3">
         {avatar}
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[15px] font-extrabold leading-snug text-oc-ink" title={textOf(title)}>{title}</p>
+          <h3 className="truncate font-sans text-[15px] font-extrabold leading-snug text-oc-ink" title={textOf(title)}>
+            {interactive ? (
+              // The card's keyboard and screen-reader target; looks like the plain title.
+              <button
+                type="button"
+                onClick={onClick}
+                className="max-w-full truncate rounded text-start align-top focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oc-green focus-visible:ring-offset-2"
+              >
+                {title}
+              </button>
+            ) : title}
+          </h3>
           {subtitle && <p className="mt-0.5 truncate text-xs text-oc-muted" title={textOf(subtitle)}>{subtitle}</p>}
         </div>
         {status}
@@ -189,8 +201,9 @@ export function ListCard({
 
       {hasFooter && (
         <footer data-card-part="footer" className="mt-4 flex min-w-0 flex-wrap items-center justify-between gap-2 border-t border-oc-line pt-3">
-          <div className="flex min-w-0 flex-wrap items-center gap-2">{secondary}</div>
-          <div className="ms-auto flex min-w-0 flex-wrap items-center justify-end gap-2">{primary}</div>
+          {/* min-h-9: an empty footer is as tall as one with a button. */}
+          <div className="flex min-h-9 min-w-0 flex-wrap items-center gap-2">{secondary}</div>
+          <div className="ms-auto flex min-h-9 min-w-0 flex-wrap items-center justify-end gap-2">{primary}</div>
         </footer>
       )}
     </article>
@@ -199,12 +212,15 @@ export function ListCard({
 
 /**
  * The grid every card list uses: one column on a phone, two from 768px, three from
- * 1280px; equal widths, and every card in a row as tall as the tallest.
+ * 1280px; equal widths, and every card in a row as tall as the tallest. `columns={1}`
+ * keeps one full-width column at every size, for cards with a lot to show (a job and
+ * its map).
  */
-export function CardGrid({ children, label, testId }) {
+export function CardGrid({ children, label, testId, columns = 3 }) {
   const items = Children.toArray(children).filter(isValidElement)
+  const layout = columns === 1 ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3'
   return (
-    <ul data-card-grid="" data-testid={testId} aria-label={label} className="grid grid-cols-1 items-stretch gap-4 md:grid-cols-2 xl:grid-cols-3">
+    <ul data-card-grid="" data-testid={testId} aria-label={label} className={`grid items-stretch gap-4 ${layout}`}>
       {items.map((child) => (
         <li key={child.key} className="flex min-w-0">{child}</li>
       ))}

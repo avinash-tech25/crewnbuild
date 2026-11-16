@@ -35,6 +35,21 @@ function open(path, routes = {}) {
 }
 
 describe('Builder card lists share one structure', () => {
+  it('My Projects: the amount is labelled by what it is (contract, quotation or budget)', async () => {
+    open('/contractor/projects?tab=upcoming', {
+      'GET /owners/projects': { data: [
+        { ...PROJECT, contract_amount: 2500000, awarded_amount: 2400000, budget: 2000000 },
+        { ...PROJECT, id: id(98), title: 'Quoted House', awarded_amount: 2400000, budget: 2000000 },
+        { ...PROJECT, id: id(99), title: 'Budget House', budget: 2000000 },
+      ] },
+    })
+    const cards = expectUniformCards(await screen.findByTestId('builder-project-cards', {}, FIND))
+    expect(within(cards[0]).getByText('Contract value')).toBeInTheDocument()
+    expect(within(cards[0]).queryByText('Budget')).not.toBeInTheDocument()
+    expect(within(cards[1]).getByText('Builder quotation')).toBeInTheDocument()
+    expect(within(cards[2]).getByText('Budget')).toBeInTheDocument()
+  })
+
   it('My Site Engineers', async () => {
     open('/contractor/my-site-engineers', {
       'GET /engineers/my-team': { data: {

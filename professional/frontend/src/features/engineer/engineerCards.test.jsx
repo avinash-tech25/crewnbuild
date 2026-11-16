@@ -38,6 +38,19 @@ describe('Site Engineer card lists', () => {
     expect(within(cards[1]).getAllByRole('button', { name: 'Open Project' })).toHaveLength(1)
   })
 
+  it('My Projects: the amount is labelled by what it is (contract, quotation or budget)', async () => {
+    open('/engineer/my-projects', {
+      'GET /engineers/my-projects': { data: [
+        anAssignedProject({ contract_amount: 2500000, awarded_amount: 2400000, budget: 2000000 }),
+        anAssignedProject({ id: id(1), title: 'Hill Top House', contract_amount: null, awarded_amount: null, budget: 2000000 }),
+      ] },
+    })
+    const cards = expectUniformCards(await screen.findByTestId('engineer-project-cards', {}, FIND))
+    expect(within(cards[0]).getByText('Contract value')).toBeInTheDocument()
+    expect(within(cards[0]).queryByText('Budget')).not.toBeInTheDocument()
+    expect(within(cards[1]).getByText('Budget')).toBeInTheDocument()
+  })
+
   it('Find Opportunities: applied and not-yet-applied cards share one structure', async () => {
     const user = userEvent.setup()
     const server = open('/engineer/find-opportunities?tab=opportunities', {

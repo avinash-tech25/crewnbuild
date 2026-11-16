@@ -3,9 +3,10 @@
 profile_service.request_counterparty_profile_payload / engineer_summary_payload, same
 rules and fields).
 
-Contact (phone, e-mail) is private until an accepted project request links the two
-accounts in either direction. An accepted property enquiry (property_enquiries) counts
-too.
+Contact (phone, e-mail, street address) is private until an accepted project request
+links the two accounts in either direction. An accepted property enquiry
+(property_enquiries) counts too. A name that is really a phone number is never shown
+(app/core/display_names.py public_name).
 """
 
 import uuid
@@ -14,6 +15,7 @@ from typing import Any
 from sqlalchemy import and_, or_, select
 from sqlalchemy.orm import Session
 
+from app.core.display_names import public_name
 from app.modules.accounts.models import EngineerProfile
 from app.modules.accounts.profile_completion import profile_complete
 from app.modules.accounts.profile_lists import read_completed_project_details, split_profile_list
@@ -62,24 +64,26 @@ def can_view_private_contact(
 
 
 def request_counterparty_profile_payload(display_user: User, can_view_contact: bool = True) -> dict[str, Any]:
-    """The other party on a request; phone and e-mail withheld until it is accepted."""
+    """The other party on a request; phone, e-mail and street address withheld until it
+    is accepted (the pincode and service areas stay: they are area-level, for discovery).
+    A name or title that is really a phone number is never shown."""
     contact = {
         "profile_phone": display_user.phone if can_view_contact else "",
         "profile_email": display_user.email if can_view_contact else "",
+        "profile_address": display_user.address if can_view_contact else "",
     }
     if display_user.role == ROLE_BUILDER and display_user.contractor_profile:
         profile = display_user.contractor_profile
         return {
             "profile_user_id": str(display_user.id),
             "profile_role": display_user.role,
-            "profile_name": display_user.name,
+            "profile_name": public_name(display_user.name),
             "profile_image_url": display_user.profile_image_url,
-            "profile_title": profile.company_name,
+            "profile_title": public_name(profile.company_name),
             "profile_subtitle": "Contractor",
             "profile_about": profile.about,
             "profile_rating": display_user.rating,
             **contact,
-            "profile_address": display_user.address,
             "profile_pincode": display_user.pincode,
             "profile_experience_years": profile.experience_years,
             "profile_completed_projects": profile.completed_projects,
@@ -95,14 +99,13 @@ def request_counterparty_profile_payload(display_user: User, can_view_contact: b
         return {
             "profile_user_id": str(display_user.id),
             "profile_role": display_user.role,
-            "profile_name": display_user.name,
+            "profile_name": public_name(display_user.name),
             "profile_image_url": supplier.store_logo_url or display_user.profile_image_url,
-            "profile_title": supplier.store_name,
+            "profile_title": public_name(supplier.store_name),
             "profile_subtitle": "Supplier",
             "profile_about": supplier.about,
             "profile_rating": display_user.rating,
             **contact,
-            "profile_address": display_user.address,
             "profile_pincode": display_user.pincode,
             "profile_categories": split_profile_list(supplier.categories),
             "profile_locations": split_profile_list(supplier.delivery_locations),
@@ -113,14 +116,13 @@ def request_counterparty_profile_payload(display_user: User, can_view_contact: b
     return {
         "profile_user_id": str(display_user.id),
         "profile_role": display_user.role,
-        "profile_name": display_user.name,
+        "profile_name": public_name(display_user.name),
         "profile_image_url": display_user.profile_image_url,
-        "profile_title": display_user.name,
+        "profile_title": public_name(display_user.name),
         "profile_subtitle": display_user.role.title(),
         "profile_about": "",
         "profile_rating": display_user.rating,
         **contact,
-        "profile_address": display_user.address,
         "profile_pincode": display_user.pincode,
     }
 
@@ -212,10 +214,10 @@ def engineer_summary_payload(
 ) -> dict[str, Any]:
     return {
         "user_id": engineer_user.id,
-        "name": engineer_user.name,
+        "name": public_name(engineer_user.name),
         "email": engineer_user.email if can_view_contact else "",
         "phone": engineer_user.phone if can_view_contact else "",
-        "address": engineer_user.address,
+        "address": engineer_user.address if can_view_contact else "",
         "pincode": engineer_user.pincode,
         "rating": engineer_user.rating,
         "profile_image_url": engineer_user.profile_image_url,

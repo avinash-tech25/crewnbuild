@@ -263,42 +263,45 @@ export default function JobCard({ job, onAction, onStarted, location }) {
     >
       <StageBanner job={job} />
 
-      {!job.requester_name && (
-        <p className="flex items-start gap-2 rounded-xl bg-oc-sunken px-3 py-2 text-xs text-oc-muted">
-          <User className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-          {job.status === 'CANCELLED'
-            ? "This job was cancelled, so the customer's name and phone number are no longer shared."
-            : 'Name and phone number are shared once you accept.'}
-        </p>
-      )}
-
-      {job.status === 'COMPLETED' && (
-        <dl className="grid grid-cols-2 gap-2">
-          <Detail icon={Play} label="Started" value={job.started_at ? formatStageTime(job.started_at) : '—'} />
-          <Detail icon={CheckCircle2} label="Completed" value={job.completed_at ? formatStageTime(job.completed_at) : '—'} />
-          {job.started_at && job.completed_at && (
-            <Detail icon={Clock} label="Time on job" value={<JobTimer startedAt={job.started_at} endedAt={job.completed_at} />} />
+      {/* The details, and from 1024px the map beside them. The map is only for a job
+          already held: an unaccepted request has no map, because it carries no location. */}
+      <div className={showsMap ? 'grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]' : 'contents'}>
+        <div className="flex min-w-0 flex-col gap-3">
+          {!job.requester_name && (
+            <p className="flex items-start gap-2 rounded-xl bg-oc-sunken px-3 py-2 text-xs text-oc-muted">
+              <User className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              {job.status === 'CANCELLED'
+                ? "This job was cancelled, so the customer's name and phone number are no longer shared."
+                : 'Name and phone number are shared once you accept.'}
+            </p>
           )}
-        </dl>
-      )}
 
-      <div className="rounded-xl border border-oc-line bg-white px-2 py-3">
-        <JobTimeline job={job} />
+          {job.status === 'COMPLETED' && (
+            <dl className="grid grid-cols-2 gap-2">
+              <Detail icon={Play} label="Started" value={job.started_at ? formatStageTime(job.started_at) : '—'} />
+              <Detail icon={CheckCircle2} label="Completed" value={job.completed_at ? formatStageTime(job.completed_at) : '—'} />
+              {job.started_at && job.completed_at && (
+                <Detail icon={Clock} label="Time on job" value={<JobTimer startedAt={job.started_at} endedAt={job.completed_at} />} />
+              )}
+            </dl>
+          )}
+
+          <div className="rounded-xl border border-oc-line bg-white px-2 py-3">
+            <JobTimeline job={job} />
+          </div>
+
+          {/* The location stream runs for the whole job on its own; this is its state. */}
+          {location && showsMap && <LiveLocationStatus location={location} navigation={liveNavigation} />}
+        </div>
+        {showsMap && (
+          <JobNavigation
+            job={job}
+            live={liveNavigation}
+            following={Boolean(location?.tracking && job.status !== 'ACCEPTED')}
+            onRouteDistance={setRouteDistanceMeters}
+          />
+        )}
       </div>
-
-      {/* The location stream runs for the whole job on its own; this is its state. */}
-      {location && showsMap && <LiveLocationStatus location={location} navigation={liveNavigation} />}
-
-      {/* Where the job is and how to get there. Only for a job already held: an
-          unaccepted request has no map, because it carries no location. */}
-      {showsMap && (
-        <JobNavigation
-          job={job}
-          live={liveNavigation}
-          following={Boolean(location?.tracking && job.status !== 'ACCEPTED')}
-          onRouteDistance={setRouteDistanceMeters}
-        />
-      )}
 
       {/* On site and after: the work itself, then the next step. */}
       {showsExecution && <JobExecution job={job} onSummary={setOpenItems} />}

@@ -57,10 +57,6 @@ const SUPPLIER_TYPE_ICONS = {
 }
 const supplierTypeIcons = (supplier) => SUPPLIER_TYPE_ICONS[supplier?.supplier_category] || { chip: Store, availability: Truck }
 
-// An empty footer for a card with nothing to do, so every card in a list that
-// has actions keeps the same footer edge.
-const NO_ACTIONS = <span aria-hidden="true" />
-
 function EmptyState({ icon: Icon, title, hint, action }) {
   return (
     <section className="rounded-2xl border border-dashed border-brand-200 bg-white p-8 text-center shadow-[0_14px_40px_-30px_rgba(15,23,42,0.35)]">
@@ -601,6 +597,7 @@ export default function SupplierBrowser({
               return (
                 <ListCard
                   key={supplier.user_id}
+                  footer="always"
                   onClick={shoppable ? () => viewSupplier(supplier) : undefined}
                   // The store mark when the shop has one, otherwise the
                   // supplier's own avatar -- the card is titled with their name.
@@ -637,7 +634,7 @@ export default function SupplierBrowser({
                       >
                         <ChevronRight className="h-4 w-4 rtl:-scale-x-100" />
                       </button>
-                    ) : NO_ACTIONS
+                    ) : null
                   ) : onSendRequest ? requestAction : null}
                 />
               )

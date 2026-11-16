@@ -6,8 +6,11 @@
 // (/project-requests/incoming): the public business details it adds for a supplier or a
 // builder (profile_supplier_category, profile_location, profile_verified,
 // profile_member_since, profile_offer). Phone and e-mail are not read here: the server
-// sends them only once the request is accepted, and the screens show them as before.
+// sends them only once the request is accepted, and the screens show them as before. The
+// street address is contact too: read only once can_view_contact says it may be shown.
+// A name that is really a phone number is never shown (displayName).
 import { SUPPLIER_TYPE_KEYS, optionLabel } from '../../i18n/optionKeys.js'
+import { displayName } from '../../shared/utils/displayName.js'
 import { formatDate } from '../../shared/utils/formatters.js'
 
 const PARTY_ROLES = ['SUPPLIER', 'BUILDER', 'CONTRACTOR']
@@ -25,9 +28,14 @@ export function isPartyRequest(request) {
   return Boolean(request) && !request.project_id && PARTY_ROLES.includes(counterpartyRole(request))
 }
 
+/** The person's name; '' when it is really a phone number. */
+export function partyName(request) {
+  return displayName(request?.profile_name, request?.sender_name)
+}
+
 /** The heading: the store or business name, else the person's name. */
 export function partyHeading(request, td = (value) => value) {
-  return td(request?.profile_title) || td(request?.profile_name || request?.sender_name) || ''
+  return td(displayName(request?.profile_title)) || td(partyName(request)) || ''
 }
 
 /** "Material Supplier" etc. in the reader's language; '' when none is saved. */
@@ -68,11 +76,15 @@ export function offerLabel(request, t) {
   return t('req.party.offers')
 }
 
-/** Where they are: the place they named, else their address and PIN code. */
+/**
+ * Where they are: the place they named, else their PIN code -- with their street address
+ * in front once contact is shared (the request accepted).
+ */
 export function partyLocation(request, td = (value) => value) {
   const place = td(request?.profile_location)
   if (place) return request?.profile_pincode ? `${place} ${request.profile_pincode}` : place
-  return [td(request?.profile_address || request?.sender_address), request?.profile_pincode || request?.sender_pincode].filter(Boolean).join(', ')
+  const address = request?.can_view_contact ? td(request?.profile_address || request?.sender_address) : ''
+  return [address, request?.profile_pincode || request?.sender_pincode].filter(Boolean).join(', ')
 }
 
 /**
@@ -83,9 +95,10 @@ export function partyLocation(request, td = (value) => value) {
 export function partyDetailRows(request, t, td = (value) => value) {
   const role = counterpartyRole(request)
   const supplier = role === 'SUPPLIER'
+  const company = displayName(request.profile_title)
   const rows = [
-    [t(supplier ? 'req.party.supplierName' : 'req.party.builderName'), td(request.profile_name || request.sender_name)],
-    supplier ? null : [t('req.party.company'), request.profile_title && request.profile_title !== (request.profile_name || request.sender_name) ? td(request.profile_title) : ''],
+    [t(supplier ? 'req.party.supplierName' : 'req.party.builderName'), td(partyName(request))],
+    supplier ? null : [t('req.party.company'), company && company !== partyName(request) ? td(company) : ''],
     supplier ? [t('req.party.supplierCategory'), supplierCategoryLabel(request, t)] : null,
     [t('dash.msg.location'), partyLocation(request, td)],
     supplier ? [offerLabel(request, t), offerSummary(request, t)] : null,

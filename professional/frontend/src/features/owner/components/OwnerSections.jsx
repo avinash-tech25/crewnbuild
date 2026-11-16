@@ -7,7 +7,7 @@ import { avatarFromPath, userAvatarSrc } from '../../../shared/ui/avatars.js'
 import StatusPill from '../../../shared/dashboard/StatusPill.jsx'
 import AwardPanel from '../../requests/components/AwardPanel.jsx'
 import NegotiateQuotationModal from '../../requests/components/NegotiateQuotationModal.jsx'
-import { FLOW_TONES, hasAssignmentFlow, requestFlowStatus, useRequestAwards } from '../../requests/requestAwards.js'
+import { FLOW_CARD_TONES, FLOW_TONES, hasAssignmentFlow, requestFlowStatus, useRequestAwards } from '../../requests/requestAwards.js'
 import { CardAvatar, CardChip, CardGrid, CardStatus, ListCard, cardButtonClass } from '../../../shared/ui/ListCard.jsx'
 import { EntityAvatar, EntityPill } from '../../../shared/ui/EntityPill.jsx'
 import { requestTypeLabel as sharedRequestTypeLabel } from '../../../shared/utils/roleLabels.js'
@@ -459,9 +459,6 @@ function ServicePills({ services = [], small = false }) {
 
 // A builder who joined within this window (2 days) is marked "Newly joined".
 const NEWLY_JOINED_MS = 2 * 24 * 60 * 60 * 1000
-
-// A request's workflow tone (FLOW_TONES) as the card status tone.
-const FLOW_CARD_TONES = { action: 'red', waiting: 'amber', negotiating: 'blue', confirmed: 'green', closed: 'grey' }
 
 export function OwnerContractorsSection({ requestMessage, contractorList, sendingReceiverId, onViewProfile, onSendRequest, onAcceptRequest, onRejectRequest, pincode, projectDetails, project, requestList = [] }) {
   const { t, td } = useLanguage()

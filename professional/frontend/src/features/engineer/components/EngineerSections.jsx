@@ -151,6 +151,8 @@ export function EngineerMyProjectsSection({ projectList, onOpenProject }) {
             const projectTitle = td(project.title)
             // The confirmed contract once there is one, else the owner's budget.
             const amount = project.contract_amount ?? project.awarded_amount ?? project.budget
+            // The label names the amount shown: contract, awarded quotation or budget.
+            const amountLabel = t(project.contract_amount != null ? 'dash.common.contractValue' : project.awarded_amount != null ? 'request.flow.builderQuotation' : 'dash.common.budget')
             // The bar fills to the schedule figure (elapsed planned time), once
             // work has actually started on site; before that it stays empty.
             const started = project.work_started === true
@@ -187,7 +189,7 @@ export function EngineerMyProjectsSection({ projectList, onOpenProject }) {
                   { key: 'pincode', label: t('dash.common.pincode'), value: project.pincode || '—' },
                   { key: 'type', label: t('dash.common.buildingType'), value: buildingType || '—' },
                   { key: 'end', label: t('dash.owner.projectDetails.endDate'), value: endDate || '—' },
-                  { key: 'amount', label: t('dash.common.budget'), value: amount ? inr(amount) : '—' },
+                  { key: 'amount', label: amountLabel, value: amount ? inr(amount) : '—' },
                 ]}
                 primary={(
                   <button type="button" onClick={() => onOpenProject(project)} className={cardButtonClass('primary')}>

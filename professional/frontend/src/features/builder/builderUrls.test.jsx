@@ -126,3 +126,31 @@ describe('Builder section tabs in the address', () => {
     expect(button).toHaveAttribute('aria-pressed', 'true')
   })
 })
+
+describe('Builder projects when they cannot be loaded', () => {
+  it('shows an error for a deep-linked project, not endless loading or not-found', async () => {
+    open(`/contractor/projects/${PROJECT_ID}`, BUILDER, { 'GET /owners/projects': { status: 500, data: { detail: 'down' } } })
+    expect(await screen.findByText('Your projects could not be loaded. Refresh the page to try again.', {}, FIND)).toBeInTheDocument()
+    expect(screen.queryByText('Loading your projects…')).toBeNull()
+    expect(screen.queryByTestId('not-found-panel')).toBeNull()
+  })
+})
+
+describe('Builder location prompt hand-off', () => {
+  it('opens the house-owner leads after a pincode is saved, in one history entry', async () => {
+    const user = userEvent.setup()
+    open('/contractor/find-clients?tab=suppliers', BUILDER, {
+      'GET /locations/pincode/560001': { data: { pincode: '560001', display: 'Bengaluru, Karnataka', post_offices: [{ name: 'MG Road' }] } },
+      'PATCH /auth/location': { data: { ...BUILDER, pincode: '560001' } },
+    })
+    await user.click(await screen.findByRole('button', { name: /^Leads for 560001/ }, FIND))
+    const save = await screen.findByRole('button', { name: 'Show my leads' }, FIND)
+    await waitFor(() => expect(save).toBeEnabled(), FIND)
+    await user.click(save)
+    await waitFor(() => expect(location.current.search).toBe(''), FIND)
+    expect(location.current.pathname).toBe('/contractor/find-clients')
+    expect(await screen.findByRole('button', { name: /^House Owner Request/, pressed: true }, FIND)).toBeInTheDocument()
+    act(() => history.back())
+    await waitFor(() => expect(location.current.search).toBe('?tab=suppliers'))
+  })
+})

@@ -34,6 +34,9 @@ import { formatDate } from '../../../shared/utils/formatters.js'
 import { projectStatusText } from '../builderHelpers.js'
 import { assignmentCoverage } from '../supplierAssignment.js'
 
+// The city of an address: its last comma-separated part.
+const cityOf = (address) => String(address || '').split(',').map((part) => part.trim()).filter(Boolean).pop() || ''
+
 function CopyButton({ text, label, className = 'inline-flex h-9 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-xs font-extrabold text-slate-700 transition hover:border-brand-300 hover:bg-brand-50 hover:text-brand-800' }) {
   const { t } = useLanguage()
   const [copied, setCopied] = useState(false)
@@ -209,7 +212,6 @@ function MyTeamEngineers({ engineers, onViewEngineer, onAssignProject, onUnassig
       </button>
     ) : null
   }
-  const cityOf = (address) => String(address || '').split(',').map((part) => part.trim()).filter(Boolean).pop() || ''
 
   return (
     <div className="space-y-3">
@@ -393,7 +395,6 @@ function FindEngineers({ engineers, pincode, onPincodeChange, onFind, onViewEngi
     return true
   }), [list, needle, pincode, location, experience, skill])
   const skillLabel = (value) => optionLabel(t, ENGINEER_CATEGORY_LABEL_KEYS, value)
-  const cityOf = (address) => String(address || '').split(',').map((part) => part.trim()).filter(Boolean).pop() || ''
 
   return (
     <div className="space-y-3">
@@ -533,7 +534,6 @@ function MySuppliers({ suppliers, projectList = [], onOpenSupplierProfile, onAss
   const pincodes = useMemo(() => [...new Set(list.map((supplier) => supplier.pincode).filter(Boolean))].sort(), [list])
   const services = useMemo(() => [...new Set(list.flatMap((supplier) => supplier.categories || []).filter(Boolean))].sort(), [list])
   const serviceLabel = (value) => optionLabel(t, SUPPLIER_CATEGORY_KEYS, value)
-  const cityOf = (address) => String(address || '').split(',').map((part) => part.trim()).filter(Boolean).pop() || ''
   const nameOf = (supplier) => td(supplier.store_name || supplier.name) || t('role.supplier')
 
   const shown = useMemo(() => {
@@ -770,7 +770,6 @@ function PendingPartnerRequests({ pendingRequests, invitations, outgoingRequests
   const inviteShown = (type === '' || type === 'invite') ? invitations.filter((invitation) => matches(invitation.phone, invitation.email, invitation.invite_code)) : []
   const sentShown = (type === '' || type === 'sent') ? outgoingRequests.filter((engineer) => matches(engineer.name, engineer.pincode, engineer.address)) : []
   const nothingAtAll = pendingRequests.length === 0 && invitations.length === 0 && outgoingRequests.length === 0
-  const cityOf = (address) => String(address || '').split(',').map((part) => part.trim()).filter(Boolean).pop() || ''
 
   const SectionTitle = ({ title, count }) => (
     <div className="flex items-center gap-2">

@@ -425,16 +425,13 @@ const kindChip = (request, t) => (
   </CardChip>
 )
 
-// An equipment request's status pill, in the word the status badge shows.
-function EquipmentCardStatus({ status }) {
+// An equipment request's status pill (supplier and site engineer cards): the
+// translated status word, coloured by the shared card tones.
+export function EquipmentCardStatus({ status }) {
   const { t } = useLanguage()
   return <CardStatus status={status}>{EQUIPMENT_STATUS_KEYS.includes(status) ? t(`labor.status.${status}`) : status}</CardStatus>
 }
 const EQUIPMENT_STATUS_KEYS = ['PENDING', 'ACCEPTED', 'REJECTED', 'CANCELLED', 'COMPLETED']
-
-// An empty footer for a card with nothing to do, so every card in a list that
-// has actions keeps the same footer edge.
-const NO_ACTIONS = <span aria-hidden="true" />
 
 function AcceptDialog({ request, onClose, onDone }) {
   const { t } = useLanguage()
@@ -573,6 +570,7 @@ export function EquipmentRequestsSection({ requests, onChanged, compact = false 
             return (
               <ListCard
                 key={request.id}
+                footer="always"
                 highlighted={pending}
                 avatar={<CardAvatar fallback={request.request_kind === 'RENT' ? <Truck aria-hidden="true" className="h-5 w-5" /> : <ShoppingCart aria-hidden="true" className="h-5 w-5" />} />}
                 title={request.project_title || t('labor.project')}
@@ -587,7 +585,7 @@ export function EquipmentRequestsSection({ requests, onChanged, compact = false 
                   <button type="button" onClick={() => { setNotice({ tone: '', text: '' }); setRejecting(request) }} className={cardButtonClass('danger')}>
                     <XCircle className="h-3.5 w-3.5" /> {t('labor.action.reject')}
                   </button>
-                ) : NO_ACTIONS}
+                ) : null}
                 primary={pending ? (
                   <button type="button" onClick={() => { setNotice({ tone: '', text: '' }); setAccepting(request) }} className={cardButtonClass('primary')}>
                     <CheckCircle2 className="h-3.5 w-3.5" /> {t('labor.action.accept')}
@@ -709,6 +707,7 @@ export function EquipmentAssignmentsSection({ requests, onChanged, refreshKey = 
             return (
               <ListCard
                 key={request.id}
+                footer="always"
                 avatar={<CardAvatar fallback={rent ? <Truck aria-hidden="true" className="h-5 w-5" /> : <ShoppingCart aria-hidden="true" className="h-5 w-5" />} />}
                 title={request.project_title || t('labor.project')}
                 subtitle={t('labor.siteEngineerName', { name: request.engineer_name || '—' })}
@@ -719,7 +718,7 @@ export function EquipmentAssignmentsSection({ requests, onChanged, refreshKey = 
                   <button type="button" onClick={() => setOpenId(openId === request.id ? null : request.id)} className={cardButtonClass('secondary')}>
                     <CalendarDays className="h-3.5 w-3.5" /> {openId === request.id ? t('equipment.usage.hide') : t('equipment.usage.view')}
                   </button>
-                ) : NO_ACTIONS}
+                ) : null}
                 primary={request.status === 'ACCEPTED' ? (
                   <button type="button" disabled={busyId === request.id} onClick={() => complete(request)} className={cardButtonClass('primary')}>
                     {busyId === request.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : rent ? <Undo2 className="h-3.5 w-3.5" /> : <Truck className="h-3.5 w-3.5" />} {rent ? t('equipment.action.markReturned') : t('equipment.action.markDelivered')}

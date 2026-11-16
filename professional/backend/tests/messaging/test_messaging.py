@@ -191,6 +191,8 @@ def test_live_hints_and_the_bell(client: TestClient, database: Session) -> None:
     card = house_builder.get(f"/messages/conversation/{inbox[0]['id']}").json()[0]
     body = json.loads(card["body"])
     assert (card["message_type"], body["status"], body["sender_phone"]) == ("REQUEST", "pending", "")
+    # Nothing that reaches the owner: no phone, e-mail or street address before acceptance.
+    assert (body["profile_phone"], body["profile_email"], body["profile_address"]) == ("", "", "")
 
     bell = house_builder.get("/notifications").json()
     assert bell and bell[0]["module"] == "request" and bell[0]["created_at"].endswith("+05:30")

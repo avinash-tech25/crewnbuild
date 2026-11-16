@@ -3,6 +3,7 @@
  * shared CardGrid of ListCards: one anatomy and one size for every card in a list.
  */
 import { screen, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import { installFakeServer } from '../../test/fakeServer.js'
 import { renderApp, signedInAs } from '../../test/renderApp.jsx'
@@ -35,6 +36,20 @@ describe('House Owner card lists', () => {
       expect(within(card).getByRole('button', { name: /Edit/ })).toBeInTheDocument()
     })
     expect(within(cards[0]).getByText('Rao Family Home')).toBeInTheDocument()
+  })
+
+  it("hides a project card's actions while it shows its analysis; Back restores them", async () => {
+    openOwner('/owner/projects', { 'GET /owners/projects': { data: [aProject()] } })
+    const user = userEvent.setup()
+    const [card] = expectUniformCards(await screen.findByTestId('owner-project-cards', {}, FIND))
+    await user.click(within(card).getByRole('button', { name: /View Analysis/ }))
+    const back = await within(card).findByRole('button', { name: /Back to Project/ })
+    expect(within(card).queryByRole('button', { name: /Edit/ })).not.toBeInTheDocument()
+    expect(within(card).queryByRole('button', { name: /^Delete$/ })).not.toBeInTheDocument()
+    expect(within(card).queryByRole('button', { name: /Assign|Builder Assigned/i })).not.toBeInTheDocument()
+    await user.click(back)
+    expect(await within(card).findByRole('button', { name: /Edit/ })).toBeInTheDocument()
+    expect(within(card).getByRole('button', { name: /^Delete$/ })).toBeInTheDocument()
   })
 
   it('lists the nearby builders as uniform cards', async () => {

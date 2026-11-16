@@ -13,6 +13,7 @@ from fastapi import HTTPException
 from sqlalchemy import and_, or_, select
 from sqlalchemy.orm import Session
 
+from app.core.display_names import public_name
 from app.core.local_time import local_iso
 from app.database.types import naive_utc_now
 from app.modules.accounts.profile_completion import is_store_manager
@@ -77,6 +78,12 @@ from app.modules.projects.team_service import (
 from app.modules.property import links as property_links
 
 
+def shown_name(person: User) -> str:
+    """How a message or error names an account to another one: its name, or its role
+    ("Builder") when the name is really a phone number, which is never shown."""
+    return public_name(person.name) or person.role.title()
+
+
 def dumps_with_ids(value: dict[str, Any]) -> str:
     """json.dumps with UUIDs (ids and keys) written as text."""
     return json.dumps(value, default=str)
@@ -116,9 +123,9 @@ def request_message_payload(request: ProjectRequest, user: User, receiver: User,
             "project_id": project.id if project else None,
             "request_type": request.request_type,
             "status": request.status,
-            "sender_name": user.name,
+            "sender_name": public_name(user.name),
             "sender_role": user.role,
-            "receiver_name": receiver.name,
+            "receiver_name": public_name(receiver.name),
             "receiver_role": receiver.role,
             **request_counterparty_profile_payload(user, can_view_contact=False),
             "project_title": project.title
@@ -127,7 +134,9 @@ def request_message_payload(request: ProjectRequest, user: User, receiver: User,
             "project_description": project.description
             if project
             else (owner_profile.project_description if owner_profile else ""),
-            "project_address": project.address if project else (owner_user.address if owner_user else user.address),
+            # Without a project the address is an account's own; the receiver sees only
+            # theirs here, never the sender's street address.
+            "project_address": project.address if project else (receiver.address if owner_user is receiver else ""),
             "project_pincode": project.pincode if project else (owner_user.pincode if owner_user else user.pincode),
             "building_type": project.building_type
             if project
@@ -158,9 +167,9 @@ def assignment_message_payload(
             # above: json.dumps cannot encode a uuid.UUID. request_id and
             # project_id are integers and are left alone.
             "owner_id": str(owner.id),
-            "owner_name": owner.name,
+            "owner_name": public_name(owner.name),
             "contractor_id": str(contractor.id),
-            "contractor_name": contractor.name,
+            "contractor_name": public_name(contractor.name),
             "project_title": project.title,
             "project_description": project.description,
             "project_address": project.address,
@@ -343,9 +352,9 @@ class ProjectRequestService:
                 if live_thread.sender_id == user.id:
                     detail = "Request already sent"
                 elif live_thread.status == "pending":
-                    detail = f"{receiver.name} has already sent you a request for this project. Accept or reject it from your requests."
+                    detail = f"{shown_name(receiver)} has already sent you a request for this project. Accept or reject it from your requests."
                 else:
-                    detail = f"You already have an accepted request with {receiver.name} for this project."
+                    detail = f"You already have an accepted request with {shown_name(receiver)} for this project."
                 raise HTTPException(status_code=409, detail=detail)
 
         # For Supplier ↔ House Owner requests, also check the opposite direction for
@@ -397,7 +406,7 @@ class ProjectRequestService:
         )
         self.repository.add(request)
         self.repository.flush()
-        conversation_title = project.title if project else f"{user.name} and {receiver.name}"
+        conversation_title = project.title if project else f"{shown_name(user)} and {shown_name(receiver)}"
         conversation = create_conversation_for_users(self.database, conversation_title, [user.id, payload.receiver_id])
         request_context = f" for {project.title}" if project else ""
         create_conversation_message(
@@ -411,7 +420,7 @@ class ProjectRequestService:
             self.database,
             payload.receiver_id,
             "New request",
-            f"{payload.request_type}: {user.name} sent a request{request_context}.",
+            f"{payload.request_type}: {shown_name(user)} sent a request{request_context}.",
             category=request_notification_category(payload.request_type),
         )
         self.repository.commit()
@@ -473,9 +482,9 @@ class ProjectRequestService:
                     "is_receiver": item.receiver_id == user.id,
                     "sender_id": item.sender_id,
                     "receiver_id": item.receiver_id,
-                    "sender_name": display_user.name,
+                    "sender_name": public_name(display_user.name),
                     "sender_role": display_user.role,
-                    "sender_address": display_user.address,
+                    "sender_address": display_user.address if contact_visible else "",
                     "sender_pincode": display_user.pincode,
                     **request_counterparty_profile_payload(display_user, contact_visible),
                     **public_details[display_user.id],
@@ -487,7 +496,9 @@ class ProjectRequestService:
                     "project_description": item.project.description
                     if item.project
                     else (owner_profile.project_description if owner_profile else ""),
-                    "project_address": item.project.address if item.project else project_owner.address,
+                    "project_address": item.project.address
+                    if item.project
+                    else (project_owner.address if project_owner.id == user.id or contact_visible else ""),
                     "project_pincode": item.project.pincode if item.project else project_owner.pincode,
                     "building_type": item.project.building_type
                     if item.project
@@ -549,7 +560,7 @@ class ProjectRequestService:
                 if holder and engineer_category_of(holder) == category:
                     raise HTTPException(
                         status_code=409,
-                        detail=f"{category} on this project was already filled by {holder.name}.",
+                        detail=f"{category} on this project was already filled by {shown_name(holder)}.",
                     )
         if user.role == ROLE_BUILDER and request.request_type == "OWNER_TO_CONTRACTOR":
             if not payload.quotation_amount or payload.quotation_amount <= 0:
@@ -596,7 +607,7 @@ class ProjectRequestService:
                 self.database, "Request", [request.sender_id, request.receiver_id]
             )
         if request.quotation_amount:
-            quote_body = f"QUOTATION: {user.name} accepted your request with a quotation of ₹{float(request.quotation_amount):,.0f}."
+            quote_body = f"QUOTATION: {shown_name(user)} accepted your request with a quotation of ₹{float(request.quotation_amount):,.0f}."
             create_conversation_message(self.database, conversation, user.id, quote_body, "QUOTATION")
             create_request_notification(
                 self.database,
@@ -607,7 +618,11 @@ class ProjectRequestService:
             )
         else:
             create_conversation_message(
-                self.database, conversation, user.id, f"REQUEST ACCEPTED: {user.name} accepted your request.", "REQUEST"
+                self.database,
+                conversation,
+                user.id,
+                f"REQUEST ACCEPTED: {shown_name(user)} accepted your request.",
+                "REQUEST",
             )
             create_request_notification(
                 self.database,
@@ -663,7 +678,7 @@ class ProjectRequestService:
         if self.repository.find_declined_award_id(project.id, contractor.id):
             raise HTTPException(
                 status_code=409,
-                detail=f"{contractor.name} declined this project's assignment and cannot be assigned to it again.",
+                detail=f"{shown_name(contractor)} declined this project's assignment and cannot be assigned to it again.",
             )
 
         # One award is live per project. An unassigned one is a negotiation still
@@ -674,7 +689,7 @@ class ProjectRequestService:
             other = self.repository.get_user(active.builder_id)
             raise HTTPException(
                 status_code=409,
-                detail=f"A negotiation with {other.name if other else 'another builder'} is in progress on this project. Cancel it before choosing another builder.",
+                detail=f"A negotiation with {shown_name(other) if other else 'another builder'} is in progress on this project. Cancel it before choosing another builder.",
             )
         if active and opening_offer is not None:
             raise HTTPException(
@@ -729,16 +744,16 @@ class ProjectRequestService:
             if active:
                 raise HTTPException(
                     status_code=409,
-                    detail=f"Waiting for {contractor.name} to confirm the final quotation. You can assign the project once they confirm.",
+                    detail=f"Waiting for {shown_name(contractor)} to confirm the final quotation. You can assign the project once they confirm.",
                 )
             self.repository.flush()
             # A round after an ended one starts from the amount last agreed.
             carried = carry_last_agreed_amount(self.database, award)
             quote_text = money_label(award_agreed_amount(self.database, award, request), project.project_country)
             if carried is not None:
-                body = f"CONFIRMATION REQUESTED: {user.name} asked you to confirm {quote_text} for {project.title}, the amount you both agreed in the previous round. Confirm it so {user.name} can assign the project to you."
+                body = f"CONFIRMATION REQUESTED: {shown_name(user)} asked you to confirm {quote_text} for {project.title}, the amount you both agreed in the previous round. Confirm it so {shown_name(user)} can assign the project to you."
             else:
-                body = f"CONFIRMATION REQUESTED: {user.name} accepted your quotation of {quote_text} for {project.title}. Confirm it so {user.name} can assign the project to you."
+                body = f"CONFIRMATION REQUESTED: {shown_name(user)} accepted your quotation of {quote_text} for {project.title}. Confirm it so {shown_name(user)} can assign the project to you."
             award_message(self.database, project, award, user.id, contractor.id, body, "Confirm your quotation")
             commit_award_change(self.database)
             return {
@@ -770,7 +785,7 @@ class ProjectRequestService:
             self.database,
             contractor.id,
             "Project assigned",
-            f"{user.name} assigned project {project.title} to you at your confirmed quotation.",
+            f"{shown_name(user)} assigned project {project.title} to you at your confirmed quotation.",
             category="NEGOTIATION",
         )
         # The contract now exists (confirmed AND assigned): re-split the escrow
@@ -828,7 +843,7 @@ class ProjectRequestService:
             self.database,
             engineer.id,
             "New project assignment",
-            f"{user.name} assigned you to project {project.title}.",
+            f"{shown_name(user)} assigned you to project {project.title}.",
             category="PROJECT",
         )
         self.repository.commit()
@@ -899,7 +914,7 @@ class ProjectRequestService:
                 self.database,
                 enquiry.sender_id,
                 "Request rejected",
-                f"{user.name} rejected your {enquiry.request_type} request.",
+                f"{shown_name(user)} rejected your {enquiry.request_type} request.",
                 category=category,
             )
             self.repository.commit()
@@ -913,7 +928,7 @@ class ProjectRequestService:
         )
         if enquiry.quotation_amount:
             quote_body = (
-                f"QUOTATION: {user.name} accepted your request with a quotation of "
+                f"QUOTATION: {shown_name(user)} accepted your request with a quotation of "
                 f"₹{float(enquiry.quotation_amount):,.0f}."
             )
             create_conversation_message(self.database, conversation, user.id, quote_body, "QUOTATION")
@@ -922,7 +937,11 @@ class ProjectRequestService:
             )
         else:
             create_conversation_message(
-                self.database, conversation, user.id, f"REQUEST ACCEPTED: {user.name} accepted your request.", "REQUEST"
+                self.database,
+                conversation,
+                user.id,
+                f"REQUEST ACCEPTED: {shown_name(user)} accepted your request.",
+                "REQUEST",
             )
             create_request_notification(
                 self.database, enquiry.sender_id, "Request accepted", "Your request is accepted.", category=category
@@ -944,7 +963,7 @@ class ProjectRequestService:
             self.database,
             request.sender_id,
             "Request rejected",
-            f"{user.name} rejected your {request.request_type} request.",
+            f"{shown_name(user)} rejected your {request.request_type} request.",
             category=request_notification_category(request.request_type),
         )
         self.repository.commit()
@@ -963,7 +982,7 @@ class ProjectRequestService:
             self.database,
             request.receiver_id,
             "Request withdrawn",
-            f"{user.name} withdrew their request{request_context}.",
+            f"{shown_name(user)} withdrew their request{request_context}.",
             category=request_notification_category(request.request_type),
         )
         self.repository.commit()

@@ -1443,7 +1443,10 @@ export function ProjectListTable({
                     || t('dash.owner.floorsCount', { floors: project.floors || 1 })}
                 </CardChip>,
               ]}
-              secondary={(
+              // Turned to its analysis, the card offers no project actions: only the
+              // analysis's own Back button (in the body) is live, as when the
+              // project face was inert behind it.
+              secondary={flipped ? null : (
                 <>
                   {!isDraft && (
                     <button
@@ -1463,7 +1466,7 @@ export function ProjectListTable({
                     <Trash2 className="h-3.5 w-3.5" /> {isDeleting ? t('dash.common.deleting') : t('dash.common.delete')}
                   </button>
                   {/* Turns this card to its Project Analysis. */}
-                  {!isDraft && !flipped && (
+                  {!isDraft && (
                     <button
                       ref={(node) => { analysisToggleRefs.current[project.id] = node }}
                       type="button"
@@ -1475,7 +1478,7 @@ export function ProjectListTable({
                   )}
                 </>
               )}
-              primary={(
+              primary={flipped ? null : (
                 <>
                   {isDraft && convertDatesFor !== estimate.id && (
                     <button

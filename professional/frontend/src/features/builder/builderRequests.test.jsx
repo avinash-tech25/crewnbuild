@@ -174,9 +174,18 @@ describe('Builder > Supplier Requests: View details', () => {
     const dialog = await openDetails(user)
     const rows = rowsOf(dialog)
     expect(rows.Offers).toBe('0 active listings')
-    expect(rows.Location).toBe('12 Market Road, 560002')
+    // Pending: the street address is contact, so only the PIN code says where they are.
+    expect(rows.Location).toBe('560002')
+    expect(document.body.textContent).not.toContain('12 Market Road')
     expect(rows).not.toHaveProperty('Member since')
     expect(within(dialog).queryByText('Not set')).not.toBeInTheDocument()
+  })
+
+  it('adds the street address to Location once the request is accepted (contact shared)', async () => {
+    const user = userEvent.setup()
+    openRequests([aSupplierRequest({ status: 'accepted', can_view_contact: true, profile_location: '' })])
+    await openTab(user, 'Supplier Requests')
+    expect(rowsOf(await openDetails(user)).Location).toBe('12 Market Road, 560002')
   })
 
   it('keeps phone and e-mail hidden before the request is accepted, and says when they are shared', async () => {

@@ -461,6 +461,23 @@
   line-height: 1.35;
 }
 
+/* A list card's title is an h3 (and, on a card that opens, a button inside it) for
+   screen readers; it keeps the card's own type (ListCard.jsx), not the dashboard
+   heading and button scale above, and its subtitle keeps its small size. */
+.dashboard-main [data-card="list"] [data-card-part="header"] h3 {
+  font-family: inherit;
+  font-size: 15px;
+  line-height: 1.375;
+}
+.dashboard-main [data-card="list"] [data-card-part="header"] h3 > button {
+  font-size: inherit;
+  line-height: inherit;
+}
+.dashboard-main [data-card="list"] [data-card-part="header"] h3 + p {
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+
 .dashboard-main input::placeholder,
 .dashboard-main textarea::placeholder {
   font-size: var(--dash-body);
@@ -1076,7 +1093,7 @@ html.dark .dash-canvas .contractor-messages-dark .bg-slate-200\/80 {
 }
 
 /* ============================================================
-   Dark theme — the shared entity card (EntityCard / EntityPill)
+   Dark theme — the shared list card and its chips (ListCard / EntityPill)
    The card uses the landing page's `oc-` palette, which the
    remap above does not cover, so its ink-on-white text stayed
    dark on the dark card surface. Same approach as the rest of
@@ -1178,18 +1195,27 @@ html.dark .dash-canvas .border-ocaccent-100 {
 html.dark .dash-canvas [class~="hover:border-ocbrand-300"]:hover {
   border-color: #2f6d51;
 }
-html.dark .dash-canvas .supplier-client-cards .bg-amber-50 { background-color: #2a2212; }
-
-html.dark .dash-canvas :is(.owner-project-cards, .builder-project-cards, .supplier-client-cards, .engineer-project-cards, .engineer-supplier-cards) .bg-emerald-50 { background-color: #0f2a20; }
-html.dark .dash-canvas :is(.owner-project-cards, .builder-project-cards, .engineer-project-cards, .supplier-client-cards) .border-emerald-100 { border-color: #1c4535; }
-html.dark .dash-canvas :is(.owner-project-cards, .builder-project-cards, .supplier-client-cards, .engineer-project-cards) .text-emerald-700 { color: #7bc2a2; }
-html.dark .dash-canvas :is(.owner-project-cards, .builder-project-cards, .engineer-project-cards, .supplier-client-cards) .bg-blue-50 { background-color: #12203a; }
-html.dark .dash-canvas :is(.owner-project-cards, .builder-project-cards, .engineer-project-cards, .supplier-client-cards) .border-blue-100 { border-color: #1e3a5f; }
-html.dark .dash-canvas :is(.owner-project-cards, .builder-project-cards, .engineer-project-cards, .supplier-client-cards) .text-slate-700 { color: #cbd5e1; }
-html.dark .dash-canvas :is(.owner-project-cards, .builder-project-cards, .engineer-project-cards, .supplier-client-cards) .bg-red-50 { background-color: #2a1418; }
-html.dark .dash-canvas :is(.owner-project-cards, .builder-project-cards, .engineer-project-cards, .supplier-client-cards) .border-red-100 { border-color: #4c1d24; }
-html.dark .dash-canvas :is(.owner-project-cards, .builder-project-cards, .engineer-project-cards, .supplier-client-cards) .border-slate-200 { border-color: #1e293b; }
-html.dark .dash-canvas :is(.owner-project-cards, .builder-project-cards, .engineer-project-cards, .supplier-client-cards) .bg-slate-200 { background-color: #1e293b; }
+/* List cards (shared/ui/ListCard.jsx): the light 50-tone status pills, chips and
+   notes, and the progress track, in the dark theme. Pills and chips keep their
+   light-on-dark text so they read as the same colour. */
+html.dark .dash-canvas [data-card="list"] .bg-slate-200 { background-color: #1e293b; }
+html.dark .dash-canvas [data-card="list"] .border-slate-200 { border-color: #1e293b; }
+html.dark .dash-canvas [data-card="list"] .text-slate-700 { color: #cbd5e1; }
+html.dark .dash-canvas [data-card="list"] .bg-emerald-50 { background-color: #0f2a20; }
+html.dark .dash-canvas [data-card="list"] :is(.border-emerald-100, .border-emerald-200) { border-color: #1c4535; }
+html.dark .dash-canvas [data-card="list"] :is(.text-emerald-700, .text-emerald-800) { color: #7bc2a2; }
+html.dark .dash-canvas [data-card="list"] :is(.bg-sky-50, .bg-blue-50) { background-color: #12203a; }
+html.dark .dash-canvas [data-card="list"] :is(.border-sky-200, .border-blue-100) { border-color: #1e3a5f; }
+html.dark .dash-canvas [data-card="list"] .text-sky-800 { color: #93c5fd; }
+html.dark .dash-canvas [data-card="list"] .bg-amber-50 { background-color: #2a2212; }
+html.dark .dash-canvas [data-card="list"] .border-amber-200 { border-color: #4a3d1a; }
+html.dark .dash-canvas [data-card="list"] :is(.text-amber-700, .text-amber-800) { color: #fcd34d; }
+html.dark .dash-canvas [data-card="list"] :is(.bg-rose-50, .bg-red-50) { background-color: #2a1418; }
+html.dark .dash-canvas [data-card="list"] :is(.border-rose-200, .border-red-100) { border-color: #4c1d24; }
+html.dark .dash-canvas [data-card="list"] .text-rose-700 { color: #fda4af; }
+html.dark .dash-canvas [data-card="list"] .bg-violet-50 { background-color: #1f1a3a; }
+html.dark .dash-canvas [data-card="list"] .border-violet-200 { border-color: #3b2f6b; }
+html.dark .dash-canvas [data-card="list"] .text-violet-800 { color: #c4b5fd; }
 
 /* Requests panel (Site Engineer > Find Opportunities > Requests): the card
    rows' light tints in the dark theme. */
