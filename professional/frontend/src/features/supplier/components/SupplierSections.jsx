@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import useUrlState from '../../../shared/hooks/useUrlState.js'
 import {
   Briefcase, Building2, CheckCircle2, ChevronRight, Clock, Eye, FileText, Home, MapPin, Package, Search, Send, Star, Tags, Users,
 } from 'lucide-react'
@@ -316,7 +316,8 @@ export function SupplierRequestsSection({ requestMessage, requestList, viewMode 
 
 export function SupplierFindClientsSection({ clientList, requestList = [], requestMessage, sendingReceiverId, sentRequestKeys, onSendRequest, onAcceptRequest, onRejectRequest, onViewProfile }) {
   const { t, td } = useLanguage()
-  const [activeTab, setActiveTab] = useState('builders')
+  // House Owners / Builders in the address (?tab=houseowners).
+  const [activeTab, setActiveTab] = useUrlState('tab', 'builders', ['houseowners', 'builders'])
 
   // Categorize incoming requests by sender type.
   const incomingOwnerRequests = requestList.filter((r) => !r.is_sender && r.status === 'pending' && r.request_type === 'OWNER_TO_SUPPLIER')

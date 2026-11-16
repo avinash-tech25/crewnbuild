@@ -1,5 +1,7 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 
+import useUrlState from '../../../shared/hooks/useUrlState.js'
+import NotFoundPanel from '../../../shared/dashboard/NotFoundPanel.jsx'
 import { Home, MessageSquare, Plus, Truck, Warehouse } from 'lucide-react'
 import MessageThread from '../../messaging/components/MessageThread.jsx'
 import StoreBuilderRequestsPanel, { useStoreBuilderRequests } from '../../store/components/StoreBuilderRequestsPanel.jsx'
@@ -22,7 +24,7 @@ export function ContractorRequestsSection({
   // House Owner and Supplier requests are the same stored rows, told apart by
   // request_type. Two tabs rather than one mixed list; each renders the board
   // that already existed for it.
-  const [requestTab, setRequestTab] = useState('houseOwner')
+  const [requestTab, setRequestTab] = useUrlState('tab', 'houseOwner', ['houseOwner', 'supplier', 'storeManager'])
   // Requests to and from the Store Managers on this builder's team: their own
   // records and endpoints, not `requests` rows, so they never enter the two boards.
   const storeManagerRequests = useStoreBuilderRequests()
@@ -105,6 +107,8 @@ export function ContractorRequestsSection({
   )
 }
 
+const PROJECT_CATEGORY_IDS = projectCategoryTabs.map((tab) => tab.id)
+
 export function ContractorProjectsSection({
   selectedProject,
   projectList,
@@ -124,9 +128,13 @@ export function ContractorProjectsSection({
   onAssignSupplier = () => {},
   assignSupplierMessage = '',
   onManageEngineers = null,
+  // An address naming a project this builder does not hold / one still loading.
+  projectNotFound = false,
+  projectLoading = false,
 }) {
   const { t } = useLanguage()
-  const [activeCategory, setActiveCategory] = useState('current')
+  // Current / Previous / Upcoming, in the address (?tab=previous).
+  const [activeCategory, setActiveCategory] = useUrlState('tab', 'current', PROJECT_CATEGORY_IDS)
   // Same projects, only grouped for display. Nothing is added, removed or reordered
   // within a group, so every category keeps the existing newest-first order.
   const projectGroups = useMemo(() => groupProjectsByCategory(projectList), [projectList])
@@ -137,6 +145,12 @@ export function ContractorProjectsSection({
   // is gone; its fields now live in that view's Overview tab.
   const openFullProject = (project) => onSelectProject(project)
 
+  if (projectNotFound) {
+    return <NotFoundPanel backLabel={t('dash.owner.projectDetails.backToProjects')} onBack={onBackProject} />
+  }
+  if (projectLoading) {
+    return <p className="py-10 text-center text-sm font-semibold text-slate-500" role="status">{t('dash.engineer.liveCamera.loadingProjects')}</p>
+  }
   if (selectedProject) {
     return (
       <ContractorProjectDetail
@@ -169,6 +183,7 @@ export function ContractorProjectsSection({
             <button
               key={tab.id}
               type="button"
+              aria-pressed={active}
               onClick={() => setActiveCategory(tab.id)}
               className={`shrink-0 rounded-md px-3.5 py-2 text-[13px] font-extrabold transition ${
                 active ? 'bg-brand-900 text-white shadow-sm' : 'text-graphite/70 hover:bg-white hover:text-brand-700'

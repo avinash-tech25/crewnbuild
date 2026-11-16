@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
+import useUrlState from '../../../shared/hooks/useUrlState.js'
 import { ArrowDown, ArrowDownLeft, ArrowUp, ArrowUpRight, BarChart3, Boxes, ChevronRight, ClipboardCheck, ClipboardList, HardHat, History, Package, ShoppingBag, ShoppingCart, Wallet, Zap } from 'lucide-react'
 import { avatarFromPath } from '../../../shared/ui/avatars.js'
 import DashboardHero from '../../../shared/dashboard/DashboardHero.jsx'
@@ -44,7 +45,8 @@ function PanelTitle({ icon: Icon, children }) {
 
 export default function StoreOverviewSection({ overview, requests, purchases = [], country, onNav, userShell }) {
   const { t, td } = useLanguage()
-  const [range, setRange] = useState('day')
+  // Day / Week / Month / Year, in the address (?range=week).
+  const [range, setRange] = useUrlState('range', 'day', PURCHASE_RANGES.map((item) => item.id))
   const pending = requests.filter((request) => request.status === 'PENDING').slice(0, 6)
   const totalStock = overview?.total_stock || []
   // What was paid to suppliers in the chosen period (see purchaseOverview).

@@ -179,10 +179,8 @@ export default function NotificationBell({ onOpen = null }) {
       // An assignment can be of any supplier type, so it opens the type choice.
       const hubTab = { MATERIAL: 'orders', LABOR: 'labor', EQUIPMENT: 'equipment', ASSIGNMENT: 'home' }[category]
       if (hubTab) {
-        // The Suppliers hub's own tab is state, not a URL: hand it over.
-        remember('crewnbuild_pending_supplier_tab', hubTab)
-        window.dispatchEvent(new CustomEvent('crewnbuild_notification_open', { detail: { supplierTab: hubTab, notification } }))
-        go('/engineer/my-supplies')
+        // The Suppliers hub's tab is in its address.
+        go(hubTab === 'home' ? '/engineer/my-supplies' : `/engineer/my-supplies?tab=${hubTab}`)
         return
       }
       const path = { ENGINEER: '/engineer/find-opportunities', NEGOTIATION: '/engineer/find-opportunities', PROJECT: '/engineer/my-projects', ACCOUNT: '/engineer/profile' }[category]

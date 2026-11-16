@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import useUrlState from '../../../shared/hooks/useUrlState.js'
 import {
   CalendarCheck, CalendarDays, HardHat, Settings, Truck, UserPlus, UserRound, Users, X,
 } from 'lucide-react'
@@ -148,7 +149,8 @@ export function ContractorProjectDetail({
   const [confirmUnassign, setConfirmUnassign] = useState(false)
   // Which of the three existing Team areas is on screen. Site Engineer first,
   // matching the order the section has always been laid out in.
-  const [teamTab, setTeamTab] = useState('siteEngineer')
+  // Site Engineer / Suppliers / Specialists, in the address (?team=suppliers).
+  const [teamTab, setTeamTab] = useUrlState('team', 'siteEngineer', ['siteEngineer', 'suppliers', 'specialists'])
   // Labelled with the keys each block already renders as its own heading, so
   // the tabs and the sections they reveal always read the same.
   const teamTabs = [
@@ -179,7 +181,6 @@ export function ContractorProjectDetail({
   useEffect(() => {
     setSelectedEngineerId('')
     setConfirmUnassign(false)
-    setTeamTab('siteEngineer')
   }, [project?.id])
 
   return (
@@ -196,6 +197,8 @@ export function ContractorProjectDetail({
             return (
               <button
                 key={tab.id}
+                type="button"
+                aria-pressed={active}
                 onClick={() => setActiveTab(tab.id)}
                 className={`shrink-0 rounded-md px-3.5 py-2 text-[13px] font-extrabold transition ${
                   // Live Camera stands out: red, blinking (live-camera-blink, index.css).

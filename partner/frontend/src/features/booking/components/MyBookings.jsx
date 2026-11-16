@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { ArrowRight, CalendarDays, ChevronDown, ClipboardList, Phone, Star } from 'lucide-react'
 import { Alert, EmptyState, Spinner } from '../../../shared/ui/ui.jsx'
 import { technicianTypeByCode } from '../../../shared/constants/technicianTypes.js'
@@ -27,7 +27,15 @@ const FILTERS = [
 export default function MyBookings() {
   const [bookings, setBookings] = useState(null)
   const [message, setMessage] = useState('')
-  const [filter, setFilter] = useState('all')
+  // The filter is in the address (?filter=completed), so it survives a refresh and Back.
+  const [searchParams, setSearchParams] = useSearchParams()
+  const filter = FILTERS.some((item) => item.id === searchParams.get('filter')) ? searchParams.get('filter') : 'all'
+  const setFilter = (value) => setSearchParams((current) => {
+    const next = new URLSearchParams(current)
+    if (value && value !== 'all') next.set('filter', value)
+    else next.delete('filter')
+    return next
+  })
 
   const load = useCallback(() => {
     fetchMyBookings()

@@ -169,6 +169,113 @@ opened and dropped from memory when closed; nothing is put in browser storage. T
 sends every admin answer, and every file an administrator opens that is not their own,
 with `Cache-Control: no-store`.
 
+## Addresses: every selected item and tab is in the URL
+
+What is on screen is read from the address, never held only in memory or browser
+storage, so a refresh, Back / Forward and a bookmark all show the same view. Paths carry
+the place (section, record id, record tab); the query carries list tabs, filters and
+layouts. Only ids (UUIDs) and fixed words appear: never a name, phone number or other
+personal data. The default tab of each place has no word of its own, so the short address
+still works and every older address opens exactly as before. Every new address sits under
+its section's existing route (`/contractor/*`, `/owner/*`, `/engineer/*`,
+`/store-manager/*`, `/supplier/*`, `/admin/*`), so it has the same guard, role check and
+permissions. An id that is not the account's (another account's project, a deleted or
+unknown record) shows the not-found panel (`shared/dashboard/NotFoundPanel.jsx`, the
+`/404` page's picture and texts) and nothing about it is fetched; in the admin console the
+server decides, and a 403 / 404 answer shows the same panel. Query words are read through
+`shared/hooks/useUrlState.js` (`useUrlState`, `useUrlParams`): an unknown value reads as
+the default.
+
+### Builder (`/contractor/*`)
+
+| Address | Shows |
+| --- | --- |
+| `/contractor/projects?tab=previous` | project list: `current` (default), `previous`, `upcoming` |
+| `/contractor/projects/:projectId` | the project, on Site Activity |
+| `/contractor/projects/:projectId/site-activity` · `/project-analysis` · `/live-camera` · `/team` · `/overview` · `/payments` | the project's tab |
+| `/contractor/projects/:projectId/team?team=suppliers` | Team sub-tab: `siteEngineer` (default), `suppliers`, `specialists` |
+| `/contractor/requests?tab=supplier` | Requests board: `houseOwner` (default), `supplier`, `storeManager` |
+| `/contractor/requests?tab=storeManager&list=sent&request=:requestId` | Store Manager requests: received / sent, the open request |
+| `/contractor/my-site-engineers?tab=find` | `team` (default), `find`, `suppliers`, `pending` |
+| `/contractor/find-clients?tab=suppliers` | `houseowners` (default), `suppliers` |
+| `/contractor/buy-sell?tab=buy` | `sell` (default for a Builder), `buy` |
+| `/contractors/:contractorId?tab=reviews` | public builder profile tab (its own page; in a pop-up the tab stays local) |
+
+Removed: the open project and its tab held in component state, and the
+`crewnbuild_contractor_project_id` localStorage read (the project used for discovery is
+the open one, else the first).
+
+### House Owner (`/owner/*`)
+
+| Address | Shows |
+| --- | --- |
+| `/owner/projects/:projectId` | the project, on Overview |
+| `/owner/projects/:projectId/assign-builder` · `/site-activity` · `/project-analysis` · `/live-camera` · `/overview` · `/payments` | the project's view |
+| `/owner/projects/:projectId/builders` · `/requests` · `/siteEngineer` · `/suppliers` · `/escrow` | the project's pages (unchanged) |
+| `/owner/projects/:projectId/suppliers?tab=orders` | Suppliers / Product Catalog / Orders / cart |
+| `/owner/projects/:projectId/suppliers?tab=orders&list=previous&status=DELIVERED` | Orders: pending / previous, status chip |
+| `/owner/buy-sell?tab=sell` | `buy` (default), `sell` |
+
+Changed: another account's project now shows the not-found panel instead of silently
+redirecting to `/owner/projects`. `crewnbuild_current_project_id` stays in localStorage
+only as "the project last opened", which a notification or Order Product uses when no
+project is in the address; it never decides what a project page shows.
+
+### Site Engineer (`/engineer/*`)
+
+| Address | Shows |
+| --- | --- |
+| `/engineer?project=:projectId` | dashboard figures for that project (default: the first) |
+| `/engineer/calendar?project=:projectId&date=YYYY-MM-DD` · `/engineer/daily-logs?project=...` | site log on that project and day; My Projects opens it by id |
+| `/engineer/find-opportunities?tab=requests` | `joinTeam` (default), `requests`, `contractors`, `opportunities` |
+| `/engineer/my-supplies?tab=orders` | Suppliers hub: `home` (default), `suppliers`, `catalog`, `orders`, `labor`, `equipment`, `store`, `cart` |
+| `/engineer/my-supplies?tab=labor&list=history` | Labor / Equipment lists: `active` (default), `pending`, `history`; Orders: `pending`, `previous` |
+| `/engineer/my-supplies?tab=store&view=cart` | Store: products (default) or cart |
+
+Removed: the `crewnbuild_pending_supplier_tab` sessionStorage hand-off; a notification now
+links to `/engineer/my-supplies?tab=...`.
+
+### Store Manager (`/store-manager/*`)
+
+| Address | Shows |
+| --- | --- |
+| `/store-manager?range=week` | purchase overview: `day` (default), `week`, `month`, `year` |
+| `/store-manager/requests?status=PENDING&request=:requestId` · `/store-manager/approvals?...` | status filter and the open request |
+| `/store-manager/builders?tab=requests&list=sent&request=:requestId` | `team` (default), `find`, `requests`; received / sent; the open request |
+
+### Supplier (`/supplier/*`)
+
+| Address | Shows |
+| --- | --- |
+| `/supplier?range=month` | analytics range |
+| `/supplier/requests?kind=client&from=owner&view=cards` | Requests: `purchase` (default) / `client`; `all` / `owner` / `builder`; `table` (default) / `cards` |
+| `/supplier/my-projects?view=cards&requester=OWNER&status=active&date=30&project=:projectId` | My Projects layout, filters and the open project |
+| `/supplier/find-clients?tab=houseowners` | `builders` (default), `houseowners` |
+| material orders list `?from=builder` | `all` / `owner` / `builder` |
+| `/supplier/assignments?status=ACCEPTED` · `/supplier/equipment-assignments?tab=purchases&assignment=:requestId` | Labor / Equipment request filter; Equipment assignments tab and open assignment |
+
+Not in the address: a material order opened from the list, because it is keyed by its
+order code rather than a UUID.
+
+### Admin console (`/admin/*`)
+
+| Address | Shows |
+| --- | --- |
+| `/admin/users/:userId?country=IN&status=ACTIVE&role=SUPPLIER` | Users with its filters and the open account |
+| `/admin/projects/:projectId` | Projects with the open project |
+| `/admin/support/:ticketId?status=OPEN` | Support tickets, filter and the open ticket |
+| `/admin/verification?state=APPROVED&open=:userId` | Verification state tab and the open account |
+| `/admin/reports?status=RESOLVED&open=:reportId` | Reports status tab and the open report |
+| `/admin/catalog?tab=brands` | `products` (default), `brands`, `categories`, `subcategories` |
+
+### Tests
+
+`features/builder/builderUrls.test.jsx`, `features/owner/ownerUrls.test.jsx`,
+`features/engineer/engineerUrls.test.jsx` and `app/router/roleUrls.test.jsx` (Store
+Manager, Supplier, admin) open each address afresh (a refresh or bookmark), press Back /
+Forward, open another account's id (not-found panel, no request for it) and try another
+role (sent to its own home, as before).
+
 ## Access, as before and as now
 
 - A signed-out visitor at a protected address goes to `/login` and, after signing in, back to that address (new: the old app always went to the dashboard), unless a step comes first (pincode, builder checkout).

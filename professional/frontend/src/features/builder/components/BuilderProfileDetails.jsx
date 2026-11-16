@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import useUrlState from '../../../shared/hooks/useUrlState.js'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
   BadgeCheck, BriefcaseBusiness, Building2, Download, FileText, Globe, HardHat,
@@ -171,7 +172,12 @@ export default function ContractorProfileDetails({ variant = 'page', contractorI
   }, [isModal])
   const [profile, setProfile] = useState(null)
   const [errorMessage, setErrorMessage] = useState('')
-  const [activeTab, setActiveTab] = useState('overview')
+  // On its own page the tab is in the address (?tab=reviews); inside a dashboard's pop-up
+  // it stays local, so it never takes over the dashboard's own ?tab.
+  const [localTab, setLocalTab] = useState('overview')
+  const [urlTab, setUrlTab] = useUrlState('tab', 'overview', tabs)
+  const activeTab = isModal ? localTab : urlTab
+  const setActiveTab = isModal ? setLocalTab : setUrlTab
   const [messageComposerOpen, setMessageComposerOpen] = useState(false)
   const [messageBody, setMessageBody] = useState('')
   const [messageStatus, setMessageStatus] = useState('')
@@ -630,7 +636,7 @@ export default function ContractorProfileDetails({ variant = 'page', contractorI
 
         <nav className={`dash-scroll sticky z-20 flex gap-1 overflow-x-auto rounded-2xl border border-brand-100 bg-white px-2 shadow-card ${isModal ? 'top-0' : 'top-16'}`}>
           {tabs.map((tab) => (
-            <button key={tab} onClick={() => setActiveTab(tab)} className={`shrink-0 border-b-2 font-bold capitalize ${isModal ? 'px-3 py-2 text-xs' : 'px-5 py-3 text-sm'} ${activeTab === tab ? 'border-brand-700 text-brand-800' : 'border-transparent text-graphite/55'}`}>
+            <button key={tab} type="button" aria-pressed={activeTab === tab} onClick={() => setActiveTab(tab)} className={`shrink-0 border-b-2 font-bold capitalize ${isModal ? 'px-3 py-2 text-xs' : 'px-5 py-3 text-sm'} ${activeTab === tab ? 'border-brand-700 text-brand-800' : 'border-transparent text-graphite/55'}`}>
               {t(TAB_LABEL_KEYS[tab])}
             </button>
           ))}

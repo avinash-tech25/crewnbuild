@@ -7,6 +7,10 @@
  * Closed. Within the administrator's own country; the server decides, and a
  * refusal shows its own reason.
  */
+const NOT_FOUND = 'not-found'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
+import useUrlState from '../../../shared/hooks/useUrlState.js'
+import NotFoundPanel from '../../../shared/dashboard/NotFoundPanel.jsx'
 import { useEffect, useState } from 'react'
 import { Loader2, Paperclip, RefreshCw, Search, Send, X } from 'lucide-react'
 import {
@@ -39,7 +43,7 @@ function TicketPanel({ id, canManage, onClose, onChanged }) {
     setError('')
     fetchStaffTicket(id)
       .then((data) => { setTicket(data); setStatus(data.status) })
-      .catch((failure) => setError(supportErrorMessage(failure, 'The ticket could not be loaded.')))
+      .catch((failure) => setError([403, 404].includes(failure.response?.status) ? NOT_FOUND : supportErrorMessage(failure, 'The ticket could not be loaded.')))
   }, [id])
 
   const save = async (event) => {
@@ -111,7 +115,8 @@ function TicketPanel({ id, canManage, onClose, onChanged }) {
               </div>
             </>
           )}
-          {error && <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 font-semibold text-red-700">{error}</p>}
+          {error === NOT_FOUND && <NotFoundPanel />}
+          {error && error !== NOT_FOUND && <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 font-semibold text-red-700">{error}</p>}
         </div>
         {ticket && canManage && (
           <form onSubmit={save} className="space-y-3 border-t border-slate-100 p-5">
@@ -136,10 +141,16 @@ function TicketPanel({ id, canManage, onClose, onChanged }) {
 }
 
 export function SupportTicketsAdminPage({ identity, Panel, useAsync }) {
-  const [status, setStatus] = useState('')
+  // The status filter is in the query (?status=OPEN), the open ticket in the path
+  // (/admin/support/:ticketId), so both survive a refresh and Back.
+  const [status, setStatus] = useUrlState('status', '')
   const [draft, setDraft] = useState('')
   const [query, setQuery] = useState('')
-  const [openId, setOpenId] = useState(null)
+  const { ticketId } = useParams()
+  const navigate = useNavigate()
+  const { search } = useLocation()
+  const openId = ticketId || null
+  const setOpenId = (id) => navigate(id ? `/admin/support/${encodeURIComponent(id)}${search}` : `/admin/support${search}`)
   const { data, error, loading, reload } = useAsync(() => fetchStaffTickets({ status, q: query }), [status, query])
   const canManage = Boolean(identity?.permissions?.includes('support.manage'))
   const tickets = data || []

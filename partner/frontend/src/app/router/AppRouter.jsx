@@ -133,6 +133,8 @@ export function AppRoutes() {
         <Route path="/onboarding" element={<OnboardingPage />} />
         <Route path="/onboarding/*" element={<Navigate to="/onboarding" replace />} />
         <Route path="/dashboard" element={<RequireTechnician><TechnicianDashboardPage /></RequireTechnician>} />
+        {/* A dashboard section (/dashboard/accepted, /dashboard/earnings, ...): the same page and guard. */}
+        <Route path="/dashboard/:section" element={<RequireTechnician><TechnicianDashboardPage /></RequireTechnician>} />
         {/* Weather for the current job, a chosen place, or the device's position. */}
         <Route path="/weather" element={<RequireTechnician><WeatherPage /></RequireTechnician>} />
         {/* Booking for Professional House Owners and Site Engineers, opened from their dashboard. */}

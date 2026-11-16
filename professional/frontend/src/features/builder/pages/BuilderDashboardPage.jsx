@@ -75,8 +75,28 @@ function parseContractorLocation(pathname) {
   // an unknown section id does when navigating.
   return SECTION_BY_SEGMENT[segment || ''] || 'requests'
 }
+
+// /contractor/projects/:projectId[/:tab]: the open project and its tab, from the address.
+// An unknown tab word reads as the default tab; the project id is checked against the
+// builder's own projects before anything is shown.
+function parseProjectLocation(pathname) {
+  const [segment, projectId, tabSlug] = pathname.replace(/^\/contractor\/?/, '').split('/').filter(Boolean)
+  if (segment !== 'projects' || !projectId) return { projectId: null, tab: DEFAULT_PROJECT_TAB }
+  return { projectId, tab: PROJECT_TAB_BY_SLUG[tabSlug] || DEFAULT_PROJECT_TAB }
+}
+
+const projectPath = (projectId, tab = DEFAULT_PROJECT_TAB) => {
+  const base = `${NAV_PATHS.projects}/${encodeURIComponent(projectId)}`
+  return tab === DEFAULT_PROJECT_TAB ? base : `${base}/${PROJECT_TAB_SLUGS[tab] || PROJECT_TAB_SLUGS[DEFAULT_PROJECT_TAB]}`
+}
+
+// The query words of the section tabs (?tab=...), each section's own.
+const ENGINEER_SUB_TABS = ['team', 'find', 'suppliers', 'pending']
+const FIND_CLIENT_TABS = ['houseowners', 'suppliers']
+const BUY_SELL_TABS = ['buy', 'sell']
 import ContractorAnalyticsSection from '../components/BuilderAnalyticsSection.jsx'
 import { useProfileGate, useResumeGatedAction } from '../../../shared/hooks/useProfileGate.js'
+import useUrlState from '../../../shared/hooks/useUrlState.js'
 import DashboardShell from '../../../shared/dashboard/DashboardShell.jsx'
 import DeleteAccountSection from '../../accounts/components/DeleteAccountSection.jsx'
 import EmailVerificationSection from '../../accounts/components/EmailVerificationSection.jsx'
@@ -121,7 +141,7 @@ import {
   fetchProjectSuppliers,
   unassignSupplierFromProject,
 } from '../../engineers/engineersApi.js'
-import { FIND_SITE_ENGINEER_CATEGORIES, baseNav } from '../builderConstants.js'
+import { FIND_SITE_ENGINEER_CATEGORIES, baseNav, DEFAULT_PROJECT_TAB, PROJECT_TAB_BY_SLUG, PROJECT_TAB_SLUGS } from '../builderConstants.js'
 import {
   clientIdentity,
   clientRequestState as readClientRequestState,
@@ -182,8 +202,8 @@ export default function ContractorDashboard() {
     if (readPendingPlan() && activeId !== 'subscription') setActiveId('subscription')
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
-  // Buy & Sell opens on SELL for a Builder.
-  const [buySellTab, setBuySellTab] = useState('sell')
+  // Buy & Sell opens on SELL for a Builder; the tab is in the address (?tab=buy).
+  const [buySellTab, setBuySellTab] = useUrlState('tab', 'sell', BUY_SELL_TABS)
   const [searchQuery, setSearchQuery] = useState('')
   const [requestList, setRequestList] = useState([])
   // True once the request list has loaded successfully; a failed load never
@@ -193,12 +213,26 @@ export default function ContractorDashboard() {
   const [nearbyProjectList, setNearbyProjectList] = useState([])
   const [seenClientKeys, setSeenClientKeys] = useState([])
   const [timelineEntries, setTimelineEntries] = useState([])
-  const [selectedProject, setSelectedProject] = useState(null)
+  // The open project and its tab are the address's (/contractor/projects/:id/:tab), never
+  // kept beside it: a refresh, Back / Forward and a bookmark show the same project.
+  const projectLocation = useMemo(() => parseProjectLocation(location.pathname), [location.pathname])
+  const [projectsLoaded, setProjectsLoaded] = useState(false)
+  const selectedProject = useMemo(
+    () => (projectLocation.projectId ? projectList.find((project) => String(project.id) === projectLocation.projectId) || null : null),
+    [projectLocation.projectId, projectList],
+  )
+  // A project id that is not one of this builder's projects: the not-found view. The
+  // server refuses its data anyway; nothing about it is asked for.
+  const projectNotFound = Boolean(projectLocation.projectId) && projectsLoaded && !selectedProject
   const [selectedClientProfile, setSelectedClientProfile] = useState(null)
-  // Open Full Details lands on Site Activity. 'activity' is that tab's id in
-  // contractorConstants.projectDetailTabs, where it is labelled "Site Activity".
-  const [selectedProjectTab, setSelectedProjectTab] = useState('activity')
-  const [activeFindClientTab, setActiveFindClientTab] = useState('houseowners')
+  // Open Full Details lands on Site Activity, the default tab (no word in the address).
+  const selectedProjectTab = projectLocation.tab
+  const setSelectedProjectTab = useCallback((tab) => {
+    if (projectLocation.projectId) navigate(projectPath(projectLocation.projectId, tab))
+  }, [navigate, projectLocation.projectId])
+  const openProject = useCallback((project) => navigate(projectPath(project.id)), [navigate])
+  const closeProject = useCallback(() => navigate(NAV_PATHS.projects), [navigate])
+  const [activeFindClientTab, setActiveFindClientTab] = useUrlState('tab', 'houseowners', FIND_CLIENT_TABS)
   const [requestMessage, setRequestMessageText] = useState('')
   // Bumped on every set. Two identical banners in a row -- "Request already
   // sent" twice, say -- are the same string, so React skips the update and the
@@ -244,7 +278,9 @@ export default function ContractorDashboard() {
   const [assignSuccessProject, setAssignSuccessProject] = useState(null)
   const [assignBusy, setAssignBusy] = useState(false)
   const [assignModalMessage, setAssignModalMessage] = useState('')
-  const [activeContractorProject, setActiveContractorProject] = useState(null)
+  // The project discovery and engineer requests are made for: the open project, else the
+  // builder's first. Read from the address and the list, never from browser storage.
+  const activeContractorProject = selectedProject || projectList[0] || null
   const [contractorSuppliers, setContractorSuppliers] = useState([])
   // Suppliers already on the open project, for the Team tab.
   const [projectSuppliers, setProjectSuppliers] = useState([])
@@ -264,7 +300,7 @@ export default function ContractorDashboard() {
   const [assignEngineerMessage, setAssignEngineerMessage] = useState('')
   const [sentEngineerIds, setSentEngineerIds] = useState(new Set())
   const [sendingEngineerId, setSendingEngineerId] = useState(null)
-  const [engineerSubTab, setEngineerSubTab] = useState('team')
+  const [engineerSubTab, setEngineerSubTab] = useUrlState('tab', 'team', ENGINEER_SUB_TABS)
 
   // The builder dashboard follows the account's country of residence.
   useEffect(() => {
@@ -326,17 +362,7 @@ export default function ContractorDashboard() {
       }))
       if (!isLatest()) return
       setProjectList(projectsWithAssignments)
-      setSelectedProject((currentSelectedProject) => {
-        if (!currentSelectedProject || !projectsWithAssignments.length) return null
-        return projectsWithAssignments.find((project) => project.id === currentSelectedProject.id) || null
-      })
-      // Restore the active project from localStorage or default to the first one
-      setActiveContractorProject((currentActive) => {
-        if (currentActive && projectsWithAssignments.some((p) => p.id === currentActive.id)) return currentActive
-        // Ids are UUIDs: compared as text.
-        const storedId = window.localStorage.getItem('crewnbuild_contractor_project_id') || ''
-        return projectsWithAssignments.find((p) => String(p.id) === storedId) || projectsWithAssignments[0] || null
-      })
+      setProjectsLoaded(true)
     })
     fetchEngineerTeam()
       .then((data) => {
@@ -697,10 +723,6 @@ export default function ContractorDashboard() {
   }
 
   const selectDashboardSection = (sectionId) => {
-    if (sectionId === 'projects') {
-      setSelectedProject(null)
-      setSelectedProjectTab('activity')
-    }
     if (sectionId !== 'findClients') {
       setSelectedClientProfile(null)
       setSendRequestTarget(null)
@@ -1218,8 +1240,7 @@ export default function ContractorDashboard() {
           {
             label: nav.find((item) => item.id === 'projects')?.label || t('ui.projects'),
             onClick: () => {
-              setSelectedProject(null)
-              setSelectedProjectTab('activity')
+              closeProject()
             },
           },
           { label: selectedProject.title || '' },
@@ -1295,18 +1316,14 @@ export default function ContractorDashboard() {
           <ContractorProjectsSection
             selectedProject={selectedProject}
             projectList={projectList}
-            onSelectProject={(projectDetails) => {
-              setSelectedProject(projectDetails)
-              setSelectedProjectTab('activity')
-            }}
+            onSelectProject={openProject}
             contractorName={contractorDisplayName}
             timelineEntries={timelineEntries}
             activeTab={selectedProjectTab}
             setActiveTab={setSelectedProjectTab}
-            onBackProject={() => {
-              setSelectedProject(null)
-              setSelectedProjectTab('activity')
-            }}
+            onBackProject={closeProject}
+            projectNotFound={projectNotFound}
+            projectLoading={Boolean(projectLocation.projectId) && !projectsLoaded}
             teamEngineers={teamData.active || []}
             projectEngineer={projectEngineer}
             onAssignEngineer={assignEngineer}

@@ -54,6 +54,7 @@ export function ContractorFindClientsSection({
         ].map((tab) => (
           <button
             key={tab.id}
+            aria-pressed={activeFindClientTab === tab.id}
             onClick={() => setActiveFindClientTab(tab.id)}
             className={`inline-flex items-center gap-1.5 border-b-2 px-3.5 py-2.5 text-[13px] font-extrabold ${activeFindClientTab === tab.id ? 'border-brand-800 text-brand-900' : 'border-transparent text-graphite/55 hover:text-brand-700'}`}
           >

@@ -1,15 +1,18 @@
 import { render } from '@testing-library/react'
 import { Provider } from 'react-redux'
-import { MemoryRouter, useLocation } from 'react-router-dom'
+import { MemoryRouter, useLocation, useNavigate } from 'react-router-dom'
 import { AppRoutes, useTechnicianSessionLifecycle } from '../app/router/AppRouter.jsx'
 import { createAppStore } from '../app/store.js'
 import { technicianSession } from '../shared/api/apiClient.js'
 import { initialAuthState } from '../shared/auth/authSlice.js'
 
 export const location = { current: null }
+// The router's navigate, for tests that press Back / Forward.
+export const history = { navigate: null, back: () => history.navigate(-1), forward: () => history.navigate(1) }
 
 function LocationProbe() {
   location.current = useLocation()
+  history.navigate = useNavigate()
   return null
 }
 

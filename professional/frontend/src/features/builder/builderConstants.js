@@ -22,6 +22,19 @@ export const baseNav = [
 ]
 
 export const defaultProjectImage = 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=900&q=80'
+// A project tab's address word: /contractor/projects/:projectId/<slug>. The first tab is
+// the project's default and has no word of its own (/contractor/projects/:projectId).
+export const PROJECT_TAB_SLUGS = {
+  activity: 'site-activity',
+  analysis: 'project-analysis',
+  liveCamera: 'live-camera',
+  team: 'team',
+  details: 'overview',
+  payments: 'payments',
+}
+export const PROJECT_TAB_BY_SLUG = Object.fromEntries(Object.entries(PROJECT_TAB_SLUGS).map(([id, slug]) => [slug, id]))
+export const DEFAULT_PROJECT_TAB = 'activity'
+
 export const projectDetailTabs = [
     { id: 'activity', labelKey: 'ui.siteActivity' },
     // The same read-only Project Analysis the House Owner sees for this project,

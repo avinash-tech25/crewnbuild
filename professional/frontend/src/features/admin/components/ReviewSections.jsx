@@ -8,8 +8,8 @@
  * to act on a summary.
  */
 
+import { useUrlParams } from '../../../shared/hooks/useUrlState.js'
 import { useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
 import { CheckCircle2, ExternalLink, FileText, RefreshCw, ShieldCheck, XCircle } from 'lucide-react'
 import { imageUrl } from '../../../shared/api/apiClient.js'
 import { PAGE_SIZE, Pagination } from './AdminPagination.jsx'
@@ -77,9 +77,11 @@ function DocumentList({ documents }) {
 /* ------------------------------------------------------------- Verification */
 
 export function VerificationPage({ identity, Panel, useAsync }) {
-  const [searchParams] = useSearchParams()
-  const [tab, setTab] = useState(searchParams.get('state') || 'PENDING')
-  const [openId, setOpenId] = useState(null)
+  // The state tab and the open account, in the address (?state=APPROVED&open=<id>).
+  const [searchParams, patchParams] = useUrlParams()
+  const tab = VERIFICATION_TABS.some(([value]) => value === searchParams.get('state')) ? searchParams.get('state') : 'PENDING'
+  const openId = searchParams.get('open') || null
+  const setOpenId = (id) => patchParams({ open: id })
   const [busyId, setBusyId] = useState(null)
   const [message, setMessage] = useState('')
   const [notes, setNotes] = useState('')
@@ -122,10 +124,7 @@ export function VerificationPage({ identity, Panel, useAsync }) {
             <button
               key={value}
               type="button"
-              onClick={() => {
-                setTab(value)
-                setOpenId(null)
-              }}
+              onClick={() => patchParams({ state: value === 'PENDING' ? null : value, open: null })}
               className={`h-8 rounded-lg px-3 text-xs font-extrabold ${
                 tab === value ? 'bg-oc-deep text-white' : 'border border-slate-200 bg-white text-oc-muted'
               }`}
@@ -284,9 +283,11 @@ export function VerificationPage({ identity, Panel, useAsync }) {
 /* ----------------------------------------------------------------- Reports */
 
 export function ReportsPage({ identity, Panel, useAsync }) {
-  const [searchParams] = useSearchParams()
-  const [tab, setTab] = useState(searchParams.get('status') || '')
-  const [openId, setOpenId] = useState(null)
+  // The status tab and the open report, in the address (?status=RESOLVED&open=<id>).
+  const [searchParams, patchParams] = useUrlParams()
+  const tab = REPORT_TABS.some(([value]) => value === searchParams.get('status')) ? searchParams.get('status') : ''
+  const openId = searchParams.get('open') || null
+  const setOpenId = (id) => patchParams({ open: id })
   const [note, setNote] = useState('')
   const [busyId, setBusyId] = useState(null)
   const [message, setMessage] = useState('')
@@ -336,9 +337,8 @@ export function ReportsPage({ identity, Panel, useAsync }) {
               key={value || 'all'}
               type="button"
               onClick={() => {
-                setTab(value)
+                patchParams({ status: value, open: null })
                 setOffset(0)
-                setOpenId(null)
               }}
               className={`h-8 rounded-lg px-3 text-xs font-extrabold ${
                 tab === value ? 'bg-oc-deep text-white' : 'border border-slate-200 bg-white text-oc-muted'

@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
+import NotFoundPanel from '../../../shared/dashboard/NotFoundPanel.jsx'
+import useUrlState from '../../../shared/hooks/useUrlState.js'
 import QuantityField from '../../shop/components/QuantityField.jsx'
 import { quantityProblem } from '../../../shared/utils/quantityUnits.js'
 import { Check, ClipboardList, Eye, PackageCheck, ShoppingCart, X } from 'lucide-react'
@@ -341,20 +343,25 @@ function ApprovalsTable({ requests, onOpen, actionLabel, onIssue = null }) {
 // Requests: every Site Engineer request under status filters, the finished ones
 // included; a pending one is approved or rejected from its details. Approvals: only
 // what was approved and is still waiting to be issued (from its Issue materials).
-export default function StoreRequestsSection({ mode, requests, country, guard, onChanged, onBuy, loadFailed = false }) {
+export default function StoreRequestsSection({ mode, requests, country, guard, onChanged, onBuy, loadFailed = false, loaded = true }) {
   const { t, td } = useLanguage()
   const [notes, setNotes] = useState({})
   const [busyId, setBusyId] = useState(null)
   const [notice, setNotice] = useState(null)
-  const [filter, setFilter] = useState('ALL')
+  // The status filter and the open request are the address's (?status=PENDING&request=<id>).
+  const [filter, setFilter] = useUrlState('status', 'ALL', REQUEST_FILTERS.map((item) => item.id))
   // Request ID (UUID) search, applied on top of the status filter.
   const [search, setSearch] = useState('')
   const searching = Boolean(search.trim())
   const found = searchRequests(requests, search)
   // The request whose details are open, by id: it is read from the latest list,
   // so the window shows the request as it stands after an action.
-  const [openId, setOpenId] = useState(null)
+  const [openIdParam, setOpenIdParam] = useUrlState('request', '')
+  const openId = openIdParam || null
+  const setOpenId = (id) => setOpenIdParam(id || '')
   const open = requests.find((request) => request.id === openId) || null
+  // A request id that is not this store's: the not-found panel, nothing asked for.
+  const openNotFound = Boolean(openId) && loaded && !loadFailed && !open
   // The request opened from its Issue materials button: its issue form is scrolled to.
   const [issueId, setIssueId] = useState(null)
   const openRequest = (id) => { setIssueId(null); setOpenId(id) }
@@ -403,6 +410,7 @@ export default function StoreRequestsSection({ mode, requests, country, guard, o
             <EmptyState icon={ClipboardList} title={t('store.requests.none')} message={t('store.requests.noneSub')} />
           )}
         </Panel>
+        {openNotFound && <NotFoundPanel backLabel={t('store.requests.requestBadge')} onBack={() => setOpenId(null)} />}
         {open && (
           <DetailModal placement="right" width="max-w-4xl" badge={t('store.requests.requestBadge')} title={detailTitle} subtitle={detailSubtitle} onClose={() => setOpenId(null)}>
             <RequestDetail request={open}>

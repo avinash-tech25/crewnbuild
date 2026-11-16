@@ -6,7 +6,8 @@
  * fulfilled — a pending order is not money yet, and a rejected one never will be.
  * Quick Actions open sections the dashboard already has.
  */
-import { useMemo, useState } from 'react'
+import useUrlState from '../../../shared/hooks/useUrlState.js'
+import { useMemo } from 'react'
 import { ArrowDown, ArrowRight, ArrowUp, BarChart3, Boxes, ChevronRight, ClipboardList, IndianRupee, Package, ShoppingCart, Tags, Users, Zap } from 'lucide-react'
 import { formatMoney as countryFormatMoney } from '../../../shared/utils/countryConfig.js'
 import { formatDate, formatNumber } from '../../../shared/utils/formatters.js'
@@ -79,7 +80,8 @@ function PanelTitle({ icon: Icon, title, action }) {
 // parts: which panels to draw ('sales', 'top', 'actions'); the dashboard lays them out.
 export default function SupplierAnalyticsDashboard({ orders = [], onNavigate, onAddProduct, parts = ['sales', 'top', 'actions'] }) {
   const { t, td } = useLanguage()
-  const [range, setRange] = useState('day')
+  // Day / Week / Month / Year, in the address (?range=week).
+  const [range, setRange] = useUrlState('range', 'day', RANGES.map((item) => item.id))
 
   const money = (value) => countryFormatMoney(value)
   const lineValue = (row) => Number(row.price || 0) * Number(row.quantity || 0)

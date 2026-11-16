@@ -1025,6 +1025,7 @@ export function MySiteEngineersSection({
             <button
               key={tab.id}
               type="button"
+              aria-pressed={isActive}
               onClick={() => onTabChange?.(tab.id)}
               className={`inline-flex h-10 shrink-0 items-center gap-2 rounded-xl px-4 text-xs font-extrabold transition ${
                 isActive ? 'bg-brand-700 text-white shadow-sm' : 'text-graphite/55 hover:bg-slate-50 hover:text-graphite'

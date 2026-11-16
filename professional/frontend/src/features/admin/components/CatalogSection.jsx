@@ -21,6 +21,7 @@
  * stored where the existing upload endpoints put it.
  */
 
+import useUrlState from '../../../shared/hooks/useUrlState.js'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { ArrowLeft, Boxes, CheckCircle2, CircleDot, ChevronLeft, ChevronRight, Film, ImageOff, ImagePlus, Images, LayoutGrid, Loader2, PackageSearch, RefreshCw, Search, Star, Tags, Trash2, Upload, X } from 'lucide-react'
@@ -138,7 +139,8 @@ export function CatalogPage({ Panel, canManage = false }) {
   const dispatch = useDispatch()
   const { categories, subcategories, brands, units, products, filters, loading, error, selectedId, detail } =
     useSelector(selectAdminCatalog)
-  const [tab, setTab] = useState('products')
+  // Products / Brands / Categories / Subcategories, in the address (?tab=brands).
+  const [tab, setTab] = useUrlState('tab', 'products', TABS.map(({ key }) => key))
   // Active subcategories, reported by the Subcategories tab once it has loaded them.
   const [subcategoryCount, setSubcategoryCount] = useState(null)
   // null | { product } -- the details editor for the open product.

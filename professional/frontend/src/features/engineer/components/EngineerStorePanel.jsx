@@ -13,6 +13,7 @@
  * The store lists only what its Store Manager has received: goods a supplier has
  * accepted are not stock until then, and the panel says so.
  */
+import useUrlState from '../../../shared/hooks/useUrlState.js'
 import { useEffect, useState } from 'react'
 import { ClipboardList, Package, Search, ShoppingCart, Trash2, Truck, X } from 'lucide-react'
 import EmptyState from '../../../shared/dashboard/EmptyState.jsx'
@@ -93,7 +94,8 @@ export default function EngineerStorePanel({ projects, stores, activeProjectId, 
   const [notice, setNotice] = useState(null)
   const [category, setCategory] = useState('')
   const [search, setSearch] = useState('')
-  const [view, setView] = useState('products')
+  // Products or the cart, in the address (?view=cart).
+  const [view, setView] = useUrlState('view', 'products', ['products', 'cart'])
   // The product opened in its details window, the variant chosen there and the quantity typed.
   const [openProduct, setOpenProduct] = useState(null)
   const [chosenId, setChosenId] = useState(null)

@@ -9,6 +9,7 @@
  *
  * No quotation, negotiation or payment.
  */
+import useUrlState, { useUrlParams } from '../../../shared/hooks/useUrlState.js'
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import { useSelector } from 'react-redux'
 import {
@@ -480,7 +481,8 @@ function RejectDialog({ request, onClose, onDone }) {
 
 export function EquipmentRequestsSection({ requests, onChanged, compact = false }) {
   const { t } = useLanguage()
-  const [filter, setFilter] = useState('PENDING')
+  // The status filter, in the address (?status=ACCEPTED).
+  const [filter, setFilter] = useUrlState('status', 'PENDING', REQUEST_FILTERS)
   const [accepting, setAccepting] = useState(null)
   const [rejecting, setRejecting] = useState(null)
   const [notice, setNotice] = useState({ tone: '', text: '' })
@@ -616,8 +618,11 @@ const ASSIGNMENT_TABS = [
 
 export function EquipmentAssignmentsSection({ requests, onChanged, refreshKey = 0 }) {
   const { t } = useLanguage()
-  const [tab, setTab] = useState('rentals')
-  const [openId, setOpenId] = useState(null)
+  // The tab and the open assignment, in the address (?tab=purchases&assignment=<id>).
+  const [params, patchParams] = useUrlParams()
+  const [tab] = useUrlState('tab', 'rentals', ASSIGNMENT_TABS.map((item) => item.id))
+  const openId = params.get('assignment') || null
+  const setOpenId = (id) => patchParams({ assignment: id })
   const [busyId, setBusyId] = useState(null)
   const [notice, setNotice] = useState({ tone: '', text: '' })
   const lists = useMemo(() => Object.fromEntries(ASSIGNMENT_TABS.map((item) => [item.id, requests.filter(item.match)])), [requests])
@@ -643,7 +648,7 @@ export function EquipmentAssignmentsSection({ requests, onChanged, refreshKey = 
     <section className="space-y-3">
       <div className="flex gap-1 overflow-x-auto rounded-2xl border border-slate-200 bg-white p-1.5">
         {ASSIGNMENT_TABS.map((item) => (
-          <button key={item.id} type="button" onClick={() => { setTab(item.id); setOpenId(null) }} className={`inline-flex h-10 shrink-0 items-center gap-2 rounded-xl px-4 text-xs font-extrabold transition ${tab === item.id ? 'bg-brand-700 text-white shadow-sm' : 'text-graphite/55 hover:bg-slate-50 hover:text-graphite'}`}>
+          <button key={item.id} type="button" onClick={() => patchParams({ tab: item.id === 'rentals' ? null : item.id, assignment: null })} className={`inline-flex h-10 shrink-0 items-center gap-2 rounded-xl px-4 text-xs font-extrabold transition ${tab === item.id ? 'bg-brand-700 text-white shadow-sm' : 'text-graphite/55 hover:bg-slate-50 hover:text-graphite'}`}>
             {t(item.labelKey)}
             {lists[item.id].length > 0 && <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-extrabold ${tab === item.id ? 'bg-white/20 text-white' : 'bg-brand-50 text-brand-700'}`}>{lists[item.id].length}</span>}
           </button>

@@ -7,6 +7,7 @@
  * Its own records and endpoints (/store-builder-requests): never mixed with Site
  * Engineer store requests, supplier purchases or House Owner / Supplier requests.
  */
+import useUrlState from '../../../shared/hooks/useUrlState.js'
 import { useCallback, useEffect, useState } from 'react'
 import { Check, Eye, Inbox, Plus, Send, Undo2, X } from 'lucide-react'
 import StatusPill from '../../../shared/dashboard/StatusPill.jsx'
@@ -182,8 +183,11 @@ function RequestDetail({ request, text, guard, onChanged }) {
 
 export default function StoreBuilderRequestsPanel({ data, failed, reload, guard }) {
   const { t, td } = useLanguage()
-  const [tab, setTab] = useState('received')
-  const [openId, setOpenId] = useState(null)
+  // Received / Sent and the open request, in the address (?list=sent&request=<id>).
+  const [tab, setTab] = useUrlState('list', 'received', ['received', 'sent'])
+  const [openIdParam, setOpenIdParam] = useUrlState('request', '')
+  const openId = openIdParam || null
+  const setOpenId = (id) => setOpenIdParam(id || '')
   const [creating, setCreating] = useState(false)
   const [notice, setNotice] = useState(null)
   if (!data) {

@@ -5,6 +5,7 @@
  * checkout reads as one order rather than a row per material. Partnership
  * requests stay on the Requests screen; this screen is only about materials.
  */
+import useUrlState, { useUrlParams } from '../../../shared/hooks/useUrlState.js'
 import { useEffect, useMemo, useState } from 'react'
 import { CheckCircle2, Clock, PackageSearch, RefreshCw, Search, XCircle } from 'lucide-react'
 import OrderDetailCard from './OrderDetailCard.jsx'
@@ -64,8 +65,10 @@ export default function OrdersPanel({ projectId } = {}) {
   const [loading, setLoading] = useState(true)
   const [openOrder, setOpenOrder] = useState(null)
   const [search, setSearch] = useState('')
-  const [tab, setTab] = useState('pending')
-  const [status, setStatus] = useState('ALL')
+  // Pending / Previous and the status chip, in the address (?list=previous&status=DELIVERED).
+  const [, patchParams] = useUrlParams()
+  const [tab] = useUrlState('list', 'pending', Object.keys(TAB_STATUSES))
+  const [status, setStatus] = useUrlState('status', 'ALL', ['ALL', ...TAB_STATUSES[tab]])
   // Orders from different suppliers already carry the supplier's name; this
   // narrows the list to one of them so "my orders from X" is one click.
   const [supplierId, setSupplierId] = useState('ALL')
@@ -126,7 +129,7 @@ export default function OrdersPanel({ projectId } = {}) {
 
   const statusFilters = ['ALL', ...TAB_STATUSES[tab]]
   const countFor = (tabId) => orders.filter((order) => TAB_STATUSES[tabId].includes(orderStatus(order.items))).length
-  const switchTab = (tabId) => { setTab(tabId); setStatus('ALL'); setSupplierId('ALL') }
+  const switchTab = (tabId) => { patchParams({ list: tabId === 'pending' ? null : tabId, status: null }); setSupplierId('ALL') }
   const chipClass = (active) => `h-9 shrink-0 rounded-full px-3.5 text-xs font-extrabold transition ${
     active ? 'bg-brand-700 text-white' : 'border border-slate-200 bg-white text-graphite/60 hover:border-brand-300'
   }`

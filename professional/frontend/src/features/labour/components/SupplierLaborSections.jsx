@@ -9,6 +9,7 @@
  *
  * There is no quotation, negotiation or payment in this flow.
  */
+import useUrlState from '../../../shared/hooks/useUrlState.js'
 import { useEffect, useMemo, useState } from 'react'
 import {
   CalendarDays, CheckCircle2, ChevronRight, ClipboardList, HardHat, Loader2, Pencil, Plus, Power, UserCheck, Users, Wrench, X, XCircle,
@@ -414,7 +415,8 @@ export const requestFilterLabel = (id) => (id === 'ALL' ? translate('labor.filte
 
 export function LaborRequestsSection({ requests, services, onChanged, compact = false }) {
   const { t } = useLanguage()
-  const [filter, setFilter] = useState('PENDING')
+  // The status filter, in the address (?status=ACCEPTED).
+  const [filter, setFilter] = useUrlState('status', 'PENDING', REQUEST_FILTERS)
   const [accepting, setAccepting] = useState(null)
   const [rejecting, setRejecting] = useState(null)
   const [notice, setNotice] = useState({ tone: '', text: '' })

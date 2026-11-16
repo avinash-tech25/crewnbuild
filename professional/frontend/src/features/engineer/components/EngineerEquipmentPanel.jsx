@@ -11,6 +11,7 @@
  * cancels pending requests and logs daily hours on accepted rentals. Prices and
  * availability are always the backend's. No quotation, negotiation or payment.
  */
+import useUrlState from '../../../shared/hooks/useUrlState.js'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { CalendarDays, Construction, History, Loader2, Send, ShoppingCart, Truck, XCircle } from 'lucide-react'
 import EmptyState from '../../../shared/dashboard/EmptyState.jsx'
@@ -350,7 +351,8 @@ export default function EngineerEquipmentPanel({ projects = [], activeProjectId 
   const loadedProjectId = useRef(projectId)
   const [dialog, setDialog] = useState(null) // { kind: 'RENT'|'BUY', item, supplierId }
   const [notice, setNotice] = useState({ tone: '', text: '' })
-  const [tab, setTab] = useState('active')
+  // The list shown, in the address (?list=...).
+  const [tab, setTab] = useUrlState('list', 'active', ['active', 'pending', 'history'])
   const [refreshKey, setRefreshKey] = useState(0)
   const guard = useLatestOnly()
 

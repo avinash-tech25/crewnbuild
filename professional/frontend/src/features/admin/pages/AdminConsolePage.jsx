@@ -12,7 +12,7 @@
  */
 
 import { Fragment, useEffect, useMemo, useState } from 'react'
-import { Navigate, Route, Routes, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
+import { Navigate, Route, Routes, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import {
   BadgeCheck,
@@ -240,13 +240,24 @@ function UsersPage({ identity }) {
   const [searchParams, setSearchParams] = useSearchParams()
   const country = searchParams.get('country') || ''
   const statusFilter = searchParams.get('status') || ''
-  const [role, setRole] = useState('')
+  // The role filter joins country and status in the query (?role=SUPPLIER); the open
+  // account is in the path (/admin/users/:userId). Ids only, never a name.
+  const role = searchParams.get('role') || ''
+  const setRole = (value) => setSearchParams((current) => {
+    const next = new URLSearchParams(current)
+    if (value) next.set('role', value)
+    else next.delete('role')
+    return next
+  })
   const [search, setSearch] = useState('')
   const [query, setQuery] = useState('')
   const [offset, setOffset] = useState(0)
   const [busyId, setBusyId] = useState(null)
   const [actionError, setActionError] = useState('')
-  const [openUserId, setOpenUserId] = useState(null)
+  const { userId: openUserId = null } = useParams()
+  const navigate = useNavigate()
+  const listSearch = useLocation().search
+  const setOpenUserId = (id) => navigate(id ? `/admin/users/${encodeURIComponent(id)}${listSearch}` : `/admin/users${listSearch}`)
 
   const { data, error, loading, reload } = useAsync(
     () =>
@@ -485,7 +496,10 @@ function UsersPage({ identity }) {
 
 function ProjectsPage() {
   const [offset, setOffset] = useState(0)
-  const [openProjectId, setOpenProjectId] = useState(null)
+  // The open project is in the path (/admin/projects/:projectId).
+  const { projectId: openProjectId = null } = useParams()
+  const navigate = useNavigate()
+  const setOpenProjectId = (id) => navigate(id ? `/admin/projects/${encodeURIComponent(id)}` : '/admin/projects')
   const { data, error, loading, reload } = useAsync(
     () => fetchAdminProjects({ limit: PAGE_SIZE, offset }),
     [offset],
@@ -1241,7 +1255,9 @@ function AdminConsole({ identity, error, onIdentityChanged }) {
             }
           />
           <Route path="users" element={<UsersPage identity={identity} />} />
+          <Route path="users/:userId" element={<UsersPage identity={identity} />} />
           <Route path="projects" element={<ProjectsPage />} />
+          <Route path="projects/:projectId" element={<ProjectsPage />} />
           <Route path="leads" element={<LeadsPage Panel={Panel} useAsync={useAsync} />} />
           <Route
             path="verification"
@@ -1270,6 +1286,7 @@ function AdminConsole({ identity, error, onIdentityChanged }) {
           <Route path="subscription-payments" element={<SubscriptionPaymentsPage identity={identity} Panel={Panel} useAsync={useAsync} />} />
           <Route path="account-deletion" element={<AccountDeletionPage Panel={Panel} useAsync={useAsync} />} />
           <Route path="support" element={<SupportTicketsAdminPage identity={identity} Panel={Panel} useAsync={useAsync} />} />
+          <Route path="support/:ticketId" element={<SupportTicketsAdminPage identity={identity} Panel={Panel} useAsync={useAsync} />} />
           <Route
             path="mobile"
             element={(

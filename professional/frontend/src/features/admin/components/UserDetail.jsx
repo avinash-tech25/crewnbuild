@@ -6,6 +6,8 @@
  * loses their place, their filter and their scroll position.
  */
 
+const NOT_FOUND = 'not-found'
+import NotFoundPanel from '../../../shared/dashboard/NotFoundPanel.jsx'
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Check, Copy, ExternalLink, FileText, ShieldCheck, X } from 'lucide-react'
@@ -98,7 +100,7 @@ export function UserDetailDrawer({ userId, onClose }) {
     fetchUserDetail(userId)
       .then((data) => !cancelled && setDetail(data))
       .catch((loadError) =>
-        !cancelled && setError(loadError.response?.data?.detail || 'Could not load this account.'),
+        !cancelled && setError([403, 404].includes(loadError.response?.status) ? NOT_FOUND : loadError.response?.data?.detail || 'Could not load this account.'),
       )
     return () => {
       cancelled = true
@@ -165,7 +167,8 @@ export function UserDetailDrawer({ userId, onClose }) {
           </button>
         </header>
 
-        {error && <p className="px-6 py-10 text-center text-sm text-slate-500">{error}</p>}
+        {error === NOT_FOUND && <div className="p-6"><NotFoundPanel /></div>}
+        {error && error !== NOT_FOUND && <p className="px-6 py-10 text-center text-sm text-slate-500">{error}</p>}
         {!error && !detail && (
           <p className="px-6 py-10 text-center text-sm text-slate-500">Loading…</p>
         )}

@@ -7,6 +7,7 @@
  * laid out as the Orders reference design: Pending / Previous tabs, a
  * filter card and an orders table. Nothing new is fetched or saved.
  */
+import useUrlState from '../../../shared/hooks/useUrlState.js'
 import { useEffect, useMemo, useState } from 'react'
 import {
   ArrowUpDown, ChevronDown, Clock, Eye, FileText, Filter, MapPin,
@@ -60,7 +61,8 @@ export default function EngineerOrdersPanel({ projectId }) {
   const [loading, setLoading] = useState(true)
   const [openOrder, setOpenOrder] = useState(null)
   const [search, setSearch] = useState('')
-  const [tab, setTab] = useState('pending')
+  // The list shown, in the address (?list=...).
+  const [tab, setTab] = useUrlState('list', 'pending', ['pending', 'previous'])
   const [sort, setSort] = useState('newest')
   // The filter row is edited as a draft and takes effect on Apply Filters.
   const [draft, setDraft] = useState(EMPTY_FILTERS)

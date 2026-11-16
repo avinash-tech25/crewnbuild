@@ -77,6 +77,7 @@ export default function StoreManagerDashboard() {
   const [overview, setOverview] = useState(null)
   const [items, setItems] = useState([])
   const [requests, setRequests] = useState([])
+  const [requestsLoaded, setRequestsLoaded] = useState(false)
   const [purchases, setPurchases] = useState([])
   const [payments, setPayments] = useState([])
   // Which of these lists failed to load: shown as an error, never as an empty list.
@@ -111,7 +112,7 @@ export default function StoreManagerDashboard() {
       .catch(() => { if (key && isLatest()) flag(key, true) })
     load(fetchStoreOverview(), setOverview)
     load(fetchStoreItems(), setItems)
-    load(fetchStoreRequests(), setRequests, 'requests')
+    load(fetchStoreRequests(), (rows) => { setRequests(rows); setRequestsLoaded(true) }, 'requests')
     load(fetchStorePurchases(), setPurchases, 'purchases')
     load(fetchStorePayments(), setPayments, 'payments')
     load(fetchStoreProjects(), setProjects)
@@ -236,7 +237,7 @@ export default function StoreManagerDashboard() {
         {activeId === 'catalog' && <StoreCatalogSection items={items} projects={projects} searchQuery={searchQuery} country={country} guard={guard} onChanged={refresh} />}
         {activeId === 'buy' && <StoreBuySection projects={projects} purchases={purchases} purchasesFailed={Boolean(loadErrors.purchases)} searchQuery={searchQuery} country={country} guard={guard} onChanged={refresh} prefill={buyPrefill} onPrefillUsed={() => setBuyPrefill(null)} onBackToRequest={(section) => setActiveId(section)} />}
         {activeId === 'payments' && <StorePaymentsSection overview={overview} purchases={purchases} payments={payments} country={country} guard={guard} onChanged={refresh} loadFailed={loadErrors} />}
-        {(activeId === 'requests' || activeId === 'approvals') && <StoreRequestsSection mode={activeId} requests={requests} loadFailed={Boolean(loadErrors.requests)} country={country} guard={guard} onChanged={refresh} onBuy={(prefill) => { setBuyPrefill({ ...prefill, backTo: activeId }); setActiveId('buy') }} />}
+        {(activeId === 'requests' || activeId === 'approvals') && <StoreRequestsSection mode={activeId} requests={requests} loaded={requestsLoaded} loadFailed={Boolean(loadErrors.requests)} country={country} guard={guard} onChanged={refresh} onBuy={(prefill) => { setBuyPrefill({ ...prefill, backTo: activeId }); setActiveId('buy') }} />}
         {activeId === 'builders' && <StoreBuildersSection teams={teams} incomingRequests={incomingRequests} contractors={contractors} defaultPincode={user?.pincode} country={country} guard={guard} onChanged={refresh} />}
         {activeId === 'messages' && (
           <div className="contractor-messages-dark space-y-3">

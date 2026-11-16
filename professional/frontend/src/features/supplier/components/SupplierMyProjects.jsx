@@ -1,4 +1,7 @@
 import { useMemo, useState } from 'react'
+const DATE_FILTER_IDS = ['all', '30', '90']
+import NotFoundPanel from '../../../shared/dashboard/NotFoundPanel.jsx'
+import useUrlState from '../../../shared/hooks/useUrlState.js'
 import {
   ArrowRight, ChevronRight, FolderKanban, LayoutGrid, LayoutList, MapPin, Package, Search, X,
 } from 'lucide-react'
@@ -41,15 +44,21 @@ const ORDER_STATUS_KEYS = {
   PENDING: 'ui.status.pending',
 }
 
-export default function SupplierMyProjects({ projectList = [], materialRequestList = [] }) {
+export default function SupplierMyProjects({ projectList = [], materialRequestList = [], allProjects = projectList, loaded = true }) {
   const { t, td } = useLanguage()
   // Table is the default presentation, matching the reference layout.
-  const [viewMode, setViewMode] = useState('table')
+  // Layout, filters and the open project are the address's
+  // (/supplier/my-projects?view=cards&status=active&project=<id>); the search box is not.
+  const [viewMode, setViewMode] = useUrlState('view', 'table', ['table', 'cards'])
   const [search, setSearch] = useState('')
-  const [requesterFilter, setRequesterFilter] = useState('all')
-  const [statusFilter, setStatusFilter] = useState('all')
-  const [dateFilter, setDateFilter] = useState('all')
-  const [openProject, setOpenProject] = useState(null)
+  const [requesterFilter, setRequesterFilter] = useUrlState('requester', 'all', ['all', 'OWNER', 'BUILDER'])
+  const [statusFilter, setStatusFilter] = useUrlState('status', 'all', ['all', 'active', 'pending', 'completed'])
+  const [dateFilter, setDateFilter] = useUrlState('date', 'all', DATE_FILTER_IDS)
+  const [openProjectId, setOpenProjectId] = useUrlState('project', '')
+  const openProject = openProjectId ? allProjects.find((project) => String(project.id) === openProjectId) || null : null
+  const setOpenProject = (project) => setOpenProjectId(project?.id ? String(project.id) : '')
+  // A project id that is not one of this supplier's: the not-found panel.
+  const openProjectNotFound = Boolean(openProjectId) && loaded && !openProject
 
   const isCompleted = (project) => (
     String(project?.status || '').toLowerCase() === 'completed'
@@ -307,6 +316,7 @@ export default function SupplierMyProjects({ projectList = [], materialRequestLi
         </section>
       )}
 
+      {openProjectNotFound && <NotFoundPanel backLabel={t('ui.myProjects')} onBack={() => setOpenProject(null)} />}
       {openProject && (
         <div className="fixed inset-0 z-[130] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-950/50" onClick={() => setOpenProject(null)} />

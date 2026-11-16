@@ -10,6 +10,7 @@
  * project's labor assignment -> daily attendance (counts only) -> Complete.
  * No quotation, negotiation or payment.
  */
+import useUrlState from '../../../shared/hooks/useUrlState.js'
 import { useEffect, useMemo, useState } from 'react'
 import { CalendarDays, CheckCircle2, HardHat, History, Loader2, Pencil, Send, UserRound, XCircle } from 'lucide-react'
 import EmptyState from '../../../shared/dashboard/EmptyState.jsx'
@@ -393,7 +394,8 @@ export default function EngineerLaborPanel({ projects = [], activeProjectId = nu
   const [loadError, setLoadError] = useState('')
   const [requesting, setRequesting] = useState(null)
   const [notice, setNotice] = useState({ tone: '', text: '' })
-  const [tab, setTab] = useState('active')
+  // The list shown, in the address (?list=...).
+  const [tab, setTab] = useUrlState('list', 'active', ['active', 'pending', 'history'])
   const [refreshKey, setRefreshKey] = useState(0)
   const guard = useLatestOnly()
 

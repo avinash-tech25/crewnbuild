@@ -11,6 +11,8 @@
  * gets forgotten.
  */
 
+const NOT_FOUND = 'not-found'
+import NotFoundPanel from '../../../shared/dashboard/NotFoundPanel.jsx'
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Flag, HardHat, MapPin, User, X } from 'lucide-react'
@@ -78,7 +80,7 @@ export function ProjectDetailDrawer({ projectId, onClose }) {
     fetchProjectDetail(projectId)
       .then((data) => !cancelled && setDetail(data))
       .catch((loadError) =>
-        !cancelled && setError(loadError.response?.data?.detail || 'Could not load this project.'),
+        !cancelled && setError([403, 404].includes(loadError.response?.status) ? NOT_FOUND : loadError.response?.data?.detail || 'Could not load this project.'),
       )
     return () => {
       cancelled = true
@@ -128,7 +130,8 @@ export function ProjectDetailDrawer({ projectId, onClose }) {
           </button>
         </header>
 
-        {error && <p className="px-6 py-10 text-center text-sm text-slate-500">{error}</p>}
+        {error === NOT_FOUND && <div className="p-6"><NotFoundPanel /></div>}
+        {error && error !== NOT_FOUND && <p className="px-6 py-10 text-center text-sm text-slate-500">{error}</p>}
         {!error && !detail && (
           <p className="px-6 py-10 text-center text-sm text-slate-500">Loading…</p>
         )}

@@ -12,6 +12,7 @@
  * "Priority" have no source in the current order data, so those columns
  * render "—" rather than inventing values.
  */
+import useUrlState from '../../../shared/hooks/useUrlState.js'
 import { useEffect, useMemo, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { ChevronRight } from 'lucide-react'
@@ -132,7 +133,8 @@ export default function SupplierMaterialRequests({ onInventoryChanged, searchQue
     { id: 'owner', label: t('role.owner'), count: ownerOrders.length },
     { id: 'builder', label: t('role.contractor'), count: builderOrders.length },
   ]
-  const [activeTab, setActiveTab] = useState('all')
+  // All / House Owner / Builder, in the address (?from=owner).
+  const [activeTab, setActiveTab] = useUrlState('from', 'all', ['all', 'owner', 'builder'])
   const visibleOrders = activeTab === 'owner' ? ownerOrders : activeTab === 'builder' ? builderOrders : allOrders
 
   const orderTotal = (order) => order.items.reduce((sum, item) => sum + Number(item.price || 0) * Number(item.quantity || 0), 0)

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import useUrlState from '../../../shared/hooks/useUrlState.js'
 import { useDispatch, useSelector } from 'react-redux'
 import { useLocation, useNavigate } from 'react-router-dom'
 import {
@@ -132,6 +133,7 @@ export default function SupplierDashboard() {
   const [productList, setProductList] = useSupplierProducts()
   const [materialRequestList, setMaterialRequestList] = useState([])
   const [myProjectsList, setMyProjectsList] = useState([])
+  const [myProjectsLoaded, setMyProjectsLoaded] = useState(false)
   // One search box lives in the topbar and filters whichever section is open —
   // the same pattern the owner and builder dashboards use — instead of only
   // narrowing the Products list.
@@ -154,9 +156,11 @@ export default function SupplierDashboard() {
   const [storeLogoPreview, setStoreLogoPreview] = useState('')
   const [showHelp, setShowHelp] = useState(false)
   const [showFeedback, setShowFeedback] = useState(false)
-  const [supplierRequestTab, setSupplierRequestTab] = useState('all')
+  // The Requests board's kind, sender filter and layout are the address's
+  // (/supplier/requests?kind=client&from=owner&view=cards).
+  const [supplierRequestTab, setSupplierRequestTab] = useUrlState('from', 'all', ['all', 'owner', 'builder'])
   // Requests shows two kinds: buyers' purchases ("Buy") and client/lead requests.
-  const [requestKind, setRequestKind] = useState('purchase')
+  const [requestKind, setRequestKind] = useUrlState('kind', 'purchase', ['purchase', 'client'])
   // Which request lists have loaded successfully; a failed load never clears
   // the New Requests badge. Each supplier type's own list is tracked apart, so
   // a load made before the profile names the type cannot stand in for another.
@@ -165,7 +169,7 @@ export default function SupplierDashboard() {
   // Table is the default request presentation — the compact view the Requests
   // page opens on — and Cards is the optional denser layout. Switching only
   // changes the layout of the same stored requests, never the data behind them.
-  const [requestViewMode, setRequestViewMode] = useState('table')
+  const [requestViewMode, setRequestViewMode] = useUrlState('view', 'table', ['table', 'cards'])
   // Labor Supplier data (GET /labor/services, /labor/requests, /labor/trades).
   const [laborServiceList, setLaborServiceList] = useState([])
   const [laborRequestList, setLaborRequestList] = useState([])
@@ -304,7 +308,7 @@ export default function SupplierDashboard() {
       .then((list) => { if (isLatest()) { setMaterialRequestList(list); markRequestsLoaded('material') } })
       .catch(() => { if (isLatest()) setMaterialRequestList([]) })
     fetchSupplierMyProjects()
-      .then((list) => { if (isLatest()) setMyProjectsList(list) })
+      .then((list) => { if (isLatest()) { setMyProjectsList(list); setMyProjectsLoaded(true) } })
       .catch(() => { if (isLatest()) setMyProjectsList([]) })
   }
   // A request, answer, purchase request or project assignment from someone
@@ -1054,6 +1058,8 @@ export default function SupplierDashboard() {
 
         {activeId === 'myProjects' && (
           <SupplierMyProjects
+            allProjects={myProjectsList}
+            loaded={myProjectsLoaded}
             projectList={myProjectsList.filter((project) => matchesSearch(project.title, project.requester?.name, project.status))}
             materialRequestList={materialRequestList}
           />

@@ -5,6 +5,8 @@ import {
   Bell, Briefcase, Building2, CalendarDays, Camera, ClipboardList, LayoutGrid, LifeBuoy, MessageSquare, PackageSearch, Settings, ShoppingCart, Truck, Users, Wrench,
 } from 'lucide-react'
 import { CART_GATED_ACTIONS, pendingActionIs, useProfileGate, useResumeGatedAction } from '../../../shared/hooks/useProfileGate.js'
+import useUrlState from '../../../shared/hooks/useUrlState.js'
+import NotFoundPanel from '../../../shared/dashboard/NotFoundPanel.jsx'
 import { canBookPartner, openPartnerBooking } from '../../partner-booking/partnerBooking.js'
 import DashboardShell from '../../../shared/dashboard/DashboardShell.jsx'
 
@@ -22,6 +24,10 @@ import DashboardShell from '../../../shared/dashboard/DashboardShell.jsx'
  * /engineer/live-camera is not here on purpose: it is its own top-level route
  * in AppRouter with its own component, and this dashboard never renders it.
  */
+// The Suppliers hub's tabs and the Find Opportunities tabs, as their ?tab= words.
+const SUPPLIER_HUB_TABS = ['home', 'suppliers', 'catalog', 'orders', 'labor', 'equipment', 'store', 'cart']
+const FIND_OPPORTUNITY_TABS = ['joinTeam', 'requests', 'contractors', 'opportunities']
+
 const NAV_PATHS = {
   dashboard: '/engineer',
   projects: '/engineer/my-projects',
@@ -136,31 +142,11 @@ export default function EngineerDashboard() {
   const { user } = useSelector((state) => state.auth)
   const { t, td, setCountry } = useLanguage()
   const dispatch = useDispatch()
-  // Back from Complete Profile with a Buy waiting: open the cart, which resumes it.
-  // A clicked notification can name the hub tab to open (Orders, Labor ...).
-  const [supplierTab, setSupplierTab] = useState(() => {
-    if (pendingActionIs(CART_GATED_ACTIONS)) return 'cart'
-    try {
-      const pending = sessionStorage.getItem('crewnbuild_pending_supplier_tab')
-      if (pending) {
-        sessionStorage.removeItem('crewnbuild_pending_supplier_tab')
-        return pending
-      }
-    } catch {
-      /* private mode: open the default tab */
-    }
-    // The supplier-type choice (Material / Labor / Equipment).
-    return 'home'
-  })
-  useEffect(() => {
-    const handleNotificationOpen = (event) => {
-      if (!event.detail?.supplierTab) return
-      try { sessionStorage.removeItem('crewnbuild_pending_supplier_tab') } catch { /* noop */ }
-      setSupplierTab(event.detail.supplierTab)
-    }
-    window.addEventListener('crewnbuild_notification_open', handleNotificationOpen)
-    return () => window.removeEventListener('crewnbuild_notification_open', handleNotificationOpen)
-  }, [])
+  // The Suppliers hub's tab is the address's (/engineer/my-supplies?tab=orders): a clicked
+  // notification links straight to it. Without one it opens on the supplier-type choice,
+  // or on the cart when coming back from Complete Profile with a Buy waiting.
+  const [supplierTabFallback] = useState(() => (pendingActionIs(CART_GATED_ACTIONS) ? 'cart' : 'home'))
+  const [supplierTab, setSupplierTab] = useUrlState('tab', supplierTabFallback, SUPPLIER_HUB_TABS)
 
   const navigate = useNavigate()
   const location = useLocation()
@@ -204,7 +190,7 @@ export default function EngineerDashboard() {
   const [notificationBadgeCounts, setNotificationBadgeCounts] = useState({})
   const [showHelp, setShowHelp] = useState(false)
   const [showFeedback, setShowFeedback] = useState(false)
-  const [findOppTab, setFindOppTab] = useState('joinTeam')
+  const [findOppTab, setFindOppTab] = useUrlState('tab', 'joinTeam', FIND_OPPORTUNITY_TABS)
   // Which request lists have loaded successfully; a failed load never clears
   // the New Requests badge.
   const [requestLoads, setRequestLoads] = useState({ requests: false, joinTeam: false })
@@ -246,12 +232,12 @@ export default function EngineerDashboard() {
       .then((list) => {
         if (!isLatest()) return
         setProjectList(list)
-        setProjectLoad({ ok: true, keys: list.map((project) => `project:${project.id}`) })
+        setProjectLoad({ ok: true, settled: true, keys: list.map((project) => `project:${project.id}`) })
       })
       .catch(() => {
         if (!isLatest()) return
         setProjectList([])
-        setProjectLoad((current) => ({ ...current, ok: false }))
+        setProjectLoad((current) => ({ ...current, ok: false, settled: true }))
       })
     fetchEngineerTeam()
       .then((data) => {
@@ -536,8 +522,11 @@ export default function EngineerDashboard() {
   const unreadActivityCount = notifications.filter((notification) => !notification.is_read).length
   // The project the dashboard's Budget Alerts and analytics show: picked in
   // Budget Alerts, the first project until then.
-  const [pickedAnalyticsProjectId, setAnalyticsProjectId] = useState('')
-  const analyticsProjectId = pickedAnalyticsProjectId || (projectList[0] ? String(projectList[0].id) : '')
+  // The project the dashboard figures are for, in the address (/engineer?project=<id>);
+  // an id that is not one of the engineer's projects reads as the first one.
+  const [pickedAnalyticsProjectId, setAnalyticsProjectId] = useUrlState('project', '')
+  const analyticsProjectId = (projectList.some((item) => String(item.id) === pickedAnalyticsProjectId) && pickedAnalyticsProjectId)
+    || (projectList[0] ? String(projectList[0].id) : '')
   const navigateToSection = (sectionId) => {
     setActiveId(sectionId)
     window.scrollTo({ top: 0, behavior: 'auto' })
@@ -603,11 +592,16 @@ export default function EngineerDashboard() {
     }
   }
 
-  const openSiteLog = () => {
+  // A project's card opens its site calendar on that project, by id in the address.
+  const openSiteLog = (project) => {
     setSelectedOpportunity(null)
-    setActiveId('calendar')
+    navigate(project?.id ? `${NAV_PATHS.calendar}?project=${encodeURIComponent(project.id)}` : NAV_PATHS.calendar)
     window.scrollTo({ top: 0, behavior: 'auto' })
   }
+  // A site-log address naming a project this engineer is not on: the not-found panel.
+  const siteLogProjectId = new URLSearchParams(location.search).get('project') || ''
+  const siteLogProjectNotFound = Boolean(siteLogProjectId) && projectLoad.ok
+    && !projectList.some((item) => String(item.id) === siteLogProjectId)
   // The location prompt saved a pincode: adopt the updated account and open the
   // opportunities. The data refresh keyed on user.pincode reloads them for the
   // new pincode through the existing opportunities request.
@@ -780,6 +774,7 @@ export default function EngineerDashboard() {
                 <button
                   key={tab.id}
                   type="button"
+                  aria-pressed={findOppTab === tab.id}
                   onClick={() => setFindOppTab(tab.id)}
                   className={`shrink-0 rounded-md px-3.5 py-2 text-[13px] font-extrabold transition ${
                     findOppTab === tab.id ? 'bg-brand-900 text-white shadow-sm' : 'text-graphite/70 hover:bg-white hover:text-brand-700'
@@ -857,9 +852,17 @@ export default function EngineerDashboard() {
           </div>
         )}
 
-        {(activeId === 'calendar' || activeId === 'dailyLogs') && (
+        {(activeId === 'calendar' || activeId === 'dailyLogs') && siteLogProjectNotFound && (
+          <NotFoundPanel backLabel={t('ui.myProjects')} onBack={() => setActiveId('projects')} />
+        )}
+        {(activeId === 'calendar' || activeId === 'dailyLogs') && siteLogProjectId && !projectLoad.settled && (
+          <p className="py-10 text-center text-sm font-semibold text-slate-500" role="status">{t('dash.engineer.liveCamera.loadingProjects')}</p>
+        )}
+        {/* A named project is shown only once it is known to be this engineer's. */}
+        {(activeId === 'calendar' || activeId === 'dailyLogs') && (!siteLogProjectId || projectLoad.settled) && !siteLogProjectNotFound && (
           <div className="site-calendar-dark">
             <SiteEngineerDashboard
+              inAddress
               projectList={projectList}
               contractorName={siteLogContractorName}
               viewMode={activeId === 'dailyLogs' ? 'logs' : 'calendar'}

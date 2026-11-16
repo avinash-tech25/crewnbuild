@@ -1,6 +1,6 @@
 import { forwardRef, useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { CalendarDays, Camera, ChevronDown, ChevronLeft, ChevronRight, CirclePlay, DoorOpen, FileText, Film, History as HistoryIcon, Image as ImageIcon, Loader2, Lock, Plus, RefreshCw, RotateCcw, Save, Search, X } from 'lucide-react'
 import { deleteProjectPhoto, fetchProjectPhotos, fetchProjectTimelineEntries, saveDailyWorkflow } from '../../projects/projectsApi.js'
 import { completionPercent, completionText, scheduleText } from '../../../shared/utils/projectProgress.js'
@@ -231,13 +231,36 @@ function MaterialHistoryPanel({ entries, filters, setFilters, touched, todayKey,
   </section>
 }
 
-export default function SiteEngineerDashboard({ projectList = [], viewMode = 'calendar', photoOnly = false, onLiveCamera = null, showBackToCalendar = false }) {
+const DAY_KEY = /^\d{4}-\d{2}-\d{2}$/
+
+// `inAddress`: the chosen project and day are the address's (?project=<id>&date=YYYY-MM-DD),
+// so a refresh, Back and a bookmark reopen the same day. Off where the log is embedded in
+// another page's single project, which keeps them local.
+export default function SiteEngineerDashboard({ projectList = [], viewMode = 'calendar', photoOnly = false, onLiveCamera = null, showBackToCalendar = false, inAddress = false }) {
   const { user } = useSelector((state) => state.auth)
   const { t, td } = useLanguage()
   const readOnly = user?.role !== 'ENGINEER'
   const historyOnly = viewMode === 'logs'
-  const [projectId, setProjectId] = useState('')
-  const [workDate, setWorkDate] = useState('')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [localProjectId, setLocalProjectId] = useState('')
+  const [localWorkDate, setLocalWorkDate] = useState('')
+  const addressDate = searchParams.get('date') || ''
+  const projectId = inAddress ? searchParams.get('project') || '' : localProjectId
+  const workDate = inAddress ? (DAY_KEY.test(addressDate) ? addressDate : '') : localWorkDate
+  // One change of the address for project and day together, so neither overwrites the other.
+  const setSiteView = (patch, { replace = false } = {}) => {
+    if (!inAddress) {
+      if ('project' in patch) setLocalProjectId(patch.project)
+      if ('date' in patch) setLocalWorkDate(patch.date)
+      return
+    }
+    setSearchParams((current) => {
+      const next = new URLSearchParams(current)
+      Object.entries(patch).forEach(([key, value]) => (value ? next.set(key, value) : next.delete(key)))
+      return next
+    }, { replace })
+  }
+  const setWorkDate = (date) => setSiteView({ date })
   const [month, setMonth] = useState(() => new Date())
   const [daySummary, setDaySummary] = useState({ registers: [], workflow: {} })
   const [allSummary, setAllSummary] = useState({ registers: [], workflow: {} })
@@ -293,7 +316,8 @@ export default function SiteEngineerDashboard({ projectList = [], viewMode = 'ca
 
   const notify = (text, tone = 'info') => setNotice(text ? { text, tone } : null)
 
-  useEffect(() => { if (!projectId && projectList.length === 1) setProjectId(String(projectList[0].id)) }, [projectId, projectList])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { if (!projectId && projectList.length === 1) setSiteView({ project: String(projectList[0].id) }, { replace: true }) }, [projectId, projectList])
   const refresh = useCallback(async () => {
     if (!projectId) return false
     const seq = requestSeq.current + 1
@@ -620,8 +644,7 @@ export default function SiteEngineerDashboard({ projectList = [], viewMode = 'ca
   }
   const selectProject = (value) => {
     if (!confirmLeave()) return
-    setProjectId(value)
-    setWorkDate('')
+    setSiteView({ project: value, date: '' })
   }
   const reload = () => { if (confirmLeave()) refresh() }
   const discardChanges = () => {

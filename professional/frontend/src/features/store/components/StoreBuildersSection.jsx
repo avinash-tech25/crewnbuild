@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import useUrlState from '../../../shared/hooks/useUrlState.js'
 import { Building2, Search } from 'lucide-react'
 import { useLanguage } from '../../../i18n/LanguageContext.jsx'
 import { requestEngineerJoin, respondEngineerJoinRequest } from '../../engineers/engineersApi.js'
@@ -14,7 +15,8 @@ import { Notice, inputClass, primaryButton, refusalText, secondaryButton } from 
 // what links this store to that builder's projects and Site Engineers.
 export default function StoreBuildersSection({ teams, incomingRequests, contractors, defaultPincode, country, guard, onChanged }) {
   const { t, td } = useLanguage()
-  const [tab, setTab] = useState('team')
+  // My Builders / Find / Requests, in the address (?tab=find).
+  const [tab, setTab] = useUrlState('tab', 'team', ['team', 'find', 'requests'])
   const [notice, setNotice] = useState(null)
   const [selected, setSelected] = useState(null)
   const [profile, setProfile] = useState(null)

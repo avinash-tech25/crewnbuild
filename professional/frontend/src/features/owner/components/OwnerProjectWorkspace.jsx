@@ -28,6 +28,20 @@ import { useLanguage } from '../../../i18n/LanguageContext.jsx'
 
 export const PROJECT_SECTION_DASHBOARD = 'dashboard'
 
+// The views of the project's dashboard panel, each with its own address word:
+// /owner/projects/:projectId/<slug>. Overview is the project's default view and has no
+// word (/owner/projects/:projectId).
+export const DEFAULT_PROJECT_VIEW = 'details'
+export const PROJECT_VIEW_SLUGS = {
+  assignedBuilders: 'assign-builder',
+  timeline: 'site-activity',
+  analysis: 'project-analysis',
+  liveCamera: 'live-camera',
+  details: 'overview',
+  payments: 'payments',
+}
+export const PROJECT_VIEW_BY_SLUG = Object.fromEntries(Object.entries(PROJECT_VIEW_SLUGS).map(([view, slug]) => [slug, view]))
+
 /**
  * The sections this project has, in order. Exported so the router can tell a
  * section that does not belong to this project from one that does — a
@@ -114,10 +128,10 @@ export default function OwnerProjectWorkspace({
 
   const tabs = useMemo(() => projectTabs(project, t), [project?.construction_type, t])
 
-  // A dashboard view picks its view first, then (if elsewhere) the page.
+  // A dashboard view is its own address; any other tab is a page of the project.
   const openTab = (entry) => {
     if (entry.view) setActiveTab?.(entry.view)
-    if (section !== entry.section) onSectionChange(entry.section)
+    else if (section !== entry.section) onSectionChange(entry.section)
   }
   const isActive = (entry) => section === entry.section && (!entry.view || activeTab === entry.view)
 

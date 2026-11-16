@@ -38,7 +38,9 @@ import { floorCountFor } from '../../../shared/utils/floorOptions.js'
 import { OwnerProfileSection, OwnerMessagesSection, OwnerProjectsSection } from '../components/OwnerSections.jsx'
 import OwnerOverviewSection from '../components/OwnerOverviewSection.jsx'
 import TechnicianPaymentsSection from '../../billing/components/TechnicianPaymentsSection.jsx'
-import OwnerProjectWorkspace, { PROJECT_SECTION_DASHBOARD, projectSectionIds, projectSectionLabel } from '../components/OwnerProjectWorkspace.jsx'
+import OwnerProjectWorkspace, { DEFAULT_PROJECT_VIEW, PROJECT_SECTION_DASHBOARD, PROJECT_VIEW_BY_SLUG, PROJECT_VIEW_SLUGS, projectSectionIds, projectSectionLabel } from '../components/OwnerProjectWorkspace.jsx'
+import useUrlState from '../../../shared/hooks/useUrlState.js'
+import NotFoundPanel from '../../../shared/dashboard/NotFoundPanel.jsx'
 import { useLatestOnly, useLiveRefresh } from '../../../shared/hooks/useLiveRefresh.js'
 import useRequestInbox, { useMarkSeenWhenOpened } from '../../../shared/hooks/useRequestInbox.js'
 import NewRequestToast from '../../requests/components/NewRequestToast.jsx'
@@ -84,6 +86,7 @@ const NAV_PATHS = {
 }
 
 const CURRENT_PROJECT_STORAGE_KEY = 'crewnbuild_current_project_id'
+const OWNER_SUPPLIER_TABS = ['suppliers', 'catalog', 'orders', 'cart']
 
 /**
  * Where the owner is, read from the URL.
@@ -97,7 +100,11 @@ function parseOwnerLocation(pathname) {
   const [first, second, third] = pathname.replace(/^\/owner\/?/, '').split('/').filter(Boolean)
   if (first === 'projects') {
     if (!second) return { page: NAV_PROJECTS }
-    return { page: 'project', projectId: second, section: third || PROJECT_SECTION_DASHBOARD }
+    // A dashboard view (/site-activity, /payments, ...) or a page of the project (/requests, ...).
+    if (!third || PROJECT_VIEW_BY_SLUG[third]) {
+      return { page: 'project', projectId: second, section: PROJECT_SECTION_DASHBOARD, view: PROJECT_VIEW_BY_SLUG[third] || DEFAULT_PROJECT_VIEW }
+    }
+    return { page: 'project', projectId: second, section: third, view: DEFAULT_PROJECT_VIEW }
   }
   if (first === 'buy-sell') return { page: NAV_BUY_SELL }
   if (first === 'messages') return { page: NAV_MESSAGES }
@@ -139,11 +146,11 @@ function readStoredProjectId() {
   }
 }
 
-const projectSectionPath = (projectId, sectionId) => (
-  sectionId === PROJECT_SECTION_DASHBOARD
-    ? `/owner/projects/${projectId}`
-    : `/owner/projects/${projectId}/${sectionId}`
-)
+const projectSectionPath = (projectId, sectionId, view = DEFAULT_PROJECT_VIEW) => {
+  const base = `/owner/projects/${encodeURIComponent(projectId)}`
+  if (sectionId !== PROJECT_SECTION_DASHBOARD) return `${base}/${sectionId}`
+  return view === DEFAULT_PROJECT_VIEW || !PROJECT_VIEW_SLUGS[view] ? base : `${base}/${PROJECT_VIEW_SLUGS[view]}`
+}
 
 export default function HomeownerDashboard() {
   const { user } = useSelector((state) => state.auth)
@@ -158,9 +165,12 @@ export default function HomeownerDashboard() {
     locationPrompt.finishPrompt()
   }
   // Back from Complete Profile with a Buy waiting: open the cart, which resumes it.
-  const [supplierTab, setSupplierTab] = useState(() => (pendingActionIs(CART_GATED_ACTIONS) ? 'cart' : 'suppliers'))
+  // Suppliers / Product Catalog / Orders (and the cart) of a self-construction project,
+  // in the address (?tab=orders). Back from Complete Profile with a Buy waiting opens the cart.
+  const [supplierTabFallback] = useState(() => (pendingActionIs(CART_GATED_ACTIONS) ? 'cart' : 'suppliers'))
+  const [supplierTab, setSupplierTab] = useUrlState('tab', supplierTabFallback, OWNER_SUPPLIER_TABS)
   // Buy & Sell opens on BUY for a House Owner.
-  const [buySellTab, setBuySellTab] = useState('buy')
+  const [buySellTab, setBuySellTab] = useUrlState('tab', 'buy', ['buy', 'sell'])
   const [searchQuery, setSearchQuery] = useState('')
 
   const navigate = useNavigate()
@@ -186,7 +196,6 @@ export default function HomeownerDashboard() {
   // The builder whose profile is open in the centred window over Find Builders.
   const [viewingBuilderId, setViewingBuilderId] = useState(null)
   // A project opens on its Project Dashboard (the overview view).
-  const [selectedProjectTab, setSelectedProjectTab] = useState('details')
   // Set by a project card's Edit: the project page opens its Overview already in edit mode.
   const [editProjectOnOpen, setEditProjectOnOpen] = useState(false)
   const [timelineEntries, setTimelineEntries] = useState([])
@@ -234,6 +243,13 @@ export default function HomeownerDashboard() {
   // first" — profile preferences and the like. Never used to decide what a page
   // shows.
   const fallbackProject = openedProject || projectList[0] || null
+
+  // The open view of the project's dashboard panel is the address's
+  // (/owner/projects/:id/site-activity, ...), never held beside it.
+  const selectedProjectTab = ownerRoute.view || DEFAULT_PROJECT_VIEW
+  const setSelectedProjectTab = useCallback((view) => {
+    if (ownerRoute.projectId) navigate(projectSectionPath(ownerRoute.projectId, PROJECT_SECTION_DASHBOARD, view))
+  }, [navigate, ownerRoute.projectId])
 
   // Only a failed send leaves a note here now; it clears after a few seconds
   // and whenever another project (or page) is opened.
@@ -347,7 +363,6 @@ export default function HomeownerDashboard() {
   const openProject = useCallback((project, sectionId = null) => {
     if (!project?.id) return
     try { window.localStorage.setItem(CURRENT_PROJECT_STORAGE_KEY, String(project.id)) } catch { /* private mode */ }
-    setSelectedProjectTab('details')
     setShowProjectForm(false)
     setProjectUpdateMessage('')
     const firstSection = project.construction_type === 'SELF_CONSTRUCTION' ? 'requests' : 'builders'
@@ -360,14 +375,13 @@ export default function HomeownerDashboard() {
   // assigns through the existing /project-requests/assign.
   const openProjectAssignBuilders = useCallback((project) => {
     openProject(project, PROJECT_SECTION_DASHBOARD)
-    setSelectedProjectTab('assignedBuilders')
-  }, [openProject])
+    navigate(projectSectionPath(project.id, PROJECT_SECTION_DASHBOARD, 'assignedBuilders'), { replace: true })
+  }, [navigate, openProject])
 
   // The project card's Edit: the same project page, on its Overview (Details)
   // with the existing edit form open, instead of a form inside the card.
   const openProjectOverviewEdit = useCallback((project) => {
     openProject(project, PROJECT_SECTION_DASHBOARD)
-    setSelectedProjectTab('details')
     setEditProjectOnOpen(true)
   }, [openProject])
 
@@ -555,10 +569,8 @@ export default function HomeownerDashboard() {
   // so the bad address is not left in the history for Back to return to.
   useEffect(() => {
     if (ownerRoute.page !== 'project' || !projectsLoaded) return
-    if (!openedProject) {
-      navigate(NAV_PATHS[NAV_PROJECTS], { replace: true })
-      return
-    }
+    // A project that is not this owner's: the not-found panel below, not a silent redirect.
+    if (!openedProject) return
     if (!projectSectionIds(openedProject).includes(ownerRoute.section)) {
       navigate(projectSectionPath(openedProject.id, PROJECT_SECTION_DASHBOARD), { replace: true })
     }
@@ -1202,6 +1214,11 @@ export default function HomeownerDashboard() {
           </div>
         )}
 
+        {ownerRoute.page === 'project' && !openedProject && (
+          projectsLoaded
+            ? <NotFoundPanel backLabel={t('dash.owner.projectDetails.backToProjects')} onBack={() => goToPage(NAV_PROJECTS)} />
+            : <p className="py-10 text-center text-sm font-semibold text-slate-500" role="status">{t('dash.engineer.liveCamera.loadingProjects')}</p>
+        )}
         {ownerRoute.page === 'project' && openedProject && (
           <OwnerProjectWorkspace
             project={openedProject}

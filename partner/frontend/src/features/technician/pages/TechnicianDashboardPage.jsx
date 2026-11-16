@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { useNavigate } from 'react-router-dom'
+import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import { Ban, BellRing, BriefcaseBusiness, Volume2, VolumeX, ChevronRight, Coffee, IndianRupee, CheckCircle2, CircleCheckBig, Inbox, LocateFixed, LogOut, MapPin, MessageSquare, Power, Radio, ShieldAlert, ShieldCheck, UserRound, Wallet } from 'lucide-react'
 import Logo from '../../../shared/ui/Logo.jsx'
 import { Alert, EmptyState, Spinner } from '../../../shared/ui/ui.jsx'
@@ -113,7 +113,12 @@ export default function TechnicianDashboard() {
   const dispatch = useDispatch()
   const navigate = useNavigate()
   const user = useSelector((state) => state.auth.user)
-  const [tab, setTab] = useState('new')
+  // The open section is the address's: /dashboard is New Requests, every other section
+  // has its own word (/dashboard/accepted ...), so a refresh, Back and a bookmark keep it.
+  const { section } = useParams()
+  const unknownSection = Boolean(section) && (section === 'new' || !TABS.some((item) => item.id === section))
+  const tab = section && !unknownSection ? section : 'new'
+  const setTab = useCallback((id) => navigate(id === 'new' ? '/dashboard' : `/dashboard/${id}`), [navigate])
   const [summary, setSummary] = useState(null)
   const [jobs, setJobs] = useState([])
   const [loadingJobs, setLoadingJobs] = useState(true)
@@ -156,7 +161,7 @@ export default function TechnicianDashboard() {
     setNotice({ tone: 'success', text: 'Job accepted. The customer can see you, and the address is on the job card.' })
     setTab('accepted')
     await refreshSummary()
-  }, [refreshSummary])
+  }, [refreshSummary, setTab])
 
   const loadJobs = useCallback(async (bucket, quiet = false) => {
     // 'new' is job REQUESTS, which arrive over the dispatch socket, and 'profile'
@@ -291,6 +296,8 @@ export default function TechnicianDashboard() {
     navigate('/login', { replace: true })
   }
 
+  // A section word that does not exist: back to the dashboard, not left in the history.
+  if (unknownSection) return <Navigate to="/dashboard" replace />
   if (!user) return null
   const available = workStatus === 'AVAILABLE'
   const statusOption = WORK_STATUS_OPTIONS.find((option) => option.id === workStatus) ?? WORK_STATUS_OPTIONS[2]
@@ -465,6 +472,7 @@ export default function TechnicianDashboard() {
             <button
               key={item.id}
               type="button"
+              aria-pressed={tab === item.id}
               onClick={() => { setNotice({ tone: 'info', text: '' }); setTab(item.id) }}
               className={`flex shrink-0 items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-extrabold transition ${
                 tab === item.id ? 'bg-oc-green text-white' : 'text-oc-muted hover:bg-oc-sunken hover:text-oc-ink'

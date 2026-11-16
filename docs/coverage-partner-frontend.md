@@ -32,11 +32,13 @@ Not in the old Partner app, so not here either:
 | `/onboarding` | `features/onboarding/pages/OnboardingPage.jsx` (face, Aadhaar, profile steps) | registration (onboarding) session | ported, tested |
 | `/onboarding/*` | redirect to `/onboarding` | — | ported |
 | `/dashboard` | `features/technician/pages/TechnicianDashboardPage.jsx` | technician session, onboarding complete | ported, tested |
+| `/dashboard/:section` | the same page on `accepted`, `active`, `completed`, `cancelled`, `earnings` or `profile` (`/dashboard` is New Requests; an unknown word goes back to `/dashboard`) | the same guard | new, tested |
 | `/weather` | `features/weather/pages/WeatherPage.jsx` | technician session | ported, tested (access) |
 | `/book-technician` | `features/booking/pages/BookTechnicianPage.jsx` | booking (requester) session from the Professional hand-off | ported, tested |
 | `/book-technician/:typeSlug` | `features/booking/pages/ServiceListPage.jsx` | booking session | ported |
 | `/book-technician/:typeSlug/:serviceSlug` | `features/booking/pages/BookServicePage.jsx` | booking session | ported, tested |
 | `/book-technician/bookings/:bookingId` | `features/booking/pages/BookingTrackerPage.jsx` | booking session | ported, tested |
+| My Bookings `?filter=completed` | filter: `all` (default), `active`, `completed`, `cancelled`, `none` | booking session | new |
 | `*` | `features/site/pages/NotFoundPage.jsx` | public | ported, tested |
 
 The two principals never mix: technician pages are guarded by `RequireTechnician` (technician session only; a registration session goes to `/onboarding`), booking pages by `useRequesterSession` (booking session only, from the hand-off or `GET /requester/session`). A signed-in technician who opens a booking page without a hand-off sees "Start from your CREWNBUILD dashboard" (tested).
@@ -90,12 +92,13 @@ The two principals never mix: technician pages are guarded by `RequireTechnician
 | `booking/StartWorkOtpCard.jsx` | `booking/components/StartWorkOtpCard.jsx` | ported |
 | `booking/RateTechnicianCard.jsx` | `booking/components/RateTechnicianCard.jsx` | ported |
 
-## Tests (`npx vitest run`: 7 files, 61 tests)
+## Tests (`npx vitest run`: 8 files, 68 tests)
 
 | File | What it covers |
 | --- | --- |
 | `shared/api/apiClient.test.js` | each principal's own CSRF token on writes, single-flight refresh, a refused refresh ends only that principal's session, CSRF recovery, nothing in browser storage |
 | `shared/api/endpointNames.test.js` | endpoint names unique; every requester endpoint on the booking client and no technician one |
+| `features/technician/dashboardUrls.test.jsx` | each dashboard section opens from its address, Back / Forward, an unknown section word, the guard on a section address |
 | `app/router/access.test.jsx` | guards for both principals, session check on load and refresh, sign-in, wrong password, registration, 404 |
 | `features/onboarding/onboarding.test.jsx` | camera asked only on Start after consent; face capture sent once with consent, nothing stored; Aadhaar sent once in the body then cleared, checksum refusal; password reset |
 | `features/technician/dashboard.test.jsx` | live location only while available, never offline, stopped and forgotten on going offline and on sign-out; job requests (no customer detail, accept, decline, nothing before the server says reachable); start with the customer's code in the body, wrong code; before photo upload in the body, shown from memory; bank account masked, new number sent once; earnings from the server |
