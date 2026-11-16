@@ -405,7 +405,7 @@ export default function ContractorDashboard() {
   useEffect(() => {
     const discoveryCountry = activeContractorProject?.project_country || user?.country_of_residence || 'India'
     fetchNearbyProjects(discoveryCountry).then(setNearbyProjectList).catch(() => setNearbyProjectList([]))
-    // Find Site Engineers lists Site Engineers and Store Managers. The other
+    // Find Site Engineers lists Site Engineers. The other
     // Engineer Categories are project specialists, invited from the project Team.
     refreshNearbyEngineers()
     // user?.pincode: leads are matched on the saved pincode, so a newly saved

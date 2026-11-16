@@ -89,6 +89,21 @@ function rowsOf(dialog) {
 
 const avatarOf = (name) => screen.getAllByAltText(name)[0]
 
+describe('Builder > Requests: the tabs', () => {
+  it('offers House Owner and Supplier requests only: there is no Store Manager tab', async () => {
+    openRequests([])
+    expect(await screen.findByRole('button', { name: /^House Owner Requests \(/ }, FIND)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^Supplier Requests \(/ })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Store Manager/ })).not.toBeInTheDocument()
+  })
+
+  it('opens an old Store Manager tab address on the House Owner requests', async () => {
+    installFakeServer(builderDashboardServer())
+    renderApp('/contractor/requests?tab=storeManager', { auth: signedInAs(BUILDER) })
+    expect(await screen.findByRole('button', { name: /^House Owner Requests \(/ }, FIND)).toHaveAttribute('aria-pressed', 'true')
+  })
+})
+
 describe('Builder > Supplier Requests: the card', () => {
   it('is headed by the store name, with the supplier, its category, what it offers and its logo', async () => {
     const user = userEvent.setup()

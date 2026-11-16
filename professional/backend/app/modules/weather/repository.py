@@ -1,8 +1,7 @@
 """Database queries of the weather module (ported from the old weather_repository.py).
 
-The project queries read the projects module's tables. Which projects a Store Manager or a
-Supplier delivers to is asked of the store, marketplace, labour and equipment modules
-(their links.py).
+The project queries read the projects module's tables. Which projects a Supplier delivers
+to is asked of the marketplace, labour and equipment modules (their links.py).
 """
 
 import uuid
@@ -13,7 +12,7 @@ from sqlalchemy import desc, func, inspect, or_
 from sqlalchemy.orm import Session
 
 from app.core.config import PROFESSIONAL_SCHEMA
-from app.modules.accounts.models import ADMIN_SCOPES, CATEGORY_STORE_MANAGER, AdminProfile, EngineerProfile
+from app.modules.accounts.models import ADMIN_SCOPES, AdminProfile
 from app.modules.identity.models import ADMIN_ROLES, ROLE_BUILDER, ROLE_OWNER, User
 from app.modules.projects.models import Project, ProjectEngineer
 from app.modules.weather.models import (
@@ -78,18 +77,6 @@ class WeatherRepository:
     def open_project_filter(self):
         return or_(Project.status.is_(None), func.lower(Project.status).notin_(CLOSED_PROJECT_STATUSES))
 
-    def is_store_manager(self, user: User) -> bool:
-        if user.role != "ENGINEER":
-            return False
-        category = self.database.query(EngineerProfile.category).filter(EngineerProfile.user_id == user.id).scalar()
-        return category == CATEGORY_STORE_MANAGER
-
-    def store_request_project_ids(self, store_manager_id: uuid.UUID) -> set[Any]:
-        """Projects this Store Manager has open site requests for."""
-        from app.modules.store.links import open_request_project_ids
-
-        return open_request_project_ids(self.database, store_manager_id)
-
     def supplier_order_project_ids(self, supplier_id: uuid.UUID) -> set[Any]:
         """Delivery destinations: projects this Supplier has open material, equipment or
         labour orders for."""
@@ -140,12 +127,6 @@ class WeatherRepository:
         if not user_ids:
             return []
         return self.database.query(User).filter(User.id.in_(list(user_ids)), User.status == "ACTIVE").all()
-
-    def store_request_recipient_ids(self, project_id: Any) -> set[uuid.UUID]:
-        """Store Managers with open site requests for the project."""
-        from app.modules.store.links import open_request_store_manager_ids
-
-        return open_request_store_manager_ids(self.database, project_id)
 
     def supplier_order_recipient_ids(self, project_id: Any) -> set[uuid.UUID]:
         """Suppliers with open material, equipment or labour orders for the project."""

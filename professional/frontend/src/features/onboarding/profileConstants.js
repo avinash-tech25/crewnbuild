@@ -86,9 +86,7 @@ export const businessTypeOptions = [
 // in the existing engineer_profiles.specialization column. There is one Engineer
 // account and one Engineer dashboard — a category never becomes a separate role,
 // and "Site Engineer" is one category among the fifteen, not a role of its own.
-// The Builder assignment flow will later match engineers on this value. Store
-// Manager is the one category with a dashboard of its own (dashboardPath).
-export const STORE_MANAGER_CATEGORY = 'Store Manager'
+// The Builder assignment flow will later match engineers on this value.
 
 export const engineerCategoryOptions = [
   'Site Engineer',
@@ -105,23 +103,13 @@ export const engineerCategoryOptions = [
   'Safety',
   'Construction Safety',
   'Finishing / Painter',
-  STORE_MANAGER_CATEGORY,
 ]
 
-export function isStoreManagerCategory(category) {
-  return String(category || '').trim().toLowerCase() === STORE_MANAGER_CATEGORY.toLowerCase()
-}
-
-// What the category control offers. The server refuses a saved category moving
-// to or from Store Manager, so the choice that would be refused is not shown. A
-// value saved before this list existed stays as an extra option, so opening a
-// form never silently rewrites it.
-export function engineerCategoryChoices(savedCategory, currentCategory) {
-  const saved = String(savedCategory || '').trim()
-  if (isStoreManagerCategory(saved)) return [saved]
-  const choices = saved ? engineerCategoryOptions.filter((category) => !isStoreManagerCategory(category)) : engineerCategoryOptions
+// What the category control offers. A value saved before this list existed
+// stays as an extra option, so opening a form never silently rewrites it.
+export function engineerCategoryChoices(currentCategory) {
   const current = String(currentCategory || '').trim()
-  return current && !choices.includes(current) ? [...choices, current] : choices
+  return current && !engineerCategoryOptions.includes(current) ? [...engineerCategoryOptions, current] : engineerCategoryOptions
 }
 
 // Display keys for the categories above. The stored value stays the English
@@ -141,5 +129,4 @@ export const ENGINEER_CATEGORY_LABEL_KEYS = {
   Safety: 'opt.category.safety',
   'Construction Safety': 'ui.profile.engCat.constructionSafety',
   'Finishing / Painter': 'ui.profile.engCat.finishingPainter',
-  [STORE_MANAGER_CATEGORY]: 'ui.profile.engCat.storeManager',
 }

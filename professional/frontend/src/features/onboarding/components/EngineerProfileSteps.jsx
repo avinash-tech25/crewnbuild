@@ -23,7 +23,7 @@ export default function EngineerProfileSteps({ form, formTopRef }) {
   // the server), so a mandatory field shows its * before Submit is pressed.
   const requiredFields = requiredProfileFields(user)
   const req = (field) => requiredFields.has(field) && <RequiredMark />
-  const categoryChoices = engineerCategoryChoices(user?.engineer_profile?.specialization, profileDetails.specialization)
+  const categoryChoices = engineerCategoryChoices(profileDetails.specialization)
   return (
     <div ref={formTopRef} className="mx-auto max-w-3xl scroll-mt-4 space-y-4">
       <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_14px_40px_-30px_rgba(15,23,42,0.35)] sm:p-5">

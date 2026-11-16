@@ -28,7 +28,7 @@ def get_public_weather_service(database: Session = Depends(get_database)) -> Pub
 # Every signed-in account, whatever its role, has its own place (/weather/me).
 # A project's weather is read only by its House Owner, awarded builder and
 # actively assigned Site Engineers, plus -- forecasts and active alerts only --
-# Store Managers and Suppliers with open requests or orders for it and
+# Suppliers with open orders for it and
 # administrators whose scope and permissions cover it (WeatherService).
 @router.get("/weather/projects")
 def list_projects(user: User = Depends(get_current_user), service: WeatherService = Depends(get_weather_service)):

@@ -14,7 +14,7 @@ import { completeUserProfile } from '../../auth/authApi.js'
 import { fetchContractorProfile, fetchSupplierProfile } from '../../accounts/publicProfileApi.js'
 import { budgetNumberFromEstimate, floorCountFromEstimate, isValidPhoneForCountry, isValidPostalCodeForCountry, missingContractorProfileFields, normalizePhone, phoneMaxLengthForCountry, readPendingEstimate, rolePath, savedPincodeLocationKept, saveOwnerEstimate } from '../../../shared/auth/accountPaths.js'
 import { apiErrorMessage, apiFieldErrors } from '../../../shared/auth/accountPaths.js'
-import { contractorSteps, isStoreManagerCategory } from '../profileConstants.js'
+import { contractorSteps } from '../profileConstants.js'
 import { ContractorProfileSteps } from '../components/BuilderProfileSteps.jsx'
 import { SupplierProfileSteps } from '../components/SupplierProfileSteps.jsx'
 import { supplierKind, supplierTextKeys } from '../supplierProfileKinds.js'
@@ -721,10 +721,6 @@ export default function CompleteProfilePage() {
     }
     if (user?.role === 'ENGINEER') {
       if (!String(profileDetails.specialization || '').trim()) nextValidationErrors.specialization = t('cp.val.specialization')
-      if (isStoreManagerCategory(profileDetails.specialization)) {
-        if (!String(profileDetails.qualification || '').trim()) nextValidationErrors.qualification = t('store.val.qualification')
-        if (!nextValidationErrors.pincode && !String(profileDetails.location || '').trim()) nextValidationErrors.location = t('location.prompt.selectBranch')
-      }
     }
     if (user?.role === 'SUPPLIER') {
       // Worded for the supplier's own category (material / labour / equipment).

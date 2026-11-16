@@ -30,7 +30,7 @@ import { DETAIL_DIALOG_SIZE } from '../../../shared/ui/DetailDialog.jsx'
 import { userAvatarSrc } from '../../../shared/ui/avatars.js'
 import { useLanguage } from '../../../i18n/LanguageContext.jsx'
 import { optionLabel, SUPPLIER_CATEGORY_KEYS, SUPPLIER_TYPE_KEYS } from '../../../i18n/optionKeys.js'
-import { ENGINEER_CATEGORY_LABEL_KEYS, isStoreManagerCategory } from '../../onboarding/profileConstants.js'
+import { ENGINEER_CATEGORY_LABEL_KEYS } from '../../onboarding/profileConstants.js'
 import { formatDate } from '../../../shared/utils/formatters.js'
 import { projectStatusText } from '../builderHelpers.js'
 import { assignmentCoverage } from '../supplierAssignment.js'
@@ -149,14 +149,7 @@ function MyTeamEngineers({ engineers, onViewEngineer, onAssignProject, onUnassig
     ? <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-bold text-amber-700"><span className="h-1.5 w-1.5 rounded-full bg-amber-500" />{t('ce.busy')}</span>
     : <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-700"><span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />{t('ce.active')}</span>)
 
-  // A Store Manager runs the store for all of this builder's projects and is
-  // never a project's Site Engineer (the server refuses that assignment), so
-  // the card names their category instead of offering Assign Project.
-  const actionButton = (engineer, wide = true) => (isStoreManagerCategory(engineer.specialization) ? (
-    <span className={`inline-flex h-8 items-center justify-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-3 text-center text-[11px] font-extrabold text-slate-600 ${wide ? 'w-full' : ''}`}>
-      {optionLabel(t, ENGINEER_CATEGORY_LABEL_KEYS, engineer.specialization)}
-    </span>
-  ) : isWorkingElsewhere(engineer) ? (
+  const actionButton = (engineer, wide = true) => (isWorkingElsewhere(engineer) ? (
     <span
       role="note"
       onClick={(event) => event.stopPropagation()}
@@ -183,16 +176,9 @@ function MyTeamEngineers({ engineers, onViewEngineer, onAssignProject, onUnassig
   ))
 
   // The same action as actionButton, placed on a card's footer: Unassign on the
-  // left (red text), Assign Project on the right; a Store Manager's category or
-  // the "working on another project" note sit on the left where there is no action.
+  // left (red text), Assign Project on the right; the "working on another
+  // project" note sits on the left where there is no action.
   const cardAction = (engineer, side) => {
-    if (isStoreManagerCategory(engineer.specialization)) {
-      return side === 'secondary' ? (
-        <span className="inline-flex h-9 items-center rounded-lg border border-slate-200 bg-slate-50 px-3 text-[11px] font-extrabold text-slate-600">
-          {optionLabel(t, ENGINEER_CATEGORY_LABEL_KEYS, engineer.specialization)}
-        </span>
-      ) : null
-    }
     if (isWorkingElsewhere(engineer)) {
       return side === 'secondary' ? (
         <span role="note" onClick={(event) => event.stopPropagation()} className="inline-flex h-9 cursor-not-allowed items-center rounded-lg border border-amber-200 bg-amber-50 px-3 text-[11px] font-extrabold text-amber-700">
@@ -328,7 +314,7 @@ function MyTeamEngineers({ engineers, onViewEngineer, onAssignProject, onUnassig
                 dimmed={elsewhere}
                 avatar={<CardAvatar src={userAvatarSrc(engineer, 'ENGINEER')} alt={engineer.name} />}
                 title={td(engineer.name)}
-                subtitle={isStoreManagerCategory(engineer.specialization) ? optionLabel(t, ENGINEER_CATEGORY_LABEL_KEYS, engineer.specialization) : t('role.engineer')}
+                subtitle={t('role.engineer')}
                 status={isBusy(engineer)
                   ? <CardStatus status="busy" tone="amber">{t('ce.busy')}</CardStatus>
                   : <CardStatus status="active" tone="green">{t('ce.active')}</CardStatus>}

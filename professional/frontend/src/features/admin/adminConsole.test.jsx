@@ -51,7 +51,7 @@ describe('admin console: who may enter', () => {
     ['OWNER', {}, '/owner'],
     ['BUILDER', {}, '/contractor'],
     ['SUPPLIER', {}, '/supplier'],
-    ['ENGINEER', { engineer_profile: { specialization: 'Store Manager' } }, '/store-manager'],
+    ['ENGINEER', { engineer_profile: { specialization: 'Site Engineer' } }, '/engineer'],
   ])('is closed to a %s, who goes to their own home', async (role, extra, home) => {
     installFakeServer({})
     renderApp('/admin/users', { auth: signedInAs(anAccount({ role, ...extra })) })

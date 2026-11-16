@@ -11,13 +11,11 @@ Project weather is private to the project. Who may read it, and how much:
                actively assigned Site Engineers (ensure_project_activity_read_access):
                everything -- forecasts, alerts, acknowledging them, history.
                The owner and builder can set where the site is.
-    store      a Store Manager with an open site request for the project, while
-               they serve its builder (store_manager_serves_project)
     delivery   a Supplier with an open material, equipment or labour order for it
     admin      an administrator with projects.view whose country scope holds it
                (the same rule as the admin project pages)
 
-The last three read the site's forecast and active alerts only: no address, no
+The last two read the site's forecast and active alerts only: no address, no
 acknowledging, and only admins see who acknowledged. None of them sees a project
 it has no such link to.
 
@@ -58,7 +56,6 @@ from app.modules.weather.project_links import (
     contractor_has_project_access,
     ensure_project_activity_read_access,
     project_locality,
-    store_manager_serves_project,
 )
 from app.modules.weather.repository import WeatherRepository, weather_installed
 from app.modules.weather.weather_alert_service import (
@@ -97,7 +94,7 @@ COUNTRY_CODES = {
 }
 
 # How an account reads a project's weather (see the module docstring).
-MEMBER, STORE, DELIVERY, ADMIN = "member", "store", "delivery", "admin"
+MEMBER, DELIVERY, ADMIN = "member", "delivery", "admin"
 PERSONAL = "personal"
 
 _site_locks: dict[tuple, threading.Lock] = {}
@@ -204,14 +201,7 @@ class WeatherService:
             return ADMIN if admin.has("projects.view") and admin.may_reach(project_locality(project)) else None
         if user.role == "SUPPLIER":
             return DELIVERY if project.id in self.repository.supplier_order_project_ids(user.id) else None
-        if self.repository.is_store_manager(user):
-            if project.id in self.repository.store_request_project_ids(user.id) and self.serves(user, project):
-                return STORE
         return None
-
-    def serves(self, store_manager: User, project: Project) -> bool:
-        # The account as this session holds it: the check reads its engineer profile.
-        return store_manager_serves_project(self.database, self.repository.user(store_manager.id), project)
 
     def project_access(self, project_id: uuid.UUID, user: User) -> tuple[Project, str]:
         self.require_installed()
@@ -239,12 +229,6 @@ class WeatherService:
             return [
                 (project, DELIVERY)
                 for project in self.repository.projects_by_id(self.repository.supplier_order_project_ids(user.id))
-            ]
-        if self.repository.is_store_manager(user):
-            return [
-                (project, STORE)
-                for project in self.repository.projects_by_id(self.repository.store_request_project_ids(user.id))
-                if self.serves(user, project)
             ]
         admin = self.admin_identity(user)
         if admin is not None and admin.has("projects.view"):

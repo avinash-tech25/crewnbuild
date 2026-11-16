@@ -63,12 +63,12 @@ describe('Site Engineer site log in the address', () => {
 })
 
 describe('Site Engineer hand-offs land on the tab they name, in one move', () => {
-  it("opens Store from the dashboard's Order Product quick action", async () => {
+  it("opens the Material Product Catalog from the dashboard's Order Product quick action", async () => {
     const user = userEvent.setup()
     openEngineer('/engineer')
     await user.click(await screen.findByRole('button', { name: /Order Product/ }, FIND))
     await waitFor(() => expect(location.current.pathname).toBe('/engineer/my-supplies'))
-    expect(location.current.search).toBe('?tab=store')
+    expect(location.current.search).toBe('?tab=catalog')
     act(() => history.back())
     await waitFor(() => expect(location.current.pathname).toBe('/engineer'))
   })
@@ -130,6 +130,20 @@ describe('Suppliers hub tabs keep their own list choice', () => {
     await screen.findByRole('button', { name: /^Orders/, pressed: true }, FIND)
     await user.click(screen.getByRole('button', { name: /^Suppliers/, pressed: false }))
     await waitFor(() => expect(location.current.search).toBe('?tab=suppliers'))
+  })
+})
+
+describe('Site Engineer: the addresses of the removed Store', () => {
+  it('opens the supplier type choice for an old ?tab=store address', async () => {
+    openEngineer('/engineer/my-supplies?tab=store')
+    expect(await screen.findByRole('button', { name: /Material Suppliers/ }, FIND)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /All supplier types/ })).not.toBeInTheDocument()
+  })
+
+  it('sends the old Store Requests address to the dashboard', async () => {
+    openEngineer('/engineer/store-requests')
+    await waitFor(() => expect(location.current.pathname).toBe('/engineer'))
+    expect(await screen.findByText('Welcome, Meena Iyer', {}, FIND)).toBeInTheDocument()
   })
 })
 

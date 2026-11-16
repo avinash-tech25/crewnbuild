@@ -13,7 +13,7 @@ now a soft delete with anonymisation (DB-07) instead of the old purge:
 
 Every old refusal is kept, in the old order and with the old answers
 (deletion_blockers.py): shared projects, then an open Book Technician booking, builder,
-supplier, store and engineer history. The e-mail address and number are free for a new
+supplier and engineer history. The e-mail address and number are free for a new
 account afterwards. No e-mail is sent.
 """
 
@@ -35,7 +35,6 @@ from app.modules.accounts.models import (
     AccountDeletionRequest,
 )
 from app.modules.accounts.policies import ensure_may_delete_own_account
-from app.modules.accounts.profile_completion import is_store_manager
 from app.modules.accounts.repository import AccountRepository
 from app.modules.accounts.schemas import AccountDeletionCreate
 from app.modules.files.file_ownership import file_ids_in, release_unreferenced_files
@@ -50,13 +49,11 @@ from app.modules.marketplace.account_links import remove_supplier_listings
 
 logger = logging.getLogger(__name__)
 
-ROLE_STORE_MANAGER = "STORE_MANAGER"
 # The account roles as people know them. The form also accepts the old CONTRACTOR.
 ROLE_LABELS = {
     "OWNER": "House Owner",
     ROLE_BUILDER: "Builder",
     "ENGINEER": "Site Engineer / Engineer",
-    ROLE_STORE_MANAGER: "Store Manager",
     "SUPPLIER": "Supplier",
 }
 LEGACY_ROLE_NAMES = {"CONTRACTOR": ROLE_BUILDER}
@@ -107,7 +104,7 @@ def public_config(settings: Settings) -> dict[str, Any]:
 
 
 def account_role_code(user: User) -> str:
-    return ROLE_STORE_MANAGER if is_store_manager(user) else user.role
+    return user.role
 
 
 def digits(value: str | None) -> str:

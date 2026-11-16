@@ -70,7 +70,7 @@ def test_the_role_is_read_from_professional_on_every_request(
     set_requester(database, engineer_id, status="ACTIVE")
     assert client.get("/api/v1/requester/me").status_code == 200
 
-    # Store Managers and other roles come back without a requester role.
+    # Engineers of any other category, and other roles, come back without a requester role.
     other_id = add_requester(database, role=None)
     other = start(TestClient(client.app, headers={"Origin": FRONTEND_ORIGIN}), sign_handoff(keys[0], other_id))
     assert other.status_code == 403

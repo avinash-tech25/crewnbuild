@@ -53,10 +53,9 @@ export const projectDetailTabs = [
 // enforces the same value on assignment; this only narrows the picker.
 export const SITE_ENGINEER_CATEGORY = 'Site Engineer'
 
-// What Find Site Engineers lists: Site Engineers and Store Managers. Both join
-// the builder's team through the same request; only a Site Engineer is
-// assigned to a project.
-export const FIND_SITE_ENGINEER_CATEGORIES = `${SITE_ENGINEER_CATEGORY},Store Manager`
+// What Find Site Engineers lists: Site Engineers, who join the builder's team
+// through a request and are assigned to its projects.
+export const FIND_SITE_ENGINEER_CATEGORIES = SITE_ENGINEER_CATEGORY
 
 // Tabs inside the Projects section. All three always render, including when a
 // category currently holds no projects.

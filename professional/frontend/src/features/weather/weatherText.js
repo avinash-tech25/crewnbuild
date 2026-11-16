@@ -12,7 +12,6 @@ export const WEATHER_TEXT = {
   'weather.subtitle': 'Live conditions, forecasts and weather alerts for your sites and your own location',
   'weather.site': 'Location',
   'weather.myLocation': 'My location',
-  'weather.access.store': 'store request',
   'weather.access.delivery': 'delivery site',
   'weather.access.admin': 'admin view',
   'weather.locationApproximateMine': 'Approximate (from your registered area)',

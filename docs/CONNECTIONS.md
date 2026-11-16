@@ -6,6 +6,7 @@ This file lists every connection between the four apps, the database and outside
 - **Sources:** the code in `Octabuild/backend`, `Octabuild/frontend 7/frontend`, `Partner/backend` and `Partner/frontend`. Target names come from `docs/CREWNBUILD — Technical Architecture and Design.pdf`, called "the doc" or "arch" below. Some tables in that PDF are garbled in text form, so target table names that had to be rebuilt are marked as such.
 - **Rules:** where the code and the doc disagree, this file follows the code and adds a note. Anything that could not be settled from the code is marked `UNKNOWN: <what to check>`. Secret values are never printed.
 - **Current schema names:** `octabuild` (target `professional`) and `partner`.
+- **Later change, Store Manager removed (16 Nov 2026):** everything below about the Store Manager (an `ENGINEER` with the "Store Manager" category, `/store-manager/*`, `/store/site-stores`, `/store/site-requests*`, `/store-builder-requests*`, the Razorpay store purchase checkout, the builder ↔ store manager requests and the seven `store_*` tables) describes the old app as it was ported and is kept as history. The role was removed from CREWNBUILD afterwards: Site Engineers order material directly from the suppliers assigned to their project through the marketplace cart (only for projects they are actively assigned to; for a self-construction project, from the House Owner's accepted suppliers; otherwise 403), the builder gets an information-only notification, and supplier-fulfilled goods go into `project_material_stock`. `/shop/products` takes a `project_id` for engineers. Professional Alembic revision 0006 drops `store_items`, `store_stock_movements`, `store_site_requests`, `store_site_request_items`, `store_payments`, `store_goods_receipts` and `store_builder_requests` (no archive) and narrows `engineer_profiles.category` to `SITE_ENGINEER`; former Store Managers choose a category at their next sign-in. Run `python scripts\migrate.py` after pulling it.
 
 ## Contents
 1. [Overview](#1-overview)
@@ -137,7 +138,7 @@ They connect in five places:
 | # | Step | Where (file → component/function) | Details |
 |---|---|---|---|
 | 1 | The button is shown (House Owner) | `Octabuild/frontend 7/frontend/src/pages/owner/OwnerDashboard.jsx` → `HomeownerDashboard`, inner function `bookTechnician(trade = null)` | Used as a quick action (`ui.owner.bookTechnician`). It is also passed as `onBookTechnician` to `OwnerOverviewSection.jsx`, which renders `OwnerTechnicianSection` from `pages/owner/ownerDiscovery.jsx` (`onBook`). If `partnerBookingConfigured` is false, it alerts `ui.owner.bookTechnicianNotConfigured`. If the popup is blocked, it alerts `ui.owner.bookTechnicianPopupBlocked`. |
-| 1b | The button is shown (Site Engineer) | `Octabuild/frontend 7/frontend/src/pages/engineer/EngineerDashboard.jsx` → `EngineerDashboard`, `const bookTechnician = canBookPartner(user) ? () => {...}` | A quick action. On failure it alerts `ui.engineer.bookTechnicianUnavailable`. The `/engineer/*` route only lets in an `ENGINEER` who is not a store manager (see the auth fragment). |
+| 1b | The button is shown (Site Engineer) | `Octabuild/frontend 7/frontend/src/pages/engineer/EngineerDashboard.jsx` → `EngineerDashboard`, `const bookTechnician = canBookPartner(user) ? () => {...}` | A quick action. On failure it alerts `ui.engineer.bookTechnicianUnavailable`. The `/engineer/*` route only lets in an `ENGINEER` who is not a store manager (see the auth fragment; the Store Manager was removed on 16 Nov 2026). |
 | 2 | Partner opens in a new window | `Octabuild/frontend 7/frontend/src/services/partnerBooking.js` → `openPartnerBooking(trade)` | Calls `window.open(\`${PARTNER_URL}${path}\`, 'octabuild-partner-booking')`. The path is `/book-technician` or `/book-technician/<slug>`, where the slug is one of `PARTNER_TRADE_SLUGS` = plumber, carpenter, electrician, painter. `PARTNER_URL` comes from **`VITE_PARTNER_URL`**. The window is opened inside the click handler so popup blockers allow it. The opener reference is kept on purpose. A `message` listener `answerPartnerHandoff` is added once. No iframe, no redirect, and no token in the URL. |
 | 3 | The Partner page asks the opener for a token | `Partner/frontend/src/services/booking.js` → `startRequesterSessionFromOctabuild()` / `handshakeWithOctabuild()` | Called from `Partner/frontend/src/hooks/useRequesterSession.js` → `useRequesterSession().connect`. That hook is used by `pages/booking/BookTechnicianPage.jsx`, `ServiceListPage.jsx`, `BookServicePage.jsx` and `BookingTrackerPage.jsx`. It needs `window.opener` (otherwise `NO_OPENER`). It sends `opener.postMessage({type: 'PARTNER_BOOKING_READY'}, origin)` to each origin in `OCTABUILD_ORIGINS`, which is **`VITE_OCTABUILD_ORIGIN`** split on commas. It times out after 10 s (`HANDOFF_TIMEOUT_MS`). A module-level `handshakeInProgress` shares one handshake between callers, because React StrictMode runs effects twice. |
 | 4 | Octabuild checks the request and asks its backend for a token | `partnerBooking.js` → `answerPartnerHandoff(event)` → `currentHandoffToken()` | **Origin checks:** `event.source === partnerWindow`, `event.origin === partnerOrigin()` (that is `new URL(VITE_PARTNER_URL).origin`), and `event.data.type === 'PARTNER_BOOKING_READY'`. `currentHandoffToken()` first checks `canBookPartner(readStoredUser())` (role `OWNER` or `ENGINEER`), then calls `apiClient.post('/auth/partner-handoff')`. |
@@ -324,6 +325,8 @@ Partner's other models (`auth_session.py`): `AuthSession.user_id` has **no FK**,
 The tables below have one row per feature and endpoint. Octabuild comes first, in three parts, followed by its endpoint coverage check; Partner comes next, with its own coverage check.
 
 ### 3.1 Octabuild, part 1: identity, accounts, admin, support, content, files, notifications, billing
+
+> Where a row below lists `/store-manager/*` among the routes or the Store Manager among the roles, that is the old app; the Store Manager was removed on 16 Nov 2026 (see the note at the top).
 
 App roots used in the cells below:
 - Frontend paths (`src/...`) are relative to `Octabuild/frontend 7/frontend/`.
@@ -749,6 +752,8 @@ Backend endpoints in these areas that nothing in part-1 scope calls:
 
 ### 3.2 Octabuild, part 2: projects, requests, teams, site records, materials, store, labour, equipment
 
+> The store parts of this section (`services/storeManager.js`, `/store-manager/*`, `/store/*`, `/store-builder-requests*`, the Store Manager in role columns) describe the old app. The Store Manager was removed on 16 Nov 2026 and revision 0006 drops its tables; see the note at the top.
+
 **Scope.** Every exported API function in these frontend files: `services/projects.js`, `services/requests.js`, `services/engineers.js`, `services/materialRequests.js`, `services/storeManager.js`, `services/labor.js`, `services/equipment.js`. That is 118 API functions and 119 rows, because `createProjectRequest` calls one of two endpoints.
 
 **Path roots.**
@@ -903,11 +908,13 @@ UNKNOWN: confirm the target map row for these two tables.
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | My orders | Site Engineer, Owner | /engineer/my-supplies (orders tab); /owner/projects/:projectId/suppliers | pages/engineer/EngineerDashboard.jsx, EngineerOrdersPanel.jsx; components/shop/OrdersPanel.jsx | fetchMyMaterialRequests (services/materialRequests.js) | GET /material-requests/mine?project_id= | shared/shop/routes/material_request_routes.py `fetch_my_material_requests` | shared/shop/services/material_request_service.py `MaterialRequestService.fetch_my_material_requests`, `material_request_payload`; shared/shop/repositories/material_request_repository.py `list_buyer_requests` | material_order_items, projects, users, supplier_products | none | marketplace | purchase_orders + purchase_order_items, projects, users, supplier_listings |
 | Supplier: incoming orders | Supplier | /supplier, /supplier/orders, /supplier/requests | pages/supplier/SupplierDashboard.jsx, SupplierMaterialRequests.jsx, SupplierPurchaseRequests.jsx | fetchSupplierMaterialRequests (services/materialRequests.js) | GET /supplier/material-requests | material_request_routes.py `fetch_supplier_material_requests` | `MaterialRequestService.fetch_supplier_material_requests`; `list_supplier_requests` | material_order_items, projects, users, supplier_products | none | marketplace | purchase_orders + purchase_order_items, projects, users, supplier_listings |
-| Place a material order | (no caller) | none: no page imports it. The comment in storeManager.js still names it, but Store Manager buying now goes through `/store-manager/purchases/checkout` | none | createMaterialRequest (services/materialRequests.js) | POST /material-requests | material_request_routes.py `create_material_request` | `MaterialRequestService.create_material_request`; shared/shop/services/cart_service.py `ensure_buyer_project_access`, `ensure_supplier_approved`; supplier/services/bulk_pricing.py `tiers_for`, `unit_price_for` | projects, users, supplier_products, supplier_bulk_pricing, requests, ACCESS | material_order_items, NOTIF | marketplace | purchase_orders + purchase_order_items, supplier_listing_price_tiers, notifications |
+| Place a material order | (no caller) | none: no page imports it. The comment in storeManager.js still names it, but Store Manager buying now goes through `/store-manager/purchases/checkout` (old app; since 16 Nov 2026 Site Engineers order through the cart and that checkout is gone) | none | createMaterialRequest (services/materialRequests.js) | POST /material-requests | material_request_routes.py `create_material_request` | `MaterialRequestService.create_material_request`; shared/shop/services/cart_service.py `ensure_buyer_project_access`, `ensure_supplier_approved`; supplier/services/bulk_pricing.py `tiers_for`, `unit_price_for` | projects, users, supplier_products, supplier_bulk_pricing, requests, ACCESS | material_order_items, NOTIF | marketplace | purchase_orders + purchase_order_items, supplier_listing_price_tiers, notifications |
 | Supplier: accept / reject / fulfil one order line | Supplier | /supplier/orders | pages/supplier/SupplierMaterialRequests.jsx | respondMaterialRequest (services/materialRequests.js) | POST /supplier/material-requests/{request_id}/respond | material_request_routes.py `respond_supplier_material_request` | `MaterialRequestService.respond_supplier_material_request`; `lock_supplier_request`, `lock_supplier_product`; daily_cost_service `get_or_create_inventory`; access_control `resolve_project_contractor` | material_order_items, supplier_products, projects, users, project_material_inventory | material_order_items (status), supplier_products (quantity, stock_alert_state, on fulfil), project_material_inventory, material_logs, project_timelines, NOTIF | marketplace (touches site_operations) | purchase_order_items, supplier_listings, project_material_stock, legacy_material_logs, project_timeline_entries, notifications |
 | Supplier: accept / reject a whole purchase | Supplier | /supplier/requests | pages/supplier/SupplierPurchaseRequests.jsx | respondPurchaseRequest (services/materialRequests.js) | POST /supplier/purchase-requests/{request_code}/respond | material_request_routes.py `respond_supplier_purchase_request` | `MaterialRequestService.respond_supplier_purchase_request`, `ensure_stock_for_acceptance`, `notify_purchase_decision` | material_order_items, supplier_products, projects, users | material_order_items (status), NOTIF | marketplace | purchase_orders + purchase_order_items, notifications |
 
 #### Store (Store Manager, and the Site Engineer's store requests)
+
+> **Removed later (16 Nov 2026):** the Store Manager role was removed after this snapshot. Professional revision 0006 drops the store tables and the routes below no longer exist; this section records the old app as it was. Site Engineers now order directly from the project's suppliers (see Cart / orders in 3.3).
 
 All `/store-manager/*` handlers live in `store_manager/routes/store_manager_routes.py`. They use the repository `store_manager/repositories/store_manager_repository.py` (`StoreManagerRepository`).
 
@@ -1069,7 +1076,7 @@ Material requests:
 - POST /supplier/material-requests/{request_id}/respond
 - POST /supplier/purchase-requests/{request_code}/respond
 
-Store:
+Store (removed 16 Nov 2026 with the Store Manager):
 - GET /store-manager/overview
 - GET /store-manager/projects
 - GET /store-manager/items
@@ -1143,9 +1150,9 @@ Equipment:
   - Several prefixes are shared across modules. `/projects/{id}/...` is used by project_routes, award_routes, daily_cost_routes, engineer_team_routes, project_supplier_routes, labor and equipment. `/contractors/...` and `/suppliers/...` are used by marketplace and project_suppliers.
 - **Cross-module coupling to preserve:**
   - `project_service` imports `award_service` and `daily_cost_service`.
-  - `project_request_service` imports `award_service`, `engineer_team_service` and `StoreManagerRepository`.
+  - `project_request_service` imports `award_service`, `engineer_team_service` and `StoreManagerRepository` (gone since the Store Manager was removed on 16 Nov 2026).
   - `material_request_service.respond_supplier_material_request` writes site tables: `project_material_inventory`, `material_logs`, `project_timelines`.
-  - The store purchase `finalize` creates `material_order_items` rows. The store uses marketplace order lines as its purchase lines.
+  - The store purchase `finalize` creates `material_order_items` rows. The store uses marketplace order lines as its purchase lines. (Old app; the store purchase was removed on 16 Nov 2026.)
 - **Two endpoints share one handler.** `negotiateQuotation` and `assignProjectToContractor` both call `POST /project-requests/assign`. Only the body differs: `offer_amount` and `offer_note`.
 - **Endpoints in these backend modules that the 7 files never call.** Other service files may call them:
   - `PATCH /projects/{project_id}/progress` (always answers 410)
@@ -1228,6 +1235,8 @@ All rows: Role = admin with `catalog.view` (reads) or `catalog.manage` (writes) 
 Not called by any frontend file in scope: PATCH /supplier-products/{product_id}/price (`update_supplier_product_price`).
 
 #### Cart / orders
+
+> **Changed later (16 Nov 2026):** with the Store Manager removed, a Site Engineer now places the order through this cart: only for a project they are actively assigned to and only from that project's assigned suppliers (`project_supplier_assignments`, ACTIVE) or, for a self-construction project, the House Owner's accepted suppliers; anything else is refused with 403. No builder approval and no Razorpay: the supplier accepts and fulfils, the builder gets an information-only notification, and fulfilled goods go into `project_material_stock`. `/shop/products` takes `project_id` for engineers. The old bug where the cart took the project but checkout refused the Site Engineer is fixed. The rows below describe the old app.
 
 All rows: Role = OWNER or ENGINEER (`cart_service.py` `BUYER_ROLES`; checkout additionally refuses a Site Engineer who is not a Store Manager, `material_request_service.py` `create_material_request`). Thunks live in src/redux/cartSlice.js. Handler file = app/shared/shop/routes/shop_routes.py; services = app/shared/shop/services/shop_service.py `ShopService` + cart_service.py `CartService`; repository = app/shared/shop/repositories/cart_repository.py `CartRepository`. Every cart reply is built by cart_service.py `cart_payload`/`cart_item_payload` (reads cart_items, supplier_products, users, supplier_bulk_pricing).
 
@@ -1507,7 +1516,7 @@ The target module comes from arch.txt section 4.3, whose table is garbled in the
 - site_operations: daily records, labour, material, machinery, expenses, payments
 - marketplace: supplier listings, price tiers, cart, purchase orders, discovery
 - labour_supply and equipment_supply: services, requests, attendance, usage
-- store: stock, issues, receipts, store payments
+- store: stock, issues, receipts, store payments (removed 16 Nov 2026 with the Store Manager)
 - property: listings, images, enquiries
 - messaging: chat, notifications, live events
 - cctv: devices, channels, playback, gateway auth
@@ -1556,7 +1565,7 @@ Arch.txt 4.6 explicitly maps `shared/auth/routes/auth_routes.py` to `modules/ide
 | shared/vastu/routes/vastu_routes.py | (none) | 1 | 0 | content |
 | site_engineer/routes/daily_cost_routes.py | (none) | 12 | 2 | site_operations |
 | site_engineer/routes/engineer_team_routes.py | (none) | 16 | 0 | projects (teams) |
-| store_manager/routes/store_manager_routes.py | (none) | 30 | 0 | store |
+| store_manager/routes/store_manager_routes.py | (none) | 30 | 0 | store (removed 16 Nov 2026 with the Store Manager) |
 | subscription/router.py | (none) | 17 | 2 | billing. It also holds premium feature routes (`/builder/portfolio/*`, `/projects/{id}/summary.csv`, `/cost-tool/registers/{id}/builder-adjustments*`); UNKNOWN whether they move to site_operations or projects. |
 | subscription/coupon_admin.py (included into subscription/router.py) | /admin/coupons | 4 | 0 | billing (coupons) |
 | subscription/payment_history_admin.py (included into subscription/router.py) | /admin/subscription-payments | 2 | 0 | billing |
@@ -2028,15 +2037,15 @@ Subscribers of socket 2 (what each does on `requests_changed`; all files under `
 | `pages/engineer/EngineerEquipmentPanel.jsx` | `useLiveRefresh(load)` | reloads equipment requests |
 | `pages/engineer/EngineerLaborPanel.jsx` | `useLiveRefresh(load)` | reloads labour requests |
 | `pages/engineer/EngineerOrdersPanel.jsx` | `useLiveRefresh(() => load({quiet:true}))` | reloads orders |
-| `pages/engineer/EngineerStorePanel.jsx` | `useLiveRefresh(() => onStoresChanged())` | parent reloads stores |
-| `pages/engineer/EngineerStoreRequestsSection.jsx` | `useLiveRefresh(reload)` | reloads store requests |
+| `pages/engineer/EngineerStorePanel.jsx` | `useLiveRefresh(() => onStoresChanged())` | parent reloads stores (removed 16 Nov 2026) |
+| `pages/engineer/EngineerStoreRequestsSection.jsx` | `useLiveRefresh(reload)` | reloads store requests (removed 16 Nov 2026) |
 | `pages/engineer/EngineerSuppliersSection.jsx` | `useLiveVersion` | re-runs suppliers effect |
 | `pages/owner/OwnerDashboard.jsx` | `useLiveRefresh(refreshOwnerData)` | reloads owner data |
 | `pages/owner/ownerProjectViews.jsx` | `useLiveVersion` | re-runs project view effect |
 | `pages/owner/OwnerSiteEngineerSection.jsx` | `useLiveRefresh(() => refresh({quiet:true}))` | reloads engineer requests |
-| `pages/store-manager/StoreBuilderRequestsPanel.jsx` | `useLiveRefresh(reload)` | reloads builder requests |
-| `pages/store-manager/StoreBuySection.jsx` | `useLiveRefresh(loadProducts)` | reloads Buy list |
-| `pages/store-manager/StoreManagerDashboard.jsx` | `useLiveRefresh(refresh)` | reloads dashboard |
+| `pages/store-manager/StoreBuilderRequestsPanel.jsx` | `useLiveRefresh(reload)` | reloads builder requests (removed 16 Nov 2026) |
+| `pages/store-manager/StoreBuySection.jsx` | `useLiveRefresh(loadProducts)` | reloads Buy list (removed 16 Nov 2026) |
+| `pages/store-manager/StoreManagerDashboard.jsx` | `useLiveRefresh(refresh)` | reloads dashboard (removed 16 Nov 2026) |
 | `pages/supplier/SupplierDashboard.jsx` | `useLiveRefresh(refreshLaborData / refreshEquipmentData / refreshSupplierData)` | reloads the three data sets |
 | `pages/supplier/SupplierPurchaseRequests.jsx` | `useLiveRefresh(load)` | reloads purchase requests |
 
@@ -2097,9 +2106,9 @@ Subscribers of socket 2 (what each does on `requests_changed`; all files under `
 | P4 | Octabuild | `app/shared/notifications/services/notification_service.py` `create_request_notification` → `queue_live_hint` | Called from `builder/services/award_service.py` (3 calls), `shared/equipment_supply/services/equipment_supply_service.py` (5), `shared/labor_supply/services/labor_supply_service.py` (5), `shared/project_requests/services/project_request_service.py` (7), `shared/project_suppliers/services/project_supplier_service.py` (3), `shared/property/services/property_listing_service.py` (1), `shared/shop/services/material_request_service.py` (11), `site_engineer/services/engineer_team_service.py` (11), `store_manager/services/builder_request_service.py` (3), `store_manager/services/purchase_payment_service.py` (1), `store_manager/services/site_request_service.py` (5) | `requests_changed` to the notified user after commit | events socket (`live_events`) |
 | P5 | Octabuild | `equipment_supply_service.py` (line ~616, usage log upsert) direct `queue_live_hint(row.supplier_id)` | engineer records rental usage | `requests_changed` to supplier | events socket |
 | P6 | Octabuild | `labor_supply_service.py` (line ~506 request edit, ~543 daily record upsert) direct `queue_live_hint(row.supplier_id)` | engineer edits a labour request or saves attendance | `requests_changed` to supplier | events socket |
-| P7 | Octabuild | `project_request_service.py` (line ~511, accept request) `queue_live_hint(member.id)` for each Store Manager of the builder | supplier/contractor request accepted | `requests_changed` | events socket |
+| P7 | Octabuild | `project_request_service.py` (line ~511, accept request) `queue_live_hint(member.id)` for each Store Manager of the builder (old app; removed 16 Nov 2026) | supplier/contractor request accepted | `requests_changed` | events socket |
 | P8 | Octabuild | `project_supplier_service.py` `unassign_supplier_from_project` `queue_live_hint(payload.supplier_id)` | supplier unassigned | `requests_changed` | events socket |
-| P9 | Octabuild | `store_manager/services/purchase_service.py` (line ~303, receive into stock) `queue_live_hint(engineer_id)` for each served engineer | Store Manager receives goods | `requests_changed` | events socket |
+| P9 | Octabuild | `store_manager/services/purchase_service.py` (line ~303, receive into stock) `queue_live_hint(engineer_id)` for each served engineer (old app; removed 16 Nov 2026) | Store Manager receives goods | `requests_changed` | events socket |
 | P10 | Octabuild | `weather/services/weather_notification_service.py` `WeatherNotificationService.announce` `queue_live_hint(user.id)` | weather monitor or a weather read that refreshes a site | `requests_changed` to each recipient | events socket |
 | P11 | Partner | `app/shared/bookings/services/dispatch_service.py` `DispatchService._dispatch` | `create_booking` (POST `/requester/bookings`), `retry_booking` (POST `/requester/bookings/{id}/retry`), `technician_cancel_job`, `_next_batch_if_unanswered`, sweeper `sweep` | `booking_offer` to each offered technician; `booking_status` to booking room | dispatch + tracking sockets |
 | P12 | Partner | `DispatchService._close_round` | no technician found / max attempts | `booking_status` (`NO_TECHNICIAN_FOUND` / `EXPIRED`) | tracking socket |
@@ -2122,10 +2131,10 @@ Subscribers of socket 2 (what each does on `requests_changed`; all files under `
 | Octabuild | `components/dashboard/MessageThread.jsx` | 15 000 ms | `loadConversations` |
 | Octabuild | `pages/contractor/ContractorDashboard.jsx` | 10 000 ms | contractor data, unread message count |
 | Octabuild | `pages/engineer/EngineerDashboard.jsx` | 15 000 ms | engineer data, notifications |
-| Octabuild | `pages/engineer/EngineerStoreRequestsSection.jsx` | 15 000 ms | store requests |
+| Octabuild | `pages/engineer/EngineerStoreRequestsSection.jsx` | 15 000 ms | store requests (removed 16 Nov 2026) |
 | Octabuild | `pages/owner/OwnerDashboard.jsx` | 10 000 ms | unread message count |
-| Octabuild | `pages/store-manager/StoreBuilderRequestsPanel.jsx` | 30 000 ms | builder requests |
-| Octabuild | `pages/store-manager/StoreManagerDashboard.jsx` | 15 000 ms | dashboard |
+| Octabuild | `pages/store-manager/StoreBuilderRequestsPanel.jsx` | 30 000 ms | builder requests (removed 16 Nov 2026) |
+| Octabuild | `pages/store-manager/StoreManagerDashboard.jsx` | 15 000 ms | dashboard (removed 16 Nov 2026) |
 | Octabuild | `pages/supplier/SupplierDashboard.jsx` | 10 000 ms | clients, unread message count |
 | Octabuild | `pages/supplier/SupplierPurchaseRequests.jsx` | 30 000 ms (`REFRESH_MS`) | purchase requests |
 | Octabuild | `pages/weather/WeatherPage.jsx` | 10 min | weather |
@@ -2303,7 +2312,7 @@ Target: `auth_sessions` → `sessions` (principal_type stays), `email_otps` → 
 
 ### 3. Roles and the backend checks that enforce them
 
-Octabuild has no single `require_role` dependency for most roles. Apart from Store Manager and admins (FastAPI dependencies), role checks run **inside services** through `Octabuild/backend/app/shared/projects/services/access_control.py` → `ensure_role(user, role)` (403 `"<ROLE> role required"`) and similar helpers. Every route first requires `dependencies.py` → `get_current_user`, which runs `get_current_session` and `subscription/signup_checkout.enforce`.
+Octabuild has no single `require_role` dependency for most roles. Apart from Store Manager (removed 16 Nov 2026) and admins (FastAPI dependencies), role checks run **inside services** through `Octabuild/backend/app/shared/projects/services/access_control.py` → `ensure_role(user, role)` (403 `"<ROLE> role required"`) and similar helpers. Every route first requires `dependencies.py` → `get_current_user`, which runs `get_current_session` and `subscription/signup_checkout.enforce`.
 
 | Role (users.role) | Backend dependency / check (file → function) | Example protected routes |
 |---|---|---|
@@ -2311,7 +2320,7 @@ Octabuild has no single `require_role` dependency for most roles. Apart from Sto
 | OWNER (House Owner) | `access_control.py` → `ensure_role(user, "OWNER")` (called in `shared/projects/services/project_service.py` → `create_project_record`, `house_owner/services/estimate_service.py` → `save_estimate`, `project_request_service.py`); `ensure_project_owner_analysis_access`; `payment_gateway/service.py` → `PaymentService.require_owner` | `POST /estimates`, `GET /owners/projects/{project_id}/analysis`, `POST /payments/orders` |
 | CONTRACTOR (Builder) | `ensure_role(user, "CONTRACTOR")` (`access_control.ensure_contractor_project_access`, `marketplace_service.fetch_nearby_projects`, `engineer_team_service.create_engineer_invitation`, ...); `Octabuild/backend/app/subscription/entitlements.py` → `require_builder` (`BUILDER_ROLE = "CONTRACTOR"`), `require_builder_feature`; `subscription/signup_checkout.py` → `enforce` (pending paid sign-up) | `GET /contractors/find-clients`, `POST /engineers/invite`, `/cost-tool/*`, `/subscriptions/orders` |
 | ENGINEER (Site Engineer) | `ensure_role(user, "ENGINEER")` (`engineer_team_service`, `labor_supply_service.ensure_engineer_on_project`, `equipment_supply_service`, `project_supplier_service`); `access_control.ensure_engineer_project_write_access`; `store_manager/services/site_request_service.py` → `ensure_site_engineer` (ENGINEER and not store manager) | Labour and equipment request routes in `shared/labor_supply/routes/labor_supply_routes.py` and the equipment supply routes; `/store/site-requests` (site request service). Note: `POST /material-requests` refuses a plain Site Engineer (`material_request_service.create_material_request` raises 403 `SITE_ENGINEER_USES_STORE`). |
-| ENGINEER + Store Manager category | `dependencies.py` → `require_store_manager` (uses `models/user.py` → `User.is_store_manager`, which is `role == "ENGINEER"` and `models/engineer.py` → `is_store_manager_category(profile.specialization)`) | Every `/store-manager/*` route in `store_manager/routes/store_manager_routes.py` (for example `GET /store-manager/overview`, `POST /store-manager/items`) |
+| ENGINEER + Store Manager category (old app; removed 16 Nov 2026, revision 0006 narrows the category to SITE\_ENGINEER) | `dependencies.py` → `require_store_manager` (uses `models/user.py` → `User.is_store_manager`, which is `role == "ENGINEER"` and `models/engineer.py` → `is_store_manager_category(profile.specialization)`) | Every `/store-manager/*` route in `store_manager/routes/store_manager_routes.py` (for example `GET /store-manager/overview`, `POST /store-manager/items`) |
 | SUPPLIER (all) | `ensure_role(user, "SUPPLIER")` | `GET /supplier/material-requests`, `POST /supplier/material-requests/{id}/respond` |
 | SUPPLIER Material | `supplier/services/supplier_product_service.py` → `ensure_material_supplier` | `/supplier-products*` |
 | SUPPLIER Labour | `shared/labor_supply/services/labor_supply_service.py` → `ensure_labor_supplier` | `POST /labor/services`, `PATCH /labor/services/{id}` |
@@ -2346,7 +2355,7 @@ Octabuild has no single `require_role` dependency for most roles. Apart from Sto
 | Access token lifetime | 30 min (`ACCESS_TOKEN_MINUTES`) in both | 15 min (6.1) |
 | Admin refresh | Same as other users (30 days) | 12 h for administrators (6.1) |
 | Access token claims | `sub, type, sid, fam, iss, aud, exp` (+ `scope` in Partner) | `sub, sid, role, typ=access, iat, exp, iss (professional / partner), aud` (6.2). Adds `role`, renames `type` → `typ`, issuer `octabuild` → `professional`. Site Engineer and Store Manager become explicit roles (7.1). |
-| Role codes | `CONTRACTOR`, `ENGINEER` + category | `BUILDER` (paths stay `/contractor/*`), `SITE_ENGINEER`, `STORE_MANAGER`, `SUPPLIER` subtypes, `PROFESSIONAL` reserved, plus Partner `TECHNICIAN`, `REQUESTER` (7.1) |
+| Role codes | `CONTRACTOR`, `ENGINEER` + category | `BUILDER` (paths stay `/contractor/*`), `SITE_ENGINEER`, `STORE_MANAGER` (dropped from the target on 16 Nov 2026), `SUPPLIER` subtypes, `PROFESSIONAL` reserved, plus Partner `TECHNICIAN`, `REQUESTER` (7.1) |
 | CSRF | Derived HMAC of the family id (not stored) | "matched against the session's CSRF secret". `csrf_secret_hash` is added to the session table (6.2, section 10). |
 | Refresh token | 384-bit (`token_urlsafe(48)`) | 256-bit (6.2) |
 | Password hashing | bcrypt (passlib) | Argon2id, re-hashing legacy bcrypt (6.3) |
@@ -2373,6 +2382,8 @@ Every outside system the four apps talk to, found by reading the client code and
 Dovesoft WhatsApp is deliberately never retried.
 
 #### 1. Razorpay (payments, subscriptions, store purchases, webhooks): Octabuild only
+
+> The store purchase rows below are the old app. The Razorpay store purchase checkout was removed with the Store Manager on 16 Nov 2026; Site Engineer orders are not paid through Razorpay.
 
 Partner has no Razorpay code. A search for `razorpay` in `PB` and `PF` returns nothing.
 
@@ -2401,13 +2412,14 @@ The gate is `resolve_gateway()`:
 | Razorpay `POST /orders` | Builder subscription checkout: `POST /subscriptions/orders` | `OB/subscription/service.py` `SubscriptionService.create_order` (client injected by `OB/subscription/router.py` `get_subscription_service` → `get_payment_client`) | same | Logs `subscription.order_failed` and returns **502 GATEWAY_UNAVAILABLE**. |
 | Razorpay `GET /payments/{id}` and capture | `POST /subscriptions/verify` | `SubscriptionService._confirmed_payment` | same | **502**, logs `subscription.fetch_failed`. |
 | Razorpay `GET /orders/{id}/payments` | Recover a paid subscription when the browser closed before verification: `POST /subscriptions/reconcile` and `POST /subscriptions/orders/{payment_id}/reconcile` | `RazorpayTestClient.fetch_order_payments`, via `SubscriptionService.reconcile` | same | **502**, logs `subscription.reconcile_failed`. |
-| Razorpay `POST /orders` | Store Manager buys supplier stock: `POST /store-manager/purchases/checkout` | `OB/store_manager/services/purchase_payment_service.py` `PurchasePaymentService.checkout` (client from `OB/dependencies/dependencies.py` `get_purchase_payment_service` → `get_payment_client`) | same | **502**, logs `store_purchase.order_failed`. |
+| Razorpay `POST /orders` | Store Manager buys supplier stock (removed 16 Nov 2026): `POST /store-manager/purchases/checkout` | `OB/store_manager/services/purchase_payment_service.py` `PurchasePaymentService.checkout` (client from `OB/dependencies/dependencies.py` `get_purchase_payment_service` → `get_payment_client`) | same | **502**, logs `store_purchase.order_failed`. |
 | Razorpay fetch and capture | `POST /store-manager/purchases/verify` | `PurchasePaymentService.verify` | same | **502**, logs `store_purchase.fetch_failed`. |
 | Razorpay `GET /orders/{id}/payments` and capture | `POST /store-manager/purchases/payments/{payment_id}/check` | `PurchasePaymentService.check` | same | **502**, logs `store_purchase.check_failed`. A change of gateway mode returns 409 `PAYMENT_GATEWAY_MODE_CHANGED`. |
 | Razorpay mock (no network) | `POST /payments/mock/checkout`, `/subscriptions/mock/checkout`, `/store-manager/purchases/mock-checkout` | `MockRazorpayClient` (in-memory, per process) | n/a | A mock payment is lost on restart: `fetch_payment` raises `RazorpayRequestError("Unknown mock payment")`. |
 | Razorpay → us: webhook | `POST /payments/webhooks/razorpay` (bookings) and `POST /subscriptions/webhooks/razorpay` (subscriptions) | `OB/payment_gateway/router.py` `razorpay_webhook`; `OB/subscription/router.py` `subscription_razorpay_webhook` | n/a (inbound) | With no `RAZORPAY_WEBHOOK_SECRET`: **503 `WEBHOOK_NOT_CONFIGURED`**. A bad `X-Razorpay-Signature` or body returns 400. The handler never calls Razorpay (`client=None`). |
 | Gateway status | `GET /payments/gateway-status` | `payment_gateway_status` | n/a | Returns `{"mode":"unavailable", reason}` and never raises. Reads (`GET /payments/technician-bookings`) use `get_payment_read_service`, which falls back to `client=None`, so they work without keys. |
-| Browser: Razorpay Checkout script `https://checkout.razorpay.com/v1/checkout.js` | Booking payments, subscriptions, store purchases | `OF/src/payment_gateway/razorpayCheckout.js` `loadRazorpayCheckout` / `openRazorpayCheckout`. Used by `OF/src/payment_gateway/TechnicianPaymentsSection.jsx`, `OF/src/subscription/subscriptionCheckout.js` (used by `BuilderSubscriptionPanel.jsx` and `SubscriptionCheckoutPage.jsx`) and `OF/src/pages/store-manager/storePurchaseCheckout.jsx` | No timeout. A script `onerror` resolves `false` and clears the cached promise so a later click retries. | The promise resolves `false` and the caller shows an error. The key id comes from the backend's order response; the frontend has no Razorpay setting. |
+| Browser: Razorpay Checkout script `https://checkout.razorpay.com/v1/checkout.js` | Booking payments, subscriptions, store purchases (store purchases removed 16 Nov 2026) |
+ `OF/src/payment_gateway/razorpayCheckout.js` `loadRazorpayCheckout` / `openRazorpayCheckout`. Used by `OF/src/payment_gateway/TechnicianPaymentsSection.jsx`, `OF/src/subscription/subscriptionCheckout.js` (used by `BuilderSubscriptionPanel.jsx` and `SubscriptionCheckoutPage.jsx`) and `OF/src/pages/store-manager/storePurchaseCheckout.jsx` | No timeout. A script `onerror` resolves `false` and clears the cached promise so a later click retries. | The promise resolves `false` and the caller shows an error. The key id comes from the backend's order response; the frontend has no Razorpay setting. |
 
 #### 2. Dovesoft WhatsApp: Octabuild only
 
@@ -2834,6 +2846,8 @@ erDiagram
 | `material_order_items` (SupplierMaterialRequest, app/models/material_request.py) | purchase_orders + purchase_order_items (split) | integer | project_id -> projects.id (CASCADE)<br>engineer_id -> users.id (CASCADE)<br>supplier_id -> users.id (CASCADE)<br>product_id -> supplier_products.id (none) | store_purchase_receipts.order_line_id (CASCADE) | none |
 
 #### Store
+
+> **Removed later (16 Nov 2026):** the Store Manager role was removed after this snapshot. In Professional these tables were `store_items`, `store_stock_movements`, `store_site_requests`, `store_site_request_items`, `store_payments`, `store_goods_receipts` and `store_builder_requests`; revision 0006 drops them with their data, and its downgrade recreates them empty. This section records the old app as it was.
 
 ```mermaid
 erDiagram
@@ -3349,9 +3363,9 @@ Settings files: Partner `Partner/backend/app/core/config.py`; Octabuild `Octabui
 | Enable flags | `WEATHER_MONITORING_ENABLED` (True). `WEATHER_MONITORING_INTERVAL_MINUTES = 0` also turns it off |
 | Manual run | `python -m app.weather.monitor` (one pass) |
 | Sites | `WeatherRepository.monitored_project_ids()` (open `projects`) plus `monitored_personal_user_ids()` (`weather_site_locations.user_id` joined to ACTIVE `users`) |
-| Tables read | `projects`, `users`, `weather_site_locations`, `weather_snapshots`, `weather_alerts`, `project_engineer_assignments`, `admin_profiles`, plus `StoreSiteRequest` and supplier-order models for linked recipients (`supplier_order_recipient_ids`, `store_request_recipient_ids`; exact table names UNKNOWN, check `app/weather/repositories/weather_repository.py`). `weather_geocode_cache` is possibly read or written by `WeatherService.lookup` during `locate_automatically` (UNKNOWN; check `lookup`) |
+| Tables read | `projects`, `users`, `weather_site_locations`, `weather_snapshots`, `weather_alerts`, `project_engineer_assignments`, `admin_profiles`, plus `StoreSiteRequest` (old app; removed 16 Nov 2026) and supplier-order models for linked recipients (`supplier_order_recipient_ids`, `store_request_recipient_ids`; exact table names UNKNOWN, check `app/weather/repositories/weather_repository.py`). `weather_geocode_cache` is possibly read or written by `WeatherService.lookup` during `locate_automatically` (UNKNOWN; check `lookup`) |
 | Tables written | `weather_site_locations` (auto location, `source="AUTO_CITY"`); `weather_snapshots` (data, `fetched_at`, `expires_at`, `last_attempt_at`, `last_error`); `weather_alerts` (insert, update, reopen, resolve; `notified_severity`, `notified_at`); `notifications` (category PROJECT or ANNOUNCEMENT). `weather_alert_acknowledgements` is written only by the user acknowledge path (`weather_service.py` ~line 910), not by the monitor |
-| Messages sent | In-app `notifications` rows to the project owner, builder, active Site Engineers, linked suppliers and Store Managers, and admins with `projects.view` in that locality (personal site: the account itself). For each recipient a `queue_live_hint`, so `{"event":"requests_changed"}` goes on `/events/ws` after commit. **E-mail** for WARNING/SEVERE when `WEATHER_EMAIL_ALERTS_ENABLED` and the user has an e-mail, sent through J6 (`EmailService.send_email`, SMTP). No WhatsApp. External HTTP: weather provider (Open-Meteo by default) and geocoding |
+| Messages sent | In-app `notifications` rows to the project owner, builder, active Site Engineers, linked suppliers and Store Managers (old app; there are none since 16 Nov 2026), and admins with `projects.view` in that locality (personal site: the account itself). For each recipient a `queue_live_hint`, so `{"event":"requests_changed"}` goes on `/events/ws` after commit. **E-mail** for WARNING/SEVERE when `WEATHER_EMAIL_ALERTS_ENABLED` and the user has an e-mail, sent through J6 (`EmailService.send_email`, SMTP). No WhatsApp. External HTTP: weather provider (Open-Meteo by default) and geocoding |
 | Multi-process safety | One thread per worker. Per-site serialisation uses an **in-process** `threading.Lock` (`weather_service._site_lock`), with a re-check of `monitor_due` inside it. Across processes, a duplicate alert insert is caught as an `IntegrityError` inside `begin_nested()` ("Another process raised this event ... it is theirs to announce"). There is no advisory lock. Two workers can each fetch the same site from the provider in the same window |
 | Failure handling | `_check`: `WeatherRateLimited` rolls back, logs `weather.monitor_paused`, and **stops the rest of the pass** (the remaining sites wait for the next tick). `WeatherProviderError` rolls back and logs `weather.monitor_failed` (the snapshot keeps `last_error`, and `cooling_down` (`FAILURE_COOLDOWN`) skips the site for a while). Any other exception rolls back and logs `weather.monitor_error`. A failure of the whole pass logs `weather.monitor_pass_error`. The loop continues |
 | Target | `professional/backend/app/jobs/weather_alert_monitor.py`, "weather monitor (30 min, severe 10 min)" in `professional-scheduler` |
@@ -3501,7 +3515,8 @@ These are read through `get_payment_gateway_settings()`, then `resolve_gateway()
 | Variable | Read in | Default? | Feature that breaks without it | In .env.example? |
 |---|---|---|---|---|
 | RAZORPAY_MODE | `resolve_gateway` | yes (test) | anything other than test → **503 `PAYMENT_GATEWAY_MISCONFIGURED`** for every payment | yes |
-| RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET | `resolve_gateway` | empty | Booking payments, builder subscriptions and store purchases answer **503**, unless `RAZORPAY_ALLOW_MOCK=true` outside production | yes / yes |
+| RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET | `resolve_gateway` | empty | Booking payments, builder subscriptions and store purchases (removed 16 Nov 2026) answer **503**,
+ unless `RAZORPAY_ALLOW_MOCK=true` outside production | yes / yes |
 | RAZORPAY_WEBHOOK_SECRET | `webhook_secret` (both webhook routes) | empty | Both webhooks answer **503 `WEBHOOK_NOT_CONFIGURED`** | yes |
 | RAZORPAY_API_BASE_URL | `resolve_gateway` | yes | — | no |
 | RAZORPAY_TIMEOUT_SECONDS | `resolve_gateway` → `RazorpayTestClient` | yes | — | no |

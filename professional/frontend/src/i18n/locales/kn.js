@@ -1,5 +1,4 @@
 // Kannada interface text, downloaded only when this language is in use (i18n/dictionaries.js). English is the fallback for any key missing here.
-// The Store Manager's keys follow the rest; a key in both takes the Store Manager's text, as before.
 const base = {
   'language.label': 'ಭಾಷೆ',
   'shared.backHome': 'ಮುಖಪುಟಕ್ಕೆ ಹಿಂತಿರುಗಿ',
@@ -3949,8 +3948,4 @@ const base = {
   'subscription.coupon.invalid': 'ಈ ಕೂಪನ್ ಅನ್ವಯಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ.',
 }
 
-const storeManager = {
-  'ui.profile.engCat.storeManager': 'ಸ್ಟೋರ್ ಮ್ಯಾನೇಜರ್',
-}
-
-export default { ...base, ...storeManager }
+export default base

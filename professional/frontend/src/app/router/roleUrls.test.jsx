@@ -1,52 +1,18 @@
 /**
- * Store Manager, Supplier and Admin addresses: list tabs, filters and the open record live
+ * Supplier and Admin addresses: list tabs, filters and the open record live
  * in the URL, so a refresh, Back and a bookmark restore the same view; an id that is not
  * this account's shows the not-found panel; the guards are unchanged.
  */
-import { act, screen, waitFor, within } from '@testing-library/react'
+import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import { anAccount, installFakeServer } from '../../test/fakeServer.js'
-import { history, location, renderApp, signedInAs } from '../../test/renderApp.jsx'
-import { STORE_MANAGER, STORE_REQUEST_ID, aSiteRequest, storeDashboardServer } from '../../features/engineer/engineerTestData.js'
+import { location, renderApp, signedInAs } from '../../test/renderApp.jsx'
 import { MATERIAL, SUPPLIER, supplierDashboardServer } from '../../features/supplier/supplierTestData.js'
 import { USER_ID, aUserRow, adminServer, anAdminAccount, anIdentity } from '../../features/admin/adminTestData.js'
 
 const FIND = { timeout: 15000 }
 const OTHER_ID = '0190a8b2-4c1e-7aa0-9f00-00000000dead'
-
-describe('Store Manager addresses', () => {
-  function openStore(path) {
-    const server = installFakeServer(storeDashboardServer({ 'GET /store-manager/requests': { data: [aSiteRequest()] } }))
-    renderApp(path, { auth: signedInAs(STORE_MANAGER) })
-    return server
-  }
-
-  it('opens a request from its address, and closing it keeps the list address', async () => {
-    const user = userEvent.setup()
-    openStore(`/store-manager/requests?request=${STORE_REQUEST_ID}`)
-    const dialog = await screen.findByRole('dialog', {}, FIND)
-    expect(within(dialog).getAllByText(/SR-0001/).length).toBeGreaterThan(0)
-    await user.keyboard('{Escape}')
-    await waitFor(() => expect(location.current.search).toBe(''))
-    expect(location.current.pathname).toBe('/store-manager/requests')
-  })
-
-  it('records an opened request, and Back closes it again', async () => {
-    const user = userEvent.setup()
-    openStore('/store-manager/requests')
-    await user.click((await screen.findAllByText(/SR-0001/, {}, FIND))[0])
-    await waitFor(() => expect(location.current.search).toBe(`?request=${STORE_REQUEST_ID}`))
-    act(() => history.back())
-    await waitFor(() => expect(location.current.search).toBe(''))
-    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
-  })
-
-  it("shows the not-found panel for a request that is not this store's", async () => {
-    openStore(`/store-manager/requests?request=${OTHER_ID}`)
-    expect(await screen.findByTestId('not-found-panel', {}, FIND)).toBeInTheDocument()
-  })
-})
 
 describe('Supplier addresses', () => {
   function openSupplier(path, overrides = {}) {

@@ -155,18 +155,27 @@ describe('Site Engineer card lists', () => {
     expect(within(items[1]).getByRole('button', { name: /Request Purchase/i })).toBeInTheDocument()
   })
 
-  it("Store: the store's product tiles share one structure", async () => {
-    const storeItem = (n, extra = {}) => ({
-      id: id(700 + n), name: `Cement ${n}`, brand: 'UltraTech', category: 'Cement', variant: '50 kg', unit: 'bag', quantity: 40, stock_state: 'IN_STOCK', image_url: null, ...extra,
+  it('Cart: the Material cart shows one card per supplier, each with its own lines and order button', async () => {
+    const cartLine = (n, supplierId) => ({
+      id: id(700 + n), product_id: id(710 + n), supplier_id: supplierId, name: `Cement ${n}`, brand: 'UltraTech', unit: 'bag', price: 420, quantity: 2, line_total: 840, available_quantity: 40, image_url: null,
     })
-    open('/engineer/my-supplies?tab=store', {
-      'GET /store/site-stores': { data: [{
-        store_manager_id: id(800), store_manager_name: 'Suresh Nair', project_ids: [PROJECT_ID],
-        items: [storeItem(1), storeItem(2, { name: 'River sand', brand: null, category: 'Sand', description: 'Washed', stock_state: 'LOW_STOCK' })],
-      }] },
+    const first = cartLine(1, id(801))
+    const second = cartLine(2, id(802))
+    open('/engineer/my-supplies?tab=cart', {
+      'GET /cart': { data: {
+        items: [first, second],
+        suppliers: [
+          { supplier_id: id(801), store_name: 'Lakshmi Traders', items: [first], total: 840 },
+          { supplier_id: id(802), store_name: 'Sri Steel Traders', items: [second], total: 840 },
+        ],
+        item_count: 2,
+        total: 1680,
+      } },
     })
-    const tiles = expectUniformCards(await screen.findByTestId('engineer-store-product-cards', {}, FIND))
-    expect(tiles).toHaveLength(2)
-    expect(within(tiles[0]).getByRole('button', { name: 'Add to cart Cement 1' })).toBeInTheDocument()
+    expect(await screen.findByText('Lakshmi Traders', {}, FIND)).toBeInTheDocument()
+    expect(screen.getByText('Sri Steel Traders')).toBeInTheDocument()
+    expect(screen.getByText('Cement 1')).toBeInTheDocument()
+    expect(screen.getByText('Cement 2')).toBeInTheDocument()
+    expect(screen.getAllByRole('button', { name: /Send Buy Request/ })).toHaveLength(2)
   })
 })

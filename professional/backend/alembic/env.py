@@ -49,11 +49,15 @@ def include_name(name: str | None, type_: str, parent_names: dict[str, str | Non
 # so autogenerate leaves them alone.
 CROSS_SCHEMA_KEYS = {"fk_booking_payment_orders__booking_id__bookings"}
 
+# Tables a data migration keeps so its downgrade can restore old values (0004, 0005);
+# they belong to the migration, not to any model, so autogenerate leaves them alone.
+MIGRATION_BACKUP_TABLES = {"migration_0004_names_backup", "migration_0005_engineer_category_backup"}
+
 
 def include_object(obj: object, name: str | None, type_: str, reflected: bool, compare_to: object) -> bool:
     # Only this service's tables are compared and migrated.
     if type_ == "table":
-        return getattr(obj, "schema", None) == SCHEMA
+        return getattr(obj, "schema", None) == SCHEMA and name not in MIGRATION_BACKUP_TABLES
     return not (type_ == "foreign_key_constraint" and name in CROSS_SCHEMA_KEYS)
 
 

@@ -19,7 +19,7 @@ import { imageUrl } from '../../../shared/api/apiClient.js'
 import { formatMoney } from '../../../shared/utils/countryConfig.js'
 import { useProfileGate, useResumeGatedAction } from '../../../shared/hooks/useProfileGate.js'
 import { useLiveRefresh } from '../../../shared/hooks/useLiveRefresh.js'
-import { DataTable, tdClass, thClass } from '../../store/components/StoreUi.jsx'
+import { DataTable, tdClass, thClass } from '../../../shared/ui/DataTable.jsx'
 
 const REFRESH_MS = 30000
 const STATUS_STYLE = {
@@ -28,7 +28,7 @@ const STATUS_STYLE = {
   FULFILLED: 'bg-emerald-100 text-emerald-800',
   REJECTED: 'bg-rose-100 text-rose-700',
 }
-const ROLE_LABEL = { OWNER: 'House Owner', ENGINEER: 'Site Engineer', STORE_MANAGER: 'Store Manager' }
+const ROLE_LABEL = { OWNER: 'House Owner', ENGINEER: 'Site Engineer' }
 
 /** One purchase request's overall status, from its lines. */
 function requestStatus(lines) {
@@ -55,8 +55,7 @@ export function groupPurchaseRequests(rows = []) {
         lines,
         status: requestStatus(lines),
         buyer: first.engineer_name,
-        // A builder's Store Manager buys for the store: named as such, not as a Site Engineer.
-        buyerRole: first.buyer_is_store_manager ? 'STORE_MANAGER' : first.engineer_role,
+        buyerRole: first.engineer_role,
         project: first.project_name,
         pincode: first.project_pincode,
         city: first.project_city,
@@ -241,7 +240,7 @@ export default function SupplierPurchaseRequests({ country, onChanged }) {
     {notice.text && (
       <p className={`rounded-xl px-3 py-2 text-xs font-bold ${notice.tone === 'error' ? 'bg-rose-50 text-rose-700' : 'bg-emerald-50 text-emerald-800'}`}>{notice.text}</p>
     )}
-    {/* One aligned row per request, in the Store Manager Requests table. A
+    {/* One aligned row per request, in the shared list table. A
         pending request keeps its amber accent and its Accept / Reject. */}
     <DataTable
       minWidth="min-w-[1360px]"

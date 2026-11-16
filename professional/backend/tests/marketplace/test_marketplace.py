@@ -17,7 +17,7 @@ from identity.helpers import FakeEmailSender
 from projects.helpers import Person, award, builder, create_project, engineer, owner, person
 from projects.test_projects import THURSDAY_MORNING, detail
 from site_operations.test_site_operations import DAY, Site, workflow
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
 from support.test_support import build
 
@@ -36,8 +36,9 @@ from app.modules.identity.models import ROLE_SUPPLIER
 from app.modules.marketplace import account_links, order_service, site_links
 from app.modules.marketplace import router as marketplace_router
 from app.modules.marketplace.models import PurchaseOrder, SupplierProduct
+from app.modules.messaging.models import Notification
 from app.modules.projects import daily_window
-from app.modules.projects.models import ProjectRequest
+from app.modules.projects.models import ProjectEngineer, ProjectRequest
 from app.modules.site_operations import service as site_service
 from app.modules.site_operations.models import CostMaterialInventory
 
@@ -355,20 +356,30 @@ def test_the_site_engineer_and_the_wired_back_site_records(
     listing_id = list_product(seller, catalog).json()["id"]
     order = {"project_id": site.project_id, "supplier_id": str(seller.user.id),
              "items": [{"product_id": listing_id, "quantity": 2}]}  # fmt: skip
+    # A Site Engineer orders directly, but only from a supplier assigned to the project:
+    # the builder's approval alone is not enough.
     refused = site.engineer.post("/material-requests", json=order)
-    assert (refused.status_code, detail(refused)) == (403, order_service.SITE_ENGINEER_USES_STORE)
-    assert site.engineer.get("/shop/products").json()["restricted"] is True
+    assert (refused.status_code, detail(refused)) == (403, "Ask your builder to assign a supplier to this project.")
+    assert site.engineer.get("/shop/products").json() == {
+        "products": [], "categories": [], "restricted": True, "needs_project": True
+    }  # fmt: skip
     accept_between(database, site.builder, seller, "CONTRACTOR_TO_SUPPLIER", None)
-    shop = site.engineer.get("/shop/products").json()
-    assert [item["id"] for item in shop["products"]] == [listing_id]
+    in_project = {"project_id": site.project_id}
+    assert site.engineer.get("/shop/products", params=in_project).json() == {
+        "products": [], "categories": [], "restricted": True, "no_suppliers": True
+    }  # fmt: skip
     line = {"project_id": site.project_id, "product_id": listing_id, "quantity": 1}
-    assert site.engineer.post("/cart/items", json=line).json()["item_count"] == 1
-    assert site.engineer.get("/material-requests/mine").json() == []
+    refused = site.engineer.post("/cart/items", json=line)
+    assert (refused.status_code, detail(refused)) == (403, "Ask your builder to assign a supplier to this project.")
 
     # Wired back into projects: an assigned supplier's published products.
     pair = {"supplier_id": str(seller.user.id), "engineer_id": str(site.engineer.user.id)}
     assigned = site.builder.post(f"/projects/{site.project_id}/assign-supplier", json=pair)
     assert assigned.json()["status"] == "assigned", assigned.text
+    shop = site.engineer.get("/shop/products", params=in_project).json()
+    assert [item["id"] for item in shop["products"]] == [listing_id] and shop["restricted"] is True
+    assert site.engineer.post("/cart/items", json=line).json()["item_count"] == 1
+    assert site.engineer.get("/material-requests/mine").json() == []
     suppliers = site.engineer.get(f"/projects/{site.project_id}/suppliers").json()
     assert [item["id"] for item in suppliers[0]["products"]] == [listing_id] and suppliers[0]["categories"] == [
         "Cement"
@@ -427,3 +438,148 @@ def test_discovery_and_profiles(client: TestClient, database: Session, catalog: 
     database.commit()
     assert house_owner.get("/contractors/nearby").json() == []
     assert house_owner.get(f"/contractors/{house_builder.user.id}/profile").status_code == 404
+
+
+# ---- a Site Engineer orders directly from suppliers (no Store Manager) ----
+
+
+ASK_YOUR_BUILDER = "Ask your builder to assign a supplier to this project."
+NOT_ASSIGNED = "Only an actively assigned Site Engineer can order for this project."
+
+
+def notices_for(database: Session, user_id: Any) -> list[Notification]:
+    database.expire_all()
+    """The account's material (order) notifications."""
+    return list(
+        database.scalars(
+            select(Notification).where(Notification.user_id == user_id, Notification.category == "MATERIAL")
+        ).all()
+    )
+
+
+def assign_supplier(site: Site, seller: Person) -> None:
+    pair = {"supplier_id": str(seller.user.id), "engineer_id": str(site.engineer.user.id)}
+    assigned = site.builder.post(f"/projects/{site.project_id}/assign-supplier", json=pair)
+    assert assigned.json()["status"] == "assigned", assigned.text
+
+
+def test_an_assigned_site_engineer_orders_from_an_assigned_supplier(
+    client: TestClient, database: Session, catalog: Catalog, site: Site
+) -> None:
+    seller = supplier(client, database)
+    listing_id = list_product(seller, catalog).json()["id"]
+    accept_between(database, site.builder, seller, "CONTRACTOR_TO_SUPPLIER", None)
+    assign_supplier(site, seller)
+    # Another supplier the builder approved, but not put on this project.
+    rival = supplier(client, database, "rival@example.in", "9876500005")
+    rival_listing = list_product(rival, catalog).json()["id"]
+    accept_between(database, site.builder, rival, "CONTRACTOR_TO_SUPPLIER", None)
+
+    shop = site.engineer.get("/shop/products", params={"project_id": site.project_id}).json()
+    assert [item["id"] for item in shop["products"]] == [listing_id]
+    line = {"project_id": site.project_id, "product_id": rival_listing, "quantity": 1}
+    refused = site.engineer.post("/cart/items", json=line)
+    assert (refused.status_code, detail(refused)) == (403, ASK_YOUR_BUILDER)
+
+    added = site.engineer.post("/cart/items", json={**line, "product_id": listing_id, "quantity": 2})
+    assert added.status_code == 200, added.text
+    checkout = site.engineer.post(
+        "/cart/checkout", json={"project_id": site.project_id, "supplier_id": str(seller.user.id)}
+    )
+    assert checkout.status_code == 200, checkout.text
+    code, ordered = checkout.json()["request_code"], checkout.json()["items"][0]
+    assert (ordered["status"], ordered["engineer_role"], ordered["buyer_role_label"]) == (
+        "PENDING",
+        "ENGINEER",
+        "Site Engineer",
+    )
+    assert "buyer_is_store_manager" not in ordered
+
+    # The supplier is told as for any buyer; the builder for information only.
+    (to_supplier,) = notices_for(database, seller.user.id)
+    assert to_supplier.title == f"New purchase request from {site.engineer.user.name} (Site Engineer)"
+    assert to_supplier.category == "MATERIAL"
+    (to_builder,) = notices_for(database, site.builder.user.id)
+    assert to_builder.title == f"{site.engineer.user.name} (Site Engineer) ordered materials"
+    assert to_builder.category == "MATERIAL" and "no approval is needed" in to_builder.body
+    assert [n.title for n in notices_for(database, site.engineer.user.id)] == ["Purchase request sent to Rao Stores"]
+    assert notices_for(database, site.owner.user.id) == []
+
+    # The supplier accepts and fulfils; no payment step, no approval step.
+    listed = seller.get("/supplier/material-requests").json()
+    assert listed[0]["buyer_role_label"] == "Site Engineer"
+    accepted = seller.post(f"/supplier/purchase-requests/{code}/respond", json={"action": "ACCEPT"})
+    assert [row["status"] for row in accepted.json()] == ["ACCEPTED"], accepted.text
+    fulfilled = seller.post(f"/supplier/material-requests/{ordered['id']}/respond", json={"action": "FULFILL"})
+    assert fulfilled.json()["status"] == "FULFILLED", fulfilled.text
+    database.expire_all()
+    stock = database.scalars(select(CostMaterialInventory)).one()
+    assert (str(stock.project_id), stock.current_stock, str(stock.product_id)) == (site.project_id, 2, listing_id)
+    assert site.engineer.get("/material-requests/mine").json()[0]["status"] == "FULFILLED"
+
+
+def test_an_unassigned_engineer_cannot_order_or_shop_for_the_project(
+    client: TestClient, database: Session, catalog: Catalog, site: Site
+) -> None:
+    seller = supplier(client, database)
+    listing_id = list_product(seller, catalog).json()["id"]
+    accept_between(database, site.builder, seller, "CONTRACTOR_TO_SUPPLIER", None)
+    assign_supplier(site, seller)
+    stranger = engineer(client, database, "stranger@example.in", "9876500019")
+
+    line = {"project_id": site.project_id, "product_id": listing_id, "quantity": 1}
+    refused = stranger.post("/cart/items", json=line)
+    assert (refused.status_code, detail(refused)) == (403, NOT_ASSIGNED)
+    order = {"project_id": site.project_id, "supplier_id": str(seller.user.id),
+             "items": [{"product_id": listing_id, "quantity": 1}]}  # fmt: skip
+    refused = stranger.post("/material-requests", json=order)
+    assert (refused.status_code, detail(refused)) == (403, NOT_ASSIGNED)
+    refused = stranger.get("/shop/products", params={"project_id": site.project_id})
+    assert (refused.status_code, detail(refused)) == (403, NOT_ASSIGNED)
+
+    # Removed from the project, the assigned engineer loses the cart too.
+    assert site.engineer.post("/cart/items", json=line).status_code == 200
+    item_id = site.engineer.get("/cart", params={"project_id": site.project_id}).json()["items"][0]["id"]
+    database.execute(
+        update(ProjectEngineer).where(ProjectEngineer.engineer_id == site.engineer.user.id).values(status="REMOVED")
+    )
+    database.commit()
+    refused = site.engineer.patch(f"/cart/items/{item_id}", json={"quantity": 2})
+    assert (refused.status_code, detail(refused)) == (403, ASK_YOUR_BUILDER)
+    checkout = site.engineer.post(
+        "/cart/checkout", json={"project_id": site.project_id, "supplier_id": str(seller.user.id)}
+    )
+    assert (checkout.status_code, detail(checkout)) == (403, NOT_ASSIGNED)
+
+
+def test_a_self_construction_engineer_buys_from_the_owners_accepted_suppliers(
+    client: TestClient, database: Session, catalog: Catalog
+) -> None:
+    house_owner = owner(client, database)
+    project_id = create_project(house_owner, construction_type="SELF_CONSTRUCTION")["id"]
+    other_project = create_project(house_owner, construction_type="SELF_CONSTRUCTION", title="Second")["id"]
+    site_engineer = engineer(client, database)
+    database.add(ProjectEngineer(project_id=uuid.UUID(project_id), engineer_id=site_engineer.user.id))
+    database.commit()
+    seller = supplier(client, database)
+    listing_id = list_product(seller, catalog).json()["id"]
+    params = {"project_id": project_id}
+
+    # Accepted for another project only: not this one's supplier.
+    accept_between(database, house_owner, seller, "OWNER_TO_SUPPLIER", other_project)
+    assert site_engineer.get("/shop/products", params=params).json()["no_suppliers"] is True
+    accept_between(database, seller, house_owner, "SUPPLIER_TO_OWNER", project_id)
+    shop = site_engineer.get("/shop/products", params=params).json()
+    assert [item["id"] for item in shop["products"]] == [listing_id]
+
+    line = {"project_id": project_id, "product_id": listing_id, "quantity": 3}
+    assert site_engineer.post("/cart/items", json=line).status_code == 200
+    checkout = site_engineer.post("/cart/checkout", json={"project_id": project_id, "supplier_id": str(seller.user.id)})
+    assert checkout.status_code == 200, checkout.text
+    (to_owner,) = notices_for(database, house_owner.user.id)
+    assert to_owner.title == f"{site_engineer.user.name} (Site Engineer) ordered materials"
+
+    # The owner's own shop is unchanged: every supplier who accepted them, no project needed.
+    owner_shop = house_owner.get("/shop/products").json()
+    assert [item["id"] for item in owner_shop["products"]] == [listing_id]
+    assert set(owner_shop) == {"products", "categories", "restricted"}

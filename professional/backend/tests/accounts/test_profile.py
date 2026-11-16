@@ -149,19 +149,22 @@ def test_supplier_complete_profile_accepts_the_british_spelling(client: TestClie
     assert profile.supplier_category == "Labor Supplier"
 
 
-def test_an_engineer_cannot_cross_the_store_manager_line(client: TestClient, database: Session) -> None:
-    engineer, headers = signed_in(client, database, role=ROLE_ENGINEER, specialization="Civil Engineer")
-    crossed = client.patch(
-        COMPLETE,
-        json={**BASE, "specialization": "Store Manager", "location": "MG Road", "qualification": "B.E."},
-        headers=headers,
-    )
-    assert crossed.status_code == 409
+def test_an_engineer_changes_category_freely_and_store_manager_is_gone(client: TestClient, database: Session) -> None:
+    engineer, headers = signed_in(client, database, role=ROLE_ENGINEER, specialization=None)
+    # Onboarding no longer offers Store Manager.
+    refused = client.patch("/api/v1/auth/engineer-category", json={"specialization": "Store Manager"}, headers=headers)
+    assert refused.status_code == 422
+    chosen = client.patch("/api/v1/auth/engineer-category", json={"specialization": "Civil Engineer"}, headers=headers)
+    assert chosen.status_code == 200, chosen.text
+    # No Store Manager line to cross, and no Store Manager fields (post office, qualification).
     moved = client.patch(COMPLETE, json={**BASE, "specialization": "Site Engineer"}, headers=headers)
-    assert moved.status_code == 200
+    assert moved.status_code == 200, moved.text
     database.expire_all()
     profile = database.scalars(select(EngineerProfile).where(EngineerProfile.user_id == engineer.id)).one()
     assert (profile.specialization, profile.category) == ("Site Engineer", "SITE_ENGINEER")
+    back = client.patch(COMPLETE, json={**BASE, "specialization": "Civil Engineer"}, headers=headers)
+    assert back.status_code == 200, back.text
+    assert [field["field"] for field in back.json()["profile_completion"]["required_fields"]][-1] == "specialization"
 
 
 def test_profile_image_must_be_an_own_upload(client: TestClient, database: Session) -> None:

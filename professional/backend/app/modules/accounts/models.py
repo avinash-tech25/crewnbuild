@@ -1,8 +1,8 @@
 """Account profile tables (technical-architecture.md section 10, domain Accounts).
 
 Sign-up writes the role's profile, the session answer reads them, WhatsApp sign-in
-finds administrators by admin_profiles.phone, the Book Technician and Store Manager
-rules read the engineer category, and the accounts endpoints edit them.
+finds administrators by admin_profiles.phone, the Book Technician and
+Site Engineer rules read the engineer category, and the accounts endpoints edit them.
 
     owner_profiles      integer key -> UUID; FK user_id CASCADE
     builder_profiles    integer key -> UUID; FK user_id CASCADE
@@ -41,7 +41,6 @@ from app.database.base import Base, TimestampMixin, UuidPrimaryKeyMixin
 
 # ---- Engineer categories ----
 SITE_ENGINEER_SPECIALIZATION = "Site Engineer"
-STORE_MANAGER_SPECIALIZATION = "Store Manager"
 # Every Engineer Category, in the order the forms list them. The onboarding save
 # accepts only these.
 ENGINEER_CATEGORIES = (
@@ -59,27 +58,19 @@ ENGINEER_CATEGORIES = (
     "Safety",
     "Construction Safety",
     "Finishing / Painter",
-    STORE_MANAGER_SPECIALIZATION,
 )
 
-# engineer_profiles.category: the two categories that change what an engineer may do.
+# engineer_profiles.category: the one category that changes what an engineer may do.
 CATEGORY_SITE_ENGINEER = "SITE_ENGINEER"
-CATEGORY_STORE_MANAGER = "STORE_MANAGER"
-ENGINEER_ACCESS_CATEGORIES = (CATEGORY_SITE_ENGINEER, CATEGORY_STORE_MANAGER)
+ENGINEER_ACCESS_CATEGORIES = (CATEGORY_SITE_ENGINEER,)
 
 
 def engineer_category_for(specialization: str | None) -> str | None:
-    """The category column for a specialization, by the rules the old code applied to
-    the specialization text itself:
-
-    * Site Engineer: exactly "Site Engineer" after trimming (the Book Technician rule)
-    * Store Manager: "Store Manager" ignoring case (the Store Manager dashboard rule)
-    """
+    """The category column for a specialization: SITE_ENGINEER for exactly "Site
+    Engineer" after trimming (the Book Technician rule), else None."""
     value = (specialization or "").strip()
     if value == SITE_ENGINEER_SPECIALIZATION:
         return CATEGORY_SITE_ENGINEER
-    if value.casefold() == STORE_MANAGER_SPECIALIZATION.casefold():
-        return CATEGORY_STORE_MANAGER
     return None
 
 
@@ -172,7 +163,7 @@ class EngineerProfile(UuidPrimaryKeyMixin, TimestampMixin, Base):
     __tablename__ = "engineer_profiles"
     __table_args__ = (
         CheckConstraint(
-            "category IS NULL OR category IN ('SITE_ENGINEER', 'STORE_MANAGER')",
+            "category IS NULL OR category IN ('SITE_ENGINEER')",
             name="category",
         ),
     )
@@ -181,7 +172,7 @@ class EngineerProfile(UuidPrimaryKeyMixin, TimestampMixin, Base):
     qualification: Mapped[str | None] = mapped_column(String(160))
     # The Engineer Category the person chose, as shown on screen.
     specialization: Mapped[str | None] = mapped_column(String(160))
-    # SITE_ENGINEER or STORE_MANAGER, derived from `specialization` whenever it is set
+    # SITE_ENGINEER, derived from `specialization` whenever it is set
     # (engineer_category_for); NULL for every other category.
     category: Mapped[str | None] = mapped_column(String(20), index=True)
     experience_years: Mapped[int] = mapped_column(Integer, nullable=False, default=0)

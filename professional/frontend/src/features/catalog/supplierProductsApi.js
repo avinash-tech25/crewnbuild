@@ -5,7 +5,7 @@ import { runMutation, runQuery } from '../../shared/api/callEndpoint.js'
 export const supplierProductsApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
     supplierProducts: build.query({ query: () => ({ url: '/supplier-products' }) }),
-    shopProducts: build.query({ query: () => ({ url: '/shop/products' }) }),
+    shopProducts: build.query({ query: (params) => ({ url: '/shop/products', params }) }),
     createSupplierProduct: build.mutation({ query: (payload) => ({ url: '/supplier-products', method: 'POST', data: payload }) }),
     updateSupplierProduct: build.mutation({
       query: ({ id, payload }) => ({ url: `/supplier-products/${id}`, method: 'PATCH', data: payload }),
@@ -21,8 +21,9 @@ export const supplierProductsApi = baseApi.injectEndpoints({
 const { endpoints } = supplierProductsApi
 
 export const fetchSupplierProducts = () => runQuery(endpoints.supplierProducts)
-// Published products this buyer may order, with the seller attached.
-export const fetchShopProducts = () => runQuery(endpoints.shopProducts)
+// Published products this buyer may order, with the seller attached. A Site
+// Engineer names the project ({ project_id }): only its suppliers' products come back.
+export const fetchShopProducts = (params) => runQuery(endpoints.shopProducts, params)
 export const createSupplierProduct = (payload) => runMutation(endpoints.createSupplierProduct, payload)
 export const updateSupplierProduct = (id, payload) => runMutation(endpoints.updateSupplierProduct, { id, payload })
 export const deleteSupplierProduct = (id) => runMutation(endpoints.deleteSupplierProduct, id)

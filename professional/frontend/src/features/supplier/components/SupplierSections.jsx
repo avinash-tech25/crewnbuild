@@ -12,7 +12,7 @@ import { constructionTypeLabel } from '../../../shared/utils/roleLabels.js'
 import { useLanguage } from '../../../i18n/LanguageContext.jsx'
 import { SERVICE_OPTION_KEYS, optionLabel } from '../../../i18n/optionKeys.js'
 import { BuilderTierBadge } from '../../billing/subscription/TierBadge.jsx'
-import { DataTable, tdClass, thClass } from '../../store/components/StoreUi.jsx'
+import { DataTable, tdClass, thClass } from '../../../shared/ui/DataTable.jsx'
 
 // The bucket the dashboard groups products with no category of their own into.
 // It is a display grouping built on the fly, never a stored `category`, so it
@@ -140,12 +140,12 @@ export function SupplierRequestsSection({ requestMessage, requestList, viewMode 
         </div>
       )}
       {viewMode === 'table' ? (
-        // The Store Manager Requests table, with the fields a client request has
+        // The shared list table, with the fields a client request has
         // (no products or quantities: those belong to Purchase Requests).
         <DataTable
           minWidth="min-w-[980px]"
           head={[
-            ['store.requests.requestId'], ['dash.common.date'], ['dash.supplier.requester'], ['dash.supplier.requesterType'],
+            ['ui.requestId'], ['dash.common.date'], ['dash.supplier.requester'], ['dash.supplier.requesterType'],
             ['dash.common.project'], ['dash.common.location'], ['dash.common.status'], ['dash.common.action', 'text-end'],
           ].map(([key, align = 'text-start']) => <th key={key} className={`${thClass} ${align}`}>{t(key)}</th>)}
         >

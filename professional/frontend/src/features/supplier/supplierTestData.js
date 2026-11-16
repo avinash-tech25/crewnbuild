@@ -74,7 +74,6 @@ export const anOrderLine = (overrides = {}) => ({
   project_name: 'Rao Family Home',
   engineer_name: 'Meena Iyer',
   engineer_role: 'ENGINEER',
-  buyer_is_store_manager: false,
   owner_name: 'Asha Rao',
   supplier_name: 'Lakshmi Traders',
   image_url: null,

@@ -14,7 +14,6 @@ export const FALLBACK_ROLES = [
   { value: 'OWNER', label: 'House Owner' },
   { value: 'BUILDER', label: 'Builder' },
   { value: 'ENGINEER', label: 'Site Engineer / Engineer' },
-  { value: 'STORE_MANAGER', label: 'Store Manager' },
   { value: 'SUPPLIER', label: 'Supplier' },
 ]
 
@@ -31,10 +30,10 @@ export const POLICY_SECTIONS = [
     intro: 'When you confirm deletion of your Crew&Build account, we delete your account and associated personal information, including:',
     items: [
       { label: 'Account and sign-in information', text: 'Your name, registered email address, mobile number, password, active sign-in sessions and linked sign-in credentials used to access Crew&Build. Your Google or Microsoft account itself is not deleted.' },
-      { label: 'Profile information', text: 'Your address, location and personal profile details associated with your role as an owner, builder, site engineer, store manager or supplier.' },
+      { label: 'Profile information', text: 'Your address, location and personal profile details associated with your role as an owner, builder, site engineer or supplier.' },
       { label: 'Personal files', text: 'Your profile photo, company or store logo, personal documents and portfolio images stored on your profile.' },
       { label: 'Account activity', text: 'Your personal notifications, messages, reviews, estimates and requests, subject to preserving records that other users are entitled to retain or that must be kept for legitimate legal or business reasons.' },
-      { label: 'Role-specific information', text: "Your supplier product listings and store manager inventory, where those records are not required to be retained for another user's transactions or other legitimate purposes." },
+      { label: 'Role-specific information', text: "Your supplier product listings, where those records are not required to be retained for another user's transactions or other legitimate purposes." },
       { label: 'Projects', text: 'Projects and records belonging solely to you will be deleted, subject to any required legal or financial retention. Shared project records belonging to other users will be preserved where necessary, with your account access and personal association removed where possible.' },
     ],
   },

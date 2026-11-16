@@ -1,8 +1,9 @@
 """Every path that sets an engineer's Engineer Category (specialization) keeps
-engineer_profiles.category in step, by the old app's rule (exactly "Site Engineer" ->
-SITE_ENGINEER, "Store Manager" -> STORE_MANAGER, anything else -> none); the three
-readers -- the project Site Engineer assignment, Book Technician and the Partner
-requester view -- agree; and migration 0005 fixed rows written otherwise."""
+engineer_profiles.category in step (exactly "Site Engineer" -> SITE_ENGINEER, anything
+else -> none); the three readers -- the project Site Engineer assignment, Book
+Technician and the Partner requester view -- agree; and migration 0005 fixed rows
+written otherwise (by the rules of its day, which still had a second category; 0006
+removed it)."""
 
 import importlib.util
 from collections.abc import Callable, Iterator
@@ -156,19 +157,33 @@ def test_assignment_book_technician_and_the_partner_view_agree(client: TestClien
 
 
 BACKUP_TABLE = "professional.migration_0005_engineer_category_backup"
+CATEGORY_CHECK = "ck_engineer_profiles__category"
 
 
 @pytest.fixture
 def migration(database: Session) -> Iterator[ModuleType]:
     """Migration 0005, its backup table dropped afterwards (it is not one of the models,
-    so the test database's cleanup does not know it)."""
+    so the test database's cleanup does not know it). 0005 ran before 0006 narrowed the
+    category check, so the check is lifted while it runs and put back afterwards, with
+    the rows 0006 would clear cleared."""
     spec = importlib.util.spec_from_file_location("engineer_category_from_specialization", MIGRATION)
     assert spec and spec.loader
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
+    database.execute(text(f"ALTER TABLE professional.engineer_profiles DROP CONSTRAINT {CATEGORY_CHECK}"))
+    database.commit()
     yield module
     database.rollback()
     database.execute(text(f"DROP TABLE IF EXISTS {BACKUP_TABLE}"))
+    database.execute(
+        text("UPDATE professional.engineer_profiles SET category = NULL WHERE category <> 'SITE_ENGINEER'")
+    )
+    database.execute(
+        text(
+            f"ALTER TABLE professional.engineer_profiles ADD CONSTRAINT {CATEGORY_CHECK} "
+            "CHECK (category IS NULL OR category IN ('SITE_ENGINEER'))"
+        )
+    )
     database.commit()
 
 

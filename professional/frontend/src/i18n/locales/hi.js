@@ -1,5 +1,4 @@
 // Hindi interface text, downloaded only when this language is in use (i18n/dictionaries.js). English is the fallback for any key missing here.
-// The Store Manager's keys follow the rest; a key in both takes the Store Manager's text, as before.
 const base = {
   'language.label': 'भाषा',
   'shared.backHome': 'होम पर वापस जाएँ',
@@ -3949,8 +3948,4 @@ const base = {
   'subscription.coupon.invalid': 'यह कूपन लागू नहीं हो सका।',
 }
 
-const storeManager = {
-  'ui.profile.engCat.storeManager': 'स्टोर मैनेजर',
-}
-
-export default { ...base, ...storeManager }
+export default base

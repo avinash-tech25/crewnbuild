@@ -1,22 +1,18 @@
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { anAccount, installFakeServer } from '../../test/fakeServer.js'
 import { location, renderApp, signedInAs, signedOut } from '../../test/renderApp.jsx'
 import {
   CHANNEL_ID,
   PROJECT_ID,
   SITE_ENGINEER,
-  STORE_MANAGER,
-  STORE_REQUEST_ID,
   STRUCTURAL_ENGINEER,
   SUPPLIER_ID,
   aRecorder,
-  aSiteRequest,
   aSupplierProduct,
   anAssignedProject,
   engineerDashboardServer,
-  storeDashboardServer,
 } from './engineerTestData.js'
 
 // hls.js stands in here; the test checks it is only asked for when a camera plays.
@@ -27,10 +23,10 @@ vi.mock('hls.js', () => {
 })
 
 const FIND = { timeout: 15000 }
-const ENGINEER_SECTIONS = ['/engineer', '/engineer/my-projects', '/engineer/my-supplies', '/engineer/store-requests', '/engineer/find-opportunities',
+const ENGINEER_SECTIONS = ['/engineer', '/engineer/my-projects', '/engineer/my-supplies', '/engineer/find-opportunities',
   '/engineer/calendar', '/engineer/daily-logs', '/engineer/messages', '/engineer/notifications', '/engineer/profile', '/engineer/live-camera']
-const STORE_SECTIONS = ['/store-manager', '/store-manager/catalog', '/store-manager/buy', '/store-manager/payments', '/store-manager/requests',
-  '/store-manager/approvals', '/store-manager/builders', '/store-manager/messages', '/store-manager/notifications', '/store-manager/profile']
+// The removed Store Manager dashboard and the Site Engineer's Store Requests page.
+const OLD_STORE_ADDRESSES = ['/store-manager', '/store-manager/requests', '/store-manager/buy', '/engineer/store-requests']
 
 function open(path, account, routes) {
   const server = installFakeServer(routes)
@@ -39,7 +35,7 @@ function open(path, account, routes) {
 }
 
 describe('access', () => {
-  it.each([...ENGINEER_SECTIONS, ...STORE_SECTIONS])('%s asks a signed-out visitor to sign in first', async (path) => {
+  it.each([...ENGINEER_SECTIONS, ...OLD_STORE_ADDRESSES])('%s asks a signed-out visitor to sign in first', async (path) => {
     installFakeServer({ 'GET /auth/phone/config': { data: { enabled: false, login: false } } })
     renderApp(path, { auth: signedOut })
     await waitFor(() => expect(location.current.pathname).toBe('/login'))
@@ -47,10 +43,9 @@ describe('access', () => {
   })
 
   it.each([
-    ['a Store Manager', STORE_MANAGER, '/engineer/my-projects', '/store-manager'],
-    ['a Store Manager', STORE_MANAGER, '/engineer/live-camera', '/store-manager'],
-    ['a Site Engineer', SITE_ENGINEER, '/store-manager/buy', '/engineer'],
-    ['a Structural Engineer', STRUCTURAL_ENGINEER, '/store-manager', '/engineer'],
+    ['a Site Engineer', SITE_ENGINEER, '/store-manager/requests', '/engineer'],
+    ['a Site Engineer', SITE_ENGINEER, '/store-manager', '/engineer'],
+    ['a Structural Engineer', STRUCTURAL_ENGINEER, '/store-manager/buy', '/engineer'],
     ['a House Owner', anAccount({ role: 'OWNER' }), '/engineer', '/owner'],
     ['a Builder', anAccount({ role: 'BUILDER' }), '/store-manager', '/contractor'],
     ['a Supplier', anAccount({ role: 'SUPPLIER' }), '/engineer/live-camera', '/supplier'],
@@ -155,97 +150,109 @@ describe('Live camera page', () => {
   })
 })
 
-describe('Store Manager dashboard', () => {
-  afterEach(() => {
-    delete window.Razorpay
+describe('Site Engineer orders material from the project suppliers', () => {
+  const OTHER_PROJECT_ID = '0190a8b2-4c1e-7aa0-9f00-0000000000a2'
+  const STEEL = { id: '0190a8b2-4c1e-7aa0-9f00-0000000c0001', name: 'Steel', image_url: null }
+  const TMT_BAR = { id: '0190a8b2-4c1e-7aa0-9f00-0000000a0001', name: 'TMT Bar 12mm', category_id: STEEL.id, subcategory_id: null, image_url: null, variants: [] }
+  const product = aSupplierProduct({ name: 'TMT Bar 12mm', master_product_id: TMT_BAR.id, price: 72, discounted_price: 72, unit: 'rod' })
+  const line = { id: '0190a8b2-4c1e-7aa0-9f00-0000000000f7', product_id: product.id, name: 'TMT Bar 12mm', unit: 'rod', price: 72, quantity: 1, line_total: 72, available_quantity: 500, image_url: null }
+  const aCart = (items) => ({
+    items,
+    suppliers: items.length ? [{ supplier_id: SUPPLIER_ID, supplier_name: 'Lakshmi Traders', store_name: 'Lakshmi Traders', items, total: 72 }] : [],
+    item_count: items.length,
+    total: items.length ? 72 : 0,
   })
 
-  it('greets the Store Manager with the store overview', async () => {
-    const { server } = open('/store-manager', STORE_MANAGER, storeDashboardServer())
-    expect(await screen.findByText('Welcome, Suresh Nair', {}, FIND)).toBeInTheDocument()
-    expect(server.calls('GET /store-manager/overview').length).toBeGreaterThan(0)
-  })
-
-  it("approves a Site Engineer's request", async () => {
-    const user = userEvent.setup()
-    const { server } = open('/store-manager/requests', STORE_MANAGER, storeDashboardServer({
-      'GET /store-manager/requests': { data: [aSiteRequest()] },
-      [`POST /store-manager/requests/${STORE_REQUEST_ID}/approve`]: { data: aSiteRequest({ status: 'APPROVED', stage: 'APPROVED' }) },
+  // Two assigned projects; the cart is the server's, answered for whichever project is asked.
+  function openShop(path, routes = {}) {
+    let cartItems = []
+    return open(path, SITE_ENGINEER, engineerDashboardServer({
+      'GET /engineers/my-projects': { data: [anAssignedProject(), anAssignedProject({ id: OTHER_PROJECT_ID, title: 'Lake View Villa' })] },
+      'GET /catalog/categories': { data: [STEEL] },
+      'GET /catalog/products': { data: [TMT_BAR] },
+      [`GET /catalog/products/${TMT_BAR.id}`]: { data: TMT_BAR },
+      [`GET /catalog/products/${TMT_BAR.id}/variants`]: { data: [] },
+      'GET /shop/products': { data: { products: [product], categories: ['Steel'], restricted: true } },
+      'GET /cart': () => ({ data: aCart(cartItems) }),
+      'POST /cart/items': () => { cartItems = [line]; return { data: aCart(cartItems) } },
+      'POST /cart/checkout': () => { cartItems = []; return { data: { request_code: '0190a8b2-ord1', cart: aCart([]) } } },
+      ...routes,
     }))
-    expect(await screen.findByText('SR-0001', {}, FIND)).toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: 'View details' }))
-    const approve = await screen.findAllByRole('button', { name: 'Approve' })
-    await user.click(approve[approve.length - 1])
-    await waitFor(() => expect(server.calls(`POST /store-manager/requests/${STORE_REQUEST_ID}/approve`)).toHaveLength(1))
-  })
-
-  const buyServer = (order, extra = {}) => storeDashboardServer({
-    'GET /store-manager/buy/products': { data: { products: [aSupplierProduct()], supplier_count: 1 } },
-    'POST /store-manager/purchases/checkout': { data: order },
-    'POST /store-manager/purchases/verify': { data: { status: 'PAID', reference_code: 'PO-0001', amount: 420 } },
-    ...extra,
-  })
-  const anOrder = (gatewayMode) => ({
-    payment_id: '0190a8b2-4c1e-7aa0-9f00-0000000000f9',
-    reference_code: 'PO-0001',
-    gateway_mode: gatewayMode,
-    key_id: gatewayMode === 'test' ? 'rzp_test_key' : '',
-    razorpay_order_id: 'order_TEST0001',
-    amount: 420,
-    amount_paise: 42000,
-    currency: 'INR',
-    supplier_id: SUPPLIER_ID,
-    supplier_name: 'Lakshmi Traders',
-    lines: [{ product_id: aSupplierProduct().id, name: 'UltraTech Cement', unit: 'bag', quantity: 1, unit_price: 420, line_total: 420 }],
-  })
-
-  async function addToOrderAndPay(user) {
-    await user.click(await screen.findByRole('button', { name: 'Add UltraTech Cement 50 kg Lakshmi Traders' }, FIND))
-    // A quantity first, then the order line, then pay.
-    await user.type(await screen.findByLabelText('Quantity UltraTech Cement'), '1')
-    await user.click(screen.getByRole('button', { name: 'Add to order' }))
-    await user.click(await screen.findByRole('button', { name: 'Pay with Razorpay (TEST)' }))
   }
 
-  it('buys from a supplier through the Razorpay client; the server prices and verifies the payment', async () => {
+  async function addToCartFrom(user, projectTitle) {
+    await user.selectOptions(await screen.findByLabelText('Project', {}, FIND), projectTitle)
+    const strip = await screen.findByRole('list', { name: 'Categories' }, FIND)
+    await user.click(within(strip).getByText('Steel'))
+    await user.click(await screen.findByRole('button', { name: 'View TMT Bar 12mm' }, FIND))
+    await user.click(await screen.findByRole('button', { name: 'Add to Cart' }, FIND))
+  }
+
+  it('picks a project, adds a product to its cart and places the order with the supplier', async () => {
     const user = userEvent.setup()
-    let options = null
-    window.Razorpay = class {
-      constructor(given) {
-        options = given
-      }
-      on() {}
-      open() {
-        options.handler({ razorpay_order_id: 'order_TEST0001', razorpay_payment_id: 'pay_TEST0001', razorpay_signature: 'signed' })
-      }
-    }
-    const { server } = open('/store-manager/buy', STORE_MANAGER, buyServer(anOrder('test')))
-    await addToOrderAndPay(user)
-    await waitFor(() => expect(server.calls('POST /store-manager/purchases/verify')).toHaveLength(1))
-    const checkout = JSON.parse(server.calls('POST /store-manager/purchases/checkout')[0].data)
-    expect(checkout).toMatchObject({ project_id: PROJECT_ID, supplier_id: SUPPLIER_ID })
-    expect(checkout).not.toHaveProperty('amount')
-    expect(options).toMatchObject({ key: 'rzp_test_key', order_id: 'order_TEST0001' })
-    expect(JSON.parse(server.calls('POST /store-manager/purchases/verify')[0].data)).toEqual({
-      payment_id: anOrder('test').payment_id,
-      razorpay_order_id: 'order_TEST0001',
-      razorpay_payment_id: 'pay_TEST0001',
-      razorpay_signature: 'signed',
-    })
+    const { server } = openShop('/engineer/my-supplies?tab=catalog')
+    await addToCartFrom(user, 'Lake View Villa')
+    await waitFor(() => expect(server.calls('POST /cart/items')).toHaveLength(1))
+    // The catalogue lists only what the chosen project's suppliers sell.
+    expect(server.calls('GET /shop/products').some((call) => call.params?.project_id === OTHER_PROJECT_ID)).toBe(true)
+    expect(JSON.parse(server.calls('POST /cart/items')[0].data)).toEqual({ project_id: OTHER_PROJECT_ID, product_id: product.id, quantity: 1 })
+
+    await user.click(screen.getByRole('button', { name: /^Cart/, pressed: false }))
+    await user.click((await screen.findAllByRole('button', { name: /Send Buy Request/ }, FIND))[0])
+    await waitFor(() => expect(server.calls('POST /cart/checkout')).toHaveLength(1))
+    expect(JSON.parse(server.calls('POST /cart/checkout')[0].data)).toEqual({ project_id: OTHER_PROJECT_ID, supplier_id: SUPPLIER_ID })
+    // No payment step: the order goes straight to the supplier.
+    expect(server.requests.some((request) => request.path.includes('razorpay') || request.path.includes('/purchases/'))).toBe(false)
   })
 
-  it("uses the simulated checkout only when the server chooses it (its development mock)", async () => {
-    const user = userEvent.setup()
-    const { server } = open('/store-manager/buy', STORE_MANAGER, buyServer(anOrder('mock'), {
-      'POST /store-manager/purchases/mock-checkout': {
-        data: { succeeded: true, razorpay_order_id: 'order_MOCK1', razorpay_payment_id: 'pay_MOCK1', razorpay_signature: 'mock-signed' },
-      },
+  it('says to ask the builder when the project has no supplier assigned', async () => {
+    const { server } = openShop('/engineer/my-supplies?tab=catalog', {
+      'GET /shop/products': { data: { products: [], categories: [], restricted: true, no_suppliers: true } },
+    })
+    expect(await screen.findByText('Ask your builder to assign a supplier to this project.', {}, FIND)).toBeInTheDocument()
+    expect(server.calls('GET /shop/products').at(-1).params).toEqual({ project_id: PROJECT_ID })
+    expect(screen.queryByRole('list', { name: 'Categories' })).not.toBeInTheDocument()
+  })
+
+  it('asks for a project first when the server needs one', async () => {
+    open('/engineer/my-supplies?tab=catalog', SITE_ENGINEER, engineerDashboardServer({
+      'GET /shop/products': { data: { products: [], categories: [], restricted: true, needs_project: true } },
     }))
-    await addToOrderAndPay(user)
-    const dialog = (await screen.findByText('Simulated test checkout')).closest('div')
-    await user.click(within(dialog.parentElement).getByRole('button', { name: 'Simulate successful payment' }))
-    await waitFor(() => expect(server.calls('POST /store-manager/purchases/verify')).toHaveLength(1))
-    expect(JSON.parse(server.calls('POST /store-manager/purchases/mock-checkout')[0].data)).toEqual({ payment_id: anOrder('mock').payment_id, outcome: 'success' })
-    expect(window.Razorpay).toBeUndefined()
+    expect(await screen.findByText('Select a project to request materials for.', {}, FIND)).toBeInTheDocument()
+  })
+
+  it('shows the reason the server gives when it refuses the product', async () => {
+    const user = userEvent.setup()
+    openShop('/engineer/my-supplies?tab=catalog', {
+      'POST /cart/items': { status: 403, data: { detail: 'Only an actively assigned Site Engineer can order for this project.' } },
+    })
+    await addToCartFrom(user, 'Rao Family Home')
+    expect(await screen.findByText('Only an actively assigned Site Engineer can order for this project.', {}, FIND)).toBeInTheDocument()
+  })
+
+  it('shows the reason the server gives when it refuses the order', async () => {
+    const user = userEvent.setup()
+    const { server } = openShop('/engineer/my-supplies?tab=cart', {
+      'GET /cart': { data: aCart([line]) },
+      'POST /cart/checkout': { status: 403, data: { detail: 'Ask your builder to assign a supplier to this project.' } },
+    })
+    await user.click((await screen.findAllByRole('button', { name: /Send Buy Request/ }, FIND))[0])
+    await waitFor(() => expect(server.calls('POST /cart/checkout')).toHaveLength(1))
+    expect(await screen.findByText('Ask your builder to assign a supplier to this project.', {}, FIND)).toBeInTheDocument()
+  })
+})
+
+describe('Engineer Category', () => {
+  it('offers no Store Manager category', async () => {
+    const newEngineer = anAccount({
+      role: 'ENGINEER',
+      engineer_profile: null,
+      profile_completion: { missing_fields: [{ field: 'specialization' }] },
+    })
+    installFakeServer({})
+    renderApp('/engineer-category', { auth: signedInAs(newEngineer) })
+    expect(await screen.findByRole('radio', { name: 'Site Engineer' }, FIND)).toBeInTheDocument()
+    expect(screen.getAllByRole('radio')).toHaveLength(14)
+    expect(screen.queryByRole('radio', { name: 'Store Manager' })).not.toBeInTheDocument()
   })
 })

@@ -2,8 +2,8 @@
  * Site Weather -- current conditions, forecasts and weather alerts for every
  * signed-in account: its own place ("My location", any role, no project
  * needed) and the project sites it may read -- its own projects (House Owner,
- * Builder, Site Engineer), and read-only the sites of a Store Manager's open
- * requests, a Supplier's open orders, or an administrator's scope.
+ * Builder, Site Engineer), and read-only the sites of a Supplier's open
+ * orders, or an administrator's scope.
  *
  * A dedicated page reached from the Weather button in each dashboard's top bar,
  * like the Site Engineer's Live Camera page: nothing here touches any dashboard,

@@ -2,14 +2,13 @@
 
 from fastapi import HTTPException
 
-from app.modules.accounts.models import CATEGORY_SITE_ENGINEER, CATEGORY_STORE_MANAGER
+from app.modules.accounts.models import CATEGORY_SITE_ENGINEER
 from app.modules.identity.models import (
     ROLE_ENGINEER,
     ROLE_GLOBAL_SUPER_ADMIN,
     ROLE_OWNER,
     ROLE_PROFESSIONAL,
     ROLE_SITE_ENGINEER,
-    ROLE_STORE_MANAGER,
     User,
 )
 
@@ -22,13 +21,12 @@ HANDOFF_NOT_ALLOWED = "Book Technician is available to House Owners and Site Eng
 
 
 def session_role(user: User) -> str:
-    """The role of a session (section 7.1): an Engineer becomes SITE_ENGINEER or
-    STORE_MANAGER by category; any other engineer category stays ENGINEER."""
-    if user.role == ROLE_ENGINEER and user.engineer_profile is not None:
-        if user.engineer_profile.category == CATEGORY_SITE_ENGINEER:
-            return ROLE_SITE_ENGINEER
-        if user.engineer_profile.category == CATEGORY_STORE_MANAGER:
-            return ROLE_STORE_MANAGER
+    """The role of a session (section 7.1), derived from the account on every request
+    (never from the role an older token carries): an Engineer whose category is Site
+    Engineer becomes SITE_ENGINEER; any other engineer stays ENGINEER."""
+    profile = user.engineer_profile if user.role == ROLE_ENGINEER else None
+    if profile is not None and profile.category == CATEGORY_SITE_ENGINEER:
+        return ROLE_SITE_ENGINEER
     return user.role
 
 

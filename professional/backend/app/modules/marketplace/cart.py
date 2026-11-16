@@ -1,12 +1,13 @@
 """Who may buy what, for which project, from which supplier, and the server-side cart
-(ported from the old cart_service.py and cart_repository.py; same rules and answers).
+(ported from the old cart_service.py and cart_repository.py).
 
-A House Owner orders for a project they own; a Store Manager for a project of a builder
-whose team they are on (an actively assigned Site Engineer passes the project check,
-but material orders refuse them later, as before). A House Owner buys from a supplier
-who accepted their request (for that project, when ordering), or, on a Self Construction
-project, from a supplier serving its location; a Site Engineer or Store Manager from a
-supplier their builder approved. A buyer only reaches their own cart lines.
+A House Owner orders for a project they own, from a supplier who accepted their request
+(for that project, when ordering), or, on a Self Construction project, from a supplier
+serving its location. A Site Engineer orders directly from suppliers for a project they
+are actively assigned to, and only from the suppliers allowed on that project: those the
+builder assigned to it (an ACTIVE project_supplier_assignments row), and on a Self
+Construction project also those who accepted the House Owner's request for it. A buyer
+only reaches their own cart lines.
 """
 
 import uuid
@@ -19,13 +20,14 @@ from sqlalchemy.orm import Session
 from app.modules.identity.models import ROLE_ENGINEER, ROLE_OWNER, ROLE_SUPPLIER, User
 from app.modules.marketplace.listings import tiers_for, unit_price_for
 from app.modules.marketplace.models import CartItem, SupplierProduct
-from app.modules.projects.access import engineer_has_project_access, store_manager_serves_project
-from app.modules.projects.models import ContractorEngineer, Project, ProjectRequest
+from app.modules.projects.access import engineer_has_project_access
+from app.modules.projects.models import Project, ProjectRequest, ProjectSupplier
 
 BUYER_ROLES = {ROLE_OWNER, ROLE_ENGINEER}
 OWNER_SUPPLIER_REQUEST_TYPES = ["OWNER_TO_SUPPLIER", "SUPPLIER_TO_OWNER"]
-BUILDER_SUPPLIER_REQUEST_TYPES = ["CONTRACTOR_TO_SUPPLIER", "SUPPLIER_TO_CONTRACTOR"]
 SELF_CONSTRUCTION = "SELF_CONSTRUCTION"
+ENGINEER_NOT_ASSIGNED = "Only an actively assigned Site Engineer can order for this project."
+SUPPLIER_NOT_ASSIGNED = "Ask your builder to assign a supplier to this project."
 
 
 def ensure_buyer(user: User) -> None:
@@ -34,8 +36,7 @@ def ensure_buyer(user: User) -> None:
 
 
 def ensure_buyer_project_access(database: Session, project_id: uuid.UUID, user: User) -> Project:
-    """A House Owner must own the project; a Site Engineer must be actively assigned; a
-    Store Manager must serve its builder."""
+    """A House Owner must own the project; a Site Engineer must be actively assigned."""
     project = database.get(Project, project_id)
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
@@ -45,9 +46,45 @@ def ensure_buyer_project_access(database: Session, project_id: uuid.UUID, user: 
         return project
     if user.role == ROLE_ENGINEER and engineer_has_project_access(database, project_id, user.id):
         return project
-    if store_manager_serves_project(database, user, project):
-        return project
-    raise HTTPException(status_code=403, detail="Only an actively assigned Site Engineer can order for this project.")
+    raise HTTPException(status_code=403, detail=ENGINEER_NOT_ASSIGNED)
+
+
+def owner_accepted_supplier_ids(
+    database: Session, owner_id: uuid.UUID, project_id: uuid.UUID | None = None
+) -> set[uuid.UUID]:
+    """Suppliers with an accepted request to or from this House Owner (for this project,
+    when one is given)."""
+    statement = select(ProjectRequest.sender_id, ProjectRequest.receiver_id).where(
+        ProjectRequest.status == "accepted",
+        ProjectRequest.request_type.in_(OWNER_SUPPLIER_REQUEST_TYPES),
+        or_(ProjectRequest.sender_id == owner_id, ProjectRequest.receiver_id == owner_id),
+    )
+    if project_id is not None:
+        statement = statement.where(ProjectRequest.project_id == project_id)
+    accepted = set()
+    for sender_id, receiver_id in database.execute(statement).all():
+        accepted.add(receiver_id if sender_id == owner_id else sender_id)
+    accepted.discard(owner_id)
+    return accepted
+
+
+def engineer_supplier_ids(database: Session, engineer: User, project_id: uuid.UUID | None) -> set[uuid.UUID]:
+    """The suppliers a Site Engineer may order from for this project: none without a
+    project or an active assignment to it; else the suppliers the builder assigned to the
+    project, and on a Self Construction project the House Owner's accepted suppliers."""
+    if project_id is None or not engineer_has_project_access(database, project_id, engineer.id):
+        return set()
+    allowed = set(
+        database.scalars(
+            select(ProjectSupplier.supplier_id).where(
+                ProjectSupplier.project_id == project_id, ProjectSupplier.status == "ACTIVE"
+            )
+        ).all()
+    )
+    project = database.get(Project, project_id)
+    if project is not None and project.construction_type == SELF_CONSTRUCTION:
+        allowed |= owner_accepted_supplier_ids(database, project.owner_id, project_id)
+    return allowed
 
 
 def approved_supplier_ids_for(
@@ -55,45 +92,10 @@ def approved_supplier_ids_for(
 ) -> list[uuid.UUID] | None:
     """The suppliers this buyer may shop from; None for a role with no restriction."""
     if user.role == ROLE_OWNER:
-        statement = select(ProjectRequest.sender_id, ProjectRequest.receiver_id).where(
-            ProjectRequest.status == "accepted",
-            ProjectRequest.request_type.in_(OWNER_SUPPLIER_REQUEST_TYPES),
-            or_(ProjectRequest.sender_id == user.id, ProjectRequest.receiver_id == user.id),
-        )
-        if project_id is not None:
-            statement = statement.where(ProjectRequest.project_id == project_id)
-        accepted = set()
-        for sender_id, receiver_id in database.execute(statement).all():
-            accepted.add(receiver_id if sender_id == user.id else sender_id)
-        accepted.discard(user.id)
-        return sorted(accepted)
-
-    if user.role != ROLE_ENGINEER:
-        return None
-
-    builder_ids = list(
-        database.scalars(
-            select(ContractorEngineer.contractor_id).where(
-                ContractorEngineer.engineer_id == user.id, ContractorEngineer.status == "ACTIVE"
-            )
-        ).all()
-    )
-    if not builder_ids:
-        return []
-    approved = set()
-    rows = database.execute(
-        select(ProjectRequest.sender_id, ProjectRequest.receiver_id).where(
-            ProjectRequest.status == "accepted",
-            ProjectRequest.request_type.in_(BUILDER_SUPPLIER_REQUEST_TYPES),
-            or_(ProjectRequest.sender_id.in_(builder_ids), ProjectRequest.receiver_id.in_(builder_ids)),
-        )
-    ).all()
-    for sender_id, receiver_id in rows:
-        if sender_id in builder_ids:
-            approved.add(receiver_id)
-        elif receiver_id in builder_ids:
-            approved.add(sender_id)
-    return sorted(approved)
+        return sorted(owner_accepted_supplier_ids(database, user.id, project_id))
+    if user.role == ROLE_ENGINEER:
+        return sorted(engineer_supplier_ids(database, user, project_id))
+    return None
 
 
 def serves_self_construction_project(
@@ -126,6 +128,8 @@ def ensure_supplier_approved(
         return
     if serves_self_construction_project(database, user, supplier_id, project_id):
         return
+    if user.role == ROLE_ENGINEER:
+        raise HTTPException(status_code=403, detail=SUPPLIER_NOT_ASSIGNED)
     raise HTTPException(
         status_code=403, detail="You can order from this supplier once they have accepted your request."
     )

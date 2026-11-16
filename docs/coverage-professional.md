@@ -22,6 +22,8 @@ None.
 | Old tables split in two | 2 |
 | Old tables removed | 0 |
 
+> **Store Manager removed (16 Nov 2026).** The counts and lists here record the port as it was done. Afterwards the Store Manager role was removed: the 30 routes under `app.store_manager.routes.store_manager_routes` (`/store-manager/*`, `/store/site-stores`, `/store/site-requests*`, `/store-builder-requests*`, including the Razorpay store purchase checkout) no longer exist, and Professional revision 0006 drops the seven store tables (section 2). Site Engineers now order directly from the project's suppliers through `/cart/*`; `GET /api/v1/shop/products` takes a `project_id` for engineers.
+
 New routes with no old counterpart: `GET /api/v1/auth/sessions`; `DELETE /api/v1/auth/sessions/{session_id}` (the session list, off unless `SESSION_LIST_ENABLED`, identity decision).
 
 ## 1. Routes
@@ -425,7 +427,7 @@ New routes with no old counterpart: `GET /api/v1/auth/sessions`; `DELETE /api/v1
 | PATCH | `/cart/items/{item_id}` | `/api/v1/cart/items/{item_id}` |
 | DELETE | `/cart/items/{item_id}` | `/api/v1/cart/items/{item_id}` |
 | POST | `/cart/checkout` | `/api/v1/cart/checkout` |
-| GET | `/shop/products` | `/api/v1/shop/products` |
+| GET | `/shop/products` | `/api/v1/shop/products` (since 16 Nov 2026 takes `project_id` for engineers) |
 
 ### app.shared.support.routes.support_routes
 
@@ -489,6 +491,8 @@ New routes with no old counterpart: `GET /api/v1/auth/sessions`; `DELETE /api/v1
 | GET | `/projects/{project_id}/engineer` | `/api/v1/projects/{project_id}/engineer` |
 
 ### app.store_manager.routes.store_manager_routes
+
+Ported, then removed on 16 Nov 2026 with the Store Manager role: none of these new paths exists any more.
 
 | Method | Old path | New path |
 | --- | --- | --- |
@@ -609,7 +613,7 @@ From technical-architecture.md section 10, checked against both codebases: every
 | Accounts | `account_deletion_requests` | `account_deletion_requests` | UUID |
 | Accounts | `admin_profiles` | `admin_profiles` | UUID |
 | Accounts | `builder_profiles` | `builder_profiles` | UUID; FK `user_id` CASCADE |
-| Accounts | `engineer_profiles` | `engineer_profiles` | UUID; add `category` (SITE\_ENGINEER / STORE\_MANAGER) |
+| Accounts | `engineer_profiles` | `engineer_profiles` | UUID; add `category` (SITE\_ENGINEER / STORE\_MANAGER; revision 0006 narrowed it to SITE\_ENGINEER on 16 Nov 2026) |
 | Accounts | `owner_profiles` | `owner_profiles` | UUID; FK `user_id` CASCADE |
 | Accounts | `supplier_profiles` | `supplier_profiles` | UUID; FK `user_id` CASCADE |
 | Admin | `advertisement_daily_stats` | `ad_daily_stats` | Rename, UUID; FK `ad_id` CASCADE |
@@ -690,13 +694,14 @@ From technical-architecture.md section 10, checked against both codebases: every
 | Site operations | `site_material_purchases` | `site_material_purchases` | UUID; FK `daily_record_id` CASCADE |
 | Site operations | `site_material_usages` | `site_material_usages` | UUID; FK `daily_record_id` CASCADE |
 | Site operations | `site_payments` | `site_payments` | UUID; FK `daily_record_id` CASCADE |
-| Store | `store_builder_requests` | `store_builder_requests` | UUID |
-| Store | `store_items` | `store_items` | UUID; add `version` |
-| Store | `store_payment_records` | `store_payments` | Rename; `transaction_uuid` becomes `id` |
-| Store | `store_purchase_receipts` | `store_goods_receipts` | Rename, UUID; FK `purchase_order_item_id` |
-| Store | `store_site_request_lines` | `store_site_request_items` | Rename, UUID |
-| Store | `store_site_requests` | `store_site_requests` | UUID; `public_request_id` becomes `id` |
-| Store | `store_stock_movements` | `store_stock_movements` | UUID |
+| Store | `store_builder_requests` | `store_builder_requests` | UUID (dropped by revision 0006, 16 Nov 2026) |
+| Store | `store_items` | `store_items` | UUID; add `version` (dropped by revision 0006, 16 Nov 2026) |
+| Store | `store_payment_records` | `store_payments` | Rename; `transaction_uuid` becomes `id` (dropped by revision 0006, 16 Nov 2026) |
+| Store | `store_purchase_receipts` | `store_goods_receipts` | Rename, UUID; FK `purchase_order_item_id` (dropped by revision 0006, 16 Nov 2026) |
+| Store | `store_site_request_lines` | `store_site_request_items` | Rename, UUID (dropped by revision 0006, 16 Nov 2026) |
+| Store | `store_site_requests` | `store_site_requests` | UUID; `public_request_id` becomes `id` (dropped by revision 0006, 16 Nov 2026) |
+| Store | `store_stock_movements` | `store_stock_movements` | UUID (dropped by revision 0006, 16 Nov 2026) |
+
 | Support | `support_ticket_messages` | `support_ticket_messages` | UUID; FK CASCADE |
 | Support | `support_tickets` | `support_tickets` | UUID; `reference` stays the public code |
 | Weather | `weather_alert_acknowledgements` | `weather_alert_acknowledgements` | UUID |

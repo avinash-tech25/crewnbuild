@@ -34,7 +34,7 @@ CREWNBUILD is an existing construction platform built as two microservices that 
 | Partner service | The FastAPI backend and React web app for booking technicians (API title `Partner API`) |
 | House Owner | Role `OWNER`: a person building a house |
 | Builder | Role `CONTRACTOR`: a construction company |
-| Site Engineer / Store Manager | Role `ENGINEER`, told apart by engineer category |
+| Site Engineer | Role `ENGINEER` with engineer category Site Engineer |
 | Supplier | Role `SUPPLIER`: material, labor or equipment supplier |
 | Technician | A Partner account: painter, plumber, electrician or carpenter |
 | Requester | A House Owner or Site Engineer booking a technician through the hand-off |
@@ -75,8 +75,7 @@ The platform serves eight Professional roles and two Partner identities. Profess
 |---|---|---|---|
 | House Owner (`OWNER`) | Professional | E-mail + password, WhatsApp OTP, Google, Microsoft | Create projects, invite builders, negotiate awards, follow progress, shop, list property, book technicians |
 | Builder (`CONTRACTOR`) | Professional | Same | Paid subscription, accept projects, manage engineers and suppliers, daily costs, portfolio |
-| Site Engineer (`ENGINEER`, site category) | Professional | Same | Daily site records, material, labor and equipment requests, store requests, CCTV, book technicians |
-| Store Manager (`ENGINEER`, store category) | Professional | Same | Stock, issue requests, buy from suppliers, record payments |
+| Site Engineer (`ENGINEER`, site category) | Professional | Same | Daily site records, material orders from the project's suppliers, labor and equipment requests, CCTV, book technicians |
 | Supplier (`SUPPLIER`) | Professional | Same | Catalog listings, bulk pricing, purchase requests, labor and equipment supply |
 | Professional (`PROFESSIONAL`) | Professional | Same | No dashboard today. Decision needed (CR-14) |
 | Administrators (`GLOBAL_SUPER_ADMIN`, `LOCATION_SUPER_ADMIN`, `MANAGER`) | Professional | E-mail + password | Users, verification, catalog, ads, coupons, reports, support, audit |
@@ -84,12 +83,12 @@ The platform serves eight Professional roles and two Partner identities. Profess
 | Requester (House Owner or Site Engineer) | Partner | Hand-off from Professional | Book, track, give start code, rate |
 
 - **FR-P-01** Every Professional endpoint must enforce the role and ownership rules of its module; admin endpoints must check a named permission.
-- **FR-P-02** A Store Manager must be told apart from a Site Engineer by engineer category, and must not reach Site Engineer screens (and the reverse).
-- **FR-T-01** Only Professional users with role `OWNER`, or `ENGINEER` with the Site Engineer category, may become Partner requesters. Store Managers must be refused.
+- **FR-P-02** The only engineer category is Site Engineer. An engineer without a category (for example a former Store Manager, whose category was cleared by revision 0006) must choose one at the next sign-in before reaching the engineer screens. There is no Store Manager role.
+- **FR-T-01** Only Professional users with role `OWNER`, or `ENGINEER` with the Site Engineer category, may become Partner requesters. Engineers without that category must be refused.
 
 ## 4. Data architecture
 
-One PostgreSQL database, `crewnbuild`, holds two schemas: `professional` (98 tables, all former `octabuild` tables) and `partner` (22 tables, unchanged). Each service owns and migrates only its own schema.
+One PostgreSQL database, `crewnbuild`, holds two schemas: `professional` (91 tables: the former `octabuild` tables less the seven Store Manager tables dropped by revision 0006) and `partner` (22 tables, unchanged). Each service owns and migrates only its own schema.
 
 ### 4.1 Database and schemas
 
@@ -115,7 +114,7 @@ One PostgreSQL database, `crewnbuild`, holds two schemas: `professional` (98 tab
 - **DR-09** Every new constraint and index must have an explicit name (24 Professional and 4 Partner unique constraints are unnamed today).
 - **DR-10** The cross-schema link `partner.service_requests.requested_by_user_id` → `professional.users.id` must not cascade deletes (see CR-01).
 
-### 4.3 Schema `professional` (98 tables)
+### 4.3 Schema `professional` (91 tables)
 
 | Area | Tables |
 |---|---|
@@ -123,7 +122,6 @@ One PostgreSQL database, `crewnbuild`, holds two schemas: `professional` (98 tab
 | Administration and audit (8) | `advertisement_daily_stats`, `advertisements`, `audit_events`, `reports`, `support_ticket_messages`, `support_tickets`, `labour_logs`, `material_logs` |
 | Projects and construction (24) | `award_offers`, `builder_engineer_invitations`, `builder_engineer_memberships`, `builder_offline_suppliers`, `builder_workers`, `daily_site_records`, `engineer_profiles`, `escrow_milestones`, `estimates`, `project_awards`, `project_engineer_assignments`, `project_material_inventory`, `project_media`, `project_supplier_assignments`, `project_timelines`, `projects`, `requests`, `reviews`, `site_expenses`, `site_labour_entries`, `site_machinery_usages`, `site_material_purchases`, `site_material_usages`, `site_payments` |
 | Catalog, suppliers and shop (11) | `cart_items`, `master_brands`, `master_categories`, `master_product_images`, `master_product_variants`, `master_products`, `master_subcategories`, `master_units`, `material_order_items`, `supplier_bulk_pricing`, `supplier_products` |
-| Store Manager (7) | `store_builder_requests`, `store_items`, `store_payment_records`, `store_purchase_receipts`, `store_site_request_lines`, `store_site_requests`, `store_stock_movements` |
 | Labor and equipment supply (6) | `equipment_items`, `equipment_requests`, `equipment_usage_logs`, `labor_daily_records`, `labor_requests`, `labor_services` |
 | Messaging and notifications (4) | `conversation_participants`, `conversations`, `messages`, `notifications` |
 | Files (1) | `uploaded_files` |
@@ -132,7 +130,7 @@ One PostgreSQL database, `crewnbuild`, holds two schemas: `professional` (98 tab
 | Payments and subscriptions (10) | `builder_subscriptions`, `daily_record_adjustments`, `payment_orders`, `payment_receipts`, `payment_transactions`, `subscription_coupon_redemptions`, `subscription_coupons`, `subscription_payments`, `subscription_plan_prices`, `subscription_webhook_events` |
 | Weather (5) | `weather_alert_acknowledgements`, `weather_alerts`, `weather_geocode_cache`, `weather_site_locations`, `weather_snapshots` |
 
-Totals: 98 tables, 1,161 columns, 124 CHECK constraints, 250 named indexes. Column-level detail stays in the Professional backend technical document.
+Totals before revision 0006: 98 tables, 1,161 columns, 124 CHECK constraints, 250 named indexes. Revision 0006 (16 Nov 2026) drops the seven Store Manager tables (`store_items`, `store_stock_movements`, `store_site_requests`, `store_site_request_items`, `store_payments`, `store_goods_receipts`, `store_builder_requests`) with their data, leaving 91 tables, and narrows `engineer_profiles.category` to `SITE_ENGINEER`. Column-level detail stays in the Professional backend technical document.
 
 ### 4.4 Schema `partner` (22 tables)
 
@@ -193,7 +191,7 @@ The Professional service exposes 373 distinct HTTP and WebSocket endpoints in 39
 | FR-P-18 | Cart and buy requests | A cart belongs to one project. Checkout turns one supplier's lines into a purchase request the supplier accepts or rejects. | `/cart/*`, `/material-requests/*`, `/supplier/*` |
 | FR-P-19 | Labor supply | Labor suppliers publish trades and capacity; engineers request workers; daily attendance is recorded per date. | `/labor/*`, `/labor-requests/*` |
 | FR-P-20 | Equipment supply | Equipment suppliers list rent or buy items; engineers request them; daily usage is logged. | `/equipment/*`, `/equipment-requests/*` |
-| FR-P-21 | Store Manager | Store Managers keep stock with a movement ledger, approve and issue Site Engineer requests in parts, buy shortfalls from the builder's suppliers through Razorpay, receive goods in parts and record payments with a permanent transaction ID. | `/store-manager/*`, `/store/*`, `/store-builder-requests/*` |
+| FR-P-21 | Site Engineer material orders | Site Engineers order material directly from suppliers through the cart: only for projects they are actively assigned to, and only from the suppliers assigned to that project (`project_supplier_assignments`, ACTIVE) or, for a self-construction project, the House Owner's accepted suppliers for it. Anything else is refused with 403. With no supplier, the screen says "Ask your builder to assign a supplier to this project." There is no builder approval and no online payment: the supplier accepts and fulfils, the builder gets an information-only notification, and fulfilled goods are added to the project's material stock (`project_material_stock`). | `/shop/products?project_id=`, `/cart/*`, `/material-requests/*` |
 | FR-P-22 | Property listings | Users list property as drafts, publish, withdraw or mark sold, and receive enquiries. | `/property-listings/*` |
 | FR-P-23 | Discovery | Users find nearby builders, suppliers, engineers and projects by pincode. | `/contractors/*`, `/suppliers/*`, `/engineers/find` |
 
@@ -217,7 +215,7 @@ The Professional service exposes 373 distinct HTTP and WebSocket endpoints in 39
 ### 5.5 Web app (Professional)
 
 - React 18 + Vite 5 single-page app on port 5173, with Redux Toolkit, Tailwind and React Router 6.
-- One dashboard per role: `/owner`, `/contractor`, `/engineer`, `/store-manager`, `/supplier`, `/admin`, plus `/weather` for all signed-in roles.
+- One dashboard per role: `/owner`, `/contractor`, `/engineer`, `/supplier`, `/admin`, plus `/weather` for all signed-in roles. Old `/store-manager` and `/engineer/store-requests` links redirect to `/engineer`.
 - Routes check a verified server session and role. Builders must finish the paid sign-up before reaching their dashboard.
 - Public site: marketing pages, calculators, contact, support tickets, delete account.
 
@@ -338,7 +336,7 @@ The platform depends on 12 outside services. Each must fail gracefully: a slow o
 
 | Service | Used by | Purpose | Mode today |
 |---|---|---|---|
-| Razorpay | Professional | Technician booking payments, builder subscriptions, Store Manager purchases; signature check and webhooks | TEST only, mock in development |
+| Razorpay | Professional | Technician booking payments, builder subscriptions; signature check and webhooks | TEST only, mock in development |
 | Dovesoft WhatsApp | Professional | Sign-up and sign-in OTP, welcome message | Live when enabled |
 | SMTP / Resend | Both | Verification codes, support, deletion and weather e-mails | Console output when SMTP is unset (Partner) |
 | Amazon S3 | Professional | Profile images, supplier data, site images and videos, presigned URLs | Per-category buckets (India) |
@@ -509,7 +507,7 @@ A release is accepted when all five suites pass against `crewnbuild_test` and th
 
 - [ ] Owner signs up by WhatsApp OTP, creates a project, assigns a builder through an award, and sees daily records from the Site Engineer.
 - [ ] Builder buys a subscription in Razorpay test mode and receives the plan badge.
-- [ ] Store Manager issues a Site Engineer request in parts, buys a shortfall and records the payment.
+- [ ] Site Engineer orders material for an assigned project from a supplier assigned to it; the builder is notified; the supplier fulfils and the goods appear in the project's material stock. Ordering for an unassigned project or supplier is refused (403).
 - [ ] Owner clicks Book Technician; the hand-off opens Partner signed in; the token fails on second use.
 - [ ] Booking is offered, accepted, tracked live, started with the start code, completed with a work bill, and rated.
 - [ ] Technician's earning appears with the commission deducted.
@@ -521,7 +519,8 @@ A release is accepted when all five suites pass against `crewnbuild_test` and th
 
 Endpoint counts by module, from the route tables in the technical documents dated 12 Nov 2026. Full endpoint lists, request bodies and column-level schemas stay in those four documents.
 
-### A.1 Professional (373 distinct endpoints)
+### A.1 Professional (373 distinct endpoints before the 30 Store Manager endpoints were removed on 16 Nov 2026)
+
 
 | Module | Endpoints | Module | Endpoints |
 |---|---|---|---|
@@ -538,7 +537,7 @@ Endpoint counts by module, from the route tables in the technical documents date
 | Live events (WebSocket) | 1 | Payment gateway | 8 |
 | Projects | 11 | Labor supply | 17 |
 | Project requests | 8 | Equipment supply | 14 |
-| Awards and negotiation | 7 | Store Manager | 30 |
+| Awards and negotiation | 7 | Store Manager (removed 16 Nov 2026) | 30 |
 | Daily costs and progress | 12 | Weather | 21 |
 | Engineer and builder teams | 16 | Builder subscriptions | 17 |
 | Marketplace discovery | 8 | Admin coupons | 4 |

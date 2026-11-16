@@ -49,7 +49,7 @@ export default function QuantityField({ value, unit, onChange, onCommit, disable
       </div>
       {problem && (
         <p role="alert" className="mt-1 max-w-[12rem] text-[11px] font-bold text-rose-700">
-          {problem === 'whole' ? t('store.quantityWhole', { unit: td(unit) }) : t('store.quantityInvalid')}
+          {problem === 'whole' ? t('shop.quantityWhole', { unit: td(unit) }) : t('shop.quantityInvalid')}
         </p>
       )}
     </div>

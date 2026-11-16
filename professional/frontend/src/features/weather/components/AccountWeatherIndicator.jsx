@@ -4,11 +4,11 @@
  *
  * Which place: the one this account picked in the popover (kept in this browser
  * per account); else the server's default -- the project an Owner, Builder or
- * Site Engineer works on, or the account's own place (a Store Manager's store,
- * a Supplier's business, an administrator's registered area). The popover
- * lists every site the account may read (/weather/projects, the Weather page's
- * own list and rules), and /weather/summary refuses a site it may not; a place
- * can also be searched and saved as the account's own ("My location"). With no
+ * Site Engineer works on, or the account's own place (a Supplier's business,
+ * an administrator's registered area). The popover lists every site the
+ * account may read (/weather/projects, the Weather page's own list and
+ * rules), and /weather/summary refuses a site it may not; a place can also be
+ * searched and saved as the account's own ("My location"). With no
  * place at all it looks and behaves like the public pages before a place is
  * chosen. Badge and warnings: the most serious active WARNING/SEVERE alerts
  * across those sites.

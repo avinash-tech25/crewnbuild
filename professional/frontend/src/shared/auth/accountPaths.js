@@ -1,4 +1,4 @@
-import { ADMIN_ROLES, MARKETPLACE_ROLES, accessRole } from './roles.js'
+import { ADMIN_ROLES, MARKETPLACE_ROLES } from './roles.js'
 
 // Each dashboard's Profile Settings address (its Mobile number and Email sections).
 export function settingsPath(role) {
@@ -15,21 +15,13 @@ export function rolePath(role) {
   return '/owner'
 }
 
-// Role ENGINEER with the Store Manager category. Read from the account the server
-// returned; the server decides for itself on every Store Manager route.
-export const STORE_MANAGER_PATH = '/store-manager'
-
-export function isStoreManager(user) {
-  return accessRole(user) === 'STORE_MANAGER'
-}
-
-// The dashboard this account opens: its role's, except a Store Manager's.
+// The dashboard this account opens: its role's.
 export function dashboardPath(user) {
-  return isStoreManager(user) ? STORE_MANAGER_PATH : rolePath(user?.role)
+  return rolePath(user?.role)
 }
 
 export function accountSettingsPath(user) {
-  return isStoreManager(user) ? `${STORE_MANAGER_PATH}/profile` : settingsPath(user?.role)
+  return settingsPath(user?.role)
 }
 
 // Whether this account still needs the pincode step: a marketplace account in

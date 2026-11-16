@@ -140,7 +140,7 @@ professional/backend/                    (partner/backend/ has the same shape)
 │   │   └── ownership_policies.py        Shared "is this record yours" checks
 │   ├── api/v1/router.py                 Includes every module router in a fixed order
 │   ├── modules/
-│   │   └── <module>/                    e.g. projects/, store/, billing/
+│   │   └── <module>/                    e.g. projects/, marketplace/, billing/
 │   │       ├── router.py                HTTP only: parse, call service, return schema
 │   │       ├── schemas.py               Pydantic request and response models
 │   │       ├── service.py               Business rules and transactions
@@ -163,10 +163,10 @@ professional/backend/                    (partner/backend/ has the same shape)
 | `admin` | Users, administrators, verification, audit, announcements | `technicians` | Profile, availability, work preferences, earnings, payout account |
 | `catalog` | Categories, brands, products, variants, media | `requesters` | Hand-off exchange, requester session, profile |
 | `projects` | Projects, requests, awards, teams, assignments | `catalog` | Services and checklist templates |
-| `site_operations` | Daily records, labour, material, machinery, expenses, payments | `bookings` | Create, cancel, retry, list bookings |
-| `marketplace` | Supplier listings, price tiers, cart, purchase orders, discovery | `dispatch` | Ranking, offers, presence, location, sweeper |
+| `site_operations` | Daily records, labour, material, machinery, expenses, payments, project material stock | `bookings` | Create, cancel, retry, list bookings |
+| `marketplace` | Supplier listings, price tiers, cart, purchase orders (including Site Engineer orders from the project's suppliers), discovery | `dispatch` | Ranking, offers, presence, location, sweeper |
 | `labour_supply`, `equipment_supply` | Services, requests, attendance, usage | `job_execution` | Checklist, media, start codes, work bills, ratings |
-| `store` | Stock, issues, receipts, store payments | `tracking` | Destination, route, ETA, tracking socket |
+| | | `tracking` | Destination, route, ETA, tracking socket |
 | `property` | Listings, images, enquiries | `locations` | Pincode, place search, reverse lookup |
 | `messaging` | Chat, notifications, live events | `weather` | Technician and public weather |
 | `cctv` | Devices, channels, playback, gateway auth | `realtime` | WebSocket hub, PostgreSQL NOTIFY relay |
@@ -192,7 +192,7 @@ professional/frontend/                   (partner/frontend/ has the same shape)
     │   │   └── guards/                  RequireAccess, GuestOnly, RequireSubscriptionCheckout
     │   └── layouts/                     PublicLayout, AuthLayout, DashboardLayout
     ├── features/
-    │   └── <feature>/                   e.g. booking/, store-manager/
+    │   └── <feature>/                   e.g. booking/, site-engineer/
     │       ├── <feature>Api.js          RTK Query endpoints for this feature
     │       ├── <feature>Slice.js        Redux Toolkit slice (only for client state)
     │       ├── pages/                   One file per screen, named <Name>Page.jsx
@@ -207,7 +207,7 @@ professional/frontend/                   (partner/frontend/ has the same shape)
     ├── i18n/, theme/, assets/
 ```
 
-Professional features: `auth`, `onboarding`, `owner`, `builder`, `site-engineer`, `store-manager`, `supplier`, `admin`, `projects`, `catalog`, `shop`, `labour`, `equipment`, `property`, `messaging`, `notifications`, `cctv`, `weather`, `billing`, `support`, `public-site`. Partner features: `auth`, `onboarding`, `technician-dashboard`, `offers`, `jobs`, `work-bill`, `earnings`, `booking`, `tracking`, `weather`.
+Professional features: `auth`, `onboarding`, `owner`, `builder`, `site-engineer`, `supplier`, `admin`, `projects`, `catalog`, `shop`, `labour`, `equipment`, `property`, `messaging`, `notifications`, `cctv`, `weather`, `billing`, `support`, `public-site`. Partner features: `auth`, `onboarding`, `technician-dashboard`, `offers`, `jobs`, `work-bill`, `earnings`, `booking`, `tracking`, `weather`.
 
 ### 4.5 Naming in code
 
@@ -217,7 +217,7 @@ Professional features: `auth`, `onboarding`, `owner`, `builder`, `site-engineer`
 | Python classes | PascalCase, singular | `PurchaseOrder`, `BookingOffer` |
 | React components and pages | PascalCase file per component | `BookingTrackerPage.jsx` |
 | Hooks and utilities | camelCase, hooks start with `use` | `useBookingTracking.js` |
-| Folders | kebab-case (web), snake\_case (Python) | `store-manager/`, `site_operations/` |
+| Folders | kebab-case (web), snake\_case (Python) | `site-engineer/`, `site_operations/` |
 | Environment variables | UPPER\_SNAKE\_CASE; web ones start `VITE_` | `DATABASE_URL`, `VITE_API_BASE_URL` |
 
 ### 4.6 Human-readable names
@@ -227,7 +227,7 @@ A name says what the thing is or does, in plain words, so a new colleague unders
 | Rule | Avoid | Use |
 | --- | --- | --- |
 | Name a file for what it holds | `utils.py`, `helpers.js`, `common.py` | `phone_number_formatting.py`, `formatCurrency.js` |
-| No private abbreviations (only `id`, `url`, `api`, `otp`, `csv`) | `svc`, `repo2`, `cfg`, `sm`, `tmp_fix` | `service`, `repository`, `config`, `storeManager` |
+| No private abbreviations (only `id`, `url`, `api`, `otp`, `csv`) | `svc`, `repo2`, `cfg`, `se`, `tmp_fix` | `service`, `repository`, `config`, `siteEngineer` |
 | Functions are verb + noun | `handle()`, `process_data()`, `doIt()` | `create_booking()`, `send_signup_code()`, `fetchMyBookings()` |
 | Booleans read as yes/no questions | `flag`, `check`, `status_ok` | `is_verified`, `has_active_subscription` |
 | One React component per file, file name = component name | `components.jsx` holding ten components | `OfferCard.jsx`, `BookingTrackerPage.jsx` |
@@ -244,7 +244,7 @@ Examples of current files and their new names:
 | `Octabuild/backend/app/subscription/sweep.py` | `professional/backend/app/jobs/subscription_renewal_sweep.py` |
 | `Partner/backend/app/models/octabuild_account.py` | `partner/backend/app/modules/requesters/professional_requester_view.py` |
 | `Partner/backend/app/shared/bookings/` (dispatch, ranking, worker) | `partner/backend/app/modules/dispatch/` (`offer_ranking.py`, `dispatch_sweeper.py`) |
-| `Octabuild/frontend 7/frontend/src/services/storeManager.js` | `professional/frontend/src/features/store-manager/storeManagerApi.js` |
+| `Octabuild/frontend 7/frontend/src/services/cart.js` | `professional/frontend/src/features/shop/cartApi.js` |
 | `Octabuild/frontend 7/frontend/src/redux/authSlice.js` | `professional/frontend/src/shared/auth/authSlice.js` |
 | `Partner/frontend/src/services/dispatch.js` | `partner/frontend/src/features/offers/offersApi.js` |
 | `Partner/frontend/src/services/booking.js` | `partner/frontend/src/features/booking/bookingApi.js` |
@@ -450,29 +450,27 @@ Every request passes three checks on the server, in order: **who** you are (role
 | `OWNER` | Professional | House Owner |
 | `BUILDER` (`was CONTRACTOR; set directly in the new baseline`) | Professional | Builder |
 | `SITE_ENGINEER` | Professional | Engineer with site category |
-| `STORE_MANAGER` | Professional | Engineer with store category |
 | `SUPPLIER` (sub-type `MATERIAL`, `LABOUR`, `EQUIPMENT`) | Professional | Supplier |
 | `PROFESSIONAL` | Professional | Reserved, no screens (open decision) |
 | `GLOBAL_SUPER_ADMIN`, `LOCATION_SUPER_ADMIN`, `MANAGER` | Professional | Administrators, with a scope |
 | `TECHNICIAN` | Partner | Technician account |
 | `REQUESTER` | Partner | Owner or Site Engineer via hand-off |
 
-Site Engineer and Store Manager become explicit roles in the token, computed from today's `ENGINEER` role plus engineer category, so no screen has to work it out again.
+Site Engineer becomes an explicit role in the token, computed from today's `ENGINEER` role plus engineer category, so no screen has to work it out again. Site Engineer is the only engineer category; an engineer without one (such as a former Store Manager) chooses it at the next sign-in. There is no Store Manager role: it was removed on 16 Nov 2026.
 
 ### 7.2 Permissions (Professional, examples by area)
 
-| Area | Permission | OWNER | BUILDER | SITE\_ENGINEER | STORE\_MANAGER | SUPPLIER |
-| --- | --- | --- | --- | --- | --- | --- |
-| Projects | `project:create` | Yes | No | No | No | No |
-| Projects | `project:read` | Own | Assigned | Assigned | Builder's | Assigned |
-| Awards | `award:negotiate` | Own projects | Own awards | No | No | No |
-| Daily records | `site_record:write` | No | No | Assigned projects | No | No |
-| Daily records | `site_record:adjust` | No | Own projects, closed records | No | No | No |
-| Store | `store:manage` | No | No | No | Own store | No |
-| Store | `store_request:create` | No | No | Assigned projects | No | No |
-| Catalog | `listing:manage` | No | No | No | No | Own listings |
-| Orders | `purchase_order:respond` | No | No | No | No | Own orders |
-| Subscriptions | `subscription:purchase` | No | Self | No | No | No |
+| Area | Permission | OWNER | BUILDER | SITE\_ENGINEER | SUPPLIER |
+| --- | --- | --- | --- | --- | --- |
+| Projects | `project:create` | Yes | No | No | No |
+| Projects | `project:read` | Own | Assigned | Assigned | Assigned |
+| Awards | `award:negotiate` | Own projects | Own awards | No | No |
+| Daily records | `site_record:write` | No | No | Assigned projects | No |
+| Daily records | `site_record:adjust` | No | Own projects, closed records | No | No |
+| Catalog | `listing:manage` | No | No | No | Own listings |
+| Orders | `purchase_order:create` | Own projects, accepted suppliers | No | Actively assigned projects, the project's suppliers only | No |
+| Orders | `purchase_order:respond` | No | No | No | Own orders |
+| Subscriptions | `subscription:purchase` | No | Self | No | No |
 | Cameras | `cctv:view` | Own projects | Awarded projects | Assigned projects | No | No |
 | Technician booking | `handoff:create` | Yes | No | Yes | No | No |
 
@@ -549,7 +547,8 @@ export const routes = [
   { path: '/owner/*', element: <OwnerDashboard/>, access: { roles: ['OWNER'] } },
   { path: '/contractor/*', element: <BuilderDashboard/>, access: { roles: ['BUILDER'], checkout: true } },
   { path: '/engineer/*', element: <SiteEngineerDashboard/>, access: { roles: ['SITE_ENGINEER'] } },
-  { path: '/store-manager/*', element: <StoreManagerDashboard/>, access: { roles: ['STORE_MANAGER'] } },
+  { path: '/store-manager/*', element: <Navigate to="/engineer" replace/>, access: { roles: ['SITE_ENGINEER'] } },   // old links; the Store Manager was removed
+
   { path: '/supplier/*', element: <SupplierDashboard/>, access: { roles: ['SUPPLIER'] } },
   { path: '/admin/*', element: <AdminDashboard/>, access: { roles: ADMIN_ROLES } },
   { path: '/weather', element: <WeatherPage/>, access: { roles: SIGNED_IN_ROLES, checkout: true } },
@@ -673,7 +672,7 @@ The 98 current tables become 100 target tables: 44 are renamed, 2 are split in t
 | Identity | `verification_records` | `user_verification_reviews` | int | Rename, UUID |
 | Accounts | `owner_profiles` | `owner_profiles` | int | UUID; FK `user_id` CASCADE |
 | Accounts | `builder_profiles` | `builder_profiles` | int | UUID; FK `user_id` CASCADE |
-| Accounts | `engineer_profiles` | `engineer_profiles` | int | UUID; add `category` (SITE\_ENGINEER / STORE\_MANAGER) |
+| Accounts | `engineer_profiles` | `engineer_profiles` | int | UUID; add `category` (SITE\_ENGINEER only; revision 0006 removed STORE\_MANAGER) |
 | Accounts | `supplier_profiles` | `supplier_profiles` | int | UUID; FK `user_id` CASCADE |
 | Accounts | `admin_profiles` | `admin_profiles` | int | UUID |
 | Accounts | `account_deletion_requests` | `account_deletion_requests` | int | UUID |
@@ -720,13 +719,7 @@ The 98 current tables become 100 target tables: 44 are renamed, 2 are split in t
 | Marketplace | `supplier_bulk_pricing` | `supplier_listing_price_tiers` | int | Rename, UUID |
 | Marketplace | `cart_items` | `cart_items` | int | UUID; FK `listing_id` |
 | Marketplace | `material_order_items` | `purchase_orders` + `purchase_order_items` | int | Split: one order per `request_code` and supplier (`order_number`), lines below it; UUID |
-| Store | `store_items` | `store_items` | int | UUID; add `version` |
-| Store | `store_stock_movements` | `store_stock_movements` | int | UUID |
-| Store | `store_site_requests` | `store_site_requests` | int | UUID; `public_request_id` becomes `id` |
-| Store | `store_site_request_lines` | `store_site_request_items` | int | Rename, UUID |
-| Store | `store_purchase_receipts` | `store_goods_receipts` | int | Rename, UUID; FK `purchase_order_item_id` |
-| Store | `store_payment_records` | `store_payments` | int | Rename; `transaction_uuid` becomes `id` |
-| Store | `store_builder_requests` | `store_builder_requests` | int | UUID |
+| Store | `store_items`, `store_stock_movements`, `store_site_requests`, `store_site_request_lines`, `store_purchase_receipts`, `store_payment_records`, `store_builder_requests` | none | int | Not moved. The Store Manager was removed on 16 Nov 2026 and revision 0006 drops its seven tables; the data is not archived |
 | Labour supply | `labor_services` | `labour_services` | int | Rename (spelling), UUID |
 | Labour supply | `labor_requests` | `labour_requests` | int | Rename, UUID; `contractor_id` → `builder_id` |
 | Labour supply | `labor_daily_records` | `labour_attendance_records` | int | Rename, UUID |
@@ -805,7 +798,7 @@ GRANT SELECT ON professional.v_partner_requesters TO crewnbuild_partner;
 
 - The view is the contract between the services: Professional can change its tables freely as long as the view keeps its columns.
 - `email` is nullable in the view and in Partner's model (phone-only users).
-- Store Managers and other roles come back with `requester_role = NULL` and are refused a requester session.
+- Engineers without the Site Engineer category (for example former Store Managers who have not chosen one yet) and other roles come back with `requester_role = NULL` and are refused a requester session.
 
 * `engineer_profiles.category` is new. Today the Site Engineer check is `specialization = 'Site Engineer'`; the data copy fills `category = 'SITE_ENGINEER'` from it, and the engineer category screen writes `category` from then on.
 
@@ -1113,7 +1106,9 @@ The platform is not in production yet, so instead of changing old tables step by
 | Partner | `partner/backend/alembic/versions/20261113_0001_initial_partner_schema.py` | Schema `partner`, all 22 tables, indexes, constraints, foreign key to `professional.users`, view v\_professional\_bookings and its grants to crewnbuild\_professional (USAGE, SELECT on the view, REFERENCES on `bookings.id`) |
 | Professional | `professional/backend/alembic/versions/20261113_0002_booking_payment_orders_booking_key.py` | Foreign key `booking_payment_orders.booking_id → partner.bookings` (RESTRICT); needs Partner's baseline |
 
-The keys between the schemas point both ways, so the order is Professional 0001, Partner 0001, Professional 0002. `python scripts/migrate.py` runs exactly that (`--down` reverses it, `--check` runs `alembic check` for both).
+The keys between the schemas point both ways, so the order is Professional 0001, Partner 0001, Professional 0002. `python scripts/migrate.py` runs exactly that (`--down` reverses it, `--check` runs `alembic check` for both), followed by the later Professional revisions.
+
+Professional revision 0006 (16 Nov 2026) removes the Store Manager role: it drops `store_items`, `store_stock_movements`, `store_site_requests`, `store_site_request_items`, `store_payments`, `store_goods_receipts` and `store_builder_requests` with their data (no archive), clears the category and the "Store Manager" specialization of former Store Managers, and narrows `engineer_profiles.category` to `SITE_ENGINEER`. Its downgrade recreates the seven tables empty. After pulling it, run `python scripts\migrate.py`.
 
 - **MG-01** Professional is always migrated first: Partner's baseline refers to `professional.users` and the requester view. Partner's `env.py` stops with a clear message if they are missing.
 - **MG-02** Each service keeps its version table in its own schema (`professional.alembic_version`, `partner.alembic_version`) and only looks at its own schema.
@@ -1191,7 +1186,8 @@ The old, scattered test files are deleted in the clean-up (4.7). This section is
 | Role access | pytest, generated from the route table | Every endpoint × every role: 200 / 401 / 403 / 404 as expected | 100% of endpoints covered |
 | Unit | pytest; Vitest + Testing Library | Services, policies, dispatch ranking, billing maths, route guards, permission hooks | Line coverage ≥ 80% on `services` and `policies` |
 | Database | pytest against PostgreSQL | Migrations up from an empty database and from a production copy; every FK valid; no unnamed constraint; no integer PK left | All checks pass |
-| End to end | Playwright | The five core journeys (sign-up to award, daily record, store issue and purchase, subscription, Book Technician to rating) | All pass on staging |
+| End to end | Playwright | The five core journeys (sign-up to award, daily record, Site Engineer material order, subscription, Book Technician to rating)
+ | All pass on staging |
 | Security | gitleaks, pip-audit, npm audit, OWASP ZAP baseline on staging | Secrets, known vulnerabilities, headers, cookies | No high findings |
 | Load | k6 or Locust | 200 concurrent users on core lists; 50 bookings dispatched at once; 2 API processes | p95 < 500 ms; no duplicate offers |
 

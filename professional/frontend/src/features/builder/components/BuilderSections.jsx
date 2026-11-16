@@ -2,9 +2,8 @@ import { useMemo } from 'react'
 
 import useUrlState from '../../../shared/hooks/useUrlState.js'
 import NotFoundPanel from '../../../shared/dashboard/NotFoundPanel.jsx'
-import { Home, MessageSquare, Plus, Truck, Warehouse } from 'lucide-react'
+import { Home, MessageSquare, Plus, Truck } from 'lucide-react'
 import MessageThread from '../../messaging/components/MessageThread.jsx'
-import StoreBuilderRequestsPanel, { useStoreBuilderRequests } from '../../store/components/StoreBuilderRequestsPanel.jsx'
 import { ContractorRequestsBoard } from './BuilderRequestViews.jsx'
 import { ContractorProjectDetail, ContractorProjectsTable } from './BuilderProjectViews.jsx'
 import { groupProjectsByCategory } from '../builderHelpers.js'
@@ -24,14 +23,10 @@ export function ContractorRequestsSection({
   // House Owner and Supplier requests are the same stored rows, told apart by
   // request_type. Two tabs rather than one mixed list; each renders the board
   // that already existed for it.
-  const [requestTab, setRequestTab] = useUrlState('tab', 'houseOwner', ['houseOwner', 'supplier', 'storeManager'])
-  // Requests to and from the Store Managers on this builder's team: their own
-  // records and endpoints, not `requests` rows, so they never enter the two boards.
-  const storeManagerRequests = useStoreBuilderRequests()
+  const [requestTab, setRequestTab] = useUrlState('tab', 'houseOwner', ['houseOwner', 'supplier'])
   const requestTabs = [
     { id: 'houseOwner', label: t('dash.contractor.tab.houseOwnerRequests'), count: filteredRequestBoardList.length, icon: Home },
     { id: 'supplier', label: t('dash.contractor.tab.supplierRequests'), count: supplierRequestBoardList.length, icon: Truck },
-    { id: 'storeManager', label: t('dash.contractor.tab.storeManagerRequests'), count: storeManagerRequests.data?.requests.length || 0, icon: Warehouse },
   ]
   return (
     <div className="space-y-3">
@@ -95,12 +90,6 @@ export function ContractorRequestsSection({
           onReject={onRejectRequest}
           onWithdraw={onWithdrawRequest}
         />
-      </section>
-      )}
-
-      {requestTab === 'storeManager' && (
-      <section>
-        <StoreBuilderRequestsPanel data={storeManagerRequests.data} failed={storeManagerRequests.failed} reload={storeManagerRequests.reload} />
       </section>
       )}
     </div>

@@ -335,8 +335,10 @@ def checkout_cart(
 def fetch_shop_products(
     category: str | None = Query(default=None),
     search: str | None = Query(default=None),
+    project_id: uuid.UUID | None = Query(default=None),
     user: User = Depends(current_user),
     service: ShopService = Depends(get_shop_service),
 ):
-    """Published listings this buyer may order, with the seller attached."""
-    return service.fetch_shop_products(category=category, search=search, user=user)
+    """Published listings this buyer may order, with the seller attached. A Site Engineer
+    passes the project they are ordering for."""
+    return service.fetch_shop_products(category=category, search=search, user=user, project_id=project_id)

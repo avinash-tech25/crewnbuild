@@ -1,7 +1,7 @@
-// Quantities typed by hand (cart and store requests). Units counted in whole numbers
+// Quantities typed by hand (the cart). Units counted in whole numbers
 // -- bags, rods, buckets, pieces -- take no fraction; any other unit (kg, tonne,
 // litre, cft ...) is measured and may take up to three decimals, as stored.
-// Keep the list identical to the server's (store_manager stock_service.COUNT_UNITS).
+// Keep the list identical to the server's COUNT_UNITS.
 const COUNT_UNITS = new Set([
   'bag', 'piece', 'pc', 'no', 'nos', 'number', 'unit', 'rod', 'bar', 'bucket', 'box', 'bundle', 'sheet',
   'packet', 'pack', 'roll', 'drum', 'tin', 'can', 'set', 'pair', 'length', 'coil', 'tile', 'block', 'brick', 'load',

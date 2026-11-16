@@ -7,7 +7,6 @@ import { playGatedNotificationSound, unlockNotificationAudio } from '../../../sh
 import { useLanguage } from '../../../i18n/LanguageContext.jsx'
 import { formatDateTime } from '../../../shared/utils/formatters.js'
 import { PLAN_BILLING_PATH, isPlanExpiryNotice } from '../../billing/subscription/expiryNotice.js'
-import { STORE_MANAGER_PATH, isStoreManager } from '../../../shared/auth/accountPaths.js'
 
 // Display names for the module codes the API infers for each notification.
 // The code itself is still what routing below compares against.
@@ -153,7 +152,6 @@ export default function NotificationBell({ onOpen = null }) {
   }
 
   const dashboardPath = () => {
-    if (isStoreManager(user)) return STORE_MANAGER_PATH
     if (user?.role === 'BUILDER') return '/contractor'
     if (user?.role === 'SUPPLIER') return '/supplier'
     if (user?.role === 'ENGINEER') return '/engineer'
@@ -171,10 +169,6 @@ export default function NotificationBell({ onOpen = null }) {
   const openCategorizedNotification = (notification) => {
     const category = notification.category
     const go = (path) => { setIsOpen(false); navigate(path) }
-    if (isStoreManager(user)) {
-      go(category === 'MATERIAL' ? `${STORE_MANAGER_PATH}/requests` : category === 'ACCOUNT' ? `${STORE_MANAGER_PATH}/profile` : STORE_MANAGER_PATH)
-      return
-    }
     if (user?.role === 'ENGINEER') {
       // An assignment can be of any supplier type, so it opens the type choice.
       const hubTab = { MATERIAL: 'orders', LABOR: 'labor', EQUIPMENT: 'equipment', ASSIGNMENT: 'home' }[category]

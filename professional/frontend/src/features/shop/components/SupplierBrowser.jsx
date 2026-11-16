@@ -117,7 +117,7 @@ export default function SupplierBrowser({
   // same actions; every other caller keeps the default card it has today.
   referenceCards = false,
   // Opt-out. false makes the catalogue browse-only: no Add to Cart and no Buy (a
-  // Site Engineer asks the Store Manager instead). Every other caller can buy.
+  // caller that only lets a buyer look). Every other caller can buy.
   canBuy = true,
 }) {
   const { t, td } = useLanguage()

@@ -27,7 +27,7 @@ from app.modules.accounts.models import (
 from app.modules.accounts.policies import ensure_engineer, ensure_has_business_logo, ensure_supplier
 from app.modules.accounts.profile_lists import read_completed_project_details
 from app.modules.accounts.profile_payloads import builder_profile_payload, supplier_profile_payload
-from app.modules.accounts.profile_validation import is_store_manager_category, profile_field_errors
+from app.modules.accounts.profile_validation import profile_field_errors
 from app.modules.accounts.repository import AccountRepository
 from app.modules.accounts.schemas import (
     BusinessLogoUpdate,
@@ -74,7 +74,6 @@ SUPPLIER_CATEGORY_ALIASES = {"labour supplier": LABOR_SUPPLIER_CATEGORY}
 
 SUPPLIER_CATEGORY_LOCKED = "Supplier Category is already set and cannot be changed."
 ENGINEER_CATEGORY_LOCKED = "Engineer Category is already set. Change it in Profile Settings."
-STORE_MANAGER_CATEGORY_LOCKED = "A saved Engineer Category cannot be changed to or from Store Manager."
 PHONE_CHANGE_NEEDS_CHECK = "Verify the new mobile number on WhatsApp first, in Profile Settings under Mobile number."
 ADMIN_PHONE_CHANGED = "admin_phone_changed"
 
@@ -337,15 +336,6 @@ class AccountService:
 
     def save_engineer_profile(self, payload: CompleteProfileRequest, user: User) -> None:
         engineer = user.engineer_profile or EngineerProfile(user_id=user.id)
-        # An account cannot move across the Store Manager line once it holds a category.
-        submitted_category = (payload.specialization or "").strip()
-        saved_category = (engineer.specialization or "").strip()
-        if (
-            submitted_category
-            and saved_category
-            and is_store_manager_category(submitted_category) != is_store_manager_category(saved_category)
-        ):
-            raise HTTPException(status_code=409, detail=STORE_MANAGER_CATEGORY_LOCKED)
         engineer.qualification = payload.qualification or engineer.qualification
         # Setting the specialization also sets engineer_profiles.category.
         engineer.specialization = payload.specialization or engineer.specialization

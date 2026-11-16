@@ -22,7 +22,7 @@ describe('role-aware rendering', () => {
   it.each([
     ['OWNER', {}, true],
     ['ENGINEER', { engineer_profile: { specialization: 'Site Engineer' } }, true],
-    ['ENGINEER', { engineer_profile: { specialization: 'Store Manager' } }, false],
+    ['ENGINEER', { engineer_profile: { specialization: 'Structural Engineer' } }, false],
     ['BUILDER', {}, false],
     ['SUPPLIER', {}, false],
     ['GLOBAL_SUPER_ADMIN', {}, false],
@@ -42,8 +42,8 @@ describe('role-aware rendering', () => {
   })
 
   it('maps an engineer to the category role the server uses', () => {
-    expect(accessRole(anAccount({ role: 'ENGINEER', engineer_profile: { specialization: ' store manager ' } }))).toBe('STORE_MANAGER')
-    expect(accessRole(anAccount({ role: 'ENGINEER', engineer_profile: { specialization: 'Site Engineer' } }))).toBe('SITE_ENGINEER')
+    expect(accessRole(anAccount({ role: 'ENGINEER', engineer_profile: { specialization: ' site engineer ' } }))).toBe('SITE_ENGINEER')
+    expect(accessRole(anAccount({ role: 'ENGINEER', engineer_profile: { specialization: 'Structural Engineer' } }))).toBe('ENGINEER')
     expect(accessRole(anAccount({ role: 'ENGINEER', engineer_profile: null }))).toBe('ENGINEER')
     expect(accessRole(anAccount({ role: 'BUILDER' }))).toBe('BUILDER')
   })

@@ -39,7 +39,7 @@ describe('Builder dashboard: access', () => {
   it.each([
     ['OWNER', {}, '/owner'],
     ['SUPPLIER', {}, '/supplier'],
-    ['ENGINEER', { engineer_profile: { specialization: 'Store Manager' } }, '/store-manager'],
+    ['ENGINEER', { engineer_profile: { specialization: 'Site Engineer' } }, '/engineer'],
     ['MANAGER', {}, '/admin'],
   ])('is closed to a %s, who goes to their own home', async (role, extra, home) => {
     installFakeServer({})

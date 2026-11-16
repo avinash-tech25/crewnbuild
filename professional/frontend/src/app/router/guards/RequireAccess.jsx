@@ -16,7 +16,7 @@ export function homeFor(user) {
  *   'public'                    anyone
  *   'guest'                     signed-out visitors; a signed-in account goes home
  *   { roles, checkout }         a signed-in account whose role (accessRole: OWNER, BUILDER,
- *                               SITE_ENGINEER, ENGINEER, STORE_MANAGER, SUPPLIER, admin roles)
+ *                               SITE_ENGINEER, ENGINEER, SUPPLIER, admin roles)
  *                               is listed; `checkout` sends a builder whose paid sign-up is
  *                               unpaid to the checkout first
  *

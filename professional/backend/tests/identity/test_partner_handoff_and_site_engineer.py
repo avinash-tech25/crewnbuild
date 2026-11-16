@@ -11,9 +11,12 @@ from cryptography.hazmat.primitives.asymmetric import ec
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
-from app.core.security.access_tokens import read_access_claims
+from app.auth.dependencies import authenticate_access_token
+from app.auth.permissions import permissions_for_role
+from app.core.security.access_tokens import create_access_token, read_access_claims
 from app.modules.accounts.models import EngineerProfile, engineer_category_for
 from app.modules.identity.models import ROLE_BUILDER, ROLE_ENGINEER
+from app.modules.identity.policies import session_role
 from identity.helpers import create_user, sign_in
 
 HANDOFF = "/api/v1/auth/partner-handoff"
@@ -86,7 +89,7 @@ def test_handoff_answers_503_when_no_key_is_configured(client: TestClient, datab
         (ROLE_ENGINEER, "Site Engineer", True),
         (ROLE_ENGINEER, "  Site Engineer  ", True),
         (ROLE_ENGINEER, "Civil Engineer", False),
-        (ROLE_ENGINEER, "Store Manager", False),
+        (ROLE_ENGINEER, "Store Manager", False),  # no longer a category: a plain engineer
         (ROLE_ENGINEER, None, False),
         (ROLE_BUILDER, None, False),
     ],
@@ -116,8 +119,8 @@ def test_only_house_owners_and_site_engineers_may_hand_off(
         ("Site Engineer", "SITE_ENGINEER"),
         (" Site Engineer ", "SITE_ENGINEER"),
         ("site engineer", None),  # the old rule compared exactly after trimming
-        ("Store Manager", "STORE_MANAGER"),
-        ("store manager", "STORE_MANAGER"),
+        ("Store Manager", None),  # the role is gone: a plain engineer
+        ("store manager", None),
         ("Civil Engineer", None),
         (None, None),
     ],
@@ -134,13 +137,43 @@ def test_sign_up_as_a_site_engineer_sets_the_category(client: TestClient, databa
 
 
 def test_the_session_role_names_the_engineer_category(client: TestClient, database: Session) -> None:
-    create_user(database, role=ROLE_ENGINEER, specialization="Store Manager")
+    create_user(database, role=ROLE_ENGINEER, specialization="Site Engineer")
     sign_in(client)
     access = client.cookies.get("pro_at") or ""
     assert read_access_claims(make_settings(), access) is not None
     claims = jwt.decode(access, options={"verify_signature": False})
-    assert claims["role"] == "STORE_MANAGER"
+    assert claims["role"] == "SITE_ENGINEER"
     assert claims["typ"] == "access"
+
+
+@pytest.mark.parametrize(
+    ("specialization", "role"), [("Civil Engineer", "ENGINEER"), ("Site Engineer", "SITE_ENGINEER")]
+)
+def test_a_session_from_the_removed_role_is_served_from_the_account(
+    make_client: ClientFactory,
+    database: Session,
+    handoff_key: tuple[str, Any],
+    specialization: str,
+    role: str,
+) -> None:
+    """A token issued before the Store Manager role was removed still names it; the role
+    is never read from the token, only re-derived from the account on every request."""
+    create_user(database, role=ROLE_ENGINEER, specialization=specialization)
+    client = handoff_client(make_client, handoff_key)
+    csrf = sign_in(client)
+    settings = make_settings()
+    claims = read_access_claims(settings, client.cookies.get("pro_at") or "")
+    assert claims is not None
+    old = create_access_token(settings, claims.user_id, claims.session_id, claims.family_id, "STORE_MANAGER")
+    client.cookies.clear()
+    client.cookies.set("pro_at", old)
+
+    user, _ = authenticate_access_token(old, database, settings)
+    assert session_role(user) == role
+    assert permissions_for_role("STORE_MANAGER") == frozenset()
+    # The request is served for the account: a Site Engineer may hand off, a plain engineer not.
+    response = client.post(HANDOFF, headers={"X-CSRF-Token": csrf})
+    assert response.status_code == (200 if role == "SITE_ENGINEER" else 403), response.text
 
 
 ENGINEER_CATEGORY = "/api/v1/auth/engineer-category"

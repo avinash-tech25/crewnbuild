@@ -1,7 +1,7 @@
 """The project rows that keep an account from being deleted (ported from the old
 self_deletion_service.shared_projects and the purge_repository history queries, the
 projects part). Other modules' rows (daily registers, stock, labour and equipment,
-material and store requests) are added by accounts/deletion_blockers.py.
+material orders) are added by accounts/deletion_blockers.py.
 """
 
 import uuid

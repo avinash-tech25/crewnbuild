@@ -1,6 +1,7 @@
 import { lazy } from 'react'
+import { Navigate } from 'react-router-dom'
 import { ADMIN_ROLES, SIGNED_IN_ROLES } from '../../shared/auth/roles.js'
-import { ENGINEER_CATEGORY_PATH, STORE_MANAGER_PATH, SUBSCRIPTION_CHECKOUT_PATH, SUPPLIER_CATEGORY_PATH } from '../../shared/auth/accountPaths.js'
+import { ENGINEER_CATEGORY_PATH, SUBSCRIPTION_CHECKOUT_PATH, SUPPLIER_CATEGORY_PATH } from '../../shared/auth/accountPaths.js'
 
 /**
  * The one route table (technical-architecture.md 8.2). Every address of the old app is
@@ -43,14 +44,16 @@ const BuilderDashboardPage = page(() => import('../../features/builder/pages/Bui
 const BuilderProfilePage = page(() => import('../../features/builder/components/BuilderProfileDetails.jsx'))
 const EngineerDashboardPage = page(() => import('../../features/engineer/pages/EngineerDashboardPage.jsx'))
 const EngineerLiveCameraPage = page(() => import('../../features/cameras/pages/EngineerLiveCameraPage.jsx'))
-const StoreManagerDashboardPage = page(() => import('../../features/store/pages/StoreManagerDashboardPage.jsx'))
 const SupplierDashboardPage = page(() => import('../../features/supplier/pages/SupplierDashboardPage.jsx'))
 const AdminConsolePage = page(() => import('../../features/admin/pages/AdminConsolePage.jsx'))
 
-const ENGINEERS = ['ENGINEER', 'SITE_ENGINEER', 'STORE_MANAGER']
+const ENGINEERS = ['ENGINEER', 'SITE_ENGINEER']
 const MARKETPLACE = ['OWNER', 'BUILDER', 'SUPPLIER', ...ENGINEERS]
-// The /engineer dashboard is every engineer but a Store Manager, as before.
-const ENGINEER_DASHBOARD = ['ENGINEER', 'SITE_ENGINEER']
+// The /engineer dashboard is every engineer.
+const ENGINEER_DASHBOARD = ENGINEERS
+// The Store Manager role is gone: its old addresses (/store-manager/*) and the Site
+// Engineer's Store Requests page open the engineer dashboard instead.
+const ToEngineerDashboard = () => <Navigate to="/engineer" replace />
 // The routes' roles are the screens' roles (accessRole): every signed-in one.
 const EVERY_SIGNED_IN = [...new Set([...SIGNED_IN_ROLES.filter((role) => role !== 'ENGINEER'), ...ENGINEERS])]
 
@@ -95,8 +98,9 @@ export const routes = [
   { path: '/contractor/*', Component: BuilderDashboardPage, access: { roles: ['BUILDER'], checkout: true } },
   { path: '/contractors/:contractorId', Component: BuilderProfilePage, access: { roles: ['OWNER', 'BUILDER', 'SUPPLIER'], checkout: true } },
   { path: '/engineer/live-camera', Component: EngineerLiveCameraPage, access: { roles: ENGINEER_DASHBOARD } },
+  { path: '/engineer/store-requests', Component: ToEngineerDashboard, access: { roles: ENGINEER_DASHBOARD } },
   { path: '/engineer/*', Component: EngineerDashboardPage, access: { roles: ENGINEER_DASHBOARD } },
-  { path: `${STORE_MANAGER_PATH}/*`, Component: StoreManagerDashboardPage, access: { roles: ['STORE_MANAGER'] } },
+  { path: '/store-manager/*', Component: ToEngineerDashboard, access: { roles: ENGINEER_DASHBOARD } },
   { path: '/supplier/*', Component: SupplierDashboardPage, access: { roles: ['SUPPLIER'] } },
   { path: '/admin/*', Component: AdminConsolePage, access: { roles: ADMIN_ROLES } },
   // ---- not found ----
@@ -111,7 +115,7 @@ export const PROTECTED_PATH_PREFIXES = [
   '/contractor',
   '/supplier',
   '/engineer',
-  STORE_MANAGER_PATH,
+  '/store-manager',
   '/admin',
   '/complete-profile',
   '/pincode',

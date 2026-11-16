@@ -34,7 +34,6 @@ from app.modules.messaging.router import websocket_router as messaging_websocket
 from app.modules.projects.router import router as projects_router
 from app.modules.property.router import router as property_router
 from app.modules.site_operations.router import router as site_operations_router
-from app.modules.store.router import router as store_router
 from app.modules.support.router import router as support_router
 from app.modules.weather.router import router as weather_router
 
@@ -88,9 +87,6 @@ MODULE_ROUTERS: list[APIRouter] = [
     booking_payments_router,
     labour_supply_router,
     equipment_supply_router,
-    # The Store Manager, the Site Engineer's store requests and Builder <-> Store
-    # Manager requests (old store_manager_routes, after equipment).
-    store_router,
     # Every /weather path is new, so it shadows nothing registered above.
     weather_router,
     # Builder plans, coupons, the premium tools and their admin screens: last, as before.

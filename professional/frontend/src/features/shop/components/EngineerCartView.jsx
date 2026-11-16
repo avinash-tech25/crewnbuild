@@ -48,7 +48,7 @@ function CartLineRow({ line, busy, onChangeQuantity, onRemove }) {
         </p>
       </div>
 
-      <SavedQuantityField quantity={line.quantity} unit={line.unit} disabled={busy} large label={`${t('store.quantity')} ${td(line.name)}`} onSave={(quantity) => onChangeQuantity(line, quantity)} />
+      <SavedQuantityField quantity={line.quantity} unit={line.unit} disabled={busy} large label={`${t('shop.quantity')} ${td(line.name)}`} onSave={(quantity) => onChangeQuantity(line, quantity)} />
 
       <p className="w-24 shrink-0 text-right text-lg font-bold text-graphite">{countryFormatMoney(line.line_total)}</p>
 

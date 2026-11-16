@@ -9,7 +9,7 @@ import { describe, expect, it } from 'vitest'
 import { anAccount, installFakeServer } from '../../test/fakeServer.js'
 import { location, renderApp, signedInAs, signedOut } from '../../test/renderApp.jsx'
 import { accountLinks } from '../../shared/auth/sessionLinks.js'
-import { STORE_MANAGER, engineerDashboardServer, storeDashboardServer } from '../../features/engineer/engineerTestData.js'
+import { engineerDashboardServer } from '../../features/engineer/engineerTestData.js'
 import { adminServer, anAdminAccount, anIdentity } from '../../features/admin/adminTestData.js'
 import { BUILDER, builderDashboardServer } from '../../features/builder/builderTestData.js'
 import { OWNER, ownerDashboardServer } from '../../features/owner/ownerTestData.js'
@@ -87,7 +87,6 @@ describe('where Dashboard leads, per role', () => {
     ['a House Owner', OWNER, '/owner', '/owner/profile'],
     ['a Builder', BUILDER, '/contractor', '/contractor/profile-settings'],
     ['a Site Engineer', SITE_ENGINEER, '/engineer', '/engineer/profile'],
-    ['a Store Manager', STORE_MANAGER, '/store-manager', '/store-manager/profile'],
     ['a Supplier', SUPPLIER, '/supplier', '/supplier/profile'],
     ['an administrator', anAdminAccount('global'), '/admin', null],
   ])('%s', (_, account, home, profile) => {
@@ -109,7 +108,6 @@ describe('the header logo leads to / for every role', () => {
     ['a House Owner', OWNER, '/owner', () => ownerDashboardServer()],
     ['a Builder', BUILDER, '/contractor', () => builderDashboardServer()],
     ['a Site Engineer', SITE_ENGINEER, '/engineer', () => engineerDashboardServer()],
-    ['a Store Manager', STORE_MANAGER, '/store-manager', () => storeDashboardServer()],
     ['a Supplier', SUPPLIER, '/supplier', () => supplierDashboardServer(MATERIAL)],
     ['an administrator', anAdminAccount('global'), '/admin', () => adminServer(anIdentity('global'))],
   ])('%s, from their dashboard', async (_, account, home, routes) => {

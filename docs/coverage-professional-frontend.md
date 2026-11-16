@@ -11,11 +11,13 @@ Every page and address of the old app (`Kuwait-Version/Octabuild/frontend 7/fron
 | Ported in part 1 | 28 |
 | Ported in part 2 (House Owner, weather) | 2 top-level routes (`/owner/*` with all its sections, `/weather`) |
 | Ported in part 3 (Builder) | 2 top-level routes (`/contractor/*` with all its sections, `/contractors/:contractorId`) |
-| Ported in part 4 (Site Engineer, live camera, Store Manager) | 3 top-level routes (`/engineer/*`, `/engineer/live-camera`, `/store-manager/*`) |
+| Ported in part 4 (Site Engineer, live camera, Store Manager) | 3 top-level routes (`/engineer/*`, `/engineer/live-camera`, `/store-manager/*`; since 16 Nov 2026 `/store-manager/*` only redirects to `/engineer`) |
 | Ported in part 5 (Supplier) | 1 top-level route (`/supplier/*` with all its sections) |
 | Ported in part 6 (admin console) | 1 top-level route (`/admin/*` with all 16 sections) |
 | Placeholders | none: every address of the old app is ported |
 | Old addresses missing | 0 |
+
+> **Store Manager removed (16 Nov 2026).** After this port the Store Manager role was removed from the product: Site Engineers now order material directly from the project's suppliers (Suppliers hub: catalog, cart, orders). `/store-manager/*` and `/engineer/store-requests` redirect to `/engineer`, the Builder's Store Manager requests tab is gone, and Professional revision 0006 drops the store tables. The rows below that name the Store Manager record the port as it was done; each is marked.
 
 ## Part 1: ported
 
@@ -78,7 +80,7 @@ The role is `BUILDER`; the addresses keep `/contractor`, as the old app had them
 | `/contractor/projects` (current, previous, upcoming; project workspace with site activity, team, suppliers, analysis, live camera) | same page, `features/builder/components/BuilderProjectViews.jsx` | BUILDER |
 | `/contractor/portfolio` (Professional plan; locked Premium feature otherwise, as before) | same page, `features/billing/subscription/BuilderPortfolioSection.jsx` | BUILDER |
 | `/contractor/subscription` (plan and billing, plans, coupons, payment history) | same page, `features/billing/subscription/BuilderSubscriptionPanel.jsx` | BUILDER |
-| `/contractor/requests` (House Owner, Supplier and Store Manager requests; quotations, awards) | same page, `features/builder/components/BuilderRequestViews.jsx` | BUILDER |
+| `/contractor/requests` (House Owner and Supplier requests; quotations, awards. The Store Manager requests tab was removed on 16 Nov 2026) | same page, `features/builder/components/BuilderRequestViews.jsx` | BUILDER |
 | `/contractor/my-site-engineers` (My Partners: site engineers, find site engineers, suppliers, pending requests) | same page, `features/builder/components/BuilderTeamSections.jsx` | BUILDER |
 | `/contractor/find-clients` (nearby projects, owners and suppliers; send request with an optional quotation) | same page, `features/builder/components/BuilderFindClients.jsx` | BUILDER |
 | `/contractor/buy-sell` | same page, `features/property/components/PropertyBuySellHub.jsx` | BUILDER |
@@ -94,8 +96,12 @@ locked cards and badges.
 
 ## Part 4: ported (Site Engineer, live camera, Store Manager)
 
-`/engineer/*` and `/engineer/live-camera` are for every engineer but a Store Manager, and
-`/store-manager/*` for Store Managers only, as before. Of the engineer categories, only a
+Since 16 Nov 2026 there is no Store Manager: `/engineer/*` and `/engineer/live-camera` are for
+every engineer, and the old `/store-manager/*` and `/engineer/store-requests` addresses
+redirect to `/engineer`. A former Store Manager has no engineer category and chooses one at the
+next sign-in. As ported (before that date), `/engineer/*` and `/engineer/live-camera` were for
+every engineer but a Store Manager, and `/store-manager/*` for Store Managers only; the
+"engineers but Store Manager" access below is from then. Of the engineer categories, only a
 Site Engineer may book a technician (the hand-off permission) or be hired and assigned as
 a project's site engineer; the server enforces both, and Book Technician is shown only to
 a Site Engineer.
@@ -105,18 +111,19 @@ a Site Engineer.
 | `/engineer` (overview: budgets, costs, daily spend, site activity, recent activity, materials) | `features/engineer/pages/EngineerDashboardPage.jsx` | engineers but Store Manager |
 | `/engineer/my-projects`, `/calendar`, `/daily-logs` (projects, site log and daily cost register) | same page, `features/engineer/components/EngineerSections.jsx`, `features/site-work/` | engineers but Store Manager |
 | `/engineer/my-supplies` (suppliers, orders, labour, equipment) | same page, `features/engineer/components/EngineerSupplierHub.jsx` | engineers but Store Manager |
-| `/engineer/store-requests` | same page, `features/engineer/components/EngineerStoreRequestsSection.jsx` | engineers but Store Manager |
+| `/engineer/store-requests` | removed 16 Nov 2026: redirects to `/engineer` (was `features/engineer/components/EngineerStoreRequestsSection.jsx`) | engineers |
 | `/engineer/find-opportunities` (join team, requests, builders, opportunities) | same page | engineers but Store Manager |
 | `/engineer/messages`, `/notifications`, `/profile` | same page | engineers but Store Manager |
 | `/engineer/live-camera` (live and recorded, first-time recorder verification) | `features/cameras/pages/EngineerLiveCameraPage.jsx` | engineers but Store Manager |
-| `/store-manager` (overview) | `features/store/pages/StoreManagerDashboardPage.jsx` | STORE\_MANAGER |
-| `/store-manager/catalog`, `/buy`, `/payments`, `/requests`, `/approvals`, `/builders`, `/messages`, `/notifications`, `/profile` | same page, `features/store/components/` | STORE\_MANAGER |
+| `/store-manager` (overview) | removed 16 Nov 2026: redirects to `/engineer` (was `features/store/pages/StoreManagerDashboardPage.jsx`) | was STORE\_MANAGER |
+| `/store-manager/catalog`, `/buy`, `/payments`, `/requests`, `/approvals`, `/builders`, `/messages`, `/notifications`, `/profile` | removed 16 Nov 2026: redirect to `/engineer` (was `features/store/components/`) | was STORE\_MANAGER |
 
 Camera passwords: typed into a password field, sent once in the request body, cleared
 from the form after every attempt, and never put in the store, browser storage or a URL
-(tested). Store purchases are priced by the server and paid through the existing Razorpay
-client; the simulated checkout appears only when the server chooses it, which it does
-only outside production with `RAZORPAY_ALLOW_MOCK=true`.
+(tested). Store purchases were priced by the server and paid through the existing Razorpay
+client, with the simulated checkout only outside production with `RAZORPAY_ALLOW_MOCK=true`;
+that checkout was removed with the Store Manager on 16 Nov 2026. A Site Engineer's order
+now goes to the supplier like any other marketplace order, with no online payment.
 
 ## Part 5: ported (Supplier)
 
@@ -131,7 +138,7 @@ enforces it.
 | --- | --- | --- |
 | `/supplier` (overview by category) | `features/supplier/pages/SupplierDashboardPage.jsx` | SUPPLIER |
 | `/supplier/products` (storefront: listings, add from the catalog, edit, publish, delete, bulk pricing) | same page, `features/storefront/components/SupplierStorefront.jsx`, `features/supplier/components/SupplierCatalogPicker.jsx` | SUPPLIER (Material) |
-| `/supplier/orders` (Site Engineer, Store Manager and owner orders) | same page, `features/supplier/components/SupplierMaterialRequests.jsx`, `SupplierPurchaseRequests.jsx` | SUPPLIER (Material) |
+| `/supplier/orders` (Site Engineer and owner orders; Store Manager orders until 16 Nov 2026) | same page, `features/supplier/components/SupplierMaterialRequests.jsx`, `SupplierPurchaseRequests.jsx` | SUPPLIER (Material) |
 | `/supplier/labor-services`, `/supplier/assignments` | same page, `features/labour/components/SupplierLaborSections.jsx` | SUPPLIER (Labor) |
 | `/supplier/equipment`, `/supplier/equipment-assignments` | same page, `features/equipment/components/SupplierEquipmentSections.jsx` | SUPPLIER (Equipment) |
 | `/supplier/my-projects`, `/find-clients`, `/requests`, `/messages`, `/profile` | same page, `features/supplier/components/` | SUPPLIER |
@@ -178,7 +185,7 @@ layouts. Only ids (UUIDs) and fixed words appear: never a name, phone number or 
 personal data. The default tab of each place has no word of its own, so the short address
 still works and every older address opens exactly as before. Every new address sits under
 its section's existing route (`/contractor/*`, `/owner/*`, `/engineer/*`,
-`/store-manager/*`, `/supplier/*`, `/admin/*`), so it has the same guard, role check and
+`/supplier/*`, `/admin/*`), so it has the same guard, role check and
 permissions. An id that is not the account's (another account's project, a deleted or
 unknown record) shows the not-found panel (`shared/dashboard/NotFoundPanel.jsx`, the
 `/404` page's picture and texts) and nothing about it is fetched; in the admin console the
@@ -194,8 +201,7 @@ the default.
 | `/contractor/projects/:projectId` | the project, on Site Activity |
 | `/contractor/projects/:projectId/site-activity` · `/project-analysis` · `/live-camera` · `/team` · `/overview` · `/payments` | the project's tab |
 | `/contractor/projects/:projectId/team?team=suppliers` | Team sub-tab: `siteEngineer` (default), `suppliers`, `specialists` |
-| `/contractor/requests?tab=supplier` | Requests board: `houseOwner` (default), `supplier`, `storeManager` |
-| `/contractor/requests?tab=storeManager&list=sent&request=:requestId` | Store Manager requests: received / sent, the open request |
+| `/contractor/requests?tab=supplier` | Requests board: `houseOwner` (default), `supplier` (the `storeManager` tab was removed on 16 Nov 2026; that value now reads as the default) |
 | `/contractor/my-site-engineers?tab=find` | `team` (default), `find`, `suppliers`, `pending` |
 | `/contractor/find-clients?tab=suppliers` | `houseowners` (default), `suppliers` |
 | `/contractor/buy-sell?tab=buy` | `sell` (default for a Builder), `buy` |
@@ -228,16 +234,17 @@ project is in the address; it never decides what a project page shows.
 | `/engineer?project=:projectId` | dashboard figures for that project (default: the first) |
 | `/engineer/calendar?project=:projectId&date=YYYY-MM-DD` · `/engineer/daily-logs?project=...` | site log on that project and day; My Projects opens it by id |
 | `/engineer/find-opportunities?tab=requests` | `joinTeam` (default), `requests`, `contractors`, `opportunities` |
-| `/engineer/my-supplies?tab=orders` | Suppliers hub: `home` (default), `suppliers`, `catalog`, `orders`, `labor`, `equipment`, `store`, `cart` |
+| `/engineer/my-supplies?tab=orders` | Suppliers hub: `home` (default), `suppliers`, `catalog`, `orders`, `labor`, `equipment`, `cart` (the `store` tab was removed with the Store Manager on 16 Nov 2026) |
 | `/engineer/my-supplies?tab=labor&list=history` | Labor / Equipment lists: `active` (default), `pending`, `history`; Orders: `pending`, `previous` |
-| `/engineer/my-supplies?tab=store&view=cart` | Store: products (default) or cart |
 
 Removed: the `crewnbuild_pending_supplier_tab` sessionStorage hand-off; a notification now
 links to `/engineer/my-supplies?tab=...`.
 
-### Store Manager (`/store-manager/*`)
+### Store Manager (`/store-manager/*`, removed 16 Nov 2026)
 
-| Address | Shows |
+These addresses were ported, then removed with the Store Manager role; every `/store-manager` address now redirects to `/engineer`.
+
+| Address | Showed |
 | --- | --- |
 | `/store-manager?range=week` | purchase overview: `day` (default), `week`, `month`, `year` |
 | `/store-manager/requests?status=PENDING&request=:requestId` · `/store-manager/approvals?...` | status filter and the open request |
@@ -271,8 +278,10 @@ order code rather than a UUID.
 ### Tests
 
 `features/builder/builderUrls.test.jsx`, `features/owner/ownerUrls.test.jsx`,
-`features/engineer/engineerUrls.test.jsx` and `app/router/roleUrls.test.jsx` (Store
-Manager, Supplier, admin) open each address afresh (a refresh or bookmark), press Back /
+`features/engineer/engineerUrls.test.jsx` and `app/router/roleUrls.test.jsx` (Supplier,
+admin; before 16 Nov 2026 also Store Manager) open
+
+ each address afresh (a refresh or bookmark), press Back /
 Forward, open another account's id (not-found panel, no request for it) and try another
 role (sent to its own home, as before).
 

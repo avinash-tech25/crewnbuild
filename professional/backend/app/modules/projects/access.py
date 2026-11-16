@@ -19,9 +19,9 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from app.core.local_time import local_today, local_workflow_now
-from app.modules.accounts.profile_completion import is_store_manager, profile_complete
+from app.modules.accounts.profile_completion import profile_complete
 from app.modules.identity.models import ROLE_BUILDER, ROLE_ENGINEER, ROLE_OWNER, User
-from app.modules.projects.models import ContractorEngineer, Project, ProjectEngineer
+from app.modules.projects.models import Project, ProjectEngineer
 
 # The old role names the refusal texts and the ensure_role calls use.
 LEGACY_ROLE = {"CONTRACTOR": ROLE_BUILDER}
@@ -52,22 +52,6 @@ def engineer_has_project_access(database: Session, project_id: uuid.UUID, engine
                 ProjectEngineer.project_id == project_id,
                 ProjectEngineer.engineer_id == engineer_id,
                 ProjectEngineer.status == "ACTIVE",
-            )
-        ).first()
-        is not None
-    )
-
-
-def store_manager_serves_project(database: Session, store_manager: User, project: Project) -> bool:
-    """A Store Manager serves the projects of the builders whose team they are on."""
-    if not is_store_manager(store_manager) or not project.contractor_id:
-        return False
-    return (
-        database.scalars(
-            select(ContractorEngineer.id).where(
-                ContractorEngineer.contractor_id == project.contractor_id,
-                ContractorEngineer.engineer_id == store_manager.id,
-                ContractorEngineer.status == "ACTIVE",
             )
         ).first()
         is not None

@@ -1,5 +1,5 @@
-"""What account deletion and file access read from the marketplace: a supplier's or
-buyer's order history (the old purge_repository counts), the projects holding an
+"""What account deletion and file access read from the marketplace: a supplier's
+order history (the old purge_repository count), the projects holding an
 engineer's orders, the pictures on a supplier's own listings, and the listings removed
 with a deleted supplier (the old purge deleted them)."""
 
@@ -20,18 +20,6 @@ def supplier_order_line_count(database: Session, supplier_id: uuid.UUID) -> int:
             select(func.count(PurchaseOrderItem.id))
             .join(PurchaseOrder, PurchaseOrder.id == PurchaseOrderItem.purchase_order_id)
             .where(or_(PurchaseOrder.supplier_id == supplier_id, PurchaseOrderItem.product_id.in_(own_listings)))
-        )
-        or 0
-    )
-
-
-def buyer_order_line_count(database: Session, buyer_id: uuid.UUID) -> int:
-    """Order lines a Store Manager (or any buyer) placed: the suppliers' sales history."""
-    return (
-        database.scalar(
-            select(func.count(PurchaseOrderItem.id))
-            .join(PurchaseOrder, PurchaseOrder.id == PurchaseOrderItem.purchase_order_id)
-            .where(PurchaseOrder.buyer_id == buyer_id)
         )
         or 0
     )

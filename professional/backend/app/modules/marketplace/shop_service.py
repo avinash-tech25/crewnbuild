@@ -10,8 +10,14 @@ from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from app.modules.accounts.models import SupplierProfile
-from app.modules.identity.models import User
-from app.modules.marketplace.cart import CartService, approved_supplier_ids_for, cart_payload, ensure_buyer
+from app.modules.identity.models import ROLE_ENGINEER, User
+from app.modules.marketplace.cart import (
+    CartService,
+    approved_supplier_ids_for,
+    cart_payload,
+    ensure_buyer,
+    ensure_buyer_project_access,
+)
 from app.modules.marketplace.listings import catalog_listings, supplier_product_payload, supplier_product_stock_state
 from app.modules.marketplace.models import SupplierProduct
 from app.modules.marketplace.order_service import MaterialRequestService
@@ -73,18 +79,33 @@ class ShopService:
         self.database.commit()
         return {**request, "cart": cart_payload(self.database, self.cart.items_for(user, payload.project_id))}
 
-    def fetch_shop_products(self, category: str | None, search: str | None, user: User) -> dict[str, Any]:
+    def fetch_shop_products(
+        self, category: str | None, search: str | None, user: User, project_id: uuid.UUID | None = None
+    ) -> dict[str, Any]:
+        """A House Owner sees the listings of every supplier who accepted them (as before;
+        `project_id` is not used for them). A Site Engineer shops for one project they are
+        actively assigned to, from the suppliers allowed on it: without a project the
+        answer is empty with needs_project, and with no allowed supplier, no_suppliers."""
         ensure_buyer(user)
+        if user.role == ROLE_ENGINEER:
+            if project_id is None:
+                return {"products": [], "categories": [], "restricted": True, "needs_project": True}
+            ensure_buyer_project_access(self.database, project_id, user)
         statement = catalog_listings(
             select(SupplierProduct, User, SupplierProfile)
             .join(User, SupplierProduct.supplier_id == User.id)
             .outerjoin(SupplierProfile, SupplierProfile.user_id == User.id)
             .where(SupplierProduct.is_published.is_(True))
         )
-        allowed_supplier_ids = approved_supplier_ids_for(self.database, user)
+        allowed_supplier_ids = approved_supplier_ids_for(
+            self.database, user, project_id if user.role == ROLE_ENGINEER else None
+        )
         if allowed_supplier_ids is not None:
             if not allowed_supplier_ids:
-                return {"products": [], "categories": [], "restricted": True}
+                empty: dict[str, Any] = {"products": [], "categories": [], "restricted": True}
+                if user.role == ROLE_ENGINEER:
+                    empty["no_suppliers"] = True
+                return empty
             statement = statement.where(SupplierProduct.supplier_id.in_(allowed_supplier_ids))
         if category:
             statement = statement.where(SupplierProduct.category == category)

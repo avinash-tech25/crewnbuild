@@ -5,7 +5,7 @@ purge_service.account_deletion_blockers.
 
 The project rows are read through the projects module (projects/deletion_history.py).
 The other modules' rows are read through their own link modules (site operations,
-marketplace, labour and equipment supply, store). The open-booking check reads Partner's view and is live already
+marketplace, labour and equipment supply). The open-booking check reads Partner's view and is live already
 (it finds nothing until the view exists).
 """
 
@@ -15,7 +15,6 @@ from typing import Any
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
-from app.modules.accounts.profile_completion import is_store_manager
 from app.modules.accounts.repository import AccountRepository
 from app.modules.equipment_supply import links as equipment_links
 from app.modules.identity.models import ROLE_BUILDER, ROLE_ENGINEER, ROLE_SUPPLIER, User
@@ -23,7 +22,6 @@ from app.modules.labour_supply import links as labour_links
 from app.modules.marketplace import account_links as marketplace_links
 from app.modules.projects import deletion_history
 from app.modules.site_operations import project_links as site_links
-from app.modules.store import links as store_links
 
 
 def builder_history_project_titles(database: Session, user_id: uuid.UUID) -> list[str]:
@@ -54,25 +52,13 @@ def engineer_history_project_titles(database: Session, user_id: uuid.UUID) -> li
         deletion_history.engineer_history_project_ids(user_id),
         marketplace_links.buyer_order_project_ids(database, user_id)
         + labour_links.engineer_history_project_ids(database, user_id)
-        + equipment_links.engineer_history_project_ids(database, user_id)
-        + store_links.engineer_request_project_ids(database, user_id),
+        + equipment_links.engineer_history_project_ids(database, user_id),
     )
 
 
 def supplier_transaction_history_count(database: Session, user_id: uuid.UUID) -> int:
-    """Order lines of this supplier (or naming one of its listings) and Store Manager
-    payment records."""
-    return marketplace_links.supplier_order_line_count(database, user_id) + store_links.supplier_payment_count(
-        database, user_id
-    )
-
-
-def store_manager_shared_history_count(database: Session, user_id: uuid.UUID) -> int:
-    """A Store Manager's records others rely on: the order lines they placed, and the
-    store's requests, payments and receipts."""
-    return marketplace_links.buyer_order_line_count(database, user_id) + store_links.store_manager_history_count(
-        database, user_id
-    )
+    """Order lines of this supplier (or naming one of its listings)."""
+    return marketplace_links.supplier_order_line_count(database, user_id)
 
 
 # ---- the rules ----
@@ -122,19 +108,13 @@ def account_deletion_blockers(database: Session, user: User) -> dict[str, Any] |
                 f"({', '.join(titles)}). Deleting it would remove their history, so contact support to delete "
                 "your account.",
             }
-    if user.role == ROLE_ENGINEER and is_store_manager(user) and store_manager_shared_history_count(database, user.id):
-        return {
-            "code": "STORE_MANAGER_HISTORY",
-            "message": "Your store holds requests, purchases, payments or deliveries that site engineers, builders "
-            "and suppliers rely on. Contact support to delete your account; these records are kept.",
-        }
-    if user.role == ROLE_ENGINEER and not is_store_manager(user):
+    if user.role == ROLE_ENGINEER:
         titles = engineer_history_project_titles(database, user.id)
         if titles:
             return {
                 "code": "ENGINEER_PROJECT_HISTORY",
                 "message": "Your account holds site records or an active assignment on other users' projects "
-                f"({', '.join(titles)}): labour, equipment, material or store requests. Deleting it would remove "
+                f"({', '.join(titles)}): labour, equipment or material requests. Deleting it would remove "
                 "their history, so contact support to delete your account.",
             }
     return None

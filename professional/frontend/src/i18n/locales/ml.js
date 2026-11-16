@@ -1,5 +1,4 @@
 // Malayalam interface text, downloaded only when this language is in use (i18n/dictionaries.js). English is the fallback for any key missing here.
-// The Store Manager's keys follow the rest; a key in both takes the Store Manager's text, as before.
 const base = {
   'language.label': 'ഭാഷ',
   'shared.backHome': 'ഹോമിലേക്ക് മടങ്ങുക',
@@ -3949,8 +3948,4 @@ const base = {
   'subscription.coupon.invalid': 'ഈ കൂപ്പൺ പ്രയോഗിക്കാനായില്ല.',
 }
 
-const storeManager = {
-  'ui.profile.engCat.storeManager': 'സ്റ്റോർ മാനേജർ',
-}
-
-export default { ...base, ...storeManager }
+export default base

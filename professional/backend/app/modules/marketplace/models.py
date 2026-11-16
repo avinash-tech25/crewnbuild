@@ -273,7 +273,7 @@ class PurchaseOrderItem(UuidPrimaryKeyMixin, Base):
 
     @property
     def engineer_id(self) -> uuid.UUID:
-        """The buyer (a House Owner or a Store Manager; the old column name)."""
+        """The buyer (a House Owner or a Site Engineer; the old column name)."""
         return self.order.buyer_id
 
     @property

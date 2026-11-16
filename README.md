@@ -2,7 +2,7 @@
 
 CREWNBUILD is a construction platform built as two products on one PostgreSQL database, `crewnbuild`:
 
-- **Professional**: the construction operating system for house owners, builders, site engineers, store managers, suppliers and administrators. It has a FastAPI backend and a React web app and uses schema `professional`.
+- **Professional**: the construction operating system for house owners, builders, site engineers, suppliers and administrators. It has a FastAPI backend and a React web app and uses schema `professional`.
 - **Partner**: on-demand technician booking (painter, plumber, electrician, carpenter). It has a FastAPI backend and a React web app and uses schema `partner`.
 
 The two services never call each other over HTTP. They connect in three ways only: the signed Book Technician hand-off, a read-only view of requesters, and a read-only view of bookings. See `docs/technical-architecture.md`, sections 2 and 11.
@@ -84,7 +84,10 @@ The commands are for Windows PowerShell, from the repository root. On macOS or L
    python scripts\migrate.py --check   # models and database match
    ```
 
-   `python scripts\migrate.py --down` removes everything again, in reverse order. Running `alembic upgrade head` in `professional\backend` alone stops at revision 0002 with a message to migrate Partner first, and applies nothing; Partner on its own refuses to start before Professional (MG-01).
+   After a pull that adds a migration, run `python scripts\migrate.py` again. For example, Professional revision 0006 (16 Nov 2026) removes the Store Manager role: it drops the seven store tables and their data, and leaves Site Engineer as the only engineer category.
+
+   `python scripts\migrate.py --down` removes everything again
+, in reverse order. Running `alembic upgrade head` in `professional\backend` alone stops at revision 0002 with a message to migrate Partner first, and applies nothing; Partner on its own refuses to start before Professional (MG-01).
 
 5. **Load the reference data** (master catalog, subscription plan prices, Partner service catalog and checklists). Every seed is idempotent:
 

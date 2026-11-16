@@ -18,7 +18,6 @@ const OWNER = anAccount({ role: 'OWNER' })
 const BUILDER = anAccount({ role: 'BUILDER', id: '0190a8b2-4c1e-7aa0-9f00-000000000002' })
 const SUPPLIER = anAccount({ role: 'SUPPLIER' })
 const SITE_ENGINEER = anAccount({ role: 'ENGINEER', engineer_profile: { specialization: 'Site Engineer' } })
-const STORE_MANAGER = anAccount({ role: 'ENGINEER', engineer_profile: { specialization: 'Store Manager' } })
 const ADMIN = anAccount({ role: 'GLOBAL_SUPER_ADMIN' })
 
 describe('the route table', () => {
@@ -52,7 +51,7 @@ describe('RequireAccess', () => {
     await waitFor(() => expect(location.current.pathname).toBe('/subscription-checkout'))
   })
 
-  it.each([OWNER, BUILDER, SUPPLIER, SITE_ENGINEER, STORE_MANAGER, ADMIN])('opens weather for every signed-in role (%#)', async (account) => {
+  it.each([OWNER, BUILDER, SUPPLIER, SITE_ENGINEER, ADMIN])('opens weather for every signed-in role (%#)', async (account) => {
     installFakeServer({ 'GET /weather/projects': { status: 503, data: {} }, 'GET /subscriptions/me': { data: {} } })
     renderApp('/weather', { auth: signedInAs(account) })
     expect(await screen.findByText('Site Weather', {}, { timeout: 15000 })).toBeInTheDocument()

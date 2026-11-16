@@ -1,4 +1,4 @@
-"""Purchase orders: a House Owner's (or Store Manager's) buy request to one supplier, the
+"""Purchase orders: a House Owner's (or Site Engineer's) buy request to one supplier, the
 supplier's decision on a whole order or one line, and fulfilment into the project's
 stock (ported from the old material_request_service.py and material_request_repository.py;
 same rules, answers and notifications).
@@ -18,7 +18,6 @@ from sqlalchemy.orm import Session
 
 from app.core.local_time import local_iso, local_workflow_now
 from app.database.types import naive_utc_now
-from app.modules.accounts.profile_completion import is_store_manager
 from app.modules.identity.models import ROLE_ENGINEER, ROLE_OWNER, ROLE_SUPPLIER, User
 from app.modules.marketplace.cart import ensure_buyer, ensure_buyer_project_access, ensure_supplier_approved
 from app.modules.marketplace.listings import supplier_product_stock_state, tiers_for, unit_price_for
@@ -38,10 +37,13 @@ from app.modules.projects.notices import create_notification, create_request_not
 from app.modules.site_operations.models import MaterialLog
 from app.modules.site_operations.service import get_or_create_inventory
 
-SITE_ENGINEER_USES_STORE = (
-    "Site Engineers request materials from their Builder's Store Manager, not from a supplier. "
-    "Open Suppliers > Store to send this request."
-)
+# How a buyer is named to the supplier and the builder.
+BUYER_ROLE_LABELS = {ROLE_OWNER: "House Owner", ROLE_ENGINEER: "Site Engineer"}
+SELF_CONSTRUCTION = "SELF_CONSTRUCTION"
+
+
+def buyer_role_label(buyer: User | None) -> str:
+    return BUYER_ROLE_LABELS.get(buyer.role, "") if buyer else ""
 
 
 def money(value: Any) -> float:
@@ -104,7 +106,7 @@ def material_request_payload(database: Session, row: PurchaseOrderItem) -> dict[
         "project_name": project.title if project else "",
         "engineer_name": engineer.name if engineer else "",
         "engineer_role": engineer.role if engineer else "",
-        "buyer_is_store_manager": bool(engineer and is_store_manager(engineer)),
+        "buyer_role_label": buyer_role_label(engineer),
         "owner_name": owner.name if owner else "",
         "supplier_name": supplier.name if supplier else "",
         "image_url": product.display_image_url if product else None,
@@ -433,9 +435,8 @@ class MaterialRequestService:
     # ---- the buyer ----
 
     def create_material_request(self, payload: MaterialRequestCreate, user: User) -> dict[str, Any]:
-        # A Site Engineer orders through the builder's Store Manager, never a supplier.
-        if user.role == ROLE_ENGINEER and not is_store_manager(user):
-            raise HTTPException(status_code=403, detail=SITE_ENGINEER_USES_STORE)
+        # A House Owner for their own project; a Site Engineer for a project they are
+        # actively assigned to, from a supplier allowed on it (cart.py).
         project = ensure_buyer_project_access(self.database, payload.project_id, user)
         require_complete_profile(user)
         supplier = self.database.scalars(
@@ -481,41 +482,43 @@ class MaterialRequestService:
             )
             self.database.add(row)
             rows.append(row)
-        if user.role == ROLE_OWNER:
-            total = sum(float(row.price or 0) * row.quantity for row in rows)
-            location = ", ".join(part for part in (project.pincode, project.project_city) if part)
-            create_request_notification(
-                self.database,
-                supplier.id,
-                f"New purchase request from {user.name}",
-                f"Purchase request #{code[:8].upper()} · {purchase_request_summary(rows)} · Total Rs {total:g}"
-                + f" · Project: {project.title}"
-                + (f" · Delivery: {location}" if location else ""),
-                category="MATERIAL",
+        summary = purchase_request_summary(rows)
+        total = sum(float(row.price or 0) * row.quantity for row in rows)
+        location = ", ".join(part for part in (project.pincode, project.project_city) if part)
+        role = buyer_role_label(user)
+        create_request_notification(
+            self.database,
+            supplier.id,
+            f"New purchase request from {user.name}" + (f" ({role})" if user.role == ROLE_ENGINEER else ""),
+            f"Purchase request #{code[:8].upper()} · {summary} · Total Rs {total:g}"
+            + f" · Project: {project.title}"
+            + (f" · Delivery: {location}" if location else ""),
+            category="MATERIAL",
+        )
+        create_notification(
+            self.database,
+            user.id,
+            f"Purchase request sent to {supplier_store_name(supplier)}",
+            f"Purchase request #{code[:8].upper()} for {project.title}: {summary}. "
+            "You will be notified when the supplier accepts or rejects it.",
+            category="MATERIAL",
+        )
+        if user.role == ROLE_ENGINEER:
+            # For information only: the builder (the House Owner on a Self Construction
+            # project) approves nothing.
+            builder_id = (
+                project.owner_id
+                if project.construction_type == SELF_CONSTRUCTION or not project.contractor_id
+                else project.contractor_id
             )
-            create_notification(
-                self.database,
-                user.id,
-                f"Purchase request sent to {supplier_store_name(supplier)}",
-                f"Purchase request #{code[:8].upper()} for {project.title}: {purchase_request_summary(rows)}. "
-                "You will be notified when the supplier accepts or rejects it.",
-                category="MATERIAL",
-            )
-        else:
-            # Only a Store Manager reaches here (a Site Engineer was refused above).
-            create_request_notification(
-                self.database,
-                supplier.id,
-                "New purchase order from a Store Manager",
-                f"{user.name} (Store Manager) ordered {len(rows)} item(s) for {project.title}.",
-                category="MATERIAL",
-            )
-            create_notification(
-                self.database,
-                user.id,
-                "Material request submitted",
-                f"Your request for {project.title} was submitted to {supplier.name}.",
-                category="MATERIAL",
-            )
+            if builder_id and builder_id != user.id:
+                create_request_notification(
+                    self.database,
+                    builder_id,
+                    f"{user.name} (Site Engineer) ordered materials",
+                    f"Purchase request #{code[:8].upper()} to {supplier_store_name(supplier)} for {project.title}: "
+                    f"{summary} · Total Rs {total:g}. For your information; no approval is needed.",
+                    category="MATERIAL",
+                )
         self.database.commit()
         return {"request_code": code, "items": [material_request_payload(self.database, row) for row in rows]}

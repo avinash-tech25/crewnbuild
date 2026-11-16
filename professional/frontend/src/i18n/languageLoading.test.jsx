@@ -60,8 +60,8 @@ describe('interface languages', () => {
     renderSample()
     act(() => screen.getByRole('button', { name: 'hi' }).click())
     await waitFor(() => expect(screen.getByTestId('language')).toHaveTextContent('hi'))
-    // Hindi has no text for the Store Manager's Buy button; English is shown, as before.
-    expect(translate('store.buy.pay')).toBe('Pay with Razorpay (TEST)')
+    // Hindi has no text for the Request ID column heading; English is shown, as before.
+    expect(translate('ui.requestId')).toBe('Request ID')
   })
 
   it("opens a returning visitor's saved language from the first render", async () => {

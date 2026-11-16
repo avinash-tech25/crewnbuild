@@ -263,8 +263,8 @@ def test_an_administrator_phone_change_is_audited(database: Session) -> None:
 
 
 def test_users_lists_customer_accounts_only_never_an_administrator(india, database: Session) -> None:
-    """Users holds owners, builders, suppliers and engineers (site engineers and store
-    managers alike); every administrator role is under Administrators only, as in the
+    """Users holds owners, builders, suppliers and engineers (site engineers and other
+    engineers alike); every administrator role is under Administrators only, as in the
     old console."""
     admin, _, _ = india
     customers = {
@@ -276,8 +276,8 @@ def test_users_lists_customer_accounts_only_never_an_administrator(india, databa
         "site@example.in": create_user(
             database, role=ROLE_ENGINEER, email="site@example.in", phone="9876500104", specialization="Site Engineer"
         ),
-        "store@example.in": create_user(
-            database, role=ROLE_ENGINEER, email="store@example.in", phone="9876500105", specialization="Store Manager"
+        "civil@example.in": create_user(
+            database, role=ROLE_ENGINEER, email="civil@example.in", phone="9876500105", specialization="Civil Engineer"
         ),
     }
     create_manager(database, "users.view")

@@ -11,7 +11,7 @@ import { renderApp, signedInAs } from '../../test/renderApp.jsx'
 import { DETAIL_DIALOG_SIZE, DetailDialog, DetailSection } from './DetailDialog.jsx'
 import { LanguageProvider } from '../../i18n/LanguageContext.jsx'
 import { OWNER, PROJECT_ID, aProject, ownerDashboardServer } from '../../features/owner/ownerTestData.js'
-import { STORE_MANAGER, STORE_REQUEST_ID, aSiteRequest, storeDashboardServer } from '../../features/engineer/engineerTestData.js'
+import { BUILDER, anOwnerRequest, builderDashboardServer } from '../../features/builder/builderTestData.js'
 import { USER_ID, aUserRow, adminServer, anAdminAccount, anIdentity } from '../../features/admin/adminTestData.js'
 
 const FIND = { timeout: 15000 }
@@ -80,9 +80,11 @@ describe('details windows', () => {
     expectSharedFrame(await screen.findByRole('dialog', {}, FIND))
   })
 
-  it("the Store Manager's request details window uses it", async () => {
-    installFakeServer(storeDashboardServer({ 'GET /store-manager/requests': { data: [aSiteRequest()] } }))
-    renderApp(`/store-manager/requests?request=${STORE_REQUEST_ID}`, { auth: signedInAs(STORE_MANAGER) })
+  it("the Builder's request details window uses it", async () => {
+    const user = userEvent.setup()
+    installFakeServer(builderDashboardServer({ 'GET /project-requests/incoming': { data: [anOwnerRequest()] } }))
+    renderApp('/contractor/requests', { auth: signedInAs(BUILDER) })
+    await user.click((await screen.findAllByRole('button', { name: /View details/ }, FIND))[0])
     expectSharedFrame(await screen.findByRole('dialog', {}, FIND))
   })
 })

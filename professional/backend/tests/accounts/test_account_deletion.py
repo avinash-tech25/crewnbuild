@@ -41,22 +41,26 @@ def signed_in(client: TestClient, database: Session, **user: Any) -> tuple[User,
 def test_public_config_and_retired_endpoints(client: TestClient, database: Session) -> None:
     config = client.get("/api/v1/account-deletion-requests/config")
     assert config.status_code == 200
-    assert {role["value"] for role in config.json()["roles"]} >= {"OWNER", "BUILDER", "STORE_MANAGER"}
+    # There is no Store Manager option any more.
+    assert [role["value"] for role in config.json()["roles"]] == ["OWNER", "BUILDER", "ENGINEER", "SUPPLIER"]
     assert client.post("/api/v1/account-deletion-requests").status_code == 410
     _, headers = signed_in(client, database)
     assert client.delete("/api/v1/account", headers=headers).status_code == 410
 
 
 def test_the_form_is_filled_from_the_account(client: TestClient, database: Session) -> None:
-    signed_in(client, database, role=ROLE_ENGINEER, specialization="Store Manager")
+    _, headers = signed_in(client, database, role=ROLE_ENGINEER, specialization="Site Engineer")
     form = client.get("/api/v1/account/deletion-form").json()
     assert form["account"] == {
         "name": "Asha Rao",
-        "role": "STORE_MANAGER",
+        "role": "ENGINEER",
         "email": "asha@example.in",
         "phone": "9876543210",
         "email_verified": True,
     }
+    # STORE_MANAGER is no longer a role the form accepts.
+    refused = client.post("/api/v1/account/delete", json={**FORM, "role": "STORE_MANAGER"}, headers=headers)
+    assert (refused.status_code, refused.json()["detail"]["field"]) == (422, "role")
 
 
 def test_deletion_anonymises_the_account_and_ends_every_session(client: TestClient, database: Session) -> None:
@@ -177,7 +181,6 @@ def test_a_builder_with_an_unpaid_plan_can_still_delete(client: TestClient, data
         (ROLE_BUILDER, None, "builder_history_project_titles", ["Villa"], "BUILDER_PROJECT_HISTORY"),
         ("SUPPLIER", None, "supplier_transaction_history_count", 2, "SUPPLIER_TRANSACTION_HISTORY"),
         ("SUPPLIER", None, "supplier_project_history_titles", ["Villa"], "SUPPLIER_PROJECT_HISTORY"),
-        (ROLE_ENGINEER, "Store Manager", "store_manager_shared_history_count", 1, "STORE_MANAGER_HISTORY"),
         (
             ROLE_ENGINEER,
             "Site Engineer",

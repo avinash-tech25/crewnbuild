@@ -7,14 +7,7 @@ User.profile_completion_fields with the same per-role rules.
 
 from typing import Any
 
-from app.modules.accounts.models import CATEGORY_STORE_MANAGER
 from app.modules.identity.models import ROLE_BUILDER, ROLE_ENGINEER, ROLE_OWNER, ROLE_SUPPLIER, User
-
-
-def is_store_manager(user: User) -> bool:
-    """Role ENGINEER with the Store Manager category, read from the database row."""
-    profile = user.engineer_profile
-    return user.role == ROLE_ENGINEER and profile is not None and profile.category == CATEGORY_STORE_MANAGER
 
 
 def completion_fields(user: User) -> list[tuple[str, str, bool]]:
@@ -52,11 +45,6 @@ def completion_fields(user: User) -> list[tuple[str, str, bool]]:
     if user.role == ROLE_ENGINEER:
         engineer = user.engineer_profile
         fields += [("specialization", "Engineer Category", bool(engineer and engineer.specialization))]
-        if is_store_manager(user):
-            fields += [
-                ("location", "Post office", bool(user.location)),
-                ("qualification", "Qualification", bool(engineer and engineer.qualification)),
-            ]
         return fields
     # A role this application does not serve is never complete.
     fields.append(("role", "Supported account type", False))

@@ -597,7 +597,7 @@ class MarketplaceService:
         statement = live(
             select(User).join(EngineerProfile, EngineerProfile.user_id == User.id).where(User.role == ROLE_ENGINEER)
         )
-        # One category, or several comma-separated ("Site Engineer,Store Manager").
+        # One category, or several comma-separated ("Site Engineer,Civil Engineer").
         categories = [value.strip() for value in (category or "").split(",") if value.strip()]
         if categories:
             statement = statement.where(EngineerProfile.specialization.in_(categories))

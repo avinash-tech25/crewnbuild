@@ -255,7 +255,7 @@ export function EngineerJoinTeamSection({ pendingCode, teams, incomingRequests, 
           the one this header used to sit on top of. */}
 
       {/* Invite code input. Only where the page joins by code (onJoin): the
-          Store Manager's Builders page joins by request and leaves it out. */}
+          page that joins by request leaves it out. */}
       {onJoin && <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_14px_40px_-30px_rgba(15,23,42,0.35)]">
         <div className="mb-2 flex items-center justify-between gap-3">
           <p className="text-xs font-extrabold uppercase tracking-wide text-slate-400">{t('dash.engineer.joinTeam')}</p>
@@ -613,7 +613,7 @@ export function EngineerProfileSection({ profile, user, onSave, onProfileImageUp
       : inputClass
   )
   const savedCategory = String(form.specialization || '').trim()
-  const categoryChoices = engineerCategoryChoices(profile?.specialization, savedCategory)
+  const categoryChoices = engineerCategoryChoices(savedCategory)
 
   return (
     <div className="space-y-3">

@@ -4,8 +4,8 @@
  * Opens on a choice of supplier type -- Material, Labor or Equipment -- and
  * each type then shows only its own screens:
  *
- *   Material   Suppliers (all the Builder accepted), Product Catalog, Orders and
- *              Cart, as tabs -- unchanged
+ *   Material   Suppliers (all the Builder accepted), Product Catalog, Cart and
+ *              Orders, as tabs
  *   Labor      the Labor panel
  *   Equipment  the Equipment panel
  *
@@ -15,22 +15,24 @@
  * same screen it always did. The landing is the extra value 'home'. The Product
  * Catalog still lists only suppliers the Builder explicitly assigned to this engineer.
  *
- * A fourth choice, Store, offered first, is where a Site Engineer asks for
- * material: the builder's Store Manager's products, a cart, and the request to
- * that Store Manager, never to a supplier. It says so plainly when the builder has
- * no Store Manager. Material is for browsing suppliers and their catalogues, and
- * the Orders placed before; it has no Cart, and 'cart' (a notification or a
- * resumed Buy) opens Store.
+ * A Site Engineer orders material straight from the suppliers of the chosen
+ * project, as a House Owner does: the Product Catalog lists only what that
+ * project's suppliers sell (GET /shop/products?project_id=), the Cart is the
+ * shared cart for that project, and its order goes to the supplier with no
+ * approval step. When the Builder has assigned no supplier to the project the
+ * Catalog says so; a refused add or order shows the server's own reason.
  */
 import { useCallback, useEffect, useState } from 'react'
-import { ArrowLeft, Boxes, ChevronRight, Construction, HardHat, PackageSearch, Search, ShoppingBag, Warehouse } from 'lucide-react'
-import EngineerSuppliersSection, { fetchAssignedSuppliers, isMaterialScreenSupplier } from './EngineerSuppliersSection.jsx'
+import { useSelector } from 'react-redux'
+import { ArrowLeft, Boxes, ChevronRight, Construction, HardHat, PackageSearch, Search, ShoppingBag, ShoppingCart, Warehouse } from 'lucide-react'
+import EngineerSuppliersSection from './EngineerSuppliersSection.jsx'
 import ProductCatalogPage from '../../shop/components/ProductCatalogPage.jsx'
 import EngineerOrdersPanel from './EngineerOrdersPanel.jsx'
 import EngineerLaborPanel from './EngineerLaborPanel.jsx'
 import EngineerEquipmentPanel from './EngineerEquipmentPanel.jsx'
-import EngineerStorePanel from './EngineerStorePanel.jsx'
-import { fetchSiteStores } from '../../store/storeManagerApi.js'
+import CartPanel from '../../shop/components/CartPanel.jsx'
+import { selectCartCount } from '../../shop/cartSlice.js'
+import { fetchShopProducts } from '../../catalog/supplierProductsApi.js'
 import { useLanguage } from '../../../i18n/LanguageContext.jsx'
 
 const joinedFirstCard = [
@@ -39,14 +41,25 @@ const joinedFirstCard = [
 ].join(' ')
 
 // Which supplier type each tab belongs to.
-const MATERIAL_TABS = ['suppliers', 'catalog', 'orders']
+const MATERIAL_TABS = ['suppliers', 'catalog', 'cart', 'orders']
 export const supplierTypeOfTab = (tab) => {
   if (tab === 'labor') return 'labor'
   if (tab === 'equipment') return 'equipment'
-  // A Site Engineer's material request is a store request.
-  if (tab === 'store' || tab === 'cart') return 'store'
   if (MATERIAL_TABS.includes(tab)) return 'material'
   return null
+}
+
+// The products of /shop/products, grouped by their supplier: the shape the
+// Product Catalog reads its offers from (each supplier with its listings).
+function suppliersOfProducts(products = []) {
+  const bySupplier = new Map()
+  for (const product of products) {
+    if (!bySupplier.has(product.supplier_id)) {
+      bySupplier.set(product.supplier_id, { user_id: product.supplier_id, name: product.supplier_name, store_name: product.store_name, products: [] })
+    }
+    bySupplier.get(product.supplier_id).products.push(product)
+  }
+  return [...bySupplier.values()]
 }
 
 const SUPPLIER_TYPES = [
@@ -54,7 +67,6 @@ const SUPPLIER_TYPES = [
   { id: 'labor', tab: 'labor', icon: HardHat, labelKey: 'dash.engineer.suppliers.type.labor', subKey: 'dash.engineer.suppliers.type.laborSub', tone: 'bg-amber-50 text-amber-700 ring-amber-100' },
   { id: 'equipment', tab: 'equipment', icon: Construction, labelKey: 'dash.engineer.suppliers.type.equipment', subKey: 'dash.engineer.suppliers.type.equipmentSub', tone: 'bg-sky-50 text-sky-700 ring-sky-100' },
 ]
-const STORE_TYPE = { id: 'store', tab: 'store', icon: Boxes, labelKey: 'store.engineer.type', subKey: 'store.engineer.typeSub', tone: 'bg-violet-50 text-violet-700 ring-violet-100' }
 
 export default function EngineerSupplierHub({ projects = [], activeTab = 'home', onTabChange }) {
   const { t } = useLanguage()
@@ -76,20 +88,27 @@ export default function EngineerSupplierHub({ projects = [], activeTab = 'home',
     if (tab === 'equipment') setEquipmentSupplierToOpen(supplierId)
     onTabChange(tab)
   }
-  // The Material catalogue lists the same suppliers as the Material Suppliers tab.
-  const loadMaterialSuppliers = useCallback(
-    async () => (await fetchAssignedSuppliers(projects)).filter(isMaterialScreenSupplier),
-    [projects],
-  )
 
-  const [stores, setStores] = useState([])
-  const projectKey = projects.map((project) => project.id).join(',')
-  const reloadStores = useCallback(() => fetchSiteStores().then(setStores).catch(() => setStores([])), [])
-  useEffect(() => { reloadStores() }, [reloadStores, projectKey])
-  const supplierTypes = [STORE_TYPE, ...SUPPLIER_TYPES]
+  const cartCount = useSelector(selectCartCount)
+  const supplierTypes = SUPPLIER_TYPES
 
   const supplierType = supplierTypeOfTab(activeTab)
   const typeInfo = supplierTypes.find((type) => type.id === supplierType)
+
+  // What the chosen project may order (the Catalog tab): its suppliers'
+  // products, or why there are none (no project chosen, no supplier assigned).
+  const [shop, setShop] = useState({ projectId: undefined, reply: null, version: 0 })
+  useEffect(() => {
+    if (activeTab !== 'catalog') return undefined
+    let live = true
+    const adopt = (reply) => { if (live) setShop((current) => ({ projectId: effectiveProjectId, reply, version: current.version + 1 })) }
+    fetchShopProducts(effectiveProjectId ? { project_id: effectiveProjectId } : undefined)
+      .then(adopt)
+      .catch(() => adopt({ products: [] }))
+    return () => { live = false }
+  }, [activeTab, effectiveProjectId])
+  const shopReply = shop.projectId === effectiveProjectId ? shop.reply : null
+  const loadProjectSuppliers = useCallback(async () => suppliersOfProducts(shopReply?.products), [shopReply])
 
   // ------------------------------------------------------------ landing
   if (!typeInfo) {
@@ -152,15 +171,6 @@ export default function EngineerSupplierHub({ projects = [], activeTab = 'home',
               openSupplierOnLoad={equipmentSupplierToOpen}
             />
           )}
-          {supplierType === 'store' && (
-            <EngineerStorePanel
-              projects={projects}
-              stores={stores}
-              activeProjectId={effectiveProjectId}
-              onProjectChange={setSelectedProjectId}
-              onStoresChanged={reloadStores}
-            />
-          )}
         </div>
       </div>
     )
@@ -170,8 +180,12 @@ export default function EngineerSupplierHub({ projects = [], activeTab = 'home',
   const tabs = [
     { id: 'suppliers', label: t('ui.suppliers'), icon: PackageSearch },
     { id: 'catalog', label: t('ui.productCatalog'), icon: Boxes },
+    { id: 'cart', label: t('shop.cart'), icon: ShoppingCart, badge: cartCount },
     { id: 'orders', label: t('shop.orders'), icon: ShoppingBag },
   ]
+  // Why the chosen project has nothing to order, in place of the Catalog.
+  const catalogNotice = shopReply?.needs_project ? t('dash.engineer.suppliers.selectProject')
+    : shopReply?.no_suppliers ? t('shop.engineer.noSupplier') : ''
 
   return (
     <div>
@@ -205,6 +219,19 @@ export default function EngineerSupplierHub({ projects = [], activeTab = 'home',
           )
         })}
       </div>
+        {/* The project the cart, the catalogue and the orders are for. */}
+        {projects.length > 1 && (
+          <label className="block w-full sm:w-64 sm:shrink-0">
+            <span className="sr-only">{t('labor.project')}</span>
+            <select
+              className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-800 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+              value={effectiveProjectId ?? ''}
+              onChange={(event) => setSelectedProjectId(event.target.value || null)}
+            >
+              {projects.map((project) => <option key={project.id} value={project.id}>{project.title}</option>)}
+            </select>
+          </label>
+        )}
         {/* Search sits beside Cart while the supplier list is open. */}
         {activeTab === 'suppliers' && (
           <div className="relative min-w-0 sm:max-w-md sm:flex-1">
@@ -233,19 +260,34 @@ export default function EngineerSupplierHub({ projects = [], activeTab = 'home',
             openSupplierId={supplierToOpen}
             onSupplierOpened={() => setSupplierToOpen(null)}
             materialOnly
-            canBuy={false}
+            onOpenCart={() => onTabChange('cart')}
             onOpenSupplierTab={openSupplierTab}
             searchValue={materialSearch}
             onSearchChange={setMaterialSearch}
           />
         )}
-        {activeTab === 'catalog' && (
+        {activeTab === 'catalog' && catalogNotice && (
+          <section role="status" className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm font-extrabold text-rose-800">
+            {catalogNotice}
+          </section>
+        )}
+        {activeTab === 'catalog' && shopReply && !catalogNotice && (
           <ProductCatalogPage
             title={t('ui.productCatalog')}
-            loadSuppliers={loadMaterialSuppliers}
-            reloadKey={projects.map((project) => project.id).join(',')}
+            loadSuppliers={loadProjectSuppliers}
+            reloadKey={`${effectiveProjectId || ''}-${shop.version}`}
             cartProjectId={effectiveProjectId}
+            canAddToCart
+            onOpenCart={() => onTabChange('cart')}
             compactHeader
+          />
+        )}
+        {activeTab === 'cart' && (
+          <CartPanel
+            projectId={effectiveProjectId}
+            engineerLayout
+            onContinueShopping={() => onTabChange('catalog')}
+            onViewSupplier={(supplierId) => { setSupplierToOpen(supplierId); onTabChange('suppliers') }}
           />
         )}
         {activeTab === 'orders' && (

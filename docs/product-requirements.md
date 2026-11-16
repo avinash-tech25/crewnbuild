@@ -4,13 +4,13 @@ Nov 12, 2026 · @Trysol Global services Pvt Ltd
 
 ## 1. Product summary
 
-CREWNBUILD is India's construction operating system: one platform where a house owner, builder, site engineer, store manager and suppliers run a building project together, and where anyone on site can book a verified technician on demand. It is live as two products on one database, `crewnbuild`: **CREWNBUILD Professional** (schema `professional`) and **CREWNBUILD Partner** (schema `partner`).
+CREWNBUILD is India's construction operating system: one platform where a house owner, builder, site engineer and suppliers run a building project together, and where anyone on site can book a verified technician on demand. It is live as two products on one database, `crewnbuild`: **CREWNBUILD Professional** (schema `professional`) and **CREWNBUILD Partner** (schema `partner`).
 
 ### 1.1 The problem
 
 - **Fragmented coordination.** Owners, builders, engineers and suppliers agree work, prices and deliveries over calls and chat, so nobody has one record of what was agreed.
 - **No cost visibility.** Owners cannot see daily labour, material and equipment spend until the money is gone.
-- **Material leakage.** Site stores lose track of what was ordered, received and issued to each site.
+- **Material leakage.** Sites lose track of what material was ordered, from whom, and what was received for each project.
 - **Unreliable small jobs.** Finding a trustworthy painter, plumber, electrician or carpenter quickly, at a known price, is hard.
 
 ### 1.2 The product answer
@@ -19,7 +19,7 @@ CREWNBUILD is India's construction operating system: one platform where a house 
 |---|---|---|
 | Fragmented coordination | Projects, requests, award negotiation, teams, chat and notifications in one place | Professional |
 | No cost visibility | Daily site records, owner analysis, live cameras and weather alerts per site | Professional |
-| Material leakage | Master catalog, supplier listings, cart and purchase requests, Store Manager stock ledger | Professional |
+| Material leakage | Master catalog, supplier listings, cart and purchase requests, Site Engineer orders from the project's suppliers, project material stock | Professional |
 | Unreliable small jobs | Fixed-price technician booking, nearby dispatch, live tracking, start code, work bill, ratings | Partner |
 
 ### 1.3 Related documents
@@ -36,7 +36,7 @@ The next release takes the existing platform to production: the `crewnbuild` dat
 | # | Goal | Why it matters | Measured by |
 |---|---|---|---|
 | G1 | Move to database `crewnbuild` with schemas `professional` and `partner`, no data loss | One clear, owned data layout for both products | Row counts match; both health checks green |
-| G2 | Take real money: live Razorpay for technician bookings, builder subscriptions and store purchases | Revenue | First live payment receipted (M5, M6) |
+| G2 | Take real money: live Razorpay for technician bookings and builder subscriptions | Revenue | First live payment receipted (M5, M6) |
 | G3 | Only verified technicians reach a customer's home | Safety and trust | Share of offers sent to verified technicians (M9) |
 | G4 | No silent data loss between products | Bookings, ratings and earnings are records people rely on | Account deletion keeps Partner history (CR-01) |
 | G5 | Every built backend feature is usable from the apps or retired | Users get what was built; less dead code | Endpoints without a caller (CR-11) |
@@ -52,14 +52,13 @@ The next release takes the existing platform to production: the `crewnbuild` dat
 
 ## 3. Personas
 
-Seven personas use the platform; the House Owner and the Builder carry the business, since one pays for the project and the other pays a subscription.
+Six personas use the platform; the House Owner and the Builder carry the business, since one pays for the project and the other pays a subscription.
 
 | Persona | Product | Role in system | Main need | Pays? |
 |---|---|---|---|---|
 | House Owner | Professional + Partner | `OWNER` | Find a builder, agree a price, see where the money goes, see the site, book repairs | Project spend; technician bookings |
 | Builder | Professional | `CONTRACTOR` | Win projects, run teams and suppliers, track daily cost, show a portfolio | Subscription (PROFESSIONAL or BUSINESS) |
-| Site Engineer | Professional + Partner | `ENGINEER` (site category) | Record each day's work, order material, labour and equipment, book technicians | No |
-| Store Manager | Professional | `ENGINEER` (store category) | Keep stock right, issue to sites, buy shortfalls, record payments | Supplier purchases |
+| Site Engineer | Professional + Partner | `ENGINEER` (site category) | Record each day's work, order material from the project's suppliers, labour and equipment, book technicians | No |
 | Supplier | Professional | `SUPPLIER` (material, labor or equipment) | List products and services, receive and fulfil requests | No (receives payment) |
 | Technician | Partner | Partner account | Steady nearby jobs, clear prices, quick payout | Commission deducted from earnings |
 | Administrator | Professional | `GLOBAL_SUPER_ADMIN`, `LOCATION_SUPER_ADMIN`, `MANAGER` | Keep the marketplace safe, curate the catalog, run ads and coupons, answer support | No |
@@ -81,16 +80,15 @@ Five journeys carry most of the platform's value; each must work end to end befo
 ### J2. Site Engineer runs a day on site
 
 1. Engineer opens the daily record and logs labour, material use, purchases, machinery, expenses and payments.
-2. Engineer requests material from assigned suppliers, workers from labor suppliers and equipment from equipment suppliers.
-3. Engineer asks the Store Manager for stock from the site store.
-4. At the daily cut-off the record locks; the builder may make an audited adjustment.
+2. Engineer orders material from the project's suppliers (J3), workers from labor suppliers and equipment from equipment suppliers.
+3. At the daily cut-off the record locks; the builder may make an audited adjustment.
 
-### J3. Store Manager keeps the store
+### J3. Site Engineer orders material
 
-1. Store Manager approves a Site Engineer request and issues it, in parts if stock is short.
-2. For the shortfall, the Store Manager sees the builder's suppliers that sell it, checks out and pays with Razorpay.
-3. Goods arrive in parts; each receipt adds stock once, and every change is in the ledger.
-4. Payments are recorded with a permanent transaction ID.
+1. Engineer picks one of the projects they are actively assigned to; the shop shows only the suppliers assigned to that project (for a self-construction project, the House Owner's accepted suppliers). With none, the screen says "Ask your builder to assign a supplier to this project."
+2. Engineer adds products to the project cart and places the order; there is no builder approval and no online payment for it.
+3. The builder gets an information-only notification of the order.
+4. The supplier accepts and fulfils the order; fulfilled goods are added to the project's material stock.
 
 ### J4. Builder subscribes
 
@@ -123,7 +121,8 @@ Most Professional features are live; this release changes six of them and finish
 | P-08 | Master catalog | As an admin, I curate categories, subcategories, brands, products, variants and images, so every supplier lists the same product the same way. | P1 | Finish: subcategory edit, category, subcategory and brand images (CR-11) |
 | P-09 | Supplier listings and shop | As a supplier, I list catalog products at my price with bulk tiers; as a buyer, I add to a project cart and send a purchase request. | P0 | Live |
 | P-10 | Labor and equipment supply | As an engineer, I request workers and equipment from my assigned suppliers and log daily attendance and usage. | P1 | Live |
-| P-11 | Store Manager | As a store manager, I keep stock with a ledger, issue to sites in parts, buy shortfalls with Razorpay and record payments. | P0 | Live |
+| P-11 | Site Engineer material orders | As a site engineer, I order material for my assigned project straight from the suppliers assigned to it, and the builder is told; fulfilled goods are added to the project's material stock. | P0 | Live |
+
 | P-12 | Builder subscriptions | As a builder, I buy a plan with a coupon and renew before expiry, so I keep my badge and limits. | P0 | Change: live payments (CR-05); recover-payment screen (CR-11) |
 | P-13 | Technician booking payment | As an owner or site engineer, I pay for a completed technician booking and get a receipt. | P0 | Change: link to Partner bookings (CR-03), live payments (CR-05) |
 | P-14 | Live cameras | As a project member, I verify the site recorder once and watch live and recorded video. | P1 | Finish: device management screens (CR-11) |

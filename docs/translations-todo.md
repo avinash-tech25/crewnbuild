@@ -4,7 +4,7 @@ The Professional web app is translated into Arabic (`ar`), Hindi (`hi`), Kannada
 
 **How this list was made:** every key in `locales/en.js` that the old app's English text (`Kuwait-Version/Octabuild/frontend 7/frontend/src/i18n/translations.js`, the state R7 started from) did not have, checked against each language file. All other English keys are unchanged since the old app, and no language lost a translation it had there.
 
-**Status (16 Nov 2026):** 22 keys, missing in all six languages. Seventeen are from the request details change (a supplier or builder shown by who they are, `features/requests/counterparty.js` and `features/requests/components/PartyDetails.jsx`); one is the plans section's "Most popular" label; two are the My Suppliers project coverage labels; two are the public header's account menu.
+**Status (16 Nov 2026):** 23 keys, missing in all six languages. Seventeen are from the request details change (a supplier or builder shown by who they are, `features/requests/counterparty.js` and `features/requests/components/PartyDetails.jsx`); one is the plans section's "Most popular" label; two are the My Suppliers project coverage labels; two are the public header's account menu; one is the Site Engineer's note when a project has no supplier to order from.
 
 | Key | English | Where it shows | Missing in |
 | --- | --- | --- | --- |
@@ -30,6 +30,7 @@ The Professional web app is translated into Arabic (`ar`), Hindi (`hi`), Kannada
 | `ce.assignedNofM` | Assigned to {count} of {total} projects | My Suppliers card: how many of the builder's projects the supplier is on (keep `{count}` and `{total}`) | ar, hi, kn, ml, ta, te |
 | `session.signOut` | Sign out | Public pages' account menu | ar, hi, kn, ml, ta, te |
 | `session.accountMenu` | Account menu | Account menu button's spoken name | ar, hi, kn, ml, ta, te |
+| `shop.engineer.noSupplier` | Ask your builder to assign a supplier to this project. | Site Engineer > Suppliers > Material > Product Catalog, when the chosen project has no supplier assigned | ar, hi, kn, ml, ta, te |
 
 **Not covered by this list:**
 

@@ -1,6 +1,6 @@
 import { anAccount } from '../../test/fakeServer.js'
 
-// Server answers for the Site Engineer, live camera and Store Manager tests, shaped like
+// Server answers for the Site Engineer and live camera tests, shaped like
 // the backend's.
 export const SITE_ENGINEER = anAccount({
   role: 'ENGINEER',
@@ -15,17 +15,10 @@ export const STRUCTURAL_ENGINEER = anAccount({
   name: 'Kiran Das',
   engineer_profile: { specialization: 'Structural Engineer', category: null, experience_years: 9 },
 })
-export const STORE_MANAGER = anAccount({
-  role: 'ENGINEER',
-  id: '0190a8b2-4c1e-7aa0-9f00-0000000000e3',
-  name: 'Suresh Nair',
-  engineer_profile: { specialization: 'Store Manager', category: 'STORE_MANAGER', experience_years: 4 },
-})
 
 export const PROJECT_ID = '0190a8b2-4c1e-7aa0-9f00-0000000000a1'
 export const BUILDER_ID = '0190a8b2-4c1e-7aa0-9f00-0000000000b1'
 export const CHANNEL_ID = '0190a8b2-4c1e-7aa0-9f00-0000000000d2'
-export const STORE_REQUEST_ID = '0190a8b2-4c1e-7aa0-9f00-0000000000c5'
 export const SUPPLIER_ID = '0190a8b2-4c1e-7aa0-9f00-0000000000f5'
 
 /** One entry of GET /engineers/my-projects. */
@@ -113,66 +106,7 @@ export const aRecorder = () => [{
   updated_at: '2026-11-14T09:00:00+05:30',
 }]
 
-/** Every call the Store Manager dashboard makes on load, answered empty unless given. */
-export const storeDashboardServer = (overrides = {}) => ({
-  'GET /notifications': { data: [] },
-  'GET /ads': { data: [] },
-  'GET /store-manager/overview': { data: {} },
-  'GET /store-manager/items': { data: [] },
-  'GET /store-manager/requests': { data: [] },
-  'GET /store-manager/purchases': { data: [] },
-  'GET /store-manager/payments': { data: [] },
-  'GET /store-manager/projects': { data: [{ id: PROJECT_ID, title: 'Rao Family Home', pincode: '560001', project_city: 'Bengaluru' }] },
-  'GET /engineers/my-team': { data: { active: [], pending_requests: [], outgoing_requests: [], invitations: [] } },
-  'GET /contractors/nearby': { data: [] },
-  'GET /weather/summary': { data: null },
-  ...overrides,
-})
-
-/** A Site Engineer's pending request to the store (GET /store-manager/requests). */
-export const aSiteRequest = (overrides = {}) => ({
-  id: STORE_REQUEST_ID,
-  public_request_id: 'SR-0001',
-  status: 'PENDING',
-  stage: 'PENDING',
-  procurement_status: 'NONE',
-  purchases: [],
-  note: 'Needed for slab work',
-  decision_note: null,
-  approved_by: null,
-  received_by: null,
-  issued_quantity: {},
-  short: false,
-  timeline: [],
-  project_id: PROJECT_ID,
-  project_name: 'Rao Family Home',
-  builder_id: BUILDER_ID,
-  builder_name: 'Ravi Builders',
-  engineer_id: SITE_ENGINEER.id,
-  engineer_name: 'Meena Iyer',
-  created_at: '2026-11-13T10:00:00+05:30',
-  lines: [{
-    id: '0190a8b2-4c1e-7aa0-9f00-0000000000c6',
-    item_id: '0190a8b2-4c1e-7aa0-9f00-0000000000c7',
-    item_name: 'UltraTech Cement',
-    variant: '50 kg',
-    category: 'Cement',
-    unit: 'bag',
-    quantity: 20,
-    approved_quantity: 0,
-    issued: 0,
-    remaining: 20,
-    available: 40,
-    shortage: 0,
-    ordered: 0,
-    received: 0,
-    on_order: 0,
-    to_procure: 0,
-  }],
-  ...overrides,
-})
-
-/** One product a Store Manager can buy (GET /store-manager/buy/products). */
+/** One product a Site Engineer can order for a project (GET /shop/products?project_id=). */
 export const aSupplierProduct = (overrides = {}) => ({
   id: '0190a8b2-4c1e-7aa0-9f00-0000000000f6',
   name: 'UltraTech Cement',

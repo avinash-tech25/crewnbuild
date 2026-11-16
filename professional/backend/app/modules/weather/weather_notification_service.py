@@ -3,7 +3,6 @@
 A project site's alert goes to:
 
     its House Owner, awarded builder and active Site Engineers   (category PROJECT)
-    Store Managers with an open site request for it, and
     Suppliers with an open order for it                         WARNING and SEVERE
     administrators whose country scope holds it and who have
     projects.view                                               SEVERE only
@@ -34,7 +33,7 @@ from app.modules.identity.models import User
 from app.modules.messaging.live_events import queue_live_hint
 from app.modules.messaging.notifications import add_notification as create_notification
 from app.modules.weather.models import SEVERITY_RANK, WeatherAlert
-from app.modules.weather.project_links import project_locality, store_manager_serves_project
+from app.modules.weather.project_links import project_locality
 from app.modules.weather.repository import WeatherRepository
 from app.modules.weather.weather_settings import WeatherSettings
 
@@ -89,13 +88,9 @@ class WeatherNotificationService:
         chosen: dict = {}
         for user in self.repository.project_recipients(project):
             chosen[user.id] = (user, "PROJECT", "INFO")
-        linked = self.repository.supplier_order_recipient_ids(project.id) | {
-            user_id for user_id in self.repository.store_request_recipient_ids(project.id)
-        }
+        linked = self.repository.supplier_order_recipient_ids(project.id)
         for user in self.repository.users_by_id(linked - set(chosen)):
-            if user.role == "SUPPLIER" or (
-                self.repository.is_store_manager(user) and store_manager_serves_project(self.database, user, project)
-            ):
+            if user.role == "SUPPLIER":
                 chosen[user.id] = (user, "ANNOUNCEMENT", LINKED_MIN_SEVERITY)
         locality = project_locality(project)
         for user, profile in self.repository.active_admins():

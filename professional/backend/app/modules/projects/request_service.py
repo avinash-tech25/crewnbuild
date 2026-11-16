@@ -10,16 +10,13 @@ import json
 from typing import Any
 
 from fastapi import HTTPException
-from sqlalchemy import and_, or_, select
-from sqlalchemy.orm import Session
+from sqlalchemy import and_, or_
 
 from app.core.display_names import public_name
 from app.core.local_time import local_iso
 from app.database.types import naive_utc_now
-from app.modules.accounts.profile_completion import is_store_manager
 from app.modules.billing import lead_locations
 from app.modules.identity.models import ROLE_BUILDER, ROLE_ENGINEER, ROLE_OWNER, ROLE_SUPPLIER, User
-from app.modules.messaging.live_events import queue_live_hint
 from app.modules.messaging.service import create_conversation_for_users, create_conversation_message
 from app.modules.projects.access import (
     ENGINEER_ALREADY_WORKING_DETAIL,
@@ -46,7 +43,6 @@ from app.modules.projects.models import (
     AWARD_AWAITING_BUILDER,
     AWARD_CONFIRMED,
     AWARD_NEGOTIATING,
-    ContractorEngineer,
     Project,
     ProjectAward,
     ProjectEngineer,
@@ -87,17 +83,6 @@ def shown_name(person: User) -> str:
 def dumps_with_ids(value: dict[str, Any]) -> str:
     """json.dumps with UUIDs (ids and keys) written as text."""
     return json.dumps(value, default=str)
-
-
-def builder_team_members(database: Session, builder_id: Any) -> list[User]:
-    """A builder's active team (the old StoreManagerRepository.list_builder_team_members)."""
-    return list(
-        database.scalars(
-            select(User)
-            .join(ContractorEngineer, ContractorEngineer.engineer_id == User.id)
-            .where(ContractorEngineer.contractor_id == builder_id, ContractorEngineer.status == "ACTIVE")
-        ).all()
-    )
 
 
 OWNER_BUILDER_REQUEST_LOCK_NAMESPACE = 2802
@@ -631,12 +616,6 @@ class ProjectRequestService:
                 "Your request is accepted.",
                 category=request_notification_category(request.request_type),
             )
-        if request.request_type in ("SUPPLIER_TO_CONTRACTOR", "CONTRACTOR_TO_SUPPLIER"):
-            # The builder's Store Managers can buy from this supplier now: an open Buy list reloads.
-            builder_id = request.sender_id if request.request_type == "CONTRACTOR_TO_SUPPLIER" else request.receiver_id
-            for member in builder_team_members(self.database, builder_id):
-                if is_store_manager(member):
-                    queue_live_hint(self.database, member.id)
         self.repository.commit()
         return {"status": "accepted"}
 

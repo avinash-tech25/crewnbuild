@@ -1,5 +1,4 @@
 // Tamil interface text, downloaded only when this language is in use (i18n/dictionaries.js). English is the fallback for any key missing here.
-// The Store Manager's keys follow the rest; a key in both takes the Store Manager's text, as before.
 const base = {
   'language.label': 'மொழி',
   'shared.backHome': 'முகப்புக்குத் திரும்பு',
@@ -3949,8 +3948,4 @@ const base = {
   'subscription.coupon.invalid': 'இந்தக் கூப்பனைப் பயன்படுத்த முடியவில்லை.',
 }
 
-const storeManager = {
-  'ui.profile.engCat.storeManager': 'ஸ்டோர் மேலாளர்',
-}
-
-export default { ...base, ...storeManager }
+export default base

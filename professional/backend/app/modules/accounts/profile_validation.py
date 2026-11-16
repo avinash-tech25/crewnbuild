@@ -2,7 +2,6 @@
 profile_service.profile_field_errors), per role and per country."""
 
 from app.core.display_names import COMPANY_IS_PHONE, NAME_IS_PHONE, STORE_IS_PHONE, looks_like_phone
-from app.modules.accounts.models import STORE_MANAGER_SPECIALIZATION
 from app.modules.accounts.profile_lists import split_profile_list
 from app.modules.accounts.schemas import CompleteProfileRequest
 from app.modules.identity.models import ROLE_BUILDER, ROLE_ENGINEER, ROLE_OWNER, ROLE_SUPPLIER, User
@@ -30,10 +29,6 @@ SUPPLIER_FIELD_MESSAGES = {
         "categories": "Select at least one equipment category.",
     },
 }
-
-
-def is_store_manager_category(category: str | None) -> bool:
-    return (category or "").strip().casefold() == STORE_MANAGER_SPECIALIZATION.casefold()
 
 
 def digits_of(value: str | None) -> str:
@@ -105,13 +100,6 @@ def profile_field_errors(payload: CompleteProfileRequest, user: User) -> dict[st
             errors["categories"] = messages["categories"]
         if not ((payload.supplier_category or "").strip() or saved_supplier_category):
             errors["supplier_category"] = "Select a supplier category."
-    elif role == ROLE_ENGINEER:
-        if not ((payload.specialization or "").strip() or saved_specialization):
-            errors["specialization"] = "Select an Engineer Category."
-        if is_store_manager_category((payload.specialization or "").strip() or saved_specialization):
-            profile = user.engineer_profile
-            if not ((payload.location or "").strip() or user.location):
-                errors["location"] = "Select your post office."
-            if not ((payload.qualification or "").strip() or (profile.qualification if profile else "")):
-                errors["qualification"] = "Qualification is required."
+    elif role == ROLE_ENGINEER and not ((payload.specialization or "").strip() or saved_specialization):
+        errors["specialization"] = "Select an Engineer Category."
     return errors

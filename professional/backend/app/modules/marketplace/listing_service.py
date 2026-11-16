@@ -219,16 +219,12 @@ class SupplierProductService:
         orders = self.database.scalar(
             select(func.count(PurchaseOrderItem.id)).where(PurchaseOrderItem.product_id == product.id)
         )
-        # Imported here: the store reads the marketplace.
-        from app.modules.store.links import payment_count_for_listing
-
-        payments = payment_count_for_listing(self.database, product.id)
-        if orders or payments:
+        if orders:
             raise HTTPException(
                 status_code=409,
                 detail=(
                     f"{product.name} has order history, so it cannot be deleted. "
-                    "Unpublish it instead to hide it from buyers; its past orders and payments are kept."
+                    "Unpublish it instead to hide it from buyers; its past orders are kept."
                 ),
             )
         # Project stock and material usage keep their rows and lose the link (SET NULL);

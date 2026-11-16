@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { useLocation, useNavigate } from 'react-router-dom'
 import {
-  Bell, Briefcase, Building2, CalendarDays, Camera, ClipboardList, LayoutGrid, LifeBuoy, MessageSquare, PackageSearch, Settings, ShoppingCart, Truck, Users, Wrench,
+  Bell, Briefcase, Building2, CalendarDays, Camera, LayoutGrid, LifeBuoy, MessageSquare, PackageSearch, Settings, ShoppingCart, Truck, Users, Wrench,
 } from 'lucide-react'
 import { CART_GATED_ACTIONS, pendingActionIs, useProfileGate, useResumeGatedAction } from '../../../shared/hooks/useProfileGate.js'
 import useUrlState, { useUrlParams } from '../../../shared/hooks/useUrlState.js'
@@ -25,14 +25,13 @@ import DashboardShell from '../../../shared/dashboard/DashboardShell.jsx'
  * in AppRouter with its own component, and this dashboard never renders it.
  */
 // The Suppliers hub's tabs and the Find Opportunities tabs, as their ?tab= words.
-const SUPPLIER_HUB_TABS = ['home', 'suppliers', 'catalog', 'orders', 'labor', 'equipment', 'store', 'cart']
+const SUPPLIER_HUB_TABS = ['home', 'suppliers', 'catalog', 'cart', 'orders', 'labor', 'equipment']
 const FIND_OPPORTUNITY_TABS = ['joinTeam', 'requests', 'contractors', 'opportunities']
 
 const NAV_PATHS = {
   dashboard: '/engineer',
   projects: '/engineer/my-projects',
   suppliers: '/engineer/my-supplies',
-  storeRequests: '/engineer/store-requests',
   findOpportunities: '/engineer/find-opportunities',
   calendar: '/engineer/calendar',
   dailyLogs: '/engineer/daily-logs',
@@ -93,7 +92,6 @@ import {
   OpportunityDetailModal,
 } from '../components/EngineerSections.jsx'
 import EngineerSupplierHub from '../components/EngineerSupplierHub.jsx'
-import EngineerStoreRequestsSection from '../components/EngineerStoreRequestsSection.jsx'
 import { QuickActionCard } from '../../owner/components/OwnerOverviewSection.jsx'
 import { formatDate, weekdayName } from '../../../shared/utils/formatters.js'
 import { loadCart } from '../../shop/cartSlice.js'
@@ -489,8 +487,6 @@ export default function EngineerDashboard() {
     { id: 'dashboard', label: t('ui.dashboard'), icon: LayoutGrid, bareIcon: true, badge: notificationBadgeCounts.dashboard },
     { id: 'projects', label: t('ui.myProjects'), icon: Building2, bareIcon: true, badge: unseenProjectCount || undefined },
     { id: 'suppliers', label: t('ui.suppliers'), icon: Truck, bareIcon: true, badge: unreadSupplierCount || undefined },
-    // The engineer's store requests and their history, apart from the Store's shopping.
-    { id: 'storeRequests', label: t('store.engineer.navStoreRequests'), icon: ClipboardList, bareIcon: true },
     // Requests now live inside this section, so its pending count moves here
     // too - otherwise an incoming builder request would arrive with no signal.
     // New: the requests and team invitations not yet opened, counted by id.
@@ -553,10 +549,10 @@ export default function EngineerDashboard() {
       label: t('owner.quick.order'),
       hint: t('owner.quick.orderSub'),
       icon: ShoppingCart,
-      // A Site Engineer's material is requested from the builder's Store Manager
-      // (Store), never bought from a supplier; Store says so if there is none.
+      // A Site Engineer orders material from the project's suppliers: the
+      // Material Product Catalog, with its Cart beside it.
       onClick: () => {
-        navigate(sectionAddress('suppliers', 'store', supplierTabFallback))
+        navigate(sectionAddress('suppliers', 'catalog', supplierTabFallback))
         window.scrollTo({ top: 0, behavior: 'auto' })
       },
     },
@@ -773,7 +769,6 @@ export default function EngineerDashboard() {
           />
         )}
 
-        {activeId === 'storeRequests' && <EngineerStoreRequestsSection />}
 
         {activeId === 'findOpportunities' && (
           <div className="space-y-3">

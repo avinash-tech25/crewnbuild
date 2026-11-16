@@ -6,8 +6,7 @@
  * Continue saves the choice (PATCH /auth/engineer-category). Nothing moves on
  * until the server confirms it: the saved account then replaces the one in the
  * store, and the guard below hands over to the same landing rule as every other
- * entry path (postAuthPath) -- the pincode step, then the Store Manager dashboard
- * for a Store Manager and the Engineer dashboard for every other category.
+ * entry path (postAuthPath) -- the pincode step, then the Engineer dashboard.
  */
 import { useRef, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'

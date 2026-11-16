@@ -13,7 +13,6 @@ from app.modules.identity.models import (
     ROLE_BUILDER,
     ROLE_OWNER,
     ROLE_SITE_ENGINEER,
-    ROLE_STORE_MANAGER,
     ROLE_SUPPLIER,
 )
 
@@ -23,7 +22,6 @@ ROLE_PERMISSIONS: dict[str, frozenset[str]] = {
     ROLE_OWNER: frozenset({HANDOFF_CREATE}),
     ROLE_BUILDER: frozenset(),
     ROLE_SITE_ENGINEER: frozenset({HANDOFF_CREATE}),
-    ROLE_STORE_MANAGER: frozenset(),
     ROLE_SUPPLIER: frozenset(),
 }
 

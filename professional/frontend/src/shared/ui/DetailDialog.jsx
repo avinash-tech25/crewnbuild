@@ -1,6 +1,6 @@
 /**
  * The one "View details" window of the application: every request / record popup
- * (House Owner, Builder, Supplier, Store Manager, labour and equipment, partners,
+ * (House Owner, Builder, Supplier, labour and equipment, partners,
  * admin) opens in this frame, so they are all the same size and read the same way.
  *
  *   frame    90vw wide up to 1280px, at most 85vh tall (at least 60vh, so a short
