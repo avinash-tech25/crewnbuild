@@ -4,7 +4,7 @@ The Professional web app is translated into Arabic (`ar`), Hindi (`hi`), Kannada
 
 **How this list was made:** every key in `locales/en.js` that the old app's English text (`Kuwait-Version/Octabuild/frontend 7/frontend/src/i18n/translations.js`, the state R7 started from) did not have, checked against each language file. All other English keys are unchanged since the old app, and no language lost a translation it had there.
 
-**Status (16 Nov 2026):** 23 keys, missing in all six languages. Seventeen are from the request details change (a supplier or builder shown by who they are, `features/requests/counterparty.js` and `features/requests/components/PartyDetails.jsx`); one is the plans section's "Most popular" label; two are the My Suppliers project coverage labels; three are the public header's signed-in controls.
+**Status (16 Nov 2026):** 22 keys, missing in all six languages. Seventeen are from the request details change (a supplier or builder shown by who they are, `features/requests/counterparty.js` and `features/requests/components/PartyDetails.jsx`); one is the plans section's "Most popular" label; two are the My Suppliers project coverage labels; two are the public header's account menu.
 
 | Key | English | Where it shows | Missing in |
 | --- | --- | --- | --- |
@@ -28,7 +28,6 @@ The Professional web app is translated into Arabic (`ar`), Hindi (`hi`), Kannada
 | `subscription.plans.mostPopular` | Most popular | Builder plans (landing page and sign-up): the label on the recommended plan | ar, hi, kn, ml, ta, te |
 | `ce.assignedAllProjects` | Assigned to all projects | Builder > My Partners > My Suppliers: the disabled button on a supplier already on every project | ar, hi, kn, ml, ta, te |
 | `ce.assignedNofM` | Assigned to {count} of {total} projects | My Suppliers card: how many of the builder's projects the supplier is on (keep `{count}` and `{total}`) | ar, hi, kn, ml, ta, te |
-| `session.goToDashboard` | Go to dashboard | Public pages' header, signed in | ar, hi, kn, ml, ta, te |
 | `session.signOut` | Sign out | Public pages' account menu | ar, hi, kn, ml, ta, te |
 | `session.accountMenu` | Account menu | Account menu button's spoken name | ar, hi, kn, ml, ta, te |
 

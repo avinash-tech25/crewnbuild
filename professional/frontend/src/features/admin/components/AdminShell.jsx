@@ -84,8 +84,8 @@ function Sidebar({ groups, activeId, badges, collapsed, onSelect, onToggleCollap
       <div className={`flex h-14 shrink-0 items-center border-b border-white/10 ${collapsed ? 'justify-center px-2' : 'justify-between px-4'}`}>
         {/* The landing logo on its white pill, so it reads on the dark green. */}
         <span className="inline-flex items-center rounded-full bg-white px-2 py-0.5">
-          {/* Inside the console the logo leads to the console's home. */}
-          <Brand logoOnly small href="/admin" />
+          {/* The logo always leads to the public landing page; it never signs out. */}
+          <Brand logoOnly small />
         </span>
         {mobile && (
           <button

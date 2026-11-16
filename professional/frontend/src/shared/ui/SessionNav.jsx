@@ -8,13 +8,13 @@ import { userAvatarSrc } from './avatars.js'
 import { useLanguage } from '../../i18n/LanguageContext.jsx'
 
 /**
- * A public page's header controls for a visitor who is signed in: "Go to dashboard"
- * (the role's home, or the step it has not finished) and the account menu (Dashboard,
- * Profile, Sign out). Renders nothing when signed out, so the header keeps its
- * Sign in / Get started buttons. Sign out here is the explicit action; nothing else on
+ * A public page's header controls for a visitor who is signed in: the avatar's account
+ * menu (Dashboard, Profile, Sign out) where Sign in sits, and a Dashboard button (the
+ * role's home, or the step it has not finished) where Get started sits. Renders nothing
+ * when signed out, so the header keeps its Sign in / Get started buttons. Sign out here is the explicit action; nothing else on
  * a public page ends a session.
  *
- * `goClassName` styles the Go to dashboard button to match the header it sits in;
+ * `goClassName` styles the Dashboard button to match the header it sits in;
  * `stacked` lays both out full width (a phone menu).
  */
 export default function SessionNav({ goClassName = '', stacked = false, onNavigate }) {
@@ -41,9 +41,6 @@ export default function SessionNav({ goClassName = '', stacked = false, onNaviga
 
   return (
     <div ref={wrapRef} data-testid="session-nav" className={`relative flex items-center gap-2 ${stacked ? 'w-full flex-col items-stretch' : ''}`}>
-      <Link to={links.home} onClick={go} className={goClassName}>
-        {t('session.goToDashboard')} <ArrowRight size={15} className="rtl:-scale-x-100" aria-hidden="true" />
-      </Link>
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
@@ -85,6 +82,9 @@ export default function SessionNav({ goClassName = '', stacked = false, onNaviga
           </button>
         </div>
       )}
+      <Link to={links.home} onClick={go} className={goClassName}>
+        {t('ui.dashboard')} <ArrowRight size={15} className="rtl:-scale-x-100" aria-hidden="true" />
+      </Link>
     </div>
   )
 }

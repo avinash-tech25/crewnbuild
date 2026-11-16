@@ -72,8 +72,8 @@ export function SiteFooter({ text, language, onSelectLanguage }) {
               <li><a className={columnLink} href="#how">{text.nav.how}</a></li>
               <li><a className={columnLink} href="#world">{text.nav.world}</a></li>
               {accountHome ? (
-                // Signed in: the way back to the dashboard, not Sign in / Get started.
-                <li><Link className={columnLink} to={accountHome}>{t("session.goToDashboard")}</Link></li>
+                // Signed in: Dashboard, not Sign in / Get started.
+                <li><Link className={columnLink} to={accountHome}>{t("ui.dashboard")}</Link></li>
               ) : (
                 <>
                   <li><a className={columnLink} href="/signup">{text.nav.start}</a></li>
