@@ -68,9 +68,11 @@ def load_suspendable_user(database: Session, admin: AdminIdentity, user_id: uuid
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     if target.id == admin.user.id:
         raise HTTPException(status_code=400, detail="You cannot suspend your own account.")
+    # 403, not 400: the request is well formed, the caller may just not do it here.
     if target.role in ADMIN_ROLES:
         raise HTTPException(
-            status_code=400, detail="Administrator accounts are managed under Administrators, not here."
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Administrator accounts are managed under Administrators, not here.",
         )
     assert_user_in_scope(target, admin)
     return target

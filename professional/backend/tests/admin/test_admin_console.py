@@ -15,7 +15,16 @@ from sqlalchemy.orm import Session
 from admin.helpers import create_admin, create_global_admin, create_manager, signed_in, whatsapp_signed_in
 from app.modules.accounts.models import AdminProfile, BuilderProfile
 from app.modules.admin.models import AdminAuditLog
-from app.modules.identity.models import ROLE_BUILDER, ROLE_MANAGER, User
+from app.modules.identity.models import (
+    ROLE_BUILDER,
+    ROLE_ENGINEER,
+    ROLE_GLOBAL_SUPER_ADMIN,
+    ROLE_LOCATION_SUPER_ADMIN,
+    ROLE_MANAGER,
+    ROLE_OWNER,
+    ROLE_SUPPLIER,
+    User,
+)
 from app.modules.messaging.models import Notification
 
 PASSWORD = "Crewnbuild!Admin1"
@@ -89,7 +98,7 @@ def test_the_old_escalation_checks(make_client: ClientFactory, database: Session
     url = f"/api/v1/admin/admins/{global_user.id}/deactivate"
     assert india.post(url, json={"reason": "x"}, headers=india_headers).status_code == 403
     url = f"/api/v1/admin/users/{manager.id}/suspend"
-    assert india.post(url, json={"reason": "x"}, headers=india_headers).status_code == 400
+    assert india.post(url, json={"reason": "x"}, headers=india_headers).status_code == 403
 
     # Validation.
     weak = {**new_admin("g@example.in", permissions=["users.view"]), "password": "abc"}
@@ -251,3 +260,53 @@ def test_an_administrator_phone_change_is_audited(database: Session) -> None:
     entry = database.scalars(select(AdminAuditLog)).one()
     assert (entry.action, entry.scope, entry.target_id) == ("admin.phone_changed", "IN", str(manager.id))
     assert database.scalars(select(AdminProfile)).one().user_id == manager.id
+
+
+def test_users_lists_customer_accounts_only_never_an_administrator(india, database: Session) -> None:
+    """Users holds owners, builders, suppliers and engineers (site engineers and store
+    managers alike); every administrator role is under Administrators only, as in the
+    old console."""
+    admin, _, _ = india
+    customers = {
+        "owner@example.in": create_user(database, role=ROLE_OWNER, email="owner@example.in", phone="9876500101"),
+        "builder@example.in": create_user(database, role=ROLE_BUILDER, email="builder@example.in", phone="9876500102"),
+        "supplier@example.in": create_user(
+            database, role=ROLE_SUPPLIER, email="supplier@example.in", phone="9876500103"
+        ),
+        "site@example.in": create_user(
+            database, role=ROLE_ENGINEER, email="site@example.in", phone="9876500104", specialization="Site Engineer"
+        ),
+        "store@example.in": create_user(
+            database, role=ROLE_ENGINEER, email="store@example.in", phone="9876500105", specialization="Store Manager"
+        ),
+    }
+    create_manager(database, "users.view")
+    create_global_admin(database)
+
+    listed = {row["email"] for row in admin.get("/api/v1/admin/users", params={"limit": 50}).json()["users"]}
+    assert listed == set(customers)
+    for role in (ROLE_MANAGER, ROLE_LOCATION_SUPER_ADMIN, ROLE_GLOBAL_SUPER_ADMIN):
+        assert admin.get("/api/v1/admin/users", params={"role": role}).json()["users"] == []
+
+
+@pytest.mark.parametrize("which", ["manager", "location", "global"])
+def test_users_never_suspends_or_reactivates_an_administrator(india, database: Session, which: str) -> None:
+    admin, headers, _ = india
+    target = {
+        "manager": lambda: create_manager(database, "users.view"),
+        "location": lambda: create_admin(database, email="other.admin@example.in", phone="9876500801"),
+        "global": lambda: create_global_admin(database),
+    }[which]()
+    for action in ("suspend", "reactivate"):
+        response = admin.post(f"/api/v1/admin/users/{target.id}/{action}", json={"reason": "x"}, headers=headers)
+        assert response.status_code == 403, response.text
+        assert response.json()["detail"] == "Administrator accounts are managed under Administrators, not here."
+    assert admin.get(f"/api/v1/admin/users/{target.id}").status_code == 404
+    database.expire_all()
+    assert database.get(User, target.id).status == "ACTIVE"
+
+
+def test_users_refuses_the_administrators_own_account_as_before(india, database: Session) -> None:
+    admin, headers, india_admin = india
+    own = admin.post(f"/api/v1/admin/users/{india_admin.id}/suspend", json={"reason": "x"}, headers=headers)
+    assert (own.status_code, own.json()["detail"]) == (400, "You cannot suspend your own account.")
