@@ -1416,6 +1416,8 @@ export function ProjectListTable({
           return (
             <ListCard
               key={project.id}
+              // The Project Analysis and the convert-dates form stay whole while shown.
+              expanded={flipped || (isDraft && convertDatesFor === estimate.id)}
               // Turned to its analysis, a click in the card does not open the project.
               onClick={isDraft || flipped ? undefined : () => onSelect(project)}
               avatar={(

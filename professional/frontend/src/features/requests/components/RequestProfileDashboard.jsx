@@ -1,4 +1,5 @@
-import { FileText, MapPin, Star, X } from 'lucide-react'
+import { FileText, MapPin, Star } from 'lucide-react'
+import { DetailDialog } from '../../../shared/ui/DetailDialog.jsx'
 import { imageUrl } from '../../../shared/api/apiClient.js'
 import { ContactValue, formatMoney, profileList } from '../../messaging/messageHelpers.jsx'
 import { useLanguage } from '../../../i18n/LanguageContext.jsx'
@@ -70,25 +71,24 @@ export function RequestProfileDashboard({ details, participant, canViewContact, 
   ]
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/45 p-3 backdrop-blur-sm sm:p-6">
-      <div className="mx-auto flex max-h-[92vh] max-w-6xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
-        <div className="flex items-start gap-4 border-b border-brand-100 bg-gradient-to-r from-brand-50 to-cream/40 p-5">
-          <div className="h-24 w-24 shrink-0 overflow-hidden rounded-2xl border border-brand-100 bg-white">
+    // The application's one details window: the role, the person, then their
+    // store / title and whether their contact details are visible.
+    <DetailDialog
+      label={profileRoleLabel}
+      title={profileName}
+      status={(
+        <>
+          <span className="font-semibold">{profileTitle}</span>
+          <span className="inline-flex rounded-full bg-brand-50 px-2 py-0.5 text-[10px] font-bold text-brand-700">{canViewContact ? t('dash.msg.contactUnlocked') : t('dash.msg.contactHidden')}</span>
+        </>
+      )}
+      onClose={onClose}
+    >
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
+          <div className="h-24 w-24 shrink-0 overflow-hidden rounded-2xl border border-oc-line bg-white">
             <ProfileImage src={profileImage} alt={profileName} role={profileRole} />
           </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-xs font-extrabold uppercase tracking-wide text-brand-700">{profileRoleLabel}</p>
-            <h2 className="mt-1 truncate font-display text-3xl font-extrabold text-graphite">{profileName}</h2>
-            <p className="mt-1 text-sm font-semibold text-graphite/60">{profileTitle}</p>
-            <p className="mt-2 inline-flex rounded-full bg-white px-3 py-1 text-xs font-bold text-brand-700">{canViewContact ? t('dash.msg.contactUnlocked') : t('dash.msg.contactHidden')}</p>
-          </div>
-          <button type="button" onClick={onClose} className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-brand-100 bg-white text-graphite hover:bg-brand-50">
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-
-        <div className="overflow-y-auto p-5">
-          <div className="grid gap-3 md:grid-cols-3">
+          <div className="grid flex-1 gap-3 md:grid-cols-3">
             {stats.map(([label, value, icon]) => (
               <div key={label} className="rounded-xl border border-brand-100 bg-white p-4">
                 <p className="text-xs font-bold uppercase text-graphite/45">{label}</p>
@@ -99,14 +99,15 @@ export function RequestProfileDashboard({ details, participant, canViewContact, 
               </div>
             ))}
           </div>
+          </div>
 
-          <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_1fr]">
-            <section className="rounded-2xl border border-brand-100 bg-white p-4">
+          <div className="grid gap-3 lg:grid-cols-[1fr_1fr]">
+            <section className="rounded-xl border border-oc-line bg-white p-3 sm:p-4">
               <h3 className="text-sm font-extrabold uppercase tracking-wide text-graphite/55">{t('dash.msg.about')}</h3>
               {/* What this person wrote about themselves. */}
             <p className="mt-2 text-sm leading-relaxed text-graphite/70">{td(details.profile_about) || profileSubtitle || t('dash.msg.profileAvailable')}</p>
             </section>
-            <section className="rounded-2xl border border-brand-100 bg-white p-4">
+            <section className="rounded-xl border border-oc-line bg-white p-3 sm:p-4">
               <h3 className="text-sm font-extrabold uppercase tracking-wide text-graphite/55">{profileRole === 'SUPPLIER' ? t('dash.common.categories') : t('dash.msg.services')}</h3>
               <div className="mt-3 flex flex-wrap gap-2">
                 {services.length ? services.map((service) => (
@@ -117,7 +118,7 @@ export function RequestProfileDashboard({ details, participant, canViewContact, 
           </div>
 
           {isSupplierProfile && (
-            <section className="mt-4 rounded-2xl border border-brand-100 bg-white p-4">
+            <section className="rounded-xl border border-oc-line bg-white p-3 sm:p-4">
               <h3 className="text-sm font-extrabold uppercase tracking-wide text-graphite/55">{t('dash.msg.supplierDetails')}</h3>
               <div className="mt-3 grid gap-3 md:grid-cols-2">
                 {supplierDetails.map(([label, value]) => (
@@ -130,7 +131,7 @@ export function RequestProfileDashboard({ details, participant, canViewContact, 
             </section>
           )}
 
-          <section className="mt-4 rounded-2xl border border-brand-100 bg-white p-4">
+          <section className="rounded-xl border border-oc-line bg-white p-3 sm:p-4">
             <h3 className="text-sm font-extrabold uppercase tracking-wide text-graphite/55">{t('dash.msg.serviceLocations')}</h3>
             <div className="mt-3 flex flex-wrap gap-2">
               {locations.length ? locations.map((location) => (
@@ -139,7 +140,7 @@ export function RequestProfileDashboard({ details, participant, canViewContact, 
             </div>
           </section>
 
-          <section className="mt-4 rounded-2xl border border-brand-100 bg-white p-4">
+          <section className="rounded-xl border border-oc-line bg-white p-3 sm:p-4">
             <h3 className="text-sm font-extrabold uppercase tracking-wide text-graphite/55">{t('dash.msg.certificates')}</h3>
             <div className="mt-3 grid gap-2 md:grid-cols-2">
               {documents.length ? documents.map((documentUrl, index) => (
@@ -150,7 +151,7 @@ export function RequestProfileDashboard({ details, participant, canViewContact, 
             </div>
           </section>
 
-          <section className="mt-4 rounded-2xl border border-brand-100 bg-white p-4">
+          <section className="rounded-xl border border-oc-line bg-white p-3 sm:p-4">
             <h3 className="text-sm font-extrabold uppercase tracking-wide text-graphite/55">{t('dash.msg.workGallery')}</h3>
             <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {gallery.length ? gallery.map((item, index) => (
@@ -162,7 +163,7 @@ export function RequestProfileDashboard({ details, participant, canViewContact, 
           </section>
 
           {profileRole === 'SUPPLIER' && (
-            <section className="mt-4 rounded-2xl border border-brand-100 bg-white p-4">
+            <section className="rounded-xl border border-oc-line bg-white p-3 sm:p-4">
               <h3 className="text-sm font-extrabold uppercase tracking-wide text-graphite/55">{t('dash.msg.supplierProducts')}</h3>
               <div className="mt-3">
                 {products.length ? (
@@ -198,8 +199,6 @@ export function RequestProfileDashboard({ details, participant, canViewContact, 
               </div>
             </section>
           )}
-        </div>
-      </div>
-    </div>
+    </DetailDialog>
   )
 }

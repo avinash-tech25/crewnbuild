@@ -4,6 +4,7 @@ import { ArrowRight, BrickWall, Check, CheckCircle2, HardHat, Home, IndianRupee,
 import { EmptyState } from '../../../shared/dashboard/RoleDashboardUi.jsx'
 import { avatarFromPath } from '../../../shared/ui/avatars.js'
 import { CardAvatar, CardChip, CardGrid, CardStatus, ListCard, cardButtonClass } from '../../../shared/ui/ListCard.jsx'
+import { DETAIL_DIALOG_SIZE } from '../../../shared/ui/DetailDialog.jsx'
 import BudgetInWords from '../../../shared/ui/BudgetInWords.jsx'
 import { buildingTypeText, inr, OWNER_REQUEST_TYPES } from '../builderHelpers.js'
 import { ClientProfilePanel, SupplierProfilePanel } from './BuilderProfilePanels.jsx'
@@ -150,6 +151,8 @@ function HomeownerLeadList({ clientList, clientRequestState, findClientRequest, 
           return (
             <ListCard
               key={project.id}
+              // The quotation field stays usable while it is open.
+              expanded={!accepted && incomingPending && Boolean(quoteError || quoting)}
               // The whole card opens the owner's details, as before; a click on
               // one of its own buttons or the quotation field does not.
               onClick={() => onSelectClient(project)}
@@ -364,6 +367,7 @@ export function ClientProfileDrawer({ selectedClientProfile, clientRequestState,
   const requestType = data.client_type === 'SUPPLIER' ? 'CONTRACTOR_TO_SUPPLIER' : 'CONTRACTOR_TO_OWNER'
   const requestState = clientRequestState(data, requestType)
   const canViewContact = requestState === 'accepted' || Boolean(data.can_view_contact)
+  const heading = data.client_type === 'SUPPLIER' ? (td(data.store_name || data.title) || t('dash.common.supplier')) : (td(data.project_title || data.title) || t('dash.contractor.homeownerProject'))
 
   useEffect(() => {
     const handleKeyDown = (event) => {
@@ -376,7 +380,7 @@ export function ClientProfileDrawer({ selectedClientProfile, clientRequestState,
   return (
     // A large centred window, as a site engineer's profile opens, for a
     // homeowner's client details and a supplier's profile alike.
-    <div className="fixed inset-0 z-[130] flex items-center justify-center p-4 sm:p-6">
+    <div className="fixed inset-0 z-[130] grid place-items-center p-3 sm:p-6">
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -386,19 +390,23 @@ export function ClientProfileDrawer({ selectedClientProfile, clientRequestState,
         onClick={onClose}
       />
       <motion.aside
+        role="dialog"
+        aria-modal="true"
+        aria-label={heading}
+        data-detail-dialog=""
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: 16 }}
         transition={{ duration: 0.2 }}
-        className={`relative flex max-h-[90vh] w-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 shadow-2xl ${data.client_type === 'SUPPLIER' ? 'max-w-5xl' : 'max-w-2xl'}`}
+        className={`detail-dialog relative flex ${DETAIL_DIALOG_SIZE} flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl`}
       >
-        {/* Header */}
-        <div className="border-b border-slate-200 bg-white">
-        <div className={`flex w-full items-center justify-between gap-3 ${data.client_type === 'SUPPLIER' ? 'px-6 py-4' : 'px-4 py-3'}`}>
+        {/* Header: small label and title. */}
+        <div className="shrink-0 border-b border-slate-100">
+        <div className="flex w-full items-start justify-between gap-3 px-4 py-3 sm:px-6">
           <div className="min-w-0">
-            <p className="text-[10px] font-extrabold uppercase tracking-wide text-slate-400">{t('dash.contractor.clientDetails')}</p>
+            <p className="text-[10px] font-bold uppercase tracking-wide text-slate-500">{t('dash.contractor.clientDetails')}</p>
             <h3 className="truncate font-display text-base font-extrabold text-slate-950">
-              {data.client_type === 'SUPPLIER' ? (td(data.store_name || data.title) || t('dash.common.supplier')) : (td(data.project_title || data.title) || t('dash.contractor.homeownerProject'))}
+              {heading}
             </h3>
           </div>
           <button
@@ -407,14 +415,14 @@ export function ClientProfileDrawer({ selectedClientProfile, clientRequestState,
             aria-label={t('dash.contractor.closeClientDetails')}
             className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
           >
-            <X className="h-5 w-5" />
+            <X className="h-4 w-4" />
           </button>
         </div>
         </div>
 
-        {/* Body */}
-        <div className="flex-1 overflow-y-auto">
-        <div className={`w-full space-y-4 ${data.client_type === 'SUPPLIER' ? 'px-6 py-6' : 'p-4'}`}>
+        {/* Body: grey and scrolling. */}
+        <div data-detail-dialog-body="" className="dash-scroll min-h-0 flex-1 overflow-y-auto bg-slate-50/50">
+        <div className="w-full space-y-3 p-3 sm:p-5">
           {data.client_type === 'SUPPLIER' ? (
             <SupplierProfilePanel
               supplier={data}

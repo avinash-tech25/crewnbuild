@@ -77,8 +77,7 @@
 }
 
 /* Every list card is this tall, on every screen and at every width (ListCard.jsx):
-   the Builder project card's anatomy with every slot reserved (header, chips, four
-   detail lines, progress and schedule, footer). */
+   the compact Builder project card. Content past it is hidden, never scrolled. */
 :root {
-  --list-card-height: 340px;
+  --list-card-height: 315px;
 }

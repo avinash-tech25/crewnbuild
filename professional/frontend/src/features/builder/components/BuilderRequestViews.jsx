@@ -12,6 +12,7 @@ import { FLOW_CARD_TONES, FLOW_TONES, hasAssignmentFlow, requestFlowStatus, useR
 import { formatDate } from '../../../shared/utils/formatters.js'
 import { isPartyRequest, offerSummary, partyHeading, partyLocation, supplierCategoryLabel } from '../../requests/counterparty.js'
 import PartyDetails from '../../requests/components/PartyDetails.jsx'
+import { DETAIL_DIALOG_SIZE } from '../../../shared/ui/DetailDialog.jsx'
 import { CardAvatar, CardChip, CardGrid, CardStatus, ListCard, cardButtonClass } from '../../../shared/ui/ListCard.jsx'
 
 // The request's workflow status (quotation / assignment / negotiation /
@@ -251,11 +252,12 @@ function RequestDetailsDrawer({ request, onClose, variant = 'owner', award = nul
       <motion.aside
         role="dialog"
         aria-modal="true"
+        data-detail-dialog=""
         initial={{ opacity: 0, scale: 0.96, y: 12 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.96, y: 12 }}
         transition={{ duration: 0.18, ease: 'easeOut' }}
-        className={`relative flex w-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl ${negotiation ? 'max-h-[92vh] max-w-5xl' : 'max-h-[88vh] max-w-md'}`}
+        className={`detail-dialog relative flex ${DETAIL_DIALOG_SIZE} flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl`}
       >
         {negotiation ? (
           <>
@@ -281,7 +283,7 @@ function RequestDetailsDrawer({ request, onClose, variant = 'owner', award = nul
               </button>
             </div>
 
-            <div className="flex-1 space-y-3 overflow-y-auto bg-slate-50/50 p-3 sm:p-5">
+            <div data-detail-dialog-body="" className="dash-scroll min-h-0 flex-1 space-y-3 overflow-y-auto bg-slate-50/50 p-3 sm:p-5">
               <AwardPanel
                 projectId={request.project_id}
                 requestId={request.id}
@@ -328,11 +330,14 @@ function RequestDetailsDrawer({ request, onClose, variant = 'owner', award = nul
           </>
         ) : (
           <>
-        {/* Header */}
-        <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-3">
+        {/* Header: small label, title and the status line. */}
+        <div className="flex items-start justify-between gap-3 border-b border-slate-100 px-4 py-3 sm:px-6">
           <div className="min-w-0">
-            <p className="text-[10px] font-extrabold uppercase tracking-wide text-slate-400">{t('dash.contractor.requestDetails')}</p>
-            <h3 className="truncate font-display text-sm font-extrabold text-slate-950">{title}</h3>
+            <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">{t('dash.contractor.requestDetails')}</p>
+            <h3 className="truncate text-slate-950">{title}</h3>
+            <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-slate-500">
+              {flow ? <RequestFlowBadge flow={flow} /> : <RequestStatusBadge status={category} labels={board.statusLabels} />}
+            </div>
           </div>
           <button
             type="button"
@@ -344,17 +349,14 @@ function RequestDetailsDrawer({ request, onClose, variant = 'owner', award = nul
           </button>
         </div>
 
-        {/* Body */}
-        <div className="flex-1 space-y-3 overflow-y-auto p-3.5">
-          <div>
-            {flow ? <RequestFlowBadge flow={flow} /> : <RequestStatusBadge status={category} labels={board.statusLabels} />}
-          </div>
+        {/* Body: grey, its sections white cards. */}
+        <div data-detail-dialog-body="" className="dash-scroll min-h-0 flex-1 space-y-3 overflow-y-auto bg-slate-50/50 p-3 sm:p-5">
           {/* A plain list: small label, value on the right. The project and
-              status are already in the header and badge above. */}
+              status are already in the header above. */}
           {party ? (
             <PartyDetails request={request} />
           ) : (
-          <dl className="divide-y divide-slate-100 rounded-xl border border-slate-100">
+          <dl className="divide-y divide-slate-100 rounded-xl border border-oc-line bg-white">
             {[
               [t(board.counterpartyLabel), ownerName],
               [t('dash.msg.location'), location],
@@ -373,12 +375,12 @@ function RequestDetailsDrawer({ request, onClose, variant = 'owner', award = nul
           )}
           {/* A request with an assignment opens in the full layout above. */}
           {request.project_description && (
-            <div>
+            <section className="rounded-xl border border-oc-line bg-white p-3 sm:p-4">
               <p className="mb-1 text-[10px] font-extrabold uppercase tracking-wide text-slate-400">{t('dash.common.description')}</p>
-              <p className="rounded-lg bg-slate-50 px-3 py-2 text-xs leading-5 text-slate-600">
+              <p className="text-xs leading-5 text-slate-600">
                 {td(request.project_description)}
               </p>
-            </div>
+            </section>
           )}
         </div>
           </>
@@ -824,6 +826,8 @@ export function ContractorRequestsBoard({ requestList, onAccept, onReject, onWit
                 return (
                   <ListCard
                     key={request.id}
+                    // The quotation field stays usable while it is open.
+                    expanded={Boolean(pendingIncoming && board.quoteOnAccept && isQuoting)}
                     avatar={<CardAvatar fallback={<HomeownerAvatar name={ownerName} request={request} role={board.role} size="h-full w-full" />} />}
                     title={cardTitle}
                     subtitle={subtitle || null}

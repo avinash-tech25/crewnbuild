@@ -59,12 +59,12 @@ describe('list card keyboard', () => {
     expect(opened).toBe(2)
   })
 
-  it('a card that does not open has a plain heading title, and keeps an empty footer', async () => {
+  it('a card that does not open has a plain heading title, and no empty footer', async () => {
     const { render } = await import('@testing-library/react')
     const { ListCard } = await import('./ListCard.jsx')
     const view = render(<ListCard title="Static" />)
     expect(view.getByRole('heading', { level: 3, name: 'Static' })).toBeInTheDocument()
     expect(view.queryByRole('button')).not.toBeInTheDocument()
-    expect(view.container.querySelector('[data-card-part="footer"]')).toBeInTheDocument()
+    expect(view.container.querySelector('[data-card-part="footer"]')).not.toBeInTheDocument()
   })
 })

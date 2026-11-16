@@ -226,8 +226,6 @@ export default function EngineerStoreRequestsSection() {
       </Panel>
       {open && (
         <DetailModal
-          placement="right"
-          width="max-w-4xl"
           title={`${t('store.requests.requestId')} ${requestRef(open)}`}
           subtitle={[open.builder_name, open.project_name].filter(Boolean).map((value) => td(value)).join(' · ')}
           onClose={() => setOpenId(null)}

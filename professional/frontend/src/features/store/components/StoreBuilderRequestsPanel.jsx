@@ -254,7 +254,7 @@ export default function StoreBuilderRequestsPanel({ data, failed, reload, guard 
         </DetailModal>
       )}
       {creating && (
-        <DetailModal title={t(text.newRequest)} onClose={() => setCreating(false)}>
+        <DetailModal compact title={t(text.newRequest)} onClose={() => setCreating(false)}>
           <NewRequestForm
             text={text}
             counterparts={data.counterparts}

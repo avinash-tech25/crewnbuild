@@ -12,7 +12,8 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import useUrlState from '../../../shared/hooks/useUrlState.js'
 import NotFoundPanel from '../../../shared/dashboard/NotFoundPanel.jsx'
 import { useEffect, useState } from 'react'
-import { Loader2, Paperclip, RefreshCw, Search, Send, X } from 'lucide-react'
+import { Loader2, Paperclip, RefreshCw, Search, Send } from 'lucide-react'
+import { DetailDialog, DetailSection } from '../../../shared/ui/DetailDialog.jsx'
 import {
   fetchStaffTicket, fetchStaffTickets, openAttachment, replyAsStaff, staffAttachmentPath, supportErrorMessage,
 } from '../../support/supportApi.js'
@@ -65,19 +66,16 @@ function TicketPanel({ id, canManage, onClose, onChanged }) {
   }
 
   return (
-    <div className="fixed inset-0 z-[120] grid place-items-center bg-slate-900/40 p-3 sm:p-4" role="dialog" aria-modal="true" aria-labelledby="support-ticket-title">
-      <div className="flex max-h-[92vh] w-full max-w-3xl flex-col rounded-2xl bg-white shadow-2xl">
-        <div className="flex items-start justify-between gap-3 border-b border-slate-100 p-5">
-          <div className="min-w-0">
-            <h3 id="support-ticket-title" className="break-words text-lg font-extrabold text-graphite">{ticket?.subject || 'Support ticket'}</h3>
-            {ticket && <p className="font-mono text-xs text-slate-500">{ticket.reference} · {ticket.category_label} · {ticket.issue_label}</p>}
-          </div>
-          <button type="button" onClick={onClose} aria-label="Close" className="grid h-8 w-8 place-items-center rounded-lg text-slate-500 hover:bg-slate-100"><X className="h-4 w-4" /></button>
-        </div>
-        <div className="flex-1 space-y-4 overflow-y-auto p-5 text-sm">
-          {!ticket && !error && <p className="flex items-center gap-2 text-slate-500"><Loader2 className="h-4 w-4 animate-spin" /> Loading…</p>}
+    <DetailDialog
+      title={ticket?.subject || 'Support ticket'}
+      onClose={onClose}
+      closeLabel="Close"
+      status={ticket && <span className="font-mono">{ticket.reference} · {ticket.category_label} · {ticket.issue_label}</span>}
+    >
+          {!ticket && !error && <p className="flex items-center gap-2 text-sm text-slate-500"><Loader2 className="h-4 w-4 animate-spin" /> Loading…</p>}
           {ticket && (
             <>
+              <DetailSection className="space-y-4 text-sm">
               <div className="flex flex-wrap items-center gap-2">
                 <StatusBadge status={ticket.status} label={ticket.status_label} />
                 {ticket.priority === 'URGENT' && <span className="rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-extrabold text-red-700 ring-1 ring-red-200">Urgent</span>}
@@ -100,10 +98,10 @@ function TicketPanel({ id, canManage, onClose, onChanged }) {
                   <Paperclip className="h-4 w-4" /> {ticket.attachment.name}
                 </button>
               )}
-              <div>
-                <h4 className="text-xs font-bold uppercase text-slate-400">Conversation</h4>
+              </DetailSection>
+              <DetailSection title="Conversation" className="text-sm">
                 {ticket.messages.length ? (
-                  <ol className="mt-2 space-y-2">
+                  <ol className="space-y-2">
                     {ticket.messages.map((message) => (
                       <li key={message.id} className={`rounded-xl px-4 py-3 ${message.author === 'STAFF' ? 'ms-8 bg-ocbrand-50' : 'me-8 bg-slate-50'}`}>
                         <p className="text-xs font-bold text-slate-500">{message.author === 'STAFF' ? 'Support' : ticket.contact.name} · {when(message.created_at)}</p>
@@ -111,15 +109,15 @@ function TicketPanel({ id, canManage, onClose, onChanged }) {
                       </li>
                     ))}
                   </ol>
-                ) : <p className="mt-2 text-slate-500">No replies yet.</p>}
-              </div>
+                ) : <p className="text-slate-500">No replies yet.</p>}
+              </DetailSection>
             </>
           )}
           {error === NOT_FOUND && <NotFoundPanel />}
-          {error && error !== NOT_FOUND && <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 font-semibold text-red-700">{error}</p>}
-        </div>
+          {error && error !== NOT_FOUND && <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{error}</p>}
         {ticket && canManage && (
-          <form onSubmit={save} className="space-y-3 border-t border-slate-100 p-5">
+          <DetailSection>
+          <form onSubmit={save} className="space-y-3">
             <label className="block text-xs font-bold text-slate-600" htmlFor="staff-reply">Reply to {ticket.contact.name}</label>
             <textarea id="staff-reply" rows={3} maxLength={2000} value={body} onChange={(event) => setBody(event.target.value)} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-ocbrand-500 focus:ring-2 focus:ring-ocbrand-100" />
             <div className="flex flex-wrap items-center justify-between gap-3">
@@ -134,9 +132,9 @@ function TicketPanel({ id, canManage, onClose, onChanged }) {
               </button>
             </div>
           </form>
+          </DetailSection>
         )}
-      </div>
-    </div>
+    </DetailDialog>
   )
 }
 

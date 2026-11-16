@@ -34,6 +34,7 @@ import { StockBadge } from '../../catalog/components/StockBadge.jsx'
 import { BulkPricingPanel } from '../../catalog/components/BulkPricing.jsx'
 import { formatDate, formatNumber } from '../../../shared/utils/formatters.js'
 import { useLanguage } from '../../../i18n/LanguageContext.jsx'
+import { DETAIL_DIALOG_SIZE } from '../../../shared/ui/DetailDialog.jsx'
 import { SUPPLIER_CATEGORY_KEYS, optionLabel } from '../../../i18n/optionKeys.js'
 
 const UNIT_OPTIONS = ['bag', 'kg', 'piece', 'ton', 'litre', 'cubic foot', 'cubic metre']
@@ -273,28 +274,43 @@ export default function ProductDetailCard({ product, statusKey, onSave, onClose,
   // ancestor overflow or transform cannot reach into a full screen overlay.
   return createPortal(
     <div
-      role="dialog"
-      aria-modal="true"
-      aria-label={t('dash.supplier.productDetails')}
       onClick={onClose}
-      className="fixed inset-0 z-[140] flex justify-center bg-slate-900/60 backdrop-blur-sm sm:items-center sm:p-4"
+      className="fixed inset-0 z-[140] grid place-items-center bg-slate-900/40 p-3 backdrop-blur-sm sm:p-6"
     >
+      {/* The application's one details window: header (label, title, status
+          line), a grey body that scrolls, its sections white cards. */}
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={t('dash.supplier.productDetails')}
+        data-detail-dialog=""
         onClick={(event) => event.stopPropagation()}
-        className="relative flex h-[100dvh] w-full flex-col overflow-hidden bg-white shadow-2xl
-                   sm:h-[min(92dvh,880px)] sm:max-w-6xl sm:rounded-2xl sm:border sm:border-slate-200"
+        className={`detail-dialog relative flex ${DETAIL_DIALOG_SIZE} flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl`}
       >
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label={t('dash.supplier.closeProductDetails')}
-          className="absolute right-3 top-3 z-10 grid h-9 w-9 place-items-center rounded-full bg-white/95 text-slate-600 shadow-sm ring-1 ring-slate-200 transition hover:text-slate-900"
-        >
-          <X className="h-4 w-4" />
-        </button>
+        <header className="flex shrink-0 items-start justify-between gap-3 border-b border-slate-100 px-4 py-3 sm:px-6">
+          <div className="min-w-0">
+            <p className="text-[10px] font-bold uppercase tracking-wide text-slate-500">{t('dash.supplier.productDetails')}</p>
+            <h4 className="truncate font-display text-base font-extrabold text-slate-950">
+              {isCatalog ? title : td(product.name)}
+            </h4>
+            <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-slate-500">
+              <span className={`font-extrabold ${AVAILABILITY_TONES[statusKey] || AVAILABILITY_TONES.Unpublished}`}>
+                {availability}
+              </span>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label={t('dash.supplier.closeProductDetails')}
+            className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </header>
 
-        <div className="min-h-0 flex-1 overflow-y-auto lg:grid lg:grid-cols-[minmax(0,44%)_minmax(0,1fr)] lg:overflow-hidden">
-          <div className="flex flex-col items-center justify-center gap-4 border-b border-slate-100 bg-slate-50 p-6 lg:h-full lg:overflow-y-auto lg:border-b-0 lg:border-e">
+        <div data-detail-dialog-body="" className="dash-scroll grid min-h-0 flex-1 content-start gap-3 overflow-y-auto bg-slate-50/50 p-3 sm:p-5 lg:grid-cols-[minmax(0,44%)_minmax(0,1fr)]">
+          <div className="flex flex-col items-center justify-center gap-4 rounded-xl border border-oc-line bg-white p-3 sm:p-4">
             {isCatalog && master ? (
               <>
                 {/* The administrator's images and video for this product. */}
@@ -310,20 +326,18 @@ export default function ProductDetailCard({ product, statusKey, onSave, onClose,
               <SmartImage
                 src={imageSource}
                 alt={td(product.name)}
-                className="max-h-[38vh] w-auto max-w-full object-contain lg:max-h-full"
+                className="max-h-[38vh] w-auto max-w-full object-contain lg:max-h-[52vh]"
               />
             ) : (
               <NoListingImage label={t('dash.msg.noImage')} className="h-48 w-full max-w-sm rounded-xl ring-1 ring-slate-200" />
             )}
           </div>
 
-          <div className="p-5 sm:p-6 lg:h-full lg:overflow-y-auto">
-            <h4 className="font-display text-2xl font-extrabold leading-tight text-graphite sm:text-3xl">
-              {isCatalog ? title : td(product.name)}
-            </h4>
+          <div className="min-w-0 space-y-3">
+          <section className="rounded-xl border border-oc-line bg-white p-3 sm:p-4">
             {isCatalog ? (
               master && (
-                <div className="mt-2 flex flex-wrap items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <BrandLogo src={master.brand_logo_url || product.brand_logo_url} name={master.brand_name || 'Generic'} size="md" />
                   <div className="min-w-0">
                     <p className="text-xs font-extrabold uppercase tracking-wide text-brand-700">{master.brand_name || 'Generic'}</p>
@@ -334,7 +348,7 @@ export default function ProductDetailCard({ product, statusKey, onSave, onClose,
                 </div>
               )
             ) : product.category && (
-              <p className="mt-1.5 text-sm font-semibold text-graphite/50">
+              <p className="text-sm font-semibold text-graphite/50">
                 {t('dash.supplier.inCategory')} <span className="font-extrabold text-graphite/70">{optionLabel(t, SUPPLIER_CATEGORY_KEYS, product.category)}</span>
               </p>
             )}
@@ -352,9 +366,6 @@ export default function ProductDetailCard({ product, statusKey, onSave, onClose,
                   <p className="mt-1.5 text-xs font-semibold text-graphite/50">{isCatalog ? catalogPerUnit : perUnit}</p>
                 )}
               </div>
-              <p className={`text-sm font-extrabold ${AVAILABILITY_TONES[statusKey] || AVAILABILITY_TONES.Unpublished}`}>
-                {availability}
-              </p>
             </div>
 
             {isCatalog && (
@@ -381,9 +392,9 @@ export default function ProductDetailCard({ product, statusKey, onSave, onClose,
             {!isCatalog && !editing && product.description && (
               <p className="mt-4 text-sm leading-relaxed text-graphite/70">{td(product.description)}</p>
             )}
+          </section>
 
-            <hr className="mt-5 border-slate-100" />
-
+          <section className="rounded-xl border border-oc-line bg-white p-3 sm:p-4 [&>:first-child]:mt-0">
             {isCatalog ? (
               <CatalogListingBody
                 t={t}
@@ -402,7 +413,7 @@ export default function ProductDetailCard({ product, statusKey, onSave, onClose,
                 saveError={saveError}
               />
             ) : editing ? (
-              <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div className="sm:col-span-2">
                   <EditField label={t('sup.field.productName')}>
                     <input value={draft.name} onChange={(event) => setField('name', event.target.value)} className={fieldClass} />
@@ -478,7 +489,7 @@ export default function ProductDetailCard({ product, statusKey, onSave, onClose,
               </div>
             ) : (
               <>
-                <div className="mt-5 grid grid-cols-2 gap-2.5 xl:grid-cols-3">
+                <div className="grid grid-cols-2 gap-2.5 xl:grid-cols-3">
                   {details.map(([label, value]) => (
                     <DetailTile key={label} label={label} value={value} />
                   ))}
@@ -517,6 +528,7 @@ export default function ProductDetailCard({ product, statusKey, onSave, onClose,
                 <BulkPricingPanel productId={product.id} unit={product.unit} normalPrice={Number(product.price || 0)} country={country} />
               </div>
             )}
+          </section>
           </div>
         </div>
 

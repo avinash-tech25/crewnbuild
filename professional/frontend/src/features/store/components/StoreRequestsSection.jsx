@@ -412,7 +412,7 @@ export default function StoreRequestsSection({ mode, requests, country, guard, o
         </Panel>
         {openNotFound && <NotFoundPanel backLabel={t('store.requests.requestBadge')} onBack={() => setOpenId(null)} />}
         {open && (
-          <DetailModal placement="right" width="max-w-4xl" badge={t('store.requests.requestBadge')} title={detailTitle} subtitle={detailSubtitle} onClose={() => setOpenId(null)}>
+          <DetailModal badge={t('store.requests.requestBadge')} title={detailTitle} subtitle={detailSubtitle} onClose={() => setOpenId(null)}>
             <RequestDetail request={open}>
               {open.status === 'PENDING' && (
                 <>
@@ -464,7 +464,7 @@ export default function StoreRequestsSection({ mode, requests, country, guard, o
         <p className="mt-2 text-[11px] font-semibold text-graphite/50">{t('store.approvals.historyUnderRequests')}</p>
       </Panel>
       {open && (
-        <DetailModal placement="right" width="max-w-4xl" badge={t('store.requests.requestBadge')} title={detailTitle} subtitle={detailSubtitle} onClose={() => setOpenId(null)}>
+        <DetailModal badge={t('store.requests.requestBadge')} title={detailTitle} subtitle={detailSubtitle} onClose={() => setOpenId(null)}>
           <RequestDetail request={open}>
             {['APPROVED', 'PARTIALLY_ISSUED'].includes(open.status) && (
               <>

@@ -13,6 +13,7 @@ import { fetchContractorProfile } from '../../accounts/publicProfileApi.js'
 import { hasRating, ratingLabel } from '../../../shared/utils/ratingLabel.js'
 import { sendConversationMessage, startConversation } from '../../messaging/messagesApi.js'
 import { useLanguage } from '../../../i18n/LanguageContext.jsx'
+import { DETAIL_DIALOG_SIZE } from '../../../shared/ui/DetailDialog.jsx'
 import { BuilderTierBadge } from '../../billing/subscription/TierBadge.jsx'
 import {
   optionLabel,
@@ -42,18 +43,33 @@ const TAB_LABEL_KEYS = {
 // card, heading and line is drawn smaller than on the full profile page.
 const CompactContext = createContext(false)
 
-// The pop-up's frame: a dimmed backdrop (click it to close) and a centred,
-// scrollable window with its own close button. The window keeps one fixed
-// height on every tab, so it does not shrink when a shorter tab is opened. Defined here, not inside the
+// The pop-up's frame: the application's one details window (DetailDialog's
+// size, header and grey scrolling body), over a dimmed backdrop (click it to
+// close). Escape is handled by the profile itself. Defined here, not inside the
 // profile, so typing in the window never rebuilds what is in it.
 function ModalFrame({ label, closeLabel, onClose, children }) {
+  const { t } = useLanguage()
   return (
-    <div className="fixed inset-0 z-[120] grid place-items-center bg-slate-900/50 p-3 backdrop-blur-sm sm:p-6" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose() }}>
-      <div role="dialog" aria-modal="true" aria-label={label} className="relative h-[88vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-cream shadow-2xl sm:h-[min(580px,90vh)]">
-        <button type="button" onClick={onClose} aria-label={closeLabel} className="absolute right-5 top-5 z-30 grid h-7 w-7 place-items-center rounded-full border border-brand-100 bg-white text-graphite/60 shadow-sm transition hover:text-graphite">
-          <X className="h-4 w-4" />
-        </button>
-        {children}
+    <div className="fixed inset-0 z-[120] grid place-items-center bg-slate-900/40 p-3 backdrop-blur-sm sm:p-6" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose() }}>
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={label}
+        data-detail-dialog=""
+        className={`detail-dialog relative flex ${DETAIL_DIALOG_SIZE} flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl`}
+      >
+        <header className="flex shrink-0 items-start justify-between gap-3 border-b border-slate-100 px-4 py-3 sm:px-6">
+          <div className="min-w-0">
+            <p className="text-[10px] font-bold uppercase tracking-wide text-slate-500">{t('dash.common.builderProfile')}</p>
+            <h3 className="truncate font-display text-base font-extrabold text-slate-950">{label}</h3>
+          </div>
+          <button type="button" onClick={onClose} aria-label={closeLabel} className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-700">
+            <X className="h-4 w-4" />
+          </button>
+        </header>
+        <div data-detail-dialog-body="" className="dash-scroll min-h-0 flex-1 overflow-y-auto bg-slate-50/50 p-3 sm:p-5">
+          {children}
+        </div>
       </div>
     </div>
   )
@@ -460,7 +476,7 @@ export default function ContractorProfileDetails({ variant = 'page', contractorI
   // a single short row -- instead of the page's large photo, logo tile, stat
   // boxes and separate contact card.
   const compactHeader = (
-    <section className="rounded-2xl border border-brand-100 bg-white p-3 pr-11 shadow-card">
+    <section className="rounded-2xl border border-brand-100 bg-white p-3 shadow-card">
       <div className="flex items-start gap-3">
         <SmartImage src={avatarFromPath(profile.profile_image_url, 'BUILDER')} alt={profile.name} className="h-14 w-14 shrink-0 rounded-full object-cover" />
         <div className="min-w-0 flex-1">
@@ -528,7 +544,7 @@ export default function ContractorProfileDetails({ variant = 'page', contractorI
   )
 
   const content = (
-      <main className={isModal ? 'space-y-2.5 p-3' : 'mx-auto max-w-[1500px] space-y-4 p-4 sm:p-6'}>
+      <main className={isModal ? 'space-y-2.5' : 'mx-auto max-w-[1500px] space-y-4 p-4 sm:p-6'}>
         {!isModal && <div className="text-xs font-semibold text-graphite/55">{t('dash.contractor.dashboardBreadcrumb')} / <span className="text-graphite">{td(profile.company_name)}</span></div>}
 
         {isModal ? compactHeader : (

@@ -1,5 +1,5 @@
 /**
- * Every list card is the same size: cards of different kinds (a project with progress, a
+ * Every list card is the same compact size: cards of different kinds (a project with progress, a
  * request with rows and actions, a bare record, a tile with a picture) all carry the one
  * fixed-height class, the same slots in the same order, and a footer pinned to the bottom.
  */
@@ -38,36 +38,59 @@ const KINDS = {
   ),
 }
 
-const shape = (card) => ({
-  height: card.classList.contains(HEIGHT),
-  parts: [...card.children].map((part) => part.getAttribute('data-card-part')),
-  slots: [...card.querySelector('[data-card-part="body"]').children].map((slot) => slot.getAttribute('data-card-slot')),
-})
+const SCROLLING = /\boverflow(-[xy])?-(auto|scroll)\b/
+
+const cardOf = (element) => {
+  const { container } = render(element)
+  return container.querySelector('[data-card="list"]')
+}
 
 describe('list card size', () => {
-  it('renders every kind of card with the same fixed height and the same slots', () => {
-    const shapes = Object.entries(KINDS).map(([kind, element]) => {
-      const { container, unmount } = render(element)
-      const result = { kind, ...shape(container.querySelector('[data-card="list"]')) }
-      unmount()
-      return result
+  it('renders every kind of card with the same compact height class', () => {
+    Object.entries(KINDS).forEach(([kind, element]) => {
+      const card = cardOf(element)
+      expect(card, kind).toHaveClass(HEIGHT)
+      expect([...card.children].map((part) => part.getAttribute('data-card-part')).slice(0, 2), kind).toEqual(['header', 'body'])
     })
-    shapes.forEach((result) => {
-      expect(result).toEqual({ kind: result.kind, height: true, parts: ['header', 'body', 'footer'], slots: ['chips', 'details', 'progress'] })
+  })
+
+  it('never scrolls inside a card: no overflow auto / scroll anywhere, hidden instead', () => {
+    Object.entries(KINDS).forEach(([kind, element]) => {
+      const card = cardOf(element)
+      expect(card, kind).toHaveClass('overflow-hidden')
+      ;[card, ...card.querySelectorAll('*')].forEach((node) => {
+        expect(String(node.getAttribute('class') || ''), `${kind}: ${node.tagName}`).not.toMatch(SCROLLING)
+      })
+      const footer = card.querySelector('[data-card-part="footer"]')
+      if (footer) expect(footer).toHaveClass('overflow-hidden')
     })
+  })
+
+  it('draws a footer only for a card with actions, and stacks no empty slots', () => {
+    expect(cardOf(KINDS.request).querySelector('[data-card-part="footer"]')).not.toBeNull()
+    const bare = cardOf(KINDS.bare)
+    expect(bare.querySelector('[data-card-part="footer"]')).toBeNull()
+    expect(bare.querySelector('[data-card-part="chips"]')).toBeNull()
+    expect(bare.querySelector('[data-card-part="progress"]')).toBeNull()
+  })
+
+  it('lets only a card showing a form or a map grow past the standard height', () => {
+    const card = cardOf(<ListCard title="Job" expanded><input aria-label="Code" /></ListCard>)
+    expect(card).toHaveClass('min-h-[var(--list-card-height)]')
+    expect(card).not.toHaveClass(HEIGHT)
   })
 
   it('never shows more than four detail rows, and keeps long text to one line with a tooltip', () => {
-    const { container } = render(KINDS.request)
-    expect(container.querySelectorAll('dt')).toHaveLength(4)
-    const title = container.querySelector('h3')
+    const card = cardOf(KINDS.request)
+    expect(card.querySelectorAll('dt')).toHaveLength(4)
+    const title = card.querySelector('h3')
     expect(title).toHaveClass('truncate')
     expect(title).toHaveAttribute('title', expect.stringContaining('A builder with a very long name'))
-    expect(container.querySelector('[data-card-part="header"] p')).toHaveClass('truncate')
+    expect(card.querySelector('[data-card-part="header"] p')).toHaveClass('truncate')
   })
 
-  it('takes its height from one shared variable', () => {
+  it('takes its compact height from one shared variable', () => {
     const css = readFileSync(`${process.cwd()}/src/index.css`, 'utf8')
-    expect(css).toMatch(/--list-card-height:\s*\d+px/)
+    expect(css).toMatch(/--list-card-height:\s*315px/)
   })
 })

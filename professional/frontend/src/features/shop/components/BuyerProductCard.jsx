@@ -21,6 +21,7 @@ import { imageUrl } from '../../../shared/api/apiClient.js'
 import { formatMoney as countryFormatMoney } from '../../../shared/utils/countryConfig.js'
 import { PriceTag } from '../../catalog/components/PriceTag.jsx'
 import { useLanguage } from '../../../i18n/LanguageContext.jsx'
+import { DETAIL_DIALOG_SIZE } from '../../../shared/ui/DetailDialog.jsx'
 import { formatNumber } from '../../../shared/utils/formatters.js'
 import { SUPPLIER_CATEGORY_KEYS, optionLabel } from '../../../i18n/optionKeys.js'
 import { CatalogGallery, CatalogVideo, ExpandableText, sellingBasis, unitQuantity } from '../../catalog/components/CatalogMedia.jsx'
@@ -106,29 +107,46 @@ export default function BuyerProductCard({
 
   return createPortal(
     <div
-      role="dialog"
-      aria-modal="true"
-      aria-label={title}
       onClick={onClose}
-      className="fixed inset-0 z-[150] flex justify-center bg-slate-900/60 backdrop-blur-sm sm:items-center sm:p-4"
+      className="fixed inset-0 z-[150] grid place-items-center bg-slate-900/40 p-3 backdrop-blur-sm sm:p-6"
     >
+      {/* The application's one details window: header (label, title, status
+          line), a grey body that scrolls, its sections white cards. */}
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        data-detail-dialog=""
         onClick={(event) => event.stopPropagation()}
-        className="relative flex h-[100dvh] w-full flex-col overflow-hidden bg-white shadow-2xl
-                   sm:h-[min(92dvh,880px)] sm:max-w-6xl sm:rounded-2xl sm:border sm:border-slate-200"
+        className={`detail-dialog relative flex ${DETAIL_DIALOG_SIZE} flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl`}
       >
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label={t('dash.common.close')}
-          className="absolute right-3 top-3 z-10 grid h-9 w-9 place-items-center rounded-full bg-white/95 text-slate-600 shadow-sm ring-1 ring-slate-200 transition hover:text-slate-900"
-        >
-          <X className="h-4 w-4" />
-        </button>
+        <header className="flex shrink-0 items-start justify-between gap-3 border-b border-slate-100 px-4 py-3 sm:px-6">
+          <div className="min-w-0">
+            <p className="text-[10px] font-bold uppercase tracking-wide text-slate-500">{t('dash.supplier.productDetails')}</p>
+            <h4 className="truncate font-display text-base font-extrabold text-slate-950">{title}</h4>
+            {catalog ? (
+              <p className="mt-1 text-xs text-slate-500">
+                {[catalog.category_name, catalog.subcategory_name, catalog.brand_name].filter(Boolean).join(' › ')}
+              </p>
+            ) : product.category && (
+              <p className="mt-1 text-xs text-slate-500">
+                {t('dash.supplier.inCategory')} <span className="font-extrabold text-slate-700">{optionLabel(t, SUPPLIER_CATEGORY_KEYS, product.category)}</span>
+              </p>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label={t('dash.common.close')}
+            className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </header>
 
-        <div className="min-h-0 flex-1 overflow-y-auto lg:grid lg:grid-cols-[minmax(0,44%)_minmax(0,1fr)] lg:overflow-hidden">
+        <div data-detail-dialog-body="" className="dash-scroll grid min-h-0 flex-1 content-start gap-3 overflow-y-auto bg-slate-50/50 p-3 sm:p-5 lg:grid-cols-[minmax(0,44%)_minmax(0,1fr)]">
           {catalog ? (
-            <div className="flex flex-col items-center justify-center gap-4 border-b border-slate-100 bg-slate-50 p-6 lg:h-full lg:overflow-y-auto lg:border-b-0 lg:border-e">
+            <div className="flex flex-col items-center justify-center gap-4 rounded-xl border border-oc-line bg-white p-3 sm:p-4">
               <CatalogGallery
                 images={catalog.images || []}
                 alt={title}
@@ -138,12 +156,12 @@ export default function BuyerProductCard({
               <CatalogVideo videoUrl={catalog.video_url} label={t('catalog.video')} className="w-full max-w-md" />
             </div>
           ) : (
-          <div className="group relative flex items-center justify-center overflow-hidden border-b border-slate-100 bg-slate-50 p-6 lg:h-full lg:border-b-0 lg:border-e">
+          <div className="group relative flex items-center justify-center overflow-hidden rounded-xl border border-oc-line bg-white p-3 sm:p-4">
             <SmartImage
               src={product.image_url ? imageUrl(product.image_url) : ''}
               alt={td(product.name)}
               onClick={() => setZoomed((on) => !on)}
-              className={`max-h-[38vh] w-auto max-w-full cursor-zoom-in object-contain transition-transform duration-300 lg:max-h-full
+              className={`max-h-[38vh] w-auto max-w-full cursor-zoom-in object-contain transition-transform duration-300 lg:max-h-[52vh]
                           ${zoomed ? 'scale-[1.9] cursor-zoom-out' : 'group-hover:scale-105'}`}
             />
             <span className="pointer-events-none absolute bottom-3 end-3 rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-bold text-graphite/50 ring-1 ring-slate-200">
@@ -152,19 +170,9 @@ export default function BuyerProductCard({
           </div>
           )}
 
-          <div className="p-5 sm:p-6 lg:h-full lg:overflow-y-auto">
-            <h4 className="font-display text-2xl font-extrabold leading-tight text-graphite sm:text-3xl">{title}</h4>
-            {catalog ? (
-              <p className="mt-1.5 text-sm font-semibold text-graphite/50">
-                {[catalog.category_name, catalog.subcategory_name, catalog.brand_name].filter(Boolean).join(' › ')}
-              </p>
-            ) : product.category && (
-              <p className="mt-1.5 text-sm font-semibold text-graphite/50">
-                {t('dash.supplier.inCategory')} <span className="font-extrabold text-graphite/70">{optionLabel(t, SUPPLIER_CATEGORY_KEYS, product.category)}</span>
-              </p>
-            )}
-
-            <div className="mt-5 flex flex-wrap items-end justify-between gap-3">
+          <div className="min-w-0 space-y-3">
+          <section className="rounded-xl border border-oc-line bg-white p-3 sm:p-4">
+            <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
                 <PriceTag price={product.price} discountPercentage={product.discount_percentage} size="lg" />
                 {unitWord && <p className="mt-1.5 text-xs font-semibold text-graphite/50">{t('dash.supplier.per')} {unitWord}</p>}
@@ -187,10 +195,10 @@ export default function BuyerProductCard({
             ) : product.description && (
               <p className="mt-4 text-sm leading-relaxed text-graphite/70">{td(product.description)}</p>
             )}
+          </section>
 
-            <hr className="mt-5 border-slate-100" />
-
-            <h5 className="mt-5 font-display text-sm font-extrabold uppercase tracking-wide text-graphite/70">
+          <section className="rounded-xl border border-oc-line bg-white p-3 sm:p-4">
+            <h5 className="font-display text-sm font-extrabold uppercase tracking-wide text-graphite/70">
               {t('shop.specifications')}
             </h5>
             <div className="mt-2.5 grid grid-cols-2 gap-2.5 xl:grid-cols-3">
@@ -215,9 +223,10 @@ export default function BuyerProductCard({
                 <p className="mt-1 text-xs font-semibold leading-relaxed text-graphite/70">{td(product.usage)}</p>
               </div>
             )}
+          </section>
 
             {(supplierName || storeName) && (
-              <div className="mt-5 flex items-center gap-3 rounded-xl border border-slate-200 px-3 py-3">
+              <section className="flex items-center gap-3 rounded-xl border border-oc-line bg-white p-3 sm:p-4">
                 <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-brand-50 text-brand-700">
                   <Store className="h-4 w-4" />
                 </span>
@@ -225,7 +234,7 @@ export default function BuyerProductCard({
                   <p className="text-[10px] font-extrabold uppercase tracking-wide text-graphite/40">{t('shop.supplierDetails')}</p>
                   <p className="truncate text-sm font-extrabold text-graphite">{td(storeName || supplierName)}</p>
                 </div>
-              </div>
+              </section>
             )}
           </div>
         </div>

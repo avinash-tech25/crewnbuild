@@ -11,7 +11,7 @@
  * infers it from anything else in the payload — it renders `can_view_contact`
  * as the server sent it.
  */
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import {
   Bath,
@@ -24,8 +24,8 @@ import {
   MapPin,
   Maximize2,
   Sofa,
-  X,
 } from 'lucide-react'
+import { DetailDialog, DetailSection } from '../../../shared/ui/DetailDialog.jsx'
 import StatusPill from '../../../shared/dashboard/StatusPill.jsx'
 import { SmartImage } from '../../../shared/ui/ui.jsx'
 import { EntityAvatar } from '../../../shared/ui/EntityPill.jsx'
@@ -62,14 +62,6 @@ export default function PropertyDetailPanel({ listing, onClose, footer }) {
   const { t, td } = useLanguage()
   const [activeImage, setActiveImage] = useState(0)
 
-  useEffect(() => {
-    const closeOnEscape = (event) => {
-      if (event.key === 'Escape') onClose()
-    }
-    window.addEventListener('keydown', closeOnEscape)
-    return () => window.removeEventListener('keydown', closeOnEscape)
-  }, [onClose])
-
   if (!listing) return null
 
   // The cover first, then the gallery the seller ordered. Nothing is invented:
@@ -84,30 +76,16 @@ export default function PropertyDetailPanel({ listing, onClose, footer }) {
   const area = (value) => (Number(value) > 0 ? `${formatNumber(value)} ${t('property.sqft')}` : '')
 
   return createPortal(
-    <div className="fixed inset-0 z-50 grid place-items-center bg-slate-900/45 p-4 backdrop-blur-sm" role="dialog" aria-modal="true">
-      <div className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-2xl border border-oc-line bg-white shadow-[0_24px_60px_-30px_rgba(15,23,42,0.5)]">
-        <header className="sticky top-0 z-10 flex items-start justify-between gap-3 border-b border-oc-line bg-white/95 px-5 py-4 backdrop-blur">
-          <div className="min-w-0">
-            <p className="text-[11px] font-bold uppercase tracking-[.14em] text-oc-faint">
-              {codeLabel(t, 'property.type', listing.property_type, td) || t('property.property')}
-              {listing.listing_type ? ` · ${codeLabel(t, 'property.listing', listing.listing_type, td)}` : ''}
-            </p>
-            <h2 className="mt-0.5 truncate font-display text-base font-bold text-oc-ink">{td(listing.title)}</h2>
-          </div>
-          <div className="flex shrink-0 items-center gap-2">
-            <StatusPill status={listing.status} />
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label={t('dash.common.close')}
-              className="grid h-8 w-8 place-items-center rounded-lg text-oc-muted transition hover:bg-oc-sunken hover:text-oc-ink"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-        </header>
-
-        <div className="grid gap-5 p-5 md:grid-cols-2">
+    // The application's one details window: label (type · listing), title, status line.
+    <DetailDialog
+      label={`${codeLabel(t, 'property.type', listing.property_type, td) || t('property.property')}${listing.listing_type ? ` · ${codeLabel(t, 'property.listing', listing.listing_type, td)}` : ''}`}
+      title={td(listing.title)}
+      status={<StatusPill status={listing.status} />}
+      onClose={onClose}
+      closeLabel={t('dash.common.close')}
+    >
+        <DetailSection>
+        <div className="grid gap-5 md:grid-cols-2">
           <div>
             {shown ? (
               <>
@@ -185,16 +163,18 @@ export default function PropertyDetailPanel({ listing, onClose, footer }) {
               <Fact icon={Home} label={t('property.type')} value={codeLabel(t, 'property.type', listing.property_type, td)} />
             </div>
           </div>
+        </div>
+        </DetailSection>
 
           {listing.description && (
-            <section className="md:col-span-2">
+            <section className="rounded-xl border border-oc-line bg-white p-3 sm:p-4">
               <h3 className="font-display text-sm font-extrabold text-oc-ink">{t('property.about')}</h3>
               <p className="mt-1.5 whitespace-pre-line text-sm leading-relaxed text-oc-muted">{td(listing.description)}</p>
             </section>
           )}
 
           {listing.seller_name && (
-            <section className="md:col-span-2 rounded-xl border border-oc-line bg-white p-4">
+            <section className="rounded-xl border border-oc-line bg-white p-3 sm:p-4">
               <h3 className="font-display text-sm font-extrabold text-oc-ink">{t('property.seller')}</h3>
               <div className="mt-2 flex items-center gap-3">
                 {/* The seller's own picture, else the default for the role
@@ -226,10 +206,8 @@ export default function PropertyDetailPanel({ listing, onClose, footer }) {
             </section>
           )}
 
-          {footer ? <div className="md:col-span-2 flex flex-wrap gap-2 border-t border-oc-line pt-4">{footer}</div> : null}
-        </div>
-      </div>
-    </div>,
+          {footer ? <div className="flex flex-wrap gap-2 rounded-xl border border-oc-line bg-white p-3 sm:p-4">{footer}</div> : null}
+    </DetailDialog>,
     document.body,
   )
 }

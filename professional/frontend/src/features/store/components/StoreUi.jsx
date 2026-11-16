@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { DetailDialog } from '../../../shared/ui/DetailDialog.jsx'
 import { Search, X } from 'lucide-react'
 import { useLanguage } from '../../../i18n/LanguageContext.jsx'
 import { apiErrorMessage } from '../../../shared/auth/accountPaths.js'
@@ -109,30 +110,35 @@ export function DataTable({ head, minWidth = 'min-w-[860px]', children }) {
   )
 }
 
-// A window over the page, closed by ×, Escape or a click outside: centred, or
-// (placement="right") a panel along the right edge that keeps the page in view.
-export function DetailModal({ title, subtitle, onClose, children, width = 'max-w-6xl', placement = 'center', badge = null }) {
+// A window over the page, closed by ×, Escape or a click outside. A details window is the
+// application's one DetailDialog (the same size and header everywhere); `compact` keeps
+// a small centred window for a form (a new request, the quantity picker).
+export function DetailModal({ title, subtitle, onClose, children, width = 'max-w-lg', compact = false, badge = null }) {
   const { t } = useLanguage()
   useEffect(() => {
+    if (!compact) return undefined
     const onKey = (event) => { if (event.key === 'Escape') onClose() }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [onClose])
-  const right = placement === 'right'
+  }, [compact, onClose])
+  if (!compact) {
+    return (
+      <DetailDialog label={badge} title={title} status={subtitle} onClose={onClose} closeLabel={t('store.close')}>
+        {children}
+      </DetailDialog>
+    )
+  }
   return (
-    <div className={`fixed inset-0 z-[130] ${right ? 'flex justify-end' : 'grid place-items-center p-3 sm:p-6'}`}>
+    <div className="fixed inset-0 z-[130] grid place-items-center p-3 sm:p-6">
       <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
       <section
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className={right
-          ? `relative flex h-full w-full ${width} flex-col overflow-hidden border-s border-slate-200 bg-white shadow-2xl`
-          : `relative flex max-h-[92vh] w-full ${width} flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl`}
+        className={`relative flex max-h-[92vh] w-full ${width} flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl`}
       >
         <div className="flex items-start justify-between gap-3 border-b border-slate-100 px-4 py-3 sm:px-5">
           <div className="min-w-0">
-            {badge && <span className="mb-1 inline-block rounded-md bg-brand-50 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-brand-800 ring-1 ring-brand-100">{badge}</span>}
             <h3 className="truncate font-display text-base font-extrabold text-graphite">{title}</h3>
             {subtitle && <div className="mt-0.5 text-xs font-semibold text-graphite/55">{subtitle}</div>}
           </div>

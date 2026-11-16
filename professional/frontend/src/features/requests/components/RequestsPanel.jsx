@@ -270,6 +270,8 @@ export default function RequestsPanel({ requestList, onAccept, onReject, require
               // fields, same handlers and the same details as before.
               <ListCard
                 key={request.id}
+                // The quotation field (or the action error under it) stays visible.
+                expanded={Boolean((canAct && needsQuotation) || (actionError && expanded))}
                 // A property enquiry shows the property it is about; every
                 // other request shows the sender's own avatar.
                 avatar={<CardAvatar src={request.property_image_url ? imageUrl(request.property_image_url) : userAvatarSrc(request)} />}

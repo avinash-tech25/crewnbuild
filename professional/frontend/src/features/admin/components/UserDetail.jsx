@@ -1,7 +1,7 @@
 /**
  * One account, in full.
  *
- * A drawer rather than a separate page: an administrator working a list is
+ * A details window rather than a separate page: an administrator working a list is
  * checking one account against the others, and sending them to a new screen
  * loses their place, their filter and their scroll position.
  */
@@ -10,8 +10,9 @@ const NOT_FOUND = 'not-found'
 import NotFoundPanel from '../../../shared/dashboard/NotFoundPanel.jsx'
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Check, Copy, ExternalLink, FileText, ShieldCheck, X } from 'lucide-react'
+import { Check, Copy, ExternalLink, FileText, ShieldCheck } from 'lucide-react'
 import { imageUrl } from '../../../shared/api/apiClient.js'
+import { DetailDialog, DetailSection as Section } from '../../../shared/ui/DetailDialog.jsx'
 import { fetchUserDetail } from '../adminApi.js'
 
 function Field({ label, children }) {
@@ -23,17 +24,6 @@ function Field({ label, children }) {
       </dt>
       <dd className="mt-0.5 text-sm font-semibold text-graphite">{children}</dd>
     </div>
-  )
-}
-
-function Section({ title, children }) {
-  return (
-    <section className="border-t border-slate-100 px-6 py-4">
-      <h3 className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-slate-400">
-        {title}
-      </h3>
-      <div className="mt-2.5">{children}</div>
-    </section>
   )
 }
 
@@ -107,37 +97,20 @@ export function UserDetailDrawer({ userId, onClose }) {
     }
   }, [userId])
 
-  // Escape closes it, because a panel that can only be dismissed with the mouse
-  // is a panel somebody gets stuck in.
-  useEffect(() => {
-    const onKey = (event) => event.key === 'Escape' && onClose()
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [onClose])
-
   if (!userId) return null
 
   const verification = detail?.verification
 
   return createPortal(
-    // Centred in the viewport rather than docked to the right edge. The list
-    // behind it stays where it was, so the administrator still keeps their
-    // place, filter and scroll position.
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <button
-        type="button"
-        aria-label="Close"
-        onClick={onClose}
-        className="absolute inset-0 bg-slate-900/30 backdrop-blur-[2px]"
-      />
-      <div role="dialog" aria-modal="true" className="relative flex max-h-[90vh] w-full max-w-lg flex-col overflow-y-auto rounded-2xl bg-white shadow-2xl">
-        <header className="sticky top-0 z-10 flex items-start justify-between gap-3 border-b border-slate-200 bg-white px-6 py-4">
-          <div className="min-w-0">
-            <p className="font-display text-lg font-bold text-graphite">
-              {detail?.name || 'Loading…'}
-            </p>
-            {detail && (
-              <p className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+    // The application's one details window (Escape, × and a click outside close
+    // it). The list behind it stays where it was, so the administrator still
+    // keeps their place, filter and scroll position.
+    <DetailDialog
+      title={detail?.name || 'Loading…'}
+      onClose={onClose}
+      closeLabel="Close"
+      status={detail && (
+              <>
                 <span className="rounded-md bg-slate-100 px-2 py-0.5 font-bold text-slate-600">
                   {detail.supplier_category || detail.role}
                 </span>
@@ -155,19 +128,10 @@ export function UserDetailDrawer({ userId, onClose }) {
                 >
                   {detail.status === 'ACTIVE' ? 'Active' : 'Suspended'}
                 </span>
-              </p>
-            )}
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </header>
-
-        {error === NOT_FOUND && <div className="p-6"><NotFoundPanel /></div>}
+              </>
+      )}
+    >
+        {error === NOT_FOUND && <NotFoundPanel />}
         {error && error !== NOT_FOUND && <p className="px-6 py-10 text-center text-sm text-slate-500">{error}</p>}
         {!error && !detail && (
           <p className="px-6 py-10 text-center text-sm text-slate-500">Loading…</p>
@@ -280,8 +244,7 @@ export function UserDetailDrawer({ userId, onClose }) {
             )}
           </>
         )}
-      </div>
-    </div>,
+    </DetailDialog>,
     document.body,
   )
 }

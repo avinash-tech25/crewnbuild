@@ -15,7 +15,8 @@
  */
 import useUrlState from '../../../shared/hooks/useUrlState.js'
 import { useEffect, useState } from 'react'
-import { ClipboardList, Package, Search, ShoppingCart, Trash2, Truck, X } from 'lucide-react'
+import { ClipboardList, Package, Search, ShoppingCart, Trash2, Truck } from 'lucide-react'
+import { DetailDialog, DetailSection } from '../../../shared/ui/DetailDialog.jsx'
 import EmptyState from '../../../shared/dashboard/EmptyState.jsx'
 import { CardAvatar, CardChip, CardGrid, CardStatus, ListCard, cardButtonClass } from '../../../shared/ui/ListCard.jsx'
 import QuantityField from '../../shop/components/QuantityField.jsx'
@@ -364,18 +365,20 @@ export default function EngineerStorePanel({ projects, stores, activeProjectId, 
       </Panel>
 
       {openProduct && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/40 p-4" role="dialog" aria-modal="true" aria-label={td(openProduct.items[0].name)}>
-          <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-4 shadow-xl">
-            <div className="mb-3 flex items-start justify-between gap-2">
-              <div className="min-w-0">
-                <p className="text-base font-extrabold text-graphite">{td(openProduct.items[0].name)}</p>
-                <p className="text-[11px] font-semibold text-graphite/55">{[openProduct.items[0].brand, openProduct.items[0].category].filter(Boolean).map((value) => td(value)).join(' · ')}</p>
-              </div>
-              <button type="button" onClick={() => setOpenProduct(null)} aria-label={t('store.engineer.close')} className={secondaryButton}><X className="h-3.5 w-3.5" /></button>
-            </div>
+        // The application's one details window: label, the product, its brand and category.
+        <DetailDialog
+          label={t('dash.supplier.productDetails')}
+          title={td(openProduct.items[0].name)}
+          status={<span>{[openProduct.items[0].brand, openProduct.items[0].category].filter(Boolean).map((value) => td(value)).join(' · ')}</span>}
+          onClose={() => setOpenProduct(null)}
+          closeLabel={t('store.engineer.close')}
+        >
+          <DetailSection>
             <ProductImage item={chosen?.image_url ? chosen : openProduct.items.find((item) => item.image_url) || openProduct.items[0]} large />
             {(chosen || openProduct.items[0]).description && <p className="mt-3 whitespace-pre-line text-xs font-medium text-graphite/70">{td((chosen || openProduct.items[0]).description)}</p>}
-            <div className="mt-3">
+          </DetailSection>
+          <DetailSection>
+            <div>
               <span className={labelClass}>{t('store.engineer.variant')}</span>
               <div role="radiogroup" aria-label={t('store.engineer.variant')} className="mt-1 flex flex-wrap gap-1.5">
                 {openProduct.items.map((item) => (
@@ -415,8 +418,8 @@ export default function EngineerStorePanel({ projects, stores, activeProjectId, 
                 <ShoppingCart className="h-3.5 w-3.5" />{chosen && cart[chosen.id] ? t('store.engineer.updateCart') : t('store.engineer.addToCart')}
               </button>
             </div>
-          </div>
-        </div>
+          </DetailSection>
+        </DetailDialog>
       )}
     </div>
   )

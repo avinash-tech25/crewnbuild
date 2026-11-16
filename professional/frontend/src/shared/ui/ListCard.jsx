@@ -3,10 +3,9 @@
  * requests of every type, partners, site engineers, suppliers, listings, orders,
  * bookings, jobs, admin records.
  *
- * One size and one anatomy for every card in the application: the same width (the grid
- * column) and the same fixed height (--list-card-height in index.css), with fixed slots
- * that keep their space when a card has nothing for them, so rows and footers line up
- * across cards of every kind:
+ * One compact size for every card in the application: the same width (the grid column)
+ * and the same height (--list-card-height in index.css). The parts stack tightly in
+ * this order, and a card simply leaves out the ones it has nothing for:
  *
  *   header       48px thumbnail · bold title (one line) · grey subtitle (location + PIN)
  *   chips        the status chip first (with its icon), then size, type and the rest
@@ -16,10 +15,11 @@
  *   meta         a small line left ("Schedule: ..."), a link on the right (View Analysis)
  *   footer       secondary actions left (outlined / red outline), the main one right
  *
- * Content never makes a card taller: titles, subtitles, chips and values are cut with an
- * ellipsis and kept whole as a tooltip; at most four detail rows. Anything else a card
- * carries (a picture, an open form) scrolls inside the detail slot rather than growing
- * the card, and a footer with more actions than fit scrolls sideways, so nothing is lost.
+ * Content never makes a card taller and never scrolls inside it: titles, subtitles, chips
+ * and values are cut with an ellipsis and kept whole as a tooltip; at most four detail
+ * rows; anything past the card's height is hidden. The footer sits at the bottom edge.
+ * Only a card showing something to work with right there (an open form, a map, a work
+ * bill) passes `expanded`, and then grows from that height instead of hiding it.
  * Hovering or focusing anything in a card turns it the brand's warm yellow (the
  * `list-card` rules in index.css), with the text kept readable.
  *
@@ -145,6 +145,8 @@ export function CardAvatar({ src, alt = '', fallback = null }) {
  * @param meta       { text, action }: a small line left, a link / button right
  * @param secondary  footer actions on the left (outlined / red text)
  * @param primary    footer actions on the right (filled)
+ * @param expanded   the card is showing content to act on (a form, a map) that must not be
+ *                   hidden: it may grow taller than the standard height while it does
  * @param onClick    opens the card; buttons and links inside keep their own clicks.
  *                   The title becomes a button, the card's keyboard target.
  * @param children   extra body content, for what is neither a row nor a chip
@@ -165,6 +167,7 @@ export function ListCard({
   highlighted = false,
   // Shown but not available (busy elsewhere, say): the body is dimmed, the actions are not.
   dimmed = false,
+  expanded = false,
   label,
   testId,
   children,
@@ -181,11 +184,11 @@ export function ListCard({
       // it. Keyboard and screen-reader users open it with the title's button.
       onClick={interactive ? (event) => { if (!event.target.closest('button, a, input, select, textarea, label')) onClick(event) } : undefined}
       // `list-card`: the warm hover / focus surface (index.css), the same on every card.
-      className={`list-card flex h-[var(--list-card-height)] w-full min-w-0 flex-col overflow-hidden rounded-2xl border p-4 shadow-ocsoft
+      className={`list-card flex w-full min-w-0 flex-col overflow-hidden rounded-2xl border p-4 shadow-ocsoft ${expanded ? 'min-h-[var(--list-card-height)]' : 'h-[var(--list-card-height)]'}
         ${highlighted ? 'border-oc-green bg-ocbrand-50' : 'border-oc-line bg-white'}
         ${interactive ? 'cursor-pointer' : ''}`}
     >
-      <header data-card-part="header" className="flex h-12 min-w-0 shrink-0 items-start gap-3">
+      <header data-card-part="header" className="flex min-w-0 shrink-0 items-start gap-3">
         {avatar}
         <div className="min-w-0 flex-1">
           <h3 className="truncate text-[15px] font-extrabold leading-snug text-oc-ink" title={textOf(title)}>
@@ -204,58 +207,51 @@ export function ListCard({
         </div>
       </header>
 
-      <div data-card-part="body" className="mt-3 flex min-h-0 min-w-0 flex-1 flex-col gap-2.5">
-        {/* Chips: one line; a chip that does not fit is cut, its full text on hover. */}
-        <div data-card-slot="chips" className="h-6 min-w-0 shrink-0 overflow-hidden">
-          {(status || shownChips.length > 0) && (
-            <div data-card-part="chips" className="flex min-w-0 flex-nowrap gap-1.5 overflow-hidden">{status}{shownChips}</div>
-          )}
-        </div>
-        {/* Details: the description, up to four rows, and anything else the card carries. */}
-        <div data-card-slot="details" className={`flex min-h-0 min-w-0 flex-1 flex-col gap-2 overflow-y-auto ${dimmed ? 'opacity-50 blur-[0.5px]' : ''}`}>
-          {description && (
-            <p data-card-part="description" className="shrink-0 truncate text-xs text-oc-muted" title={textOf(description)}>{description}</p>
-          )}
-          {shownRows.length > 0 && (
-            <dl className="grid min-w-0 shrink-0 grid-cols-[minmax(0,auto)_minmax(0,1fr)] gap-x-3 gap-y-1 text-xs">
-              {shownRows.map((row, index) => (
-                <div key={row.key || (typeof row.label === 'string' ? row.label : index)} className="contents">
-                  <dt className="truncate font-semibold text-oc-muted">{row.label}</dt>
-                  <dd className="truncate text-end font-bold text-oc-ink" title={row.title || textOf(row.value)}>{row.value ?? '–'}</dd>
-                </div>
-              ))}
-            </dl>
-          )}
-          {children}
-        </div>
-        {/* Progress and the meta line, in the same place on every card. */}
-        <div data-card-slot="progress" className="flex h-11 min-w-0 shrink-0 flex-col justify-end gap-1.5">
-          {progress && (
-            <div data-card-part="progress" className="min-w-0">
-              <div className="flex min-w-0 items-baseline justify-between gap-3 text-xs">
-                <span className="truncate font-semibold text-oc-muted" title={textOf(progress.label)}>{progress.label}</span>
-                {progress.amount != null && <span className="shrink-0 truncate text-sm font-extrabold text-oc-ink">{progress.amount}</span>}
+      <div data-card-part="body" className={`mt-3 flex min-h-0 min-w-0 flex-1 flex-col gap-2 ${expanded ? '' : 'overflow-hidden'} ${dimmed ? 'opacity-50 blur-[0.5px]' : ''}`}>
+        {(status || shownChips.length > 0) && (
+          // One line; a chip that does not fit is cut, its full text on hover.
+          <div data-card-part="chips" className="flex min-w-0 shrink-0 flex-nowrap gap-1.5 overflow-hidden">{status}{shownChips}</div>
+        )}
+        {description && (
+          <p data-card-part="description" className="shrink-0 truncate text-xs text-oc-muted" title={textOf(description)}>{description}</p>
+        )}
+        {shownRows.length > 0 && (
+          <dl className="grid min-w-0 shrink-0 grid-cols-[minmax(0,auto)_minmax(0,1fr)] gap-x-3 gap-y-1 text-xs">
+            {shownRows.map((row, index) => (
+              <div key={row.key || (typeof row.label === 'string' ? row.label : index)} className="contents">
+                <dt className="truncate font-semibold text-oc-muted">{row.label}</dt>
+                <dd className="truncate text-end font-bold text-oc-ink" title={row.title || textOf(row.value)}>{row.value ?? '–'}</dd>
               </div>
-              <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-slate-200" aria-hidden="true">
-                <div className="h-full rounded-full bg-emerald-500" style={{ width: `${Math.max(0, Math.min(100, Number(progress.percent) || 0))}%` }} />
-              </div>
+            ))}
+          </dl>
+        )}
+        {progress && (
+          <div data-card-part="progress" className="min-w-0 shrink-0">
+            <div className="flex min-w-0 items-baseline justify-between gap-3 text-xs">
+              <span className="truncate font-semibold text-oc-muted" title={textOf(progress.label)}>{progress.label}</span>
+              {progress.amount != null && <span className="shrink-0 truncate text-sm font-extrabold text-oc-ink">{progress.amount}</span>}
             </div>
-          )}
-          {meta && (meta.text || meta.action) && (
-            <div data-card-part="meta" className="flex min-w-0 items-center justify-between gap-3 text-[11px]">
-              <span className="truncate font-semibold text-oc-muted" title={textOf(meta.text)}>{meta.text}</span>
-              {meta.action && <span className="shrink-0">{meta.action}</span>}
+            <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-slate-200" aria-hidden="true">
+              <div className="h-full rounded-full bg-emerald-500" style={{ width: `${Math.max(0, Math.min(100, Number(progress.percent) || 0))}%` }} />
             </div>
-          )}
-        </div>
+          </div>
+        )}
+        {meta && (meta.text || meta.action) && (
+          <div data-card-part="meta" className="flex min-w-0 shrink-0 items-center justify-between gap-3 text-[11px]">
+            <span className="truncate font-semibold text-oc-muted" title={textOf(meta.text)}>{meta.text}</span>
+            {meta.action && <span className="shrink-0">{meta.action}</span>}
+          </div>
+        )}
+        {children}
       </div>
 
-      {/* The footer is always drawn and pinned to the bottom edge; actions that do not
-          fit scroll sideways rather than wrapping onto a second line. */}
-      <footer data-card-part="footer" className="mt-3 flex h-11 min-w-0 shrink-0 items-center justify-between gap-2 overflow-x-auto border-t border-oc-line pt-3">
-        <div className="flex h-8 min-w-0 shrink-0 flex-nowrap items-center gap-2">{secondary}</div>
-        <div className="ms-auto flex h-8 min-w-0 shrink-0 flex-nowrap items-center justify-end gap-2">{primary}</div>
-      </footer>
+      {(secondary || primary) && (
+        // At the bottom edge, never scrolling: several actions wrap instead.
+        <footer data-card-part="footer" className="mt-3 flex min-w-0 shrink-0 flex-wrap items-center justify-between gap-2 overflow-hidden border-t border-oc-line pt-3">
+          <div className="flex min-w-0 flex-wrap items-center gap-2">{secondary}</div>
+          <div className="ms-auto flex min-w-0 flex-wrap items-center justify-end gap-2">{primary}</div>
+        </footer>
+      )}
     </article>
   )
 }

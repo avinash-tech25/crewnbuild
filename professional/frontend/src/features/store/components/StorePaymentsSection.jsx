@@ -392,8 +392,6 @@ export default function StorePaymentsSection({ overview, purchases, payments, co
       </Panel>
       {opened && (openOrder || openPayment) && (
         <DetailModal
-          placement="right"
-          width="max-w-4xl"
           badge={t('store.payments.purchaseBadge')}
           title={t('store.col.purchaseId')}
           subtitle={openPayment ? t('store.payments.openedFrom', { id: transactionRef(openPayment) }) : td(openOrder.supplier_name)}

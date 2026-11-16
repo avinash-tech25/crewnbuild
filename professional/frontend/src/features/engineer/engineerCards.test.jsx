@@ -123,8 +123,9 @@ describe('Site Engineer card lists', () => {
     suppliers.forEach((card) => expect(within(card).getByRole('button', { name: /Request Labor/ })).toBeInTheDocument())
     const requests = expectUniformCards(screen.getByTestId('engineer-labor-request-cards'))
     expect(requests).toHaveLength(2)
-    // A rejected request has no action, yet keeps the footer the completed one has.
-    requests.forEach((card) => expect(card.querySelector('[data-card-part="footer"]')).not.toBeNull())
+    // A card draws a footer only for its actions: the completed request's, none for the rejected one.
+    const footers = requests.map((card) => Boolean(card.querySelector('[data-card-part="footer"]')))
+    expect(footers.filter(Boolean).length).toBeLessThan(requests.length)
   })
 
   it('Equipment: supplier, item and request cards share one structure', async () => {

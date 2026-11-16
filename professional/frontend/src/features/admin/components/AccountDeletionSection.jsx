@@ -8,7 +8,8 @@
  * (deletions.view), and a refusal shows the server's own reason.
  */
 import { useEffect, useState } from 'react'
-import { CheckCircle2, Eye, EyeOff, RefreshCw, Search, X } from 'lucide-react'
+import { CheckCircle2, Eye, EyeOff, RefreshCw, Search } from 'lucide-react'
+import { DetailDialog, DetailSection } from '../../../shared/ui/DetailDialog.jsx'
 import { fetchDeletedAccount, fetchDeletedAccounts } from '../adminApi.js'
 
 function when(value) {
@@ -50,19 +51,16 @@ function DeletedAccountDetails({ id, onClose }) {
   }, [id])
 
   return (
-    <div className="fixed inset-0 z-[120] grid place-items-center bg-slate-900/40 p-3 sm:p-4" role="dialog" aria-modal="true" aria-labelledby="deleted-account-title">
-      <div className="flex max-h-[92vh] w-full max-w-2xl flex-col rounded-2xl bg-white shadow-2xl">
-        <div className="flex items-start justify-between gap-3 border-b border-slate-100 p-5">
-          <div className="min-w-0">
-            <h3 id="deleted-account-title" className="text-lg font-extrabold text-graphite">{data?.name || 'Deleted account'}</h3>
-            {data && <p className="font-mono text-xs text-slate-500">{data.reference}</p>}
-          </div>
-          <button type="button" onClick={onClose} aria-label="Close" className="grid h-8 w-8 place-items-center rounded-lg text-slate-500 hover:bg-slate-100"><X className="h-4 w-4" /></button>
-        </div>
-        <div className="min-h-0 overflow-y-auto p-5 text-sm">
-          {!data && <p className="text-slate-500">{error || 'Loading…'}</p>}
+    <DetailDialog
+      title={data?.name || 'Deleted account'}
+      onClose={onClose}
+      closeLabel="Close"
+      status={data && <span className="font-mono">{data.reference}</span>}
+    >
+          {!data && <p className="text-sm text-slate-500">{error || 'Loading…'}</p>}
           {data && (
-            <div className="space-y-5">
+            <>
+              <DetailSection className="text-sm">
               <dl className="grid gap-4 sm:grid-cols-2">
                 <Field label="Full name">{data.name}</Field>
                 <Field label="User role">{data.role_label}</Field>
@@ -72,9 +70,9 @@ function DeletedAccountDetails({ id, onClose }) {
                 <Field label="Account deletion date">{when(data.deleted_at)}</Field>
                 <div className="sm:col-span-2"><Field label="Deletion reason">{reasonText(data)}</Field></div>
               </dl>
-              <div>
-                <p className="text-xs font-bold uppercase text-slate-400">Deletion history</p>
-                <ul className="mt-1 space-y-1 text-slate-700">
+              </DetailSection>
+              <DetailSection title="Deletion history" className="text-sm">
+                <ul className="space-y-1 text-slate-700">
                   <li>Account joined: {when(data.joined_at)}</li>
                   {data.confirmed_at && <li>Deletion confirmed by the account holder: {when(data.confirmed_at)}</li>}
                   <li>Account deleted: {when(data.deleted_at)} by {data.deleted_by}</li>
@@ -85,16 +83,16 @@ function DeletedAccountDetails({ id, onClose }) {
                     <li className="font-bold text-amber-700">Stored files not removed from storage: {data.stored_objects_not_removed.join(', ')}</li>
                   )}
                 </ul>
-              </div>
+              </DetailSection>
+              <DetailSection className="text-sm">
               <dl className="grid gap-4 sm:grid-cols-2">
                 <Field label="Original user ID"><span className="font-mono text-xs">{data.user_id}</span></Field>
                 <Field label="Record reference"><span className="font-mono text-xs">{data.reference}</span></Field>
               </dl>
-            </div>
+              </DetailSection>
+            </>
           )}
-        </div>
-      </div>
-    </div>
+    </DetailDialog>
   )
 }
 

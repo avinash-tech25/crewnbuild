@@ -391,7 +391,7 @@ export default function StoreBuySection({ projects, purchases, purchasesFailed =
         const most = isCountUnit(product.unit) ? Math.floor(available) : available
         const editing = lines.some((line) => line.id === product.id)
         return (
-          <DetailModal width="max-w-lg" title={td(product.name)} subtitle={[product.size && t('store.buy.sizeLabel', { size: td(product.size) }), t('store.buy.supplierLabel', { name: td(product.store_name || product.supplier_name) })].filter(Boolean).join(' · ')} onClose={() => setAdding(null)}>
+          <DetailModal compact title={td(product.name)} subtitle={[product.size && t('store.buy.sizeLabel', { size: td(product.size) }), t('store.buy.supplierLabel', { name: td(product.store_name || product.supplier_name) })].filter(Boolean).join(' · ')} onClose={() => setAdding(null)}>
             <div className="space-y-3 pb-1">
               <dl className="grid grid-cols-2 gap-2 text-xs">
                 <div className="rounded-lg bg-slate-50 p-2"><dt className={labelClass}>{t('store.col.unitPrice')}</dt><dd className="font-extrabold text-graphite">{t('store.buy.pricePer', { price: money(product.price, country), unit: td(product.unit) })}</dd></div>
@@ -441,6 +441,8 @@ export default function StoreBuySection({ projects, purchases, purchasesFailed =
             {purchases.map((order) => (
               <ListCard
                 key={order.request_code}
+                // The received-quantity fields stay usable while any line can be received.
+                expanded={order.lines.some((line) => line.can_receive)}
                 avatar={<CardAvatar fallback={<ShoppingBag aria-hidden="true" className="h-5 w-5" />} />}
                 title={t('store.buy.purchaseId', { id: purchaseRef(order) })}
                 subtitle={`${td(order.supplier_name)} · ${td(order.project_name)}`}
@@ -506,8 +508,6 @@ export default function StoreBuySection({ projects, purchases, purchasesFailed =
       {/* The same details window as a transaction's under Payments. */}
       {tab === 'history' && openedOrder && (
         <DetailModal
-          placement="right"
-          width="max-w-4xl"
           badge={t('store.payments.purchaseBadge')}
           title={t('store.col.purchaseId')}
           subtitle={td(openedOrder.supplier_name)}

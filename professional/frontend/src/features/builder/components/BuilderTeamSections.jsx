@@ -26,6 +26,7 @@ import {
 import { SmartImage } from '../../../shared/ui/ui.jsx'
 import { EntityAvatar } from '../../../shared/ui/EntityPill.jsx'
 import { CardAvatar, CardChip, CardGrid, CardStatus, ListCard, cardButtonClass } from '../../../shared/ui/ListCard.jsx'
+import { DETAIL_DIALOG_SIZE } from '../../../shared/ui/DetailDialog.jsx'
 import { userAvatarSrc } from '../../../shared/ui/avatars.js'
 import { useLanguage } from '../../../i18n/LanguageContext.jsx'
 import { optionLabel, SUPPLIER_CATEGORY_KEYS, SUPPLIER_TYPE_KEYS } from '../../../i18n/optionKeys.js'
@@ -1503,7 +1504,7 @@ export function ContractorEngineerProfileDrawer({ engineer, onClose, onSendReque
   }, [onClose])
 
   return (
-    <div className="fixed inset-0 z-[130] flex items-center justify-center p-4 sm:p-6">
+    <div className="fixed inset-0 z-[130] grid place-items-center p-3 sm:p-6">
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -1512,20 +1513,24 @@ export function ContractorEngineerProfileDrawer({ engineer, onClose, onSendReque
         className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
         onClick={onClose}
       />
-      {/* A large centred window rather than a side drawer, with the
-          dashboard dimmed around it. */}
+      {/* The application's one details window, with the dashboard dimmed
+          around it. */}
       <motion.aside
+        role="dialog"
+        aria-modal="true"
+        aria-label={td(data.name) || t('ce.engineerFallback')}
+        data-detail-dialog=""
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: 16 }}
         transition={{ duration: 0.2 }}
-        className="relative flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 shadow-2xl"
+        className={`detail-dialog relative flex ${DETAIL_DIALOG_SIZE} flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl`}
       >
-        {/* Header */}
-        <div className="border-b border-slate-200 bg-white">
-        <div className="flex w-full items-center justify-between gap-3 px-6 py-4">
+        {/* Header: small label and title. */}
+        <div className="shrink-0 border-b border-slate-100">
+        <div className="flex w-full items-start justify-between gap-3 px-4 py-3 sm:px-6">
           <div className="min-w-0">
-            <p className="text-[10px] font-extrabold uppercase tracking-wide text-slate-400">{t('ps.eng.title')}</p>
+            <p className="text-[10px] font-bold uppercase tracking-wide text-slate-500">{t('ps.eng.title')}</p>
             <h3 className="truncate font-display text-base font-extrabold text-slate-950">{td(data.name) || t('ce.engineerFallback')}</h3>
           </div>
           <button
@@ -1534,15 +1539,15 @@ export function ContractorEngineerProfileDrawer({ engineer, onClose, onSendReque
             aria-label={t('ce.closeProfile')}
             className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
           >
-            <X className="h-5 w-5" />
+            <X className="h-4 w-4" />
           </button>
         </div>
         </div>
 
-        {/* Body */}
-        <div className="flex-1 overflow-y-auto">
-        <div className="w-full space-y-5 px-6 py-6">
-          <div className="flex items-center gap-5 rounded-2xl border border-slate-200 bg-white p-5">
+        {/* Body: grey and scrolling, its sections white cards. */}
+        <div data-detail-dialog-body="" className="dash-scroll min-h-0 flex-1 overflow-y-auto bg-slate-50/50">
+        <div className="w-full space-y-3 p-3 sm:p-5">
+          <div className="flex items-center gap-5 rounded-xl border border-oc-line bg-white p-3 sm:p-4">
             <SmartImage src={userAvatarSrc(data, 'ENGINEER')} alt={data.name} className="h-24 w-24 shrink-0 rounded-full object-cover ring-1 ring-slate-200" />
             <div className="min-w-0">
               <h3 className="truncate font-display text-2xl font-extrabold text-slate-950">{td(data.name)}</h3>

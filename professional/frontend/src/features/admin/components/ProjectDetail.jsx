@@ -1,7 +1,7 @@
 /**
  * One project, in full.
  *
- * Same drawer pattern as the account view: an administrator reviewing a list is
+ * Same details window as the account view: an administrator reviewing a list is
  * checking one project against the others, and a separate page loses their
  * place, their filter and their scroll position.
  */
@@ -10,7 +10,8 @@ const NOT_FOUND = 'not-found'
 import NotFoundPanel from '../../../shared/dashboard/NotFoundPanel.jsx'
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Flag, HardHat, MapPin, User, X } from 'lucide-react'
+import { Flag, HardHat, MapPin, User } from 'lucide-react'
+import { DetailDialog, DetailSection as Section } from '../../../shared/ui/DetailDialog.jsx'
 import { fetchProjectDetail } from '../adminApi.js'
 import { completionPercent, formatPercent } from '../../../shared/utils/projectProgress.js'
 
@@ -23,17 +24,6 @@ function Field({ label, children }) {
       </dt>
       <dd className="mt-0.5 text-sm font-semibold text-graphite">{children}</dd>
     </div>
-  )
-}
-
-function Section({ title, children }) {
-  return (
-    <section className="border-t border-slate-100 px-6 py-4">
-      <h3 className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-slate-400">
-        {title}
-      </h3>
-      <div className="mt-2.5">{children}</div>
-    </section>
   )
 }
 
@@ -81,30 +71,16 @@ export function ProjectDetailDrawer({ projectId, onClose }) {
     }
   }, [projectId])
 
-  useEffect(() => {
-    const onKey = (event) => event.key === 'Escape' && onClose()
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [onClose])
-
   if (!projectId) return null
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex justify-end">
-      <button
-        type="button"
-        aria-label="Close"
-        onClick={onClose}
-        className="absolute inset-0 bg-slate-900/30 backdrop-blur-[2px]"
-      />
-      <div className="relative flex h-full w-full max-w-lg flex-col overflow-y-auto bg-white shadow-2xl">
-        <header className="sticky top-0 z-10 flex items-start justify-between gap-3 border-b border-slate-200 bg-white px-6 py-4">
-          <div className="min-w-0">
-            <p className="font-display text-lg font-bold text-graphite">
-              {detail?.title || 'Loading…'}
-            </p>
-            {detail && (
-              <p className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+    // The application's one details window (Escape, × and a click outside close it).
+    <DetailDialog
+      title={detail?.title || 'Loading…'}
+      onClose={onClose}
+      closeLabel="Close"
+      status={detail && (
+              <>
                 <span className="rounded-md bg-slate-100 px-2 py-0.5 font-bold text-slate-600">
                   #{detail.id}
                 </span>
@@ -112,19 +88,10 @@ export function ProjectDetailDrawer({ projectId, onClose }) {
                   {detail.status}
                 </span>
                 <span className="tabular-nums">{completionPercent(detail) === null ? 'Completion not available' : `${formatPercent(completionPercent(detail))} complete`}</span>
-              </p>
-            )}
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </header>
-
-        {error === NOT_FOUND && <div className="p-6"><NotFoundPanel /></div>}
+              </>
+      )}
+    >
+        {error === NOT_FOUND && <NotFoundPanel />}
         {error && error !== NOT_FOUND && <p className="px-6 py-10 text-center text-sm text-slate-500">{error}</p>}
         {!error && !detail && (
           <p className="px-6 py-10 text-center text-sm text-slate-500">Loading…</p>
@@ -212,8 +179,7 @@ export function ProjectDetailDrawer({ projectId, onClose }) {
             </Section>
           </>
         )}
-      </div>
-    </div>,
+    </DetailDialog>,
     document.body,
   )
 }
