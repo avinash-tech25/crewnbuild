@@ -357,7 +357,7 @@ function RequestCard({ request, open, onToggle, onChanged, setNotice }) {
       primary={complete}
       // A request with no action still draws the footer, so every card in the list
       // keeps the same shape.
-      footer="always"
+
     >
       {allocation.partial && (
         <p className="rounded-xl bg-amber-50 px-3 py-2 text-xs font-bold text-amber-800">

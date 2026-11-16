@@ -341,8 +341,8 @@ export default function EngineerStorePanel({ projects, stores, activeProjectId, 
                     >
                       {/* The picture at a fixed height, so every tile is the same size. */}
                       {pictured
-                        ? <img src={imageUrl(pictured.image_url)} alt={td(first.name)} loading="lazy" className="h-32 w-full rounded-xl bg-slate-50 object-contain p-2" />
-                        : <span className="grid h-32 w-full place-items-center rounded-xl bg-slate-50 text-slate-300"><Package className="h-8 w-8" /></span>}
+                        ? <img src={imageUrl(pictured.image_url)} alt={td(first.name)} loading="lazy" className="h-14 w-full rounded-xl bg-slate-50 object-contain p-2" />
+                        : <span className="grid h-14 w-full place-items-center rounded-xl bg-slate-50 text-slate-300"><Package className="h-8 w-8" /></span>}
                       {described && <p className="line-clamp-2 text-[11px] font-medium text-graphite/55" title={td(described.description)}>{td(described.description)}</p>}
                       {/* Each size the store holds, with its stock. */}
                       <div className="mt-auto space-y-0.5">

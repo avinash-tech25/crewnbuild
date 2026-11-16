@@ -89,9 +89,9 @@ export default function SellListingCard({ listing, onOpen, browse = false }) {
       )}
     >
       {/* The photo, at one fixed height so every card in the list is the same size. */}
-      <div className="h-36 w-full overflow-hidden rounded-xl bg-oc-sunken">
+      <div className="h-14 w-full overflow-hidden rounded-xl bg-oc-sunken">
         {cover ? (
-          <SmartImage src={imageUrl(cover)} alt={title} className="h-36 w-full rounded-xl object-cover" />
+          <SmartImage src={imageUrl(cover)} alt={title} className="h-14 w-full rounded-xl object-cover" />
         ) : (
           <div className="grid h-full place-items-center text-oc-faint"><Home className="h-8 w-8" strokeWidth={1.5} /></div>
         )}

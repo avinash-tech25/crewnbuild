@@ -12,7 +12,7 @@ export function expectUniformCards(grid) {
   const shape = (card) => ({
     parts: [...card.children].map((part) => part.getAttribute('data-card-part')),
     avatar: Boolean(card.querySelector('[data-card-part="header"] > [data-card-part="avatar"]')),
-    fills: card.classList.contains('h-full') && card.classList.contains('w-full'),
+    fills: card.classList.contains('h-[var(--list-card-height)]') && card.classList.contains('w-full'),
   })
   const first = shape(cards[0])
   expect(first.parts.slice(0, 2)).toEqual(['header', 'body'])

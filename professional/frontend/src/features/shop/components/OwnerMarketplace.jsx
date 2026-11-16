@@ -86,7 +86,7 @@ function ListingCard({ listing, country, projectId, onOpen, onMessage }) {
       primary={<CartStepper offer={listing} projectId={projectId} onMessage={onMessage} size="sm" />}
     >
       {/* The photo, at one height on every card. */}
-      <button type="button" onClick={onOpen} className="relative h-32 w-full shrink-0 overflow-hidden rounded-xl bg-slate-50" aria-label={`View ${listing.name} from ${listing.supplier_name}`}>
+      <button type="button" onClick={onOpen} className="relative h-14 w-full shrink-0 overflow-hidden rounded-xl bg-slate-50" aria-label={`View ${listing.name} from ${listing.supplier_name}`}>
         <CardImage src={listing.image_url} alt={listing.name} />
         {discount > 0 && (
           <span className="absolute left-1.5 top-1.5 rounded bg-oc-amber px-1.5 py-0.5 text-[10px] font-extrabold text-graphite">{Number(discount.toFixed(2))}% OFF</span>

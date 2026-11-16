@@ -310,8 +310,8 @@ export default function StoreBuySection({ projects, purchases, purchasesFailed =
                     >
                       {/* The picture at a fixed height, so every tile is the same size. */}
                       {product.image_url
-                        ? <img src={imageUrl(product.image_url)} alt={td(product.name)} loading="lazy" className="h-32 w-full rounded-xl bg-slate-50 object-contain p-2" />
-                        : <span className="grid h-32 w-full place-items-center rounded-xl bg-slate-50 text-slate-300"><ShoppingBag className="h-8 w-8" /></span>}
+                        ? <img src={imageUrl(product.image_url)} alt={td(product.name)} loading="lazy" className="h-14 w-full rounded-xl bg-slate-50 object-contain p-2" />
+                        : <span className="grid h-14 w-full place-items-center rounded-xl bg-slate-50 text-slate-300"><ShoppingBag className="h-8 w-8" /></span>}
                       {product.description && <p className="line-clamp-2 text-[11px] font-medium text-graphite/55" title={td(product.description)}>{td(product.description)}</p>}
                     </ListCard>
                   )

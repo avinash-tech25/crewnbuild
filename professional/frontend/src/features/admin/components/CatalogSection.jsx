@@ -100,7 +100,7 @@ function AdminProductCard({ product, onOpen, canManage }) {
         </button>
       }
     >
-      <button type="button" onClick={onOpen} className="block h-36 w-full overflow-hidden rounded-lg bg-slate-50" aria-label={canManage ? `Manage images of ${product.name}` : `View ${product.name}`}>
+      <button type="button" onClick={onOpen} className="block h-14 w-full overflow-hidden rounded-lg bg-slate-50" aria-label={canManage ? `Manage images of ${product.name}` : `View ${product.name}`}>
         {product.image_url ? (
           <StoredImage src={product.image_url} alt="" className="h-full w-full object-contain p-3" />
         ) : (

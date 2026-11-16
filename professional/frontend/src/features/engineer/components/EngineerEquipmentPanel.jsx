@@ -320,7 +320,7 @@ function RequestCard({ request, open, onToggle, onChanged, setNotice }) {
       secondary={(cancelButton || usageButton) ? <>{cancelButton}{usageButton}</> : null}
       // A request with no action still draws the footer, so every card in the list
       // keeps the same shape.
-      footer="always"
+
     >
       {/* The request's facts (equipment, type, quantity, period / price). */}
       <EquipmentRequestFacts request={request} />
@@ -498,10 +498,10 @@ export default function EngineerEquipmentPanel({ projects = [], activeProjectId 
                             ]}
                             secondary={rentButton ? buyButton : null}
                             primary={rentButton || buyButton}
-                            footer="always"
+
                           >
                             {/* The photo, shown whole at a fixed height so every tile is the same size. */}
-                            <EquipmentImage src={item.image_url} className="h-32 w-full" />
+                            <EquipmentImage src={item.image_url} className="h-14 w-full" />
                             <EquipmentPrices item={item} />
                             <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs font-bold">
                               {allowsRent(item) && <span className="text-emerald-700">{t('equipment.engineer.toRentToday', { count: item.available_to_rent, total: item.quantity_total })}</span>}

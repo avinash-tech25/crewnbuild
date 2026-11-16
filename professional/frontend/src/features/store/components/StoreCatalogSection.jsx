@@ -431,8 +431,8 @@ export default function StoreCatalogSection({ items, projects = [], searchQuery,
                   >
                     {/* The picture of the supplier product received into this item, at a fixed height. */}
                     {item.image_url
-                      ? <img src={imageUrl(item.image_url)} alt={td(item.name)} loading="lazy" className="h-32 w-full rounded-xl bg-slate-50 object-contain p-2" />
-                      : <span className="grid h-32 w-full place-items-center rounded-xl bg-slate-50 text-slate-300"><Package className="h-8 w-8" /></span>}
+                      ? <img src={imageUrl(item.image_url)} alt={td(item.name)} loading="lazy" className="h-14 w-full rounded-xl bg-slate-50 object-contain p-2" />
+                      : <span className="grid h-14 w-full place-items-center rounded-xl bg-slate-50 text-slate-300"><Package className="h-8 w-8" /></span>}
                     {item.description && <p className="line-clamp-2 text-[11px] font-medium text-graphite/55" title={td(item.description)}>{td(item.description)}</p>}
                   </ListCard>
                 )

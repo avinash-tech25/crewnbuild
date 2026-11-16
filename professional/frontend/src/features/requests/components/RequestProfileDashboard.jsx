@@ -186,9 +186,9 @@ export function RequestProfileDashboard({ details, participant, canViewContact, 
                         >
                           {/* The product photo, at one fixed height so every card is the same size. */}
                           {product.image_url ? (
-                            <img src={imageUrl(product.image_url)} alt={name} className="h-36 w-full rounded-xl object-cover" />
+                            <img src={imageUrl(product.image_url)} alt={name} className="h-14 w-full rounded-xl object-cover" />
                           ) : (
-                            <div className="grid h-36 w-full place-items-center rounded-xl bg-brand-50 text-sm font-bold text-brand-700">{t('dash.msg.noImage')}</div>
+                            <div className="grid h-14 w-full place-items-center rounded-xl bg-brand-50 text-sm font-bold text-brand-700">{t('dash.msg.noImage')}</div>
                           )}
                         </ListCard>
                       )

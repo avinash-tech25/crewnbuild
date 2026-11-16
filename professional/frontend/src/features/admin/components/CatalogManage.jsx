@@ -147,7 +147,7 @@ function ActiveSwitch({ name, active, busy, onToggle }) {
 
 /** A card's picture area: one fixed height, so cards in a row line up. */
 function CardPicture({ children }) {
-  return <div className="flex h-36 w-full items-center justify-center overflow-hidden rounded-lg bg-slate-50">{children}</div>
+  return <div className="flex h-14 w-full items-center justify-center overflow-hidden rounded-lg bg-slate-50">{children}</div>
 }
 
 /**
@@ -489,7 +489,7 @@ export function CategoryManager({ categories, onChanged, onOpenProduct }) {
                 </button>
               }
             >
-              <button type="button" onClick={() => setOpenCategoryId(category.id)} className="group flex h-36 w-full items-center justify-center rounded-lg bg-slate-50" aria-label={`Open ${category.name}`}>
+              <button type="button" onClick={() => setOpenCategoryId(category.id)} className="group flex h-14 w-full items-center justify-center rounded-lg bg-slate-50" aria-label={`Open ${category.name}`}>
                 <span className="rounded-full transition group-hover:ring-4 group-hover:ring-brand-100">
                   <RoundPicture src={category.image_url} className="h-28 w-28" />
                 </span>

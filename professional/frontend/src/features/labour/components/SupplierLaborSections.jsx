@@ -467,7 +467,7 @@ export function LaborRequestsSection({ requests, services, onChanged, compact = 
             return (
               <ListCard
                 key={request.id}
-                footer="always"
+
                 highlighted={pending}
                 avatar={<CardAvatar fallback={<HardHat aria-hidden="true" className="h-5 w-5" />} />}
                 title={request.project_title || t('labor.project')}

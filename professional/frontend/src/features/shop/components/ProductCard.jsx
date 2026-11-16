@@ -89,10 +89,10 @@ export default function ProductCard({ product, busy, onOpen, onAddToCart }) {
         <img
           src={imageUrl(product.image_url)}
           alt={td(product.name)}
-          className="h-32 w-full rounded-xl bg-slate-50 object-contain p-2"
+          className="h-14 w-full rounded-xl bg-slate-50 object-contain p-2"
         />
       ) : (
-        <span className="grid h-32 w-full place-items-center rounded-xl bg-slate-50 text-slate-300"><Package className="h-7 w-7" /></span>
+        <span className="grid h-14 w-full place-items-center rounded-xl bg-slate-50 text-slate-300"><Package className="h-7 w-7" /></span>
       )}
       <PriceTag price={product.price} discountPercentage={product.discount_percentage} size="sm" />
     </ListCard>

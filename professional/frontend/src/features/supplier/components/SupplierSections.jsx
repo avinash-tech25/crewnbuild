@@ -231,7 +231,7 @@ export function SupplierRequestsSection({ requestMessage, requestList, viewMode 
             return (
               <ListCard
                 key={request.id}
-                footer="always"
+
                 onClick={canOpen ? () => onOpen(request) : undefined}
                 avatar={<CardAvatar src={userAvatarSrc(request)} alt={td(name)} />}
                 title={td(name)}
@@ -309,7 +309,7 @@ export function SupplierFindClientsSection({ clientList, requestList = [], reque
   const renderIncomingRequest = (request) => (
     <ListCard
       key={`req-${request.id}`}
-      footer="always"
+
       avatar={<CardAvatar src={userAvatarSrc(request)} alt={td(request.sender_name)} />}
       title={request.sender_name ? td(request.sender_name) : t('dash.supplier.nearbyClient')}
       subtitle={td(request.project_title || '')}

@@ -82,7 +82,7 @@ export function StorefrontProductCard({ listing, country, onOpen, onEdit, onTogg
       ) : null}
     >
       {/* The photo, at one height on every card. */}
-      <button type="button" onClick={onOpen} className="relative h-32 w-full shrink-0 overflow-hidden rounded-xl bg-white ring-1 ring-slate-100" aria-label={`View ${listing.name}`}>
+      <button type="button" onClick={onOpen} className="relative h-14 w-full shrink-0 overflow-hidden rounded-xl bg-white ring-1 ring-slate-100" aria-label={`View ${listing.name}`}>
         <ProductImage src={listing.image_url} alt={listing.name} className="px-8 py-1" />
         {discount > 0 && <DiscountBadge discount={discount} className="absolute left-0 top-0" />}
       </button>

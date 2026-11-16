@@ -1353,3 +1353,10 @@ html.dark .dash-canvas .list-card.list-card:is(:hover, :focus-within) :is(.text-
     transform: none;
   }
 }
+
+/* Every list card is this tall, on every screen and at every width (ListCard.jsx):
+   the Builder project card's anatomy with every slot reserved (header, chips, four
+   detail lines, progress and schedule, footer). */
+:root {
+  --list-card-height: 340px;
+}

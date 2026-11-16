@@ -597,7 +597,7 @@ export default function SupplierBrowser({
               return (
                 <ListCard
                   key={supplier.user_id}
-                  footer="always"
+
                   onClick={shoppable ? () => viewSupplier(supplier) : undefined}
                   // The store mark when the shop has one, otherwise the
                   // supplier's own avatar -- the card is titled with their name.

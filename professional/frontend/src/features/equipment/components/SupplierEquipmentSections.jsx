@@ -355,7 +355,7 @@ export function EquipmentInventorySection({ items, onChanged }) {
               )}
             >
               {/* The photo, whole (object-contain), at one height on every card. */}
-              <EquipmentImage src={item.image_url} className="h-32 w-full" />
+              <EquipmentImage src={item.image_url} className="h-14 w-full" />
               <EquipmentPrices item={item} />
               {item.specifications && <p className="line-clamp-2 text-xs font-semibold text-graphite/60">{item.specifications}</p>}
             </ListCard>
@@ -570,7 +570,7 @@ export function EquipmentRequestsSection({ requests, onChanged, compact = false 
             return (
               <ListCard
                 key={request.id}
-                footer="always"
+
                 highlighted={pending}
                 avatar={<CardAvatar fallback={request.request_kind === 'RENT' ? <Truck aria-hidden="true" className="h-5 w-5" /> : <ShoppingCart aria-hidden="true" className="h-5 w-5" />} />}
                 title={request.project_title || t('labor.project')}
@@ -707,7 +707,7 @@ export function EquipmentAssignmentsSection({ requests, onChanged, refreshKey = 
             return (
               <ListCard
                 key={request.id}
-                footer="always"
+
                 avatar={<CardAvatar fallback={rent ? <Truck aria-hidden="true" className="h-5 w-5" /> : <ShoppingCart aria-hidden="true" className="h-5 w-5" />} />}
                 title={request.project_title || t('labor.project')}
                 subtitle={t('labor.siteEngineerName', { name: request.engineer_name || '—' })}
