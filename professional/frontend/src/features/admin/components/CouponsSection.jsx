@@ -13,7 +13,6 @@ import { Pencil, Plus, Power, TicketPercent, X } from 'lucide-react'
 import { createCoupon, fetchCoupons, setCouponActive, updateCoupon } from '../adminApi.js'
 import { canManageCoupons, couponCodeError, couponViewState, messageOf, normalizeCouponCode } from '../couponsView.js'
 
-const COUNTRY_NAMES = { IN: 'India' }
 const CURRENCY_FOR = { IN: 'INR' }
 // The two offered builder plans, as the server identifies them.
 const OFFERS = [
@@ -46,14 +45,14 @@ function Field({ label, hint, children }) {
 
 const inputClass = 'h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-graphite outline-none focus:border-brand-500 disabled:bg-slate-50 disabled:text-slate-400'
 
-function CouponForm({ identity, initial, onClose, onSaved }) {
+function CouponForm({ initial, onClose, onSaved }) {
   const editing = Boolean(initial)
-  const isGlobal = identity.scope === 'GLOBAL'
   const [draft, setDraft] = useState(() => (initial ? {
     code: initial.code, country: initial.country, discount: initial.discount_amount,
     starts: initial.starts_on, expires: initial.expires_on,
   } : {
-    code: '', country: isGlobal ? 'IN' : identity.scope, discount: '', starts: todayIso(), expires: inDays(30),
+    // India, the only market; the server keeps the coupon's country field.
+    code: '', country: 'IN', discount: '', starts: todayIso(), expires: inDays(30),
   }))
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState('')
@@ -104,12 +103,7 @@ function CouponForm({ identity, initial, onClose, onSaved }) {
             aria-describedby={codeError ? 'coupon-code-error' : undefined} />
           {codeError && <span id="coupon-code-error" role="alert" className="text-[11px] font-bold text-red-600">{codeError}</span>}
         </Field>
-        <Field label="Country" hint={isGlobal ? 'Fixed once created.' : 'Your administrative country.'}>
-          <select className={inputClass} value={draft.country} onChange={set('country')} disabled={editing || !isGlobal}>
-            {Object.entries(COUNTRY_NAMES).map(([code, name]) => <option key={code} value={code}>{name}</option>)}
-          </select>
-        </Field>
-        <Field label="Starts on" hint={`A day in ${COUNTRY_NAMES[draft.country] || 'the coupon country'}.`}>
+        <Field label="Starts on" hint="A day in India time.">
           <input type="date" className={inputClass} required value={draft.starts} onChange={set('starts')} />
         </Field>
         <Field label="Expires on" hint="Valid through the end of this day.">
@@ -150,7 +144,7 @@ export function CouponsPage({ identity, Panel, useAsync }) {
   return (
     <Panel
       title={<><TicketPercent className="h-4 w-4 text-brand-600" /> Builder subscription coupons</>}
-      subtitle={identity.scope === 'GLOBAL' ? 'India coupons.' : `Coupons for ${COUNTRY_NAMES[identity.scope] || identity.scope}.`}
+      subtitle="Discounts on the builder plans."
       right={canManage && !form ? (
         <button type="button" onClick={() => setForm('new')} className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-brand-600 px-4 text-xs font-bold text-white hover:bg-brand-700">
           <Plus className="h-3.5 w-3.5" /> New coupon
@@ -158,7 +152,7 @@ export function CouponsPage({ identity, Panel, useAsync }) {
       ) : null}
     >
       {form && (
-        <CouponForm identity={identity} initial={form === 'new' ? null : form} onClose={() => setForm(null)}
+        <CouponForm initial={form === 'new' ? null : form} onClose={() => setForm(null)}
           onSaved={() => { setForm(null); reload() }} />
       )}
       {message && <p role="alert" className="mx-6 mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-700">{message}</p>}
@@ -178,7 +172,6 @@ export function CouponsPage({ identity, Panel, useAsync }) {
             <thead className="bg-slate-50 text-[11px] uppercase tracking-wide text-slate-500">
               <tr>
                 <th className="px-6 py-3">Code</th>
-                <th className="px-3 py-3">Country</th>
                 <th className="px-3 py-3">Discount</th>
                 <th className="px-3 py-3">Plan</th>
                 <th className="px-3 py-3">Valid</th>
@@ -192,7 +185,6 @@ export function CouponsPage({ identity, Panel, useAsync }) {
               {coupons.map((coupon) => (
                 <tr key={coupon.id}>
                   <td className="px-6 py-3 font-mono text-xs font-bold text-graphite">{coupon.code}</td>
-                  <td className="px-3 py-3 text-slate-600">{COUNTRY_NAMES[coupon.country]}</td>
                   <td className="px-3 py-3 font-bold text-graphite">{coupon.discount_amount} {coupon.currency}</td>
                   <td className="px-3 py-3 text-slate-600">{offerLabel(coupon.plan_code, coupon.duration_code)}</td>
                   <td className="px-3 py-3 text-xs text-slate-600">{coupon.starts_on} → {coupon.expires_on}</td>

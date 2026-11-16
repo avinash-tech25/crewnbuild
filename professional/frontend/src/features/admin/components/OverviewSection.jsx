@@ -12,11 +12,8 @@
 
 import { AlertTriangle, ArrowRight, Building2, CheckCircle2, Clock, Flag, ShieldAlert, Users, UserX } from 'lucide-react'
 import { fetchAdminOverview } from '../adminApi.js'
-import { CountryFlag } from './AdminCountry.jsx'
 import { mayOpen } from '../adminAccess.js'
-import { CardAvatar, CardChip, CardGrid, ListCard, cardButtonClass } from '../../../shared/ui/ListCard.jsx'
 
-const SCOPE_LABELS = { GLOBAL: 'Global', IN: 'India' }
 
 // Each card keeps its name whatever the number is. The name is what the card is;
 // swapping it for a status message means somebody scanning for "Open reports"
@@ -55,7 +52,7 @@ const ATTENTION = [
   },
 ]
 
-function AttentionCard({ card, value, split, needsAction, onNav }) {
+function AttentionCard({ card, value, needsAction, onNav }) {
   const Icon = needsAction ? AlertTriangle : card.icon
   const clickable = Boolean(card.goto && onNav)
   const Tag = clickable ? 'button' : 'div'
@@ -87,15 +84,6 @@ function AttentionCard({ card, value, split, needsAction, onNav }) {
         >
           {value ?? '—'}
         </span>
-        {/* A Global Super Admin's total says whether anything is wrong but not
-            where. Five pending is a different morning depending on whether they
-            are all India's, so the split sits under every total. */}
-        {split && (
-          <span className="mt-2 flex items-center gap-1.5 text-[11px] font-bold tabular-nums text-slate-600 dark:text-slate-300">
-            <CountryFlag country="India" className="h-2.5 w-4" />
-            India {split.IN}
-          </span>
-        )}
       </span>
       {clickable && (
         <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-slate-400 transition group-hover:translate-x-0.5 group-hover:text-slate-600" aria-hidden="true" />
@@ -104,40 +92,8 @@ function AttentionCard({ card, value, split, needsAction, onNav }) {
   )
 }
 
-function CountryCard({ country, onNav, canOpenAccounts }) {
-  return (
-    <ListCard
-      title={country.country}
-      avatar={<CardAvatar fallback={<CountryFlag country={country.country} className="h-4 w-6" />} />}
-      chips={[<CardChip key="scope" tone="green">{country.scope}</CardChip>]}
-      rows={[
-        ['Accounts', country.accounts],
-        ['Projects', country.projects],
-        ['Open reports', country.open_reports],
-        ['Administrators', country.administrators],
-      ].map(([label, value]) => ({ key: label, label, value }))}
-      primary={
-        canOpenAccounts && (
-          <button
-            type="button"
-            onClick={() => onNav(`users?country=${encodeURIComponent(country.country)}`)}
-            className={cardButtonClass('primary')}
-          >
-            <CountryFlag country={country.country} className="h-2.5 w-4" />
-            Open {country.country} accounts →
-          </button>
-        )
-      }
-    />
-  )
-}
-
 export function Overview({ identity, Panel, useAsync, onNav }) {
   const { data, error, loading } = useAsync(() => fetchAdminOverview(), [])
-
-  const territory = identity.is_global
-    ? 'the whole platform'
-    : `${SCOPE_LABELS[identity.scope] || identity.scope} only`
 
   if (error) {
     return <Panel title="Dashboard" subtitle={error} />
@@ -147,7 +103,6 @@ export function Overview({ identity, Panel, useAsync, onNav }) {
   }
 
   const attention = data.attention || {}
-  const byCountry = data.attention_by_country
   // The server counts only what this administrator may see; a card also never links to
   // a section their permissions do not open.
   const visibleCards = ATTENTION.filter((card) => card.key in attention && mayOpen(identity, card.goto))
@@ -170,9 +125,6 @@ export function Overview({ identity, Panel, useAsync, onNav }) {
             <h2 className="font-display text-lg font-bold text-graphite dark:text-white">
               {outstanding === 0 ? 'Nothing needs your attention' : 'Needs your attention'}
             </h2>
-            <p className="mt-0.5 text-sm font-medium text-slate-600 dark:text-slate-300">
-              You are administering {territory}.
-            </p>
           </div>
           {outstanding === 0 && (
             <span className="inline-flex items-center gap-1.5 rounded-full bg-ocbrand-50 px-3 py-1 text-xs font-extrabold text-ocbrand-700">
@@ -190,42 +142,17 @@ export function Overview({ identity, Panel, useAsync, onNav }) {
               key={card.key}
               card={card}
               value={attention[card.key]}
-              split={
-                byCountry && {
-                  IN: byCountry.IN?.[card.key] ?? 0,
-                }
-              }
               needsAction={(attention[card.key] || 0) > 0 && !card.neutral}
               onNav={onNav}
             />
           ))}
-          {/* The platform's size, from the same figures as the country cards
-              below: never coloured, since a total is not a queue. */}
+          {/* The platform's size: never coloured, since a total is not a queue. */}
           {totals.map((card) => (
             <AttentionCard key={card.key} card={card} value={card.value} needsAction={false} onNav={card.goto ? onNav : null} />
           ))}
         </div>
       </section>
 
-      {data.countries?.length > 0 && (
-        <section>
-          <h2 className="font-display text-[15px] font-bold text-graphite dark:text-white">
-            {identity.is_global ? 'By country' : `${data.countries[0].country} at a glance`}
-          </h2>
-          <p className="mt-0.5 text-xs font-medium text-slate-600 dark:text-slate-300">
-            {identity.is_global
-              ? 'Each location administrator sees just their own.'
-              : 'The market you are responsible for.'}
-          </p>
-          <div className="mt-3">
-            <CardGrid testId="admin-country-cards" label="Countries">
-              {data.countries.map((country) => (
-                <CountryCard key={country.scope} country={country} onNav={onNav} canOpenAccounts={mayOpen(identity, 'users')} />
-              ))}
-            </CardGrid>
-          </div>
-        </section>
-      )}
     </div>
   )
 }

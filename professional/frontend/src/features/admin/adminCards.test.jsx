@@ -1,5 +1,5 @@
 /**
- * The admin console's card lists (adverts, countries, catalog products, brands,
+ * The admin console's card lists (adverts, catalog products, brands,
  * categories, subcategories) are the shared CardGrid of ListCards, every card
  * with the same anatomy.
  */
@@ -50,21 +50,6 @@ describe('admin card lists', () => {
       'GET /admin/ads/placements': { data: [{ key: 'home', label: 'Home' }] },
     })
     expectUniformCards(await screen.findByTestId('admin-advert-cards', {}, FIND))
-  })
-
-  it('overview countries', async () => {
-    openConsole('/admin', {
-      'GET /admin/overview': {
-        data: {
-          attention: {},
-          countries: [
-            { country: 'India', scope: 'IN', accounts: 40, projects: 7, open_reports: 0, administrators: 2 },
-            { country: 'Kuwait', scope: 'KW', accounts: 3, projects: 1, open_reports: 1, administrators: 1 },
-          ],
-        },
-      },
-    })
-    expectUniformCards(await screen.findByTestId('admin-country-cards', {}, FIND))
   })
 
   it('catalog products', async () => {

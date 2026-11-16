@@ -47,7 +47,6 @@ const TONES = {
   slate: 'bg-slate-100 text-slate-500',
 }
 
-const SCOPE_NAMES = { GLOBAL: 'Global', IN: 'India', KU: 'Kuwait' }
 const today = () => new Date().toISOString().slice(0, 10)
 
 export function AuditPage({ Panel, useAsync }) {
@@ -188,28 +187,27 @@ export function AuditPage({ Panel, useAsync }) {
               <th className="px-4 py-2.5">Action</th>
               <th className="px-4 py-2.5">What happened</th>
               <th className="px-4 py-2.5">Who</th>
-              <th className="px-4 py-2.5">Scope</th>
               <th className="px-4 py-2.5">Reason</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {error && (
               <tr>
-                <td colSpan={6} className="px-4 py-10 text-center text-sm text-slate-500">
+                <td colSpan={5} className="px-4 py-10 text-center text-sm text-slate-500">
                   {error}
                 </td>
               </tr>
             )}
             {!error && loading && (
               <tr>
-                <td colSpan={6} className="px-4 py-10 text-center text-sm text-slate-500">
+                <td colSpan={5} className="px-4 py-10 text-center text-sm text-slate-500">
                   Loading…
                 </td>
               </tr>
             )}
             {!error && !loading && !data?.entries.length && (
               <tr>
-                <td colSpan={6} className="px-4 py-10 text-center text-sm font-medium text-slate-500">
+                <td colSpan={5} className="px-4 py-10 text-center text-sm font-medium text-slate-500">
                   {filtered ? 'Nothing matches those filters.' : 'Nothing has been recorded yet.'}
                 </td>
               </tr>
@@ -252,11 +250,6 @@ export function AuditPage({ Panel, useAsync }) {
                     </td>
                     <td className="whitespace-nowrap px-4 py-2.5 text-xs font-semibold text-graphite">
                       {entry.actor_email.split('@')[0]}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-2.5">
-                      <span className="rounded-md bg-oc-mint px-2 py-0.5 text-[11px] font-bold text-oc-deep">
-                        {SCOPE_NAMES[entry.scope] || entry.scope}
-                      </span>
                     </td>
                     {/* Wrapped rather than cropped. The reason is what explains
                         the decision months later, and half of it is no use. */}

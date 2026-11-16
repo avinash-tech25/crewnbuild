@@ -186,7 +186,6 @@ export function UserDetailDrawer({ userId, onClose }) {
                   )}
                 </Field>
                 <Field label="Phone">{detail.phone || '—'}</Field>
-                <Field label="Country">{detail.country || '—'}</Field>
                 <Field label="Pincode">{detail.pincode || '—'}</Field>
                 <Field label="Joined">{new Date(detail.created_at).toLocaleDateString()}</Field>
                 <Field label="Profile">

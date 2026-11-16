@@ -21,7 +21,6 @@ export const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'Jun
   'October', 'November', 'December']
 
 const DURATION_LABELS = { MONTHLY: 'Monthly', SIX_MONTHS: '6 months', ANNUAL: 'Annual' }
-const COUNTRY_NAMES = { IN: 'India' }
 const MINOR_DIGITS = { INR: 2 }
 
 export const STATUS_TONES = {
@@ -35,7 +34,6 @@ export const STATUS_TONES = {
 export const statusLabel = (status) => PAYMENT_STATUSES.find((item) => item.value === status)?.label || status || '—'
 export const planLabel = (plan, duration) =>
   `${PLAN_OPTIONS.find((item) => item.value === plan)?.label || plan || '—'}${duration ? ` · ${DURATION_LABELS[duration] || duration}` : ''}`
-export const countryName = (code) => COUNTRY_NAMES[code] || code || '—'
 
 // Minor units (paise) to a currency string. null/undefined stays a dash.
 export function formatMinor(minor, currency = 'INR') {

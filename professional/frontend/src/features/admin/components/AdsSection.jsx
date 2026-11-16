@@ -45,7 +45,6 @@ const BLANK = {
   placements: [],
   positions: {},
   display_width: 'FULL',
-  scope: '',
   starts_on: '',
   ends_on: '',
   price_amount: '',
@@ -365,7 +364,6 @@ function AdvertForm({ identity, placements, existing, onDone, onCancel }) {
           price_amount: existing.price_amount || '',
           pricing_model: existing.pricing_model || '',
           currency: existing.currency || '',
-          scope: existing.scope,
           starts_on: existing.starts_on || '',
           ends_on: existing.ends_on || '',
         }
@@ -491,9 +489,8 @@ function AdvertForm({ identity, placements, existing, onDone, onCancel }) {
         if (!draft.price_amount && !draft.pricing_model) body.clear_price = true
         await updateAdvert(existing.id, body)
       } else {
-        // Ignored by the server for a location administrator, whose own country
-        // is always used.
-        await createAdvert({ ...body, scope: identity.is_global ? draft.scope : undefined })
+        // India, the only market (the server ignores it from anyone but a Global Super Admin).
+        await createAdvert({ ...body, scope: identity.is_global ? 'IN' : undefined })
       }
       onDone()
     } catch (requestError) {
@@ -641,7 +638,7 @@ function AdvertForm({ identity, placements, existing, onDone, onCancel }) {
             it has come to. */}
         <label className="block">
           <span className={label}>
-            Price {draft.currency || CURRENCY_FOR_SCOPE[editing ? existing.scope : draft.scope] || ''} (optional)
+            Price {draft.currency || CURRENCY_FOR_SCOPE[editing ? existing.scope : 'IN'] || 'INR'} (optional)
           </span>
           <input
             // A plain text input, not type="number": a focused number input
@@ -672,40 +669,6 @@ function AdvertForm({ identity, placements, existing, onDone, onCancel }) {
             ))}
           </select>
         </label>
-        {/* Country is fixed once an advert exists: moving a running advert
-            between countries would leave its recorded performance describing an
-            audience it no longer has. */}
-        {identity.is_global && !editing && (
-          <label className="block">
-            <span className={label}>Country</span>
-            <select
-              value={draft.scope}
-              onChange={(event) => setDraft({ ...draft, scope: event.target.value })}
-              className={field}
-              required
-            >
-              <option value="">Choose…</option>
-              <option value="IN">India</option>
-              <option value="GLOBAL">Global</option>
-            </select>
-          </label>
-        )}
-        {/* Only for a GLOBAL advert. Everywhere else the currency follows the
-            country the advert belongs to. */}
-        {draft.scope === 'GLOBAL' && draft.price_amount && !editing && (
-          <label className="block">
-            <span className={label}>Priced in</span>
-            <select
-              value={draft.currency}
-              onChange={(event) => setDraft({ ...draft, currency: event.target.value })}
-              className={field}
-              required
-            >
-              <option value="">Choose…</option>
-              <option value="INR">INR — Indian rupees</option>
-            </select>
-          </label>
-        )}
         <label className="block">
           <span className={label}>Starts (optional)</span>
           <input
@@ -829,11 +792,7 @@ export function AdsPage({ identity, Panel }) {
   return (
     <Panel
       title="Adverts"
-      subtitle={
-        identity.is_global
-          ? 'Every advert running on the platform.'
-          : 'Adverts running in your country.'
-      }
+      subtitle="Every advert running on the platform."
       right={
         mayManage && !creating ? (
           <button
@@ -892,7 +851,7 @@ export function AdsPage({ identity, Panel }) {
           <ImageIcon className="mx-auto h-6 w-6 text-slate-300" />
           <p className="mt-2 text-sm font-bold text-oc-deep">No adverts yet</p>
           <p className="mt-0.5 text-xs font-medium text-oc-muted">
-            An advert appears on the screens you choose, to the country it belongs to.
+            An advert appears on the screens you choose.
           </p>
         </div>
       ) : (
@@ -943,7 +902,6 @@ export function AdsPage({ identity, Panel }) {
                     status={<CardStatus status={advert.status}>{advert.status}</CardStatus>}
                     rows={rows}
                     chips={[
-                      <CardChip key="scope" tone="green">{advert.scope === 'GLOBAL' ? 'Global' : advert.scope}</CardChip>,
                       (advert.starts_on || advert.ends_on) && (
                         <CardChip key="dates">{advert.starts_on || 'now'} → {advert.ends_on || 'until stopped'}</CardChip>
                       ),

@@ -103,15 +103,6 @@ describe('Admin addresses', () => {
     await waitFor(() => expect(location.current.search).toBe('?role=SUPPLIER&country=India'))
   })
 
-  it('keeps ?role= and ?status= when the country changes', async () => {
-    const user = userEvent.setup()
-    openAdmin('/admin/users?role=SUPPLIER&status=ACTIVE&country=India')
-    await user.selectOptions(await screen.findByDisplayValue('India', {}, FIND), '')
-    await waitFor(() => expect(location.current.search).toBe('?role=SUPPLIER&status=ACTIVE'))
-    await user.selectOptions(screen.getByDisplayValue('All countries'), 'India')
-    await waitFor(() => expect(location.current.search).toBe('?role=SUPPLIER&status=ACTIVE&country=India'))
-  })
-
   it('keeps a builder out of an admin record address, as before', async () => {
     installFakeServer({})
     renderApp(`/admin/users/${USER_ID}`, { auth: signedInAs(anAccount({ role: 'BUILDER' })) })

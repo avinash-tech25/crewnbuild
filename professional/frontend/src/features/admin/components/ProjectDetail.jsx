@@ -4,11 +4,6 @@
  * Same drawer pattern as the account view: an administrator reviewing a list is
  * checking one project against the others, and a separate page loses their
  * place, their filter and their scroll position.
- *
- * The owner's country and the site's country are shown side by side and labelled
- * as different things. They differ often, and the distinction is the rule the
- * whole administrative scope rests on. Presenting them as one field is how that
- * gets forgotten.
  */
 
 const NOT_FOUND = 'not-found'
@@ -55,10 +50,9 @@ function Person({ icon: Icon, role, person }) {
         {person ? (
           <>
             <span className="block truncate text-sm font-semibold text-graphite">{person.name}</span>
-            <span className="block truncate text-[11px] text-slate-500">
-              {person.country || '—'}
-              {person.status !== 'ACTIVE' && ' · suspended'}
-            </span>
+            {person.status !== 'ACTIVE' && (
+              <span className="block truncate text-[11px] text-slate-500">Suspended</span>
+            )}
           </>
         ) : (
           <span className="block text-sm font-medium text-slate-400">Not assigned</span>
@@ -143,20 +137,12 @@ export function ProjectDetailDrawer({ projectId, onClose }) {
                 <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-brand-600" />
                 <div>
                   <p className="text-sm font-semibold text-graphite">
-                    {[detail.project_city, detail.project_state, detail.project_country]
+                    {[detail.project_city, detail.project_state]
                       .filter(Boolean)
                       .join(', ')}
                   </p>
                   <p className="mt-0.5 text-xs text-slate-500">
                     {detail.address} · {detail.pincode}
-                  </p>
-                  {/* Stated outright, because it is the rule the scope rests on. */}
-                  <p className="mt-1.5 text-[11px] font-medium text-slate-400">
-                    This project is administered by {detail.project_country || 'India'} because that
-                    is where the site is
-                    {detail.owner && detail.owner.country !== detail.project_country
-                      ? `, not ${detail.owner.country} where its owner lives.`
-                      : '.'}
                   </p>
                 </div>
               </div>

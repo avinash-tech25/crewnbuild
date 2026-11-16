@@ -179,15 +179,16 @@ describe('admin console: announcements, adverts, catalog and coupons', () => {
     expect(await screen.findByText(/^Price .*\(optional\)$/)).toBeInTheDocument()
   })
 
-  it("prices a Global Super Admin's advert in the chosen country's currency", async () => {
+  it("prices a Global Super Admin's advert in rupees, with no country to choose (India only)", async () => {
     const user = userEvent.setup()
     openConsole('/admin/ads', anIdentity('global'), {
       'GET /admin/ads': { data: { items: [], revenue: [] } },
       'GET /admin/ads/placements': { data: [] },
     })
     await user.click(await screen.findByRole('button', { name: /New advert/ }, FIND))
-    await user.selectOptions(screen.getByLabelText('Country'), 'IN')
     expect(screen.getByText('Price INR (optional)')).toBeInTheDocument()
+    expect(screen.queryByLabelText('Country')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Priced in')).not.toBeInTheDocument()
   })
 
   it('hides New advert from a manager with ads.view only', async () => {
@@ -298,15 +299,43 @@ describe('admin console: sensitive records', () => {
   })
 })
 
-describe('admin console: global and location administrators', () => {
-  it('lets only a Global Super Admin switch the country being viewed', async () => {
-    openConsole('/admin', anIdentity('global'))
+describe('admin console: one platform, India only', () => {
+  it.each(['global', 'location'])('shows a %s Super Admin plain numbers, no countries or flags', async (kind) => {
+    openConsole('/admin', anIdentity(kind), {
+      'GET /admin/overview': {
+        data: { attention: {}, attention_by_country: { IN: {} }, countries: [{ country: 'India', scope: 'IN', accounts: 40, projects: 7, open_reports: 0, administrators: 2 }] },
+      },
+    })
     expect(await screen.findByText('Nothing needs your attention', {}, FIND)).toBeInTheDocument()
-    expect(screen.getByText(/whole platform/)).toBeInTheDocument()
+    expect(screen.getByText('40')).toBeInTheDocument()
+    expect(screen.queryByText(/By country|at a glance|administering|India/)).not.toBeInTheDocument()
+    expect(screen.queryByRole('img', { name: 'India' })).not.toBeInTheDocument()
   })
 
-  it('tells a Location Super Admin they administer their country only', async () => {
-    openConsole('/admin', anIdentity('location'))
-    expect(await screen.findByText(/administering India only/, {}, FIND)).toBeInTheDocument()
+  it('lists accounts with no country filter or column', async () => {
+    openConsole('/admin/users', anIdentity('global'), { 'GET /admin/users': { data: { users: [aUserRow()], total: 1 } } })
+    expect(await screen.findByRole('columnheader', { name: 'Verified' }, FIND)).toBeInTheDocument()
+    expect(screen.queryByRole('columnheader', { name: 'Country' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('option', { name: 'All countries' })).not.toBeInTheDocument()
+  })
+
+  it('creates a Super Admin with no country to choose; the server still gets India', async () => {
+    const user = userEvent.setup()
+    const { server } = openConsole('/admin/admins', anIdentity('global'), {
+      'GET /admin/admins': { data: { admins: [] } },
+      'GET /admin/manager-presets': { data: { permissions: [], presets: [] } },
+      'POST /admin/admins': { data: { id: USER_ID } },
+    })
+    await user.click(await screen.findByRole('button', { name: /New administrator/ }, FIND))
+    expect(screen.queryByLabelText('Country')).not.toBeInTheDocument()
+    expect(screen.getByRole('option', { name: 'Super Admin' })).toBeInTheDocument()
+    expect(screen.queryByRole('option', { name: /Location/ })).not.toBeInTheDocument()
+    await user.type(screen.getByLabelText('Name'), 'Priya Rao')
+    await user.type(screen.getByLabelText('Email'), 'priya@crewnbuild.test')
+    await user.type(screen.getByLabelText('Password'), 'Str0ng!Passw0rd')
+    await user.selectOptions(screen.getByLabelText('Role'), 'LOCATION_SUPER_ADMIN')
+    await user.click(screen.getByRole('button', { name: 'Create administrator' }))
+    await waitFor(() => expect(server.calls('POST /admin/admins')).toHaveLength(1))
+    expect(JSON.parse(server.calls('POST /admin/admins')[0].data)).toMatchObject({ role: 'LOCATION_SUPER_ADMIN', scope: 'IN' })
   })
 })

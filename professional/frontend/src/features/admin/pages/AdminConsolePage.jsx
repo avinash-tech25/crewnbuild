@@ -22,7 +22,6 @@ import {
   Plus,
   RefreshCw,
   Flag,
-  Globe,
   Megaphone,
   Library,
   TicketPercent,
@@ -40,7 +39,6 @@ import PhoneChangeSection from '../../accounts/components/PhoneChangeSection.jsx
 import { logoutUser } from '../../../shared/auth/authSlice.js'
 import {
   AdminCountryProvider,
-  CountryFlag,
   useAdminCountry,
 } from '../components/AdminCountry.jsx'
 import { LeadsPage } from '../components/LeadsSection.jsx'
@@ -74,7 +72,9 @@ import {
   setViewingCountry,
 } from '../adminApi.js'
 
-const SCOPE_LABELS = { GLOBAL: 'Global', IN: 'India' }
+// India is the only market, so every administrator works platform-wide; the role names
+// say what someone may do, not where. (The server keeps its country fields, always IN.)
+const ROLE_LABELS = { GLOBAL_SUPER_ADMIN: 'Super Admin', LOCATION_SUPER_ADMIN: 'Super Admin', MANAGER: 'Manager' }
 
 // Marketplace roles only. Administrators are staff and live on their own screen,
 // so they are neither listed here nor returned by the endpoint.
@@ -142,22 +142,6 @@ function StatusPill({ value }) {
       }`}
     >
       {active ? 'Active' : 'Suspended'}
-    </span>
-  )
-}
-
-function ScopeChip({ scope }) {
-  return (
-    <span className="inline-flex items-center gap-1.5 rounded-md bg-oc-mint px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-oc-deep">
-      {/* A globe for GLOBAL, since no country's flag means "everywhere" — and
-          the same globe the country switch shows when it is set to all
-          countries, so the two say the same thing in the same way. */}
-      {scope === 'GLOBAL' ? (
-        <Globe className="h-3 w-3 shrink-0" />
-      ) : (
-        <CountryFlag country={SCOPE_LABELS[scope]} className="h-2.5 w-4" />
-      )}
-      {SCOPE_LABELS[scope] || scope}
     </span>
   )
 }
@@ -323,7 +307,7 @@ function UsersPage({ identity }) {
         data
           ? `${data.total} marketplace account${data.total === 1 ? '' : 's'}${
               statusFilter ? ` · ${statusFilter.toLowerCase()}` : ''
-            }${country ? ` in ${country}` : ' in your scope'}`
+            }`
           : 'Loading…'
       }
       right={
@@ -354,19 +338,6 @@ function UsersPage({ identity }) {
             >
               {statusFilter.toLowerCase()} only ✕
             </button>
-          )}
-          {identity.is_global && (
-            <select
-              value={country}
-              onChange={(event) => {
-                setOffset(0)
-                setFilterParam('country', event.target.value)
-              }}
-              className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-graphite"
-            >
-              <option value="">All countries</option>
-              <option value="India">India</option>
-            </select>
           )}
           <select
             value={role}
@@ -404,7 +375,6 @@ function UsersPage({ identity }) {
               <th className="px-4 py-2.5">Role</th>
               <th className="px-4 py-2.5">Email</th>
               <th className="px-4 py-2.5">Phone</th>
-              <th className="px-4 py-2.5">Country</th>
               <th className="px-4 py-2.5">Verified</th>
               <th className="px-4 py-2.5">Profile</th>
               <th className="px-4 py-2.5">Status</th>
@@ -413,10 +383,10 @@ function UsersPage({ identity }) {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {error && <EmptyRow colSpan={10} message={error} />}
-            {!error && loading && <EmptyRow colSpan={10} message="Loading…" />}
+            {error && <EmptyRow colSpan={9} message={error} />}
+            {!error && loading && <EmptyRow colSpan={9} message="Loading…" />}
             {!error && !loading && !data?.users.length && (
-              <EmptyRow colSpan={10} message="No accounts match these filters." />
+              <EmptyRow colSpan={9} message="No accounts match these filters." />
             )}
             {!error &&
               !loading &&
@@ -436,7 +406,6 @@ function UsersPage({ identity }) {
                     </td>
                     <td className="px-4 py-3 text-slate-500">{user.email}</td>
                     <td className="px-4 py-2.5 tabular-nums text-oc-muted">{user.phone || '—'}</td>
-                    <td className="px-4 py-3 text-slate-500">{user.country || '—'}</td>
                     <td className="px-4 py-2.5">
                       {/* Only builders and suppliers submit documents, so the rest
                           show a dash rather than an unverified badge they could
@@ -533,17 +502,16 @@ function ProjectsPage() {
               <th className="px-4 py-2.5">#</th>
               <th className="px-4 py-2.5">Project</th>
               <th className="px-4 py-2.5">Owner</th>
-              <th className="px-4 py-2.5">Owner is from</th>
-              <th className="px-4 py-2.5">Site is in</th>
+              <th className="px-4 py-2.5">Site</th>
               <th className="px-4 py-2.5">Progress</th>
               <th className="px-4 py-2.5">Status</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {error && <EmptyRow colSpan={7} message={error} />}
-            {!error && loading && <EmptyRow colSpan={7} message="Loading…" />}
+            {error && <EmptyRow colSpan={6} message={error} />}
+            {!error && loading && <EmptyRow colSpan={6} message="Loading…" />}
             {!error && !loading && !data?.projects.length && (
-              <EmptyRow colSpan={7} message="No projects in your scope yet." />
+              <EmptyRow colSpan={6} message="No projects yet." />
             )}
             {!error &&
               !loading &&
@@ -556,15 +524,7 @@ function ProjectsPage() {
                   <td className="px-4 py-2.5 tabular-nums text-oc-faint">{project.id}</td>
                   <td className="px-4 py-3 font-semibold text-graphite">{project.title}</td>
                   <td className="px-4 py-3 text-slate-500">{project.owner_name || '—'}</td>
-                  {/* Deliberately side by side: these two often differ, and seeing
-                      both is how the distinction stays visible to the administrator. */}
-                  <td className="px-4 py-3 text-slate-500">{project.owner_country || '—'}</td>
-                  <td className="px-4 py-2.5">
-                    <span className="font-semibold text-oc-ink">{project.project_country || 'India'}</span>
-                    {project.project_city && (
-                      <span className="text-oc-muted"> · {project.project_city}</span>
-                    )}
-                  </td>
+                  <td className="px-4 py-3 text-slate-500">{project.project_city || '—'}</td>
                   <td className="px-4 py-2.5 tabular-nums text-oc-muted">
                     {completionPercent(project) === null ? 'Not available' : formatPercent(completionPercent(project))}
                   </td>
@@ -582,7 +542,7 @@ function ProjectsPage() {
 
 /* ----------------------------------------------------------- Administrators */
 
-const BLANK_ADMIN = { name: '', email: '', password: '', role: '', scope: '', permissions: [] }
+const BLANK_ADMIN = { name: '', email: '', password: '', role: '', permissions: [] }
 
 const sameSet = (left, right) => {
   if (left.length !== right.length) return false
@@ -679,12 +639,12 @@ function CreateAdministratorForm({ identity, catalogue, onCreated, onCancel }) {
   const [message, setMessage] = useState('')
   const [saving, setSaving] = useState(false)
 
-  // A Global Super Admin creates Location Super Admins; a Location Super Admin
-  // creates Managers. The server enforces this either way — the list below only
-  // spares the administrator from choosing something that will be refused.
+  // A Global Super Admin may also create Super Admins; other Super Admins create
+  // Managers. The server enforces this either way — the list below only spares the
+  // administrator from choosing something that will be refused.
   const creatableRoles = identity.is_global
-    ? [['LOCATION_SUPER_ADMIN', 'Location Super Admin'], ['MANAGER', 'Manager']]
-    : [['MANAGER', 'Manager']]
+    ? [['LOCATION_SUPER_ADMIN', ROLE_LABELS.LOCATION_SUPER_ADMIN], ['MANAGER', ROLE_LABELS.MANAGER]]
+    : [['MANAGER', ROLE_LABELS.MANAGER]]
 
   const isManager = draft.role === 'MANAGER'
   // A manager can never be granted administrator management, so it is not offered.
@@ -700,8 +660,8 @@ function CreateAdministratorForm({ identity, catalogue, onCreated, onCancel }) {
         email: draft.email,
         password: draft.password,
         role: draft.role,
-        // Ignored by the server for a location administrator, whose own scope wins.
-        scope: identity.is_global ? draft.scope : undefined,
+        // India, the only market (the server ignores it from anyone but a Global Super Admin).
+        scope: identity.is_global ? 'IN' : undefined,
         permissions: isManager ? draft.permissions : undefined,
       })
       setDraft(BLANK_ADMIN)
@@ -770,22 +730,6 @@ function CreateAdministratorForm({ identity, catalogue, onCreated, onCancel }) {
           </select>
         </label>
 
-        {identity.is_global && (
-          <label className="grid gap-1">
-            <span className="text-[11px] font-extrabold uppercase tracking-wide text-oc-faint">
-              Country
-            </span>
-            <select
-              value={draft.scope}
-              onChange={(event) => setDraft({ ...draft, scope: event.target.value })}
-              className={field}
-              required
-            >
-              <option value="">Choose…</option>
-              <option value="IN">India</option>
-            </select>
-          </label>
-        )}
       </div>
 
       {isManager && (
@@ -795,13 +739,6 @@ function CreateAdministratorForm({ identity, catalogue, onCreated, onCancel }) {
           permissions={draft.permissions}
           onChange={(permissions) => setDraft((current) => ({ ...current, permissions }))}
         />
-      )}
-
-      {!identity.is_global && (
-        <p className="mt-3 text-xs font-medium text-oc-muted">
-          This account will be created in {SCOPE_LABELS[identity.scope]} — you can only create
-          administrators for your own country.
-        </p>
       )}
 
       {message && <p className="mt-3 text-xs font-bold text-red-600">{message}</p>}
@@ -840,7 +777,6 @@ function EditAdministratorRow({ identity, admin, catalogue, onSaved, onCancel })
   const isManager = admin.role === 'MANAGER'
   const grantable = identity.permissions.filter((permission) => permission !== 'admins.manage')
   const [permissions, setPermissions] = useState(admin.permissions || [])
-  const [scope, setScope] = useState(admin.scope)
   const [reason, setReason] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -853,7 +789,6 @@ function EditAdministratorRow({ identity, admin, catalogue, onSaved, onCancel })
       // means the same thing the person sees.
       const changes = { reason }
       if (isManager) changes.permissions = permissions
-      if (identity.is_global && scope !== admin.scope) changes.scope = scope
       await updateAdministrator(admin.user_id, changes)
       onSaved()
     } catch (requestError) {
@@ -880,26 +815,11 @@ function EditAdministratorRow({ identity, admin, catalogue, onSaved, onCancel })
         ) : (
           <p className="mt-2 text-xs font-semibold text-oc-muted">
             A Super Admin holds every permission by virtue of the role, so there is
-            nothing to tick. Only their country can be changed.
+            nothing to tick.
           </p>
         )}
 
         <div className="mt-3 flex flex-wrap items-end gap-2">
-          {/* Only a Global Super Admin can move somebody between countries; a
-              location administrator has one scope and the server ignores the
-              field from them anyway. */}
-          {identity.is_global && (
-            <label className="text-[11px] font-extrabold uppercase tracking-wide text-oc-faint">
-              Country
-              <select
-                value={scope}
-                onChange={(event) => setScope(event.target.value)}
-                className="ml-2 h-8 rounded-lg border border-oc-line bg-white px-2 text-xs font-bold text-graphite"
-              >
-                <option value="IN">India</option>
-              </select>
-            </label>
-          )}
           <input
             value={reason}
             onChange={(event) => setReason(event.target.value)}
@@ -962,9 +882,7 @@ function AdministratorsPage({ identity }) {
     <Panel
       title="Administrators"
       subtitle={
-        identity.is_global
-          ? 'Every administrator on the platform.'
-          : `Administrators for ${SCOPE_LABELS[identity.scope]}.`
+        'Every administrator on the platform.'
       }
       right={
         !showForm && (
@@ -1003,15 +921,14 @@ function AdministratorsPage({ identity }) {
               <th className="px-4 py-2.5">Name</th>
               <th className="px-4 py-2.5">Email</th>
               <th className="px-4 py-2.5">Role</th>
-              <th className="px-4 py-2.5">Scope</th>
               <th className="px-4 py-2.5">Permissions</th>
               <th className="px-4 py-2.5">Status</th>
               <th className="px-4 py-2.5 text-right">Action</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {error && <EmptyRow colSpan={7} message={error} />}
-            {!error && loading && <EmptyRow colSpan={7} message="Loading…" />}
+            {error && <EmptyRow colSpan={6} message={error} />}
+            {!error && loading && <EmptyRow colSpan={6} message="Loading…" />}
             {!error &&
               !loading &&
               data?.admins.map((admin) => {
@@ -1025,10 +942,7 @@ function AdministratorsPage({ identity }) {
                       {isSelf && <span className="ml-1.5 text-[11px] text-oc-faint">(you)</span>}
                     </td>
                     <td className="px-4 py-3 text-slate-500">{admin.email}</td>
-                    <td className="px-4 py-2.5 text-xs font-bold text-oc-deep">{admin.role}</td>
-                    <td className="px-4 py-2.5">
-                      <ScopeChip scope={admin.scope} />
-                    </td>
+                    <td className="px-4 py-2.5 text-xs font-bold text-oc-deep">{ROLE_LABELS[admin.role] || admin.role}</td>
                     <td className="px-4 py-2.5 text-xs text-oc-muted">
                       {admin.permissions.length ? admin.permissions.join(', ') : 'All (by role)'}
                     </td>
@@ -1205,12 +1119,7 @@ function AdminConsole({ identity, error, onIdentityChanged }) {
     )
   }
 
-  const roleLabel =
-    identity.role === 'GLOBAL_SUPER_ADMIN'
-      ? 'Global Super Admin'
-      : identity.role === 'LOCATION_SUPER_ADMIN'
-        ? `${SCOPE_LABELS[identity.scope]} Super Admin`
-        : `${SCOPE_LABELS[identity.scope]} Manager`
+  const roleLabel = ROLE_LABELS[identity.role] || 'Administrator'
 
   const current = SECTIONS.find((section) => section.id === activeId)
   const title = current?.label || OTHER_PAGES[activeId] || 'Dashboard'
@@ -1239,12 +1148,6 @@ function AdminConsole({ identity, error, onIdentityChanged }) {
           can(identity, SECTION_PERMISSIONS.notifications)
             ? () => navigate('/admin/notifications')
             : null
-        }
-        headerActions={
-          // A location administrator gets a chip naming their territory, which
-          // is their only indication of it. A Global Super Admin gets nothing
-          // here: a chip reading "Global" would repeat the role label beside it.
-          identity.is_global ? null : <ScopeChip scope={identity.scope} />
         }
       >
         {!mayOpen(identity, activeId) ? <NoAccess /> : (
@@ -1289,7 +1192,7 @@ function AdminConsole({ identity, error, onIdentityChanged }) {
           <Route path="audit" element={<AuditPage Panel={Panel} useAsync={useAsync} />} />
           <Route path="catalog" element={<CatalogPage key={country} Panel={Panel} canManage={can(identity, 'catalog.manage')} />} />
           <Route path="coupons" element={<CouponsPage identity={identity} Panel={Panel} useAsync={useAsync} />} />
-          <Route path="subscription-payments" element={<SubscriptionPaymentsPage identity={identity} Panel={Panel} useAsync={useAsync} />} />
+          <Route path="subscription-payments" element={<SubscriptionPaymentsPage Panel={Panel} useAsync={useAsync} />} />
           <Route path="account-deletion" element={<AccountDeletionPage Panel={Panel} useAsync={useAsync} />} />
           <Route path="support" element={<SupportTicketsAdminPage identity={identity} Panel={Panel} useAsync={useAsync} />} />
           <Route path="support/:ticketId" element={<SupportTicketsAdminPage identity={identity} Panel={Panel} useAsync={useAsync} />} />

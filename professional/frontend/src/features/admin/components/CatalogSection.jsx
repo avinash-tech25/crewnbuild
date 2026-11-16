@@ -65,7 +65,6 @@ const MAX_VIDEO_BYTES = 100 * 1024 * 1024
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024
 // The server's rule (REQUIRED_PRODUCT_IMAGES); the product payload states it too.
 const REQUIRED_IMAGES = 5
-const COUNTRY_NAMES = { IN: 'India' }
 
 /** One read-only fact about the product. Rendered only when there is a value. */
 function Fact({ label, children }) {
@@ -338,7 +337,7 @@ export function CatalogPage({ Panel, canManage = false }) {
                   <div className="min-w-0">
                     <h3 className="font-display text-base font-extrabold text-graphite">{detail.name}</h3>
                     <p className="mt-0.5 text-xs font-semibold text-slate-500">
-                      {COUNTRY_NAMES[detail.country_code] || detail.country_code} · {detail.category_name} › {detail.subcategory_name}
+                      {detail.category_name} › {detail.subcategory_name}
                       {detail.brand_name ? ` › ${detail.brand_name}` : ''}
                     </p>
                     <p className="mt-1 text-[11px] font-semibold text-slate-400">

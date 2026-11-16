@@ -171,7 +171,7 @@ export function VerificationPage({ identity, Panel, useAsync }) {
                       <VerifiedBadge verified={account.verified} />
                     </p>
                     <p className="mt-0.5 text-xs text-oc-muted">
-                      {account.name} · {account.role} · {account.country || '—'}
+                      {account.name} · {account.role}
                       {account.licence_number && ` · Licence ${account.licence_number}`}
                     </p>
                     <p className="mt-0.5 text-[11px] text-oc-faint">
