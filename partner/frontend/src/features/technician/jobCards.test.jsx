@@ -43,7 +43,7 @@ describe('job cards share one anatomy', () => {
     }
   })
 
-  it('accepted jobs: the same anatomy for every card, status top right, Start journey on the right', async () => {
+  it('accepted jobs: the same anatomy for every card, status the first chip, Start journey on the right', async () => {
     const user = userEvent.setup()
     openDashboard(AVAILABLE, {
       'GET /technicians/me/dashboard': { data: summary({ accepted_jobs: 2 }) },
@@ -62,7 +62,7 @@ describe('job cards share one anatomy', () => {
     for (const card of cards) {
       expect(card).toHaveAttribute('data-testid', 'job-card')
       expect(card).toHaveAttribute('data-status', 'ACCEPTED')
-      expect(card.querySelector('[data-card-part="header"] > [data-card-part="status"]')).toHaveTextContent('accepted')
+      expect(card.querySelector('[data-card-part="chips"] > [data-card-part="status"]:first-child')).toHaveTextContent('accepted')
       expect(within(card).getByText('1 Test Road')).toBeInTheDocument()
       expect(within(card).getByText('560001')).toBeInTheDocument()
       const { left, right } = footerSides(card)

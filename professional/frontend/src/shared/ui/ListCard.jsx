@@ -3,15 +3,21 @@
  * requests of every type, partners, site engineers, suppliers, listings, orders,
  * bookings, jobs, admin records.
  *
- * Fixed anatomy, so cards in a list line up and read the same everywhere:
+ * Fixed anatomy, so cards in a list line up and read the same everywhere; a card leaves
+ * out the rows it has nothing for, without leaving a gap:
  *
- *   header  avatar / logo (48px) · title · subtitle · status pill (top right)
- *   body    up to four label / value rows, then a chip row
- *   footer  actions pinned to the bottom: secondary on the left, primary on the right
+ *   header       48px thumbnail · bold title (one line) · grey subtitle (location + PIN)
+ *   chips        the status chip first (with its icon), then size, type and the rest
+ *   description  one grey line
+ *   rows         up to four label / value lines (cards that list facts)
+ *   progress     "Progress: ..." left, the amount right, a thin bar under them
+ *   meta         a small line left ("Schedule: ..."), a link on the right (View Analysis)
+ *   footer       secondary actions left (outlined / red outline), the main one right
  *
- * Inside a <CardGrid> every card in a row stretches to the row's height and the footer
- * sits on the bottom edge. Long text never grows a card: titles, subtitles and values
- * are truncated with an ellipsis and carry the full text as a tooltip.
+ * Inside a <CardGrid> the cards in a row line up and the footer sits on the bottom edge.
+ * Long text never grows a card: it is cut with an ellipsis and kept whole as a tooltip.
+ * Hovering or focusing anything in a card turns it the brand's warm yellow (the
+ * `list-card` rules in index.css), with the text kept readable.
  *
  * Only the layout lives here. What a card shows and what its buttons do stay with the
  * screen that renders it.
@@ -55,24 +61,39 @@ export const STATUS_TONES = {
 
 export const statusTone = (status) => STATUS_TONES[String(status || '').trim().toLowerCase().replace(/[\s-]+/g, '_')] || 'grey'
 
-/** The status pill of a card: `status` picks the tone, `children` is the word shown. */
-export function CardStatus({ status, tone, children }) {
+const textOfChildren = (children) => (Array.isArray(children) ? children : [children])
+  .filter((part) => typeof part === 'string' || typeof part === 'number').join('') || undefined
+
+/**
+ * The card's status chip, first in the chip row: `status` picks the tone, `icon` is
+ * optional, `children` is the word shown (whole as a tooltip when it is cut).
+ */
+export function CardStatus({ status, tone, icon: Icon, children }) {
   const classes = TONE_CLASSES[tone || statusTone(status)] || TONE_CLASSES.grey
   return (
     <span
       data-card-part="status"
-      className={`inline-flex max-w-[9rem] shrink-0 items-center truncate rounded-full border px-2.5 py-0.5 text-[11px] font-extrabold uppercase tracking-wide rtl:tracking-normal ${classes}`}
-      title={typeof children === 'string' ? children : undefined}
+      className={`inline-flex max-w-full shrink-0 items-center gap-1 truncate rounded-full border px-2.5 py-0.5 text-[11px] font-bold ${classes}`}
+      title={textOfChildren(children)}
     >
-      {children}
+      {Icon && <Icon aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />}
+      <span className="truncate">{children}</span>
     </span>
   )
 }
 
-/** A chip in the card body (a category, a trade, a count). */
-export function CardChip({ tone = 'grey', icon: Icon, children }) {
+/**
+ * A chip in the card body (a size, a category, a trade, a count). `outline` draws only
+ * the border on white (the type / floors chip).
+ */
+export function CardChip({ tone = 'grey', icon: Icon, outline = false, children }) {
+  const classes = TONE_CLASSES[tone] || TONE_CLASSES.grey
+  const shown = outline ? `${classes.split(' ').filter((name) => !name.startsWith('bg-')).join(' ')} bg-white` : classes
   return (
-    <span className={`inline-flex max-w-full items-center gap-1 truncate rounded-full border px-2.5 py-0.5 text-[11px] font-bold ${TONE_CLASSES[tone] || TONE_CLASSES.grey}`}>
+    <span
+      className={`inline-flex max-w-full items-center gap-1 truncate rounded-full border px-2.5 py-0.5 text-[11px] font-bold ${shown}`}
+      title={textOfChildren(children)}
+    >
       {Icon && <Icon aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />}
       <span className="truncate">{children}</span>
     </span>
@@ -81,7 +102,7 @@ export function CardChip({ tone = 'grey', icon: Icon, children }) {
 
 // ---- actions -----------------------------------------------------------------------
 
-const BUTTON_BASE = 'inline-flex h-9 min-w-0 shrink-0 items-center justify-center gap-1.5 rounded-lg px-3.5 text-xs font-extrabold transition '
+const BUTTON_BASE = 'inline-flex h-8 min-w-0 shrink-0 items-center justify-center gap-1.5 rounded-lg px-3 text-xs font-extrabold transition '
   + 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oc-green focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50'
 
 /**
@@ -89,9 +110,10 @@ const BUTTON_BASE = 'inline-flex h-9 min-w-0 shrink-0 items-center justify-cente
  * (outlined) and `danger` (outlined, red text), both on the left.
  */
 export const cardButtonClass = (variant = 'primary') => `${BUTTON_BASE} ${{
-  primary: 'bg-oc-green text-white hover:bg-oc-deep',
+  // Light green, as in the design; still AA (emerald-800 on emerald-50).
+  primary: 'border border-emerald-200 bg-emerald-50 text-emerald-800 hover:border-emerald-300 hover:bg-emerald-100',
   secondary: 'border border-slate-300 bg-white text-oc-ink hover:bg-slate-50',
-  danger: 'border border-rose-200 bg-white text-rose-700 hover:bg-rose-50',
+  danger: 'border border-rose-300 bg-white text-rose-700 hover:bg-rose-50',
 }[variant] || ''}`
 
 // ---- the card ------------------------------------------------------------------------
@@ -101,7 +123,7 @@ const textOf = (value) => (typeof value === 'string' || typeof value === 'number
 /** A 48px round avatar or logo; `fallback` (initials, an icon) when there is no image. */
 export function CardAvatar({ src, alt = '', fallback = null }) {
   return (
-    <span data-card-part="avatar" className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-full border border-oc-line bg-oc-mint text-sm font-extrabold text-oc-green">
+    <span data-card-part="avatar" className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-xl border border-oc-line bg-oc-mint text-sm font-extrabold text-oc-green">
       {src ? <img src={src} alt={alt} className="h-full w-full object-cover" /> : fallback}
     </span>
   )
@@ -111,9 +133,12 @@ export function CardAvatar({ src, alt = '', fallback = null }) {
  * @param avatar     a node, usually <CardAvatar>; 48px
  * @param title      the card's name (truncated; the full text is its tooltip)
  * @param subtitle   one line under the title
- * @param status     a <CardStatus>, top right
+ * @param status     a <CardStatus>, the first chip
+ * @param chips      nodes for the chip row, after the status
+ * @param description one grey line
  * @param rows       up to four { key?, label, value, title? } rows (more are not drawn)
- * @param chips      nodes for the chip row
+ * @param progress   { label, amount, percent }: label left, amount right, a bar (0-100)
+ * @param meta       { text, action }: a small line left, a link / button right
  * @param secondary  footer actions on the left (outlined / red text)
  * @param primary    footer actions on the right (filled)
  * @param footer     'always': draw the footer even with no actions, as tall as one with
@@ -129,6 +154,9 @@ export function ListCard({
   status = null,
   rows = [],
   chips = [],
+  description = null,
+  progress = null,
+  meta = null,
   secondary = null,
   primary = null,
   onClick,
@@ -152,10 +180,10 @@ export function ListCard({
       // A click anywhere on the card opens it, except on a button, link or field inside
       // it. Keyboard and screen-reader users open it with the title's button.
       onClick={interactive ? (event) => { if (!event.target.closest('button, a, input, select, textarea, label')) onClick(event) } : undefined}
-      className={`flex h-full w-full min-w-0 flex-col rounded-[18px] border p-4 shadow-ocsoft transition-[border-color,box-shadow,transform] duration-200
-        hover:border-[rgba(8,62,43,.28)] hover:shadow-[0_18px_40px_-24px_rgba(23,32,28,0.35)]
+      // `list-card`: the warm hover / focus surface (index.css), the same on every card.
+      className={`list-card flex h-full w-full min-w-0 flex-col rounded-2xl border p-4 shadow-ocsoft
         ${highlighted ? 'border-oc-green bg-ocbrand-50' : 'border-oc-line bg-white'}
-        ${interactive ? 'cursor-pointer hover:-translate-y-0.5' : ''}`}
+        ${interactive ? 'cursor-pointer' : ''}`}
     >
       <header data-card-part="header" className="flex min-w-0 items-start gap-3">
         {avatar}
@@ -174,12 +202,17 @@ export function ListCard({
           </h3>
           {subtitle && <p className="mt-0.5 truncate text-xs text-oc-muted" title={textOf(subtitle)}>{subtitle}</p>}
         </div>
-        {status}
       </header>
 
-      <div data-card-part="body" className={`mt-3 flex min-w-0 flex-1 flex-col gap-3 ${dimmed ? 'opacity-50 blur-[0.5px]' : ''}`}>
+      <div data-card-part="body" className={`mt-3 flex min-w-0 flex-1 flex-col gap-2.5 ${dimmed ? 'opacity-50 blur-[0.5px]' : ''}`}>
+        {(status || shownChips.length > 0) && (
+          <div data-card-part="chips" className="flex min-w-0 flex-wrap gap-1.5">{status}{shownChips}</div>
+        )}
+        {description && (
+          <p data-card-part="description" className="truncate text-xs text-oc-muted" title={textOf(description)}>{description}</p>
+        )}
         {shownRows.length > 0 && (
-          <dl className="grid min-w-0 grid-cols-[minmax(0,auto)_minmax(0,1fr)] gap-x-3 gap-y-1.5 text-xs">
+          <dl className="grid min-w-0 grid-cols-[minmax(0,auto)_minmax(0,1fr)] gap-x-3 gap-y-1 text-xs">
             {shownRows.map((row, index) => (
               <div key={row.key || (typeof row.label === 'string' ? row.label : index)} className="contents">
                 <dt className="truncate font-semibold text-oc-muted">{row.label}</dt>
@@ -188,15 +221,31 @@ export function ListCard({
             ))}
           </dl>
         )}
-        {shownChips.length > 0 && <div data-card-part="chips" className="flex min-w-0 flex-wrap gap-1.5">{shownChips}</div>}
+        {progress && (
+          <div data-card-part="progress" className="min-w-0">
+            <div className="flex min-w-0 items-baseline justify-between gap-3 text-xs">
+              <span className="truncate font-semibold text-oc-muted" title={textOf(progress.label)}>{progress.label}</span>
+              {progress.amount != null && <span className="shrink-0 text-sm font-extrabold text-oc-ink">{progress.amount}</span>}
+            </div>
+            <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-slate-200" aria-hidden="true">
+              <div className="h-full rounded-full bg-emerald-500" style={{ width: `${Math.max(0, Math.min(100, Number(progress.percent) || 0))}%` }} />
+            </div>
+          </div>
+        )}
+        {meta && (meta.text || meta.action) && (
+          <div data-card-part="meta" className="flex min-w-0 items-center justify-between gap-3 text-[11px]">
+            <span className="truncate font-semibold text-oc-muted" title={textOf(meta.text)}>{meta.text}</span>
+            {meta.action && <span className="shrink-0">{meta.action}</span>}
+          </div>
+        )}
         {children}
       </div>
 
       {hasFooter && (
-        <footer data-card-part="footer" className="mt-4 flex min-w-0 flex-wrap items-center justify-between gap-2 border-t border-oc-line pt-3">
-          {/* min-h-9: an empty footer is as tall as one with a button. */}
-          <div className="flex min-h-9 min-w-0 flex-wrap items-center gap-2">{secondary}</div>
-          <div className="ms-auto flex min-h-9 min-w-0 flex-wrap items-center justify-end gap-2">{primary}</div>
+        <footer data-card-part="footer" className="mt-3 flex min-w-0 flex-wrap items-center justify-between gap-2 border-t border-oc-line pt-3">
+          {/* min-h-8: an empty footer is as tall as one with a button. */}
+          <div className="flex min-h-8 min-w-0 flex-wrap items-center gap-2">{secondary}</div>
+          <div className="ms-auto flex min-h-8 min-w-0 flex-wrap items-center justify-end gap-2">{primary}</div>
         </footer>
       )}
     </article>
@@ -210,7 +259,7 @@ export function ListCard({
 export function CardGrid({ children, label, testId }) {
   const items = Children.toArray(children).filter(isValidElement)
   return (
-    <ul data-card-grid="" data-testid={testId} aria-label={label} className="grid grid-cols-1 items-stretch gap-4 md:grid-cols-2 xl:grid-cols-3">
+    <ul data-card-grid="" data-testid={testId} aria-label={label} className="grid grid-cols-1 items-stretch gap-5 md:grid-cols-2 xl:grid-cols-3">
       {items.map((child) => (
         <li key={child.key} className="flex min-w-0">{child}</li>
       ))}

@@ -3,7 +3,7 @@ import { AlertTriangle, Calculator, Calendar, Globe2, HardHat, Home, IndianRupee
 import PincodeAreaHint from '../../../shared/ui/PincodeAreaHint.jsx'
 import BudgetInWords from '../../../shared/ui/BudgetInWords.jsx'
 import StatusPill from '../../../shared/dashboard/StatusPill.jsx'
-import { CardAvatar, CardChip, CardGrid, ListCard, cardButtonClass } from '../../../shared/ui/ListCard.jsx'
+import { CardAvatar, CardChip, CardGrid, CardStatus, ListCard, cardButtonClass } from '../../../shared/ui/ListCard.jsx'
 import { usePincodeAreaLookup } from '../../../shared/hooks/usePincodeAreaLookup.js'
 import { SmartImage } from '../../../shared/ui/ui.jsx'
 import ProjectCameraPanel from '../../cameras/components/LazyProjectCameraPanel.jsx'
@@ -1430,14 +1430,15 @@ export function ProjectListTable({
               title={cardTitle}
               // The location, as the card's subtitle.
               subtitle={`${td(project.address) || t('dash.owner.estimates.locationNotSet')} ${project.pincode || ''}`.trim()}
-              rows={flipped ? [] : [
-                progressRow,
+              // A draft has no project yet: its budget is a plain row, nothing more.
+              rows={flipped || !isDraft ? [] : [
                 { key: 'budget', label: t('dash.common.budget'), value: budgetLabel },
               ]}
+              // Who builds it (or that a builder is still being looked for) is the status chip.
+              status={flipped ? null : <CardStatus tone="green" icon={MapPin}>{builderText}</CardStatus>}
               chips={flipped ? [] : [
-                <CardChip key="builder" tone="green" icon={MapPin}>{builderText}</CardChip>,
                 <CardChip key="area" tone="blue">{t('dash.owner.sqft', { area: estimate?.land_area ?? project.land_area ?? 0 })}</CardChip>,
-                <CardChip key="build" tone="amber">
+                <CardChip key="build" tone="amber" outline>
                   {(estimate?.floor_type ? optionLabel(t, FLOOR_TYPE_KEYS, estimate.floor_type) : '')
                     || buildingTypeText(project.building_type, t)
                     || t('dash.owner.floorsCount', { floors: project.floors || 1 })}
@@ -1446,6 +1447,28 @@ export function ProjectListTable({
               // Turned to its analysis, the card offers no project actions: only the
               // analysis's own Back button (in the body) is live, as when the
               // project face was inert behind it.
+              description={!flipped && describes ? td(estimate.project_description) : null}
+              // "Progress: …" left, the active amount right, the schedule bar under them
+              // (elapsed planned time, only once work has started on site).
+              progress={flipped || isDraft ? null : {
+                label: `${progressRow.label}: ${progressRow.value}`,
+                amount: budgetLabel,
+                percent: project.work_started === true ? elapsed : 0,
+              }}
+              meta={flipped || isDraft ? null : {
+                text: schedule ? `${t('progress.schedule')}: ${schedule}` : '',
+                // Turns this card to its Project Analysis.
+                action: (
+                  <button
+                    ref={(node) => { analysisToggleRefs.current[project.id] = node }}
+                    type="button"
+                    onClick={(event) => { event.stopPropagation(); setFlipped(project.id, true) }}
+                    className="inline-flex items-center gap-1 rounded text-[11px] font-extrabold text-emerald-700 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oc-green"
+                  >
+                    <RotateCw aria-hidden="true" className="h-3.5 w-3.5" /> {t('owner.analysis.view')}
+                  </button>
+                ),
+              }}
               secondary={flipped ? null : (
                 <>
                   {!isDraft && (
@@ -1465,17 +1488,6 @@ export function ProjectListTable({
                   >
                     <Trash2 className="h-3.5 w-3.5" /> {isDeleting ? t('dash.common.deleting') : t('dash.common.delete')}
                   </button>
-                  {/* Turns this card to its Project Analysis. */}
-                  {!isDraft && (
-                    <button
-                      ref={(node) => { analysisToggleRefs.current[project.id] = node }}
-                      type="button"
-                      onClick={(event) => { event.stopPropagation(); setFlipped(project.id, true) }}
-                      className={cardButtonClass('secondary')}
-                    >
-                      {t('owner.analysis.view')} <RotateCw aria-hidden="true" className="h-3.5 w-3.5" />
-                    </button>
-                  )}
                 </>
               )}
               primary={flipped ? null : (
@@ -1518,18 +1530,6 @@ export function ProjectListTable({
                 </div>
               ) : (
                 <>
-                  {describes && <p className="line-clamp-1 text-[11px] font-medium text-oc-muted">{td(estimate.project_description)}</p>}
-                  {/* The schedule bar (elapsed planned time) and its figure, at
-                      the foot of the body. The line keeps its height when there
-                      is no schedule. */}
-                  {!isDraft && (
-                    <div className="mt-auto">
-                      <div className="owner-project-progress h-1.5 w-full overflow-hidden rounded-full bg-slate-200">
-                        <div className="h-full rounded-full bg-emerald-500" style={{ width: `${project.work_started === true ? elapsed : 0}%` }} />
-                      </div>
-                      <p aria-hidden={schedule ? undefined : true} className="mt-1 min-h-[15px] truncate text-[10px] font-semibold text-oc-muted">{schedule ? `${t('progress.schedule')}: ${schedule}` : ''}</p>
-                    </div>
-                  )}
                   {isDraft && (
                     <p className="mt-auto text-[10px] font-medium text-oc-muted">{t('dash.owner.estimates.draftSyncNote')}</p>
                   )}

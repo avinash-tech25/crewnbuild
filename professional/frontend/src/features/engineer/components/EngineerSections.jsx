@@ -189,24 +189,26 @@ export function EngineerMyProjectsSection({ projectList, onOpenProject }) {
                   { key: 'pincode', label: t('dash.common.pincode'), value: project.pincode || '—' },
                   { key: 'type', label: t('dash.common.buildingType'), value: buildingType || '—' },
                   { key: 'end', label: t('dash.owner.projectDetails.endDate'), value: endDate || '—' },
-                  { key: 'amount', label: amountLabel, value: amount ? inr(amount) : '—' },
                 ]}
+                // "Progress: …" left, the amount (labelled by what it is) right, the bar
+                // filling to the schedule figure (elapsed planned time) under them.
+                progress={{
+                  label: progressValue ? `${progressLabel}: ${progressValue}` : '',
+                  amount: (
+                    <>
+                      <span className="me-1 text-[11px] font-semibold text-oc-muted">{amountLabel}</span>
+                      {amount ? inr(amount) : '—'}
+                    </>
+                  ),
+                  percent: elapsed,
+                }}
+                meta={schedule ? { text: `${t('progress.schedule')}: ${schedule}` } : null}
                 primary={(
                   <button type="button" onClick={() => onOpenProject(project)} className={cardButtonClass('primary')}>
                     {t('dash.engineer.openProject')} <ArrowUpRight aria-hidden="true" className="h-3.5 w-3.5 rtl:-scale-x-100" />
                   </button>
                 )}
-              >
-                {/* Progress, the completion bar and the schedule, at the foot of the body. */}
-                <div className="mt-auto">
-                  <p className="min-h-[16px] truncate text-[11px] font-semibold text-oc-muted">{progressValue ? `${progressLabel}: ${progressValue}` : ''}</p>
-                  {/* Fills to the schedule figure (elapsed planned time). */}
-                  <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-slate-200">
-                    <div className="h-full rounded-full bg-emerald-500" style={{ width: `${elapsed}%` }} />
-                  </div>
-                  <p aria-hidden={schedule ? undefined : true} className="mt-1 min-h-[15px] truncate text-[10px] font-semibold text-oc-muted">{schedule ? `${t('progress.schedule')}: ${schedule}` : ''}</p>
-                </div>
-              </ListCard>
+              />
             )
           })}
         </CardGrid>

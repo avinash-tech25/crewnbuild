@@ -69,31 +69,31 @@ export function ContractorProjectsTable({ projectList, onSelect }) {
                 // The engineer's name once assigned, else "Assignment required".
                 value: project.assigned_engineer ? td(project.assigned_engineer.name) : t('dash.contractor.assignmentRequired'),
               },
-              // The confirmed contract once there is one, else the awarded quotation, else
-              // the owner's budget; labelled by the amount shown (as the project details are).
-              {
-                key: 'amount',
-                label: t(project.contract_amount != null ? 'dash.common.contractValue' : project.awarded_amount != null ? 'request.flow.builderQuotation' : 'dash.common.budget'),
-                value: inr(project.contract_amount ?? project.awarded_amount ?? project.budget, project.project_country),
-              },
             ]}
+            // "Progress: …" left; the confirmed contract once there is one, else the awarded
+            // quotation, else the owner's budget, on the right, labelled by the amount shown
+            // (as the project details are); the schedule bar under them.
+            progress={{
+              label: progressValue ? `${t('dash.contractor.progress')}: ${progressValue}` : '',
+              amount: (
+                <>
+                  <span className="me-1 text-[11px] font-semibold text-oc-muted">
+                    {t(project.contract_amount != null ? 'dash.common.contractValue' : project.awarded_amount != null ? 'request.flow.builderQuotation' : 'dash.common.budget')}
+                  </span>
+                  {inr(project.contract_amount ?? project.awarded_amount ?? project.budget, project.project_country)}
+                </>
+              ),
+              percent: project.work_started === true ? elapsed : 0,
+            }}
+            meta={schedule ? { text: `${t('progress.schedule')}: ${schedule}` } : null}
             // Who the project is for, its land area and building type.
             chips={[
               ownerName && <CardChip key="owner" tone="green" icon={UserRound}>{td(ownerName)}</CardChip>,
               <CardChip key="area" tone="blue">{t('dash.owner.sqft', { area: project.land_area ?? 0 })}</CardChip>,
-              <CardChip key="type" tone="amber">{buildingTypeText(project.building_type, t) || t('dash.common.notSet')}</CardChip>,
+              <CardChip key="type" tone="amber" outline>{buildingTypeText(project.building_type, t) || t('dash.common.notSet')}</CardChip>,
               project.assigned_engineer && <CardChip key="assigned" tone="green">{t('dash.contractor.assigned')}</CardChip>,
             ]}
-          >
-            {/* Progress and the schedule bar, at the foot of the body. */}
-            <div className="mt-auto">
-              <p className="truncate text-[11px] font-semibold text-oc-muted">{progressValue ? `${t('dash.contractor.progress')}: ${progressValue}` : ''}</p>
-              <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-slate-200">
-                <div className="h-full rounded-full bg-emerald-500" style={{ width: `${project.work_started === true ? elapsed : 0}%` }} />
-              </div>
-              <p aria-hidden={schedule ? undefined : true} className="mt-1 min-h-[15px] truncate text-[10px] font-semibold text-oc-muted">{schedule ? `${t('progress.schedule')}: ${schedule}` : ''}</p>
-            </div>
-          </ListCard>
+          />
         )
       })}
     </CardGrid>
