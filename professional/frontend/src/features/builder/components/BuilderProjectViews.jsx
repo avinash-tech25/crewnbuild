@@ -8,8 +8,8 @@ import ContractorProjectSpecialistTeam from './BuilderProjectSpecialistTeam.jsx'
 import { constructionTypeLabel } from '../../../shared/utils/roleLabels.js'
 import { completionPercent, completionText, formatPercent, scheduleText, scheduleWidth } from '../../../shared/utils/projectProgress.js'
 import StatusPill from '../../../shared/dashboard/StatusPill.jsx'
-import { EntityCard } from '../../../shared/ui/EntityCard.jsx'
-import { EntityAvatar } from '../../../shared/ui/EntityPill.jsx'
+import { CardAvatar, CardChip, CardGrid, CardStatus, ListCard, cardButtonClass } from '../../../shared/ui/ListCard.jsx'
+import { statusLabel } from '../../../shared/dashboard/StatusPill.jsx'
 import { imageUrl } from '../../../shared/api/apiClient.js'
 import { defaultProjectImage } from '../../owner/components/OwnerProjectViews.jsx'
 import { EmptyState } from '../../../shared/dashboard/RoleDashboardUi.jsx'
@@ -30,7 +30,7 @@ import { optionLabel, SUPPLIER_TYPE_KEYS } from '../../../i18n/optionKeys.js'
 export function ContractorProjectsTable({ projectList, onSelect }) {
   const { t, td } = useLanguage()
   return (
-    <div className="builder-project-cards grid auto-rows-[minmax(211px,1fr)] grid-cols-1 gap-3 sm:auto-rows-[minmax(215px,1fr)] sm:grid-cols-2 lg:grid-cols-3">
+    <CardGrid testId="builder-project-cards">
       {projectList.map((project) => {
         const ownerName = project.owner?.name || project.owner_name || ''
         const cardTitle = td(project.title)
@@ -44,85 +44,54 @@ export function ContractorProjectsTable({ projectList, onSelect }) {
           : project.work_started !== true
             ? t('progress.scheduleNotStarted')
             : ['in_progress', 'end_date_passed'].includes(project.schedule_status) ? formatPercent(elapsed) : ''
+        const status = project.status || 'active'
         return (
-          <div key={project.id} className="relative h-full">
-            {/* The project status, in the card's top corner beside the title. */}
-            <span className="pointer-events-none absolute end-3 top-3 z-[1] max-wide:end-2.5 max-wide:top-2.5">
-              <StatusPill status={project.status || 'active'} />
-            </span>
-            <EntityCard
-              compact
-              fill
-              onClick={() => onSelect(project)}
-              avatar={
-                <EntityAvatar
-                  src={project.cover_image_url ? imageUrl(project.cover_image_url) : defaultProjectImage}
-                  alt={cardTitle}
-                  fallback={cardTitle.trim().slice(0, 1).toUpperCase() || '•'}
-                />
-              }
-              // Room on the right of the name for the status in the corner.
-              title={<span className="block truncate pe-20">{cardTitle}</span>}
-              // The address and pincode as the subtitle, as on the House Owner's
-              // project card.
-              subtitle={`${td(project.address) || t('dash.owner.estimates.locationNotSet')} ${project.pincode || ''}`.trim()}
-              // The House Owner card's pills, from the builder's side: who the
-              // project is for, its land area, and its building type.
-              pills={[
-                ...(ownerName ? [{ key: 'owner', text: td(ownerName), icon: UserRound, tone: 'positive' }] : []),
-                { key: 'area', text: t('dash.owner.sqft', { area: project.land_area ?? 0 }), tone: 'info' },
-                // The stored code, translated. Re-casing it ("RESIDENTIAL" ->
-                // "Residential") only produced an English word.
-                { key: 'type', text: buildingTypeText(project.building_type, t) || t('dash.common.notSet'), tone: 'accent' },
-              ]}
-            >
-              {/* The planned start and end dates on one line ("Not set" if
-                  empty), so the card keeps the House Owner card's size. */}
-              <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px]">
-                {[
-                  [CalendarDays, t('dash.owner.projectDetails.startDate'), formatProjectDate(project.start_date, t)],
-                  [CalendarCheck, t('dash.owner.projectDetails.endDate'), formatProjectDate(project.end_date, t)],
-                ].map(([Icon, label, value]) => (
-                  <span key={label} className="inline-flex min-w-0 items-center gap-1 font-semibold text-oc-muted">
-                    <Icon className="h-3 w-3 shrink-0" aria-hidden="true" />
-                    <span className="truncate">{label}: <b className="font-bold text-oc-ink">{value}</b></span>
-                  </span>
-                ))}
-              </div>
-
-              {/* Site Engineer: the same Assigned / Assignment required badges. */}
-              <div className="mt-1.5 flex min-w-0 items-center gap-2">
-                <span className="shrink-0 text-[11px] font-semibold text-oc-muted">{t('dash.contractor.siteEngineer')}:</span>
-                {project.assigned_engineer ? (
-                  <>
-                    <span className="inline-flex shrink-0 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-extrabold uppercase text-emerald-700 ring-1 ring-emerald-200">{t('dash.contractor.assigned')}</span>
-                    <span className="min-w-0 truncate text-[11px] font-bold text-slate-700">{td(project.assigned_engineer.name)}</span>
-                  </>
-                ) : (
-                  <span className="inline-flex shrink-0 rounded-full bg-brand-50 px-2 py-0.5 text-[10px] font-extrabold uppercase text-brand-700 ring-1 ring-brand-200">{t('dash.contractor.assignmentRequired')}</span>
-                )}
-              </div>
-
-              {/* Progress on the left, the amount on the right, pinned to the
-                  foot of the card as on the owner cards. */}
-              <div className="mt-auto flex flex-wrap items-center justify-between gap-x-2 gap-y-1 pt-2">
-                <span className="text-[11px] font-semibold text-oc-muted">{progressValue ? `${t('dash.contractor.progress')}: ${progressValue}` : ''}</span>
-                {/* The confirmed contract once there is one, else the owner's budget. */}
-                <span className="text-sm font-extrabold text-oc-ink">{inr(project.contract_amount ?? project.awarded_amount ?? project.budget, project.project_country)}</span>
-              </div>
-
-              {/* Fills to the schedule figure below (elapsed planned time). */}
+          <ListCard
+            key={project.id}
+            onClick={() => onSelect(project)}
+            avatar={(
+              <CardAvatar
+                src={project.cover_image_url ? imageUrl(project.cover_image_url) : defaultProjectImage}
+                alt={cardTitle}
+                fallback={cardTitle.trim().slice(0, 1).toUpperCase() || '•'}
+              />
+            )}
+            title={cardTitle}
+            // The address and pincode, as on the House Owner's project card.
+            subtitle={`${td(project.address) || t('dash.owner.estimates.locationNotSet')} ${project.pincode || ''}`.trim()}
+            status={<CardStatus status={status}>{statusLabel(status, t)}</CardStatus>}
+            rows={[
+              { key: 'start', label: t('dash.owner.projectDetails.startDate'), value: formatProjectDate(project.start_date, t) },
+              { key: 'end', label: t('dash.owner.projectDetails.endDate'), value: formatProjectDate(project.end_date, t) },
+              {
+                key: 'engineer',
+                label: t('dash.contractor.siteEngineer'),
+                // The engineer's name once assigned, else "Assignment required".
+                value: project.assigned_engineer ? td(project.assigned_engineer.name) : t('dash.contractor.assignmentRequired'),
+              },
+              // The confirmed contract once there is one, else the owner's budget.
+              { key: 'amount', label: t('dash.common.budget'), value: inr(project.contract_amount ?? project.awarded_amount ?? project.budget, project.project_country) },
+            ]}
+            // Who the project is for, its land area and building type.
+            chips={[
+              ownerName && <CardChip key="owner" tone="green" icon={UserRound}>{td(ownerName)}</CardChip>,
+              <CardChip key="area" tone="blue">{t('dash.owner.sqft', { area: project.land_area ?? 0 })}</CardChip>,
+              <CardChip key="type" tone="amber">{buildingTypeText(project.building_type, t) || t('dash.common.notSet')}</CardChip>,
+              project.assigned_engineer && <CardChip key="assigned" tone="green">{t('dash.contractor.assigned')}</CardChip>,
+            ]}
+          >
+            {/* Progress and the schedule bar, at the foot of the body. */}
+            <div className="mt-auto">
+              <p className="truncate text-[11px] font-semibold text-oc-muted">{progressValue ? `${t('dash.contractor.progress')}: ${progressValue}` : ''}</p>
               <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-slate-200">
                 <div className="h-full rounded-full bg-emerald-500" style={{ width: `${project.work_started === true ? elapsed : 0}%` }} />
               </div>
-              <div className="mt-1 flex min-h-[15px] items-center gap-2">
-                <p aria-hidden={schedule ? undefined : true} className="min-w-0 flex-1 truncate text-[10px] font-semibold text-oc-muted">{schedule ? `${t('progress.schedule')}: ${schedule}` : ''}</p>
-              </div>
-            </EntityCard>
-          </div>
+              <p aria-hidden={schedule ? undefined : true} className="mt-1 min-h-[15px] truncate text-[10px] font-semibold text-oc-muted">{schedule ? `${t('progress.schedule')}: ${schedule}` : ''}</p>
+            </div>
+          </ListCard>
         )
       })}
-    </div>
+    </CardGrid>
   )
 }
 
@@ -406,40 +375,34 @@ export function ContractorProjectDetail({
                 <p className="mb-2 text-sm font-extrabold text-slate-800">
                   {group.label} <span className="font-semibold text-slate-500">({group.suppliers.length})</span>
                 </p>
-                <div className="grid gap-2">
+                <CardGrid testId={`team-supplier-cards-${group.key}`}>
                   {group.suppliers.map((supplier) => {
                     const assigned = assignedSupplierIds.has(supplier.user_id)
                     return (
-                      <div key={supplier.user_id} className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-3 transition hover:border-brand-200 sm:flex-row sm:items-center">
-                        <div className="flex min-w-0 flex-1 items-center gap-3">
-                          <SmartImage src={userAvatarSrc(supplier, 'SUPPLIER')} alt={supplier.name} className="h-11 w-11 shrink-0 rounded-full object-cover" />
-                          <div className="min-w-0">
-                            <p className="truncate text-sm font-extrabold text-slate-950">{td(supplier.store_name || supplier.name)}</p>
-                            <p className="text-xs font-medium text-slate-500">
-                              {supplier.supplier_category
-                                ? `${optionLabel(t, SUPPLIER_TYPE_KEYS, supplier.supplier_category)} · ${supplier.pincode || '—'}`
-                                : supplier.pincode || '—'}
-                            </p>
-                          </div>
-                        </div>
-                        {assigned ? (
-                          <span className="inline-flex shrink-0 items-center gap-2 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-extrabold text-emerald-700 ring-1 ring-emerald-100">
-                            <span className="h-2 w-2 rounded-full bg-emerald-500" /> {t('team.assigned')}
-                          </span>
+                      <ListCard
+                        key={supplier.user_id}
+                        avatar={<CardAvatar src={userAvatarSrc(supplier, 'SUPPLIER')} alt={supplier.name} />}
+                        title={td(supplier.store_name || supplier.name)}
+                        subtitle={supplier.supplier_category
+                          ? `${optionLabel(t, SUPPLIER_TYPE_KEYS, supplier.supplier_category)} · ${supplier.pincode || '—'}`
+                          : supplier.pincode || '—'}
+                        // Where Assign is: Assigned, once the supplier is on this project.
+                        primary={assigned ? (
+                          <CardStatus status="assigned" tone="green">{t('team.assigned')}</CardStatus>
                         ) : (
                           <button
                             type="button"
                             disabled={!projectEngineer}
                             onClick={() => onAssignSupplier(project.id, supplier.user_id, projectEngineer?.user_id)}
-                            className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-brand-900 px-5 text-sm font-extrabold text-white transition hover:bg-brand-800 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
+                            className={cardButtonClass('primary')}
                           >
                             <UserPlus className="h-4 w-4" /> {t('team.assign')}
                           </button>
                         )}
-                      </div>
+                      />
                     )
                   })}
-                </div>
+                </CardGrid>
               </div>
             ))}
           </div>

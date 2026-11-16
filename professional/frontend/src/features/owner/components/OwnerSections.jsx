@@ -8,7 +8,7 @@ import StatusPill from '../../../shared/dashboard/StatusPill.jsx'
 import AwardPanel from '../../requests/components/AwardPanel.jsx'
 import NegotiateQuotationModal from '../../requests/components/NegotiateQuotationModal.jsx'
 import { FLOW_TONES, hasAssignmentFlow, requestFlowStatus, useRequestAwards } from '../../requests/requestAwards.js'
-import { EntityCard } from '../../../shared/ui/EntityCard.jsx'
+import { CardAvatar, CardChip, CardGrid, CardStatus, ListCard, cardButtonClass } from '../../../shared/ui/ListCard.jsx'
 import { EntityAvatar, EntityPill } from '../../../shared/ui/EntityPill.jsx'
 import { requestTypeLabel as sharedRequestTypeLabel } from '../../../shared/utils/roleLabels.js'
 import { builderIdOnRequest, countryText, money } from '../ownerHelpers.js'
@@ -460,8 +460,23 @@ function ServicePills({ services = [], small = false }) {
 // A builder who joined within this window (2 days) is marked "Newly joined".
 const NEWLY_JOINED_MS = 2 * 24 * 60 * 60 * 1000
 
+// A request's workflow tone (FLOW_TONES) as the card status tone.
+const FLOW_CARD_TONES = { action: 'red', waiting: 'amber', negotiating: 'blue', confirmed: 'green', closed: 'grey' }
+
 export function OwnerContractorsSection({ requestMessage, contractorList, sendingReceiverId, onViewProfile, onSendRequest, onAcceptRequest, onRejectRequest, pincode, projectDetails, project, requestList = [] }) {
   const { t, td } = useLanguage()
+  // A builder's services as card chips: two and a "+N", as the cards showed them.
+  const serviceChips = (services = []) => {
+    if (!services?.length) return []
+    const label = (service) => {
+      const known = optionLabel(t, SERVICE_OPTION_KEYS, service)
+      return known === service ? td(service) : known
+    }
+    return [
+      ...services.slice(0, 2).map((service) => <CardChip key={`service-${service}`} tone="blue">{label(service)}</CardChip>),
+      services.length > 2 && <CardChip key="service-more">+{services.length - 2}</CardChip>,
+    ]
+  }
   // Cards by default; Table stays one click away.
   const [viewMode, setViewMode] = useState('cards')
   // A project that already has an assigned builder cannot take another one, so
@@ -707,84 +722,106 @@ export function OwnerContractorsSection({ requestMessage, contractorList, sendin
                 </tr>
               )
             }
+            // The card's footer: the same request controls as the table row,
+            // drawn as the shared card buttons, with View beside them.
+            const cardActions = unavailable ? (
+              <button
+                type="button"
+                disabled
+                title={t('dash.owner.contractors.builderAssignedNote')}
+                className={cardButtonClass('primary')}
+              >
+                {t('dash.common.sendRequest')}
+                <ArrowRight className="h-3.5 w-3.5 rtl:-scale-x-100" strokeWidth={2.25} />
+              </button>
+            ) : incomingPendingRequest ? (
+              <button
+                type="button"
+                onClick={(event) => { event.stopPropagation(); onAcceptRequest?.(incomingPendingRequest.id) }}
+                className={cardButtonClass('primary')}
+              >
+                <Check className="h-3.5 w-3.5" /> {t('dash.common.accept')}
+              </button>
+            ) : requestStatus === 'accepted' || requestStatus === 'pending' ? null : (
+              // After a rejected or withdrawn request a new one may be sent.
+              <button
+                type="button"
+                disabled={sending}
+                onClick={() => onSendRequest(contractor)}
+                className={cardButtonClass('primary')}
+              >
+                {sending ? t('dash.common.sending') : t('dash.common.sendRequest')}
+                <ArrowRight className="h-3.5 w-3.5 rtl:-scale-x-100" strokeWidth={2.25} />
+              </button>
+            )
+            // Where an existing request stands, in the card's status corner.
+            const cardStatus = unavailable ? null : requestStatus === 'accepted' ? (
+              <CardStatus tone={flow ? FLOW_CARD_TONES[flow.tone] : 'green'}>{flow ? t(flow.key) : t('dash.common.accepted')}</CardStatus>
+            ) : requestStatus === 'pending' && !incomingPendingRequest ? (
+              <CardStatus status="pending">{t('dash.common.requestPending')}</CardStatus>
+            ) : null
+            const newlyJoined = pills.some((pill) => pill.key === 'new')
             return (
-              <div
+              <ListCard
+                // Another builder holds this project: shown dimmed, as before.
+                dimmed={unavailable}
                 key={contractor.id}
-                aria-disabled={unavailable || undefined}
-                // h-full + `fill`: every card in a row is the same height.
-                className={`relative h-full ${unavailable ? 'pointer-events-none cursor-not-allowed opacity-60 blur-[1px]' : ''}`}
-              >
-              {/* Newly joined: a badge in the card's top corner. */}
-              {pills.some((pill) => pill.key === 'new') && (
-                <span className="pointer-events-none absolute end-0 top-0 z-10 inline-flex items-center gap-1 rounded-bl-xl rounded-tr-[18px] bg-emerald-600 px-2.5 py-1 text-[10px] font-bold text-white shadow-sm">
-                  <Sparkles className="h-3 w-3" /> {t('dash.owner.contractors.newlyJoined')}
-                </span>
-              )}
-              <EntityCard
-                compact
-                fill
-                // No "Builder" heading: every card in this list is a builder,
-                // and the builder's own name is the card's title.
-                tightTop
-                onClick={() => onViewProfile(contractor)}
-                avatar={
-                  /* A builders list, so every row is a CONTRACTOR: their
-                      uploaded picture, else the Builder default. */
-                  <EntityAvatar user={contractor} role="BUILDER" alt={builderName} />
-                }
-                title={<span className="inline-flex max-w-full items-center gap-1.5"><span className="truncate">{builderName}</span><BuilderTierBadge builderId={contractor.user_id} /></span>}
-                // The company line is always there (blank when there is none),
-                // with the Verified mark at its end, so every card is the same
-                // size whatever a builder has.
-                subtitle={(
-                  <span className="flex min-w-0 items-center gap-1.5">
-                    <span className="min-w-0 truncate uppercase">{companyName || ' '}</span>
-                    {contractor.is_verified === true && (
-                      <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-ocbrand-50 px-1.5 py-0.5 text-[10px] font-semibold normal-case text-ocbrand-700">
-                        <BadgeCheck className="h-3 w-3" /> {t('dash.common.verified')}
-                      </span>
+                // A builder unavailable here (another builder is assigned) does
+                // not open and offers nothing, as before.
+                onClick={unavailable ? undefined : () => onViewProfile(contractor)}
+                label={builderName}
+                avatar={<CardAvatar src={userAvatarSrc(contractor, 'BUILDER')} alt={builderName} />}
+                title={builderName}
+                // The company, when it adds something the name does not say.
+                subtitle={companyName ? <span className="uppercase">{companyName}</span> : null}
+                status={cardStatus}
+                rows={[
+                  { key: 'experience', label: t('dash.owner.contractors.colExperience'), value: t('dash.owner.contractors.yearsShort', { n: Number(contractor.experience_years || 0) }) },
+                  { key: 'completed', label: t('dash.owner.contractors.colCompleted'), value: Number(contractor.completed_projects || 0) },
+                  {
+                    key: 'rating',
+                    label: t('dash.owner.contractors.colRating'),
+                    value: `${ratingLabel(contractor.rating, contractor.review_count, t)} · ${t('dash.owner.contractors.reviews', { count: Number(contractor.review_count || 0) })}`,
+                  },
+                  // The project's land area and floors, as the card showed them.
+                  projectMeta ? { key: 'project', label: t('dash.common.project'), value: projectMeta } : null,
+                ]}
+                chips={[
+                  newlyJoined && <CardChip key="new" tone="green" icon={Sparkles}>{t('dash.owner.contractors.newlyJoined')}</CardChip>,
+                  contractor.is_verified === true && <CardChip key="verified" tone="blue" icon={BadgeCheck}>{t('dash.common.verified')}</CardChip>,
+                  <BuilderTierBadge key="tier" builderId={contractor.user_id} />,
+                  ...serviceChips(contractor.services_offered),
+                ]}
+                secondary={(
+                  <>
+                    {incomingPendingRequest && !unavailable && (
+                      <button
+                        type="button"
+                        onClick={(event) => { event.stopPropagation(); onRejectRequest?.(incomingPendingRequest.id) }}
+                        className={cardButtonClass('danger')}
+                      >
+                        <X className="h-3.5 w-3.5" /> {t('dash.common.reject')}
+                      </button>
                     )}
-                  </span>
+                    {/* View: the builder's profile, as clicking the card opens it. */}
+                    <button
+                      type="button"
+                      disabled={unavailable}
+                      onClick={(event) => { event.stopPropagation(); onViewProfile(contractor) }}
+                      className={cardButtonClass('secondary')}
+                    >
+                      <Eye className="h-3.5 w-3.5" /> {t('dash.owner.contractors.view')}
+                    </button>
+                  </>
                 )}
-                // No amount on the card: neither the project's budget nor the
-                // builder's quotation or contract value is shown here.
-                meta={projectMeta || null}
+                primary={cardActions}
               >
-                {/* The table row's figures: experience, completed projects and rating. */}
-                <div className="mt-2 grid grid-cols-3 divide-x divide-oc-line rounded-lg bg-slate-50 py-1.5 text-center">
-                  <div>
-                    <p className="text-[9px] font-semibold text-oc-faint">{t('dash.owner.contractors.colExperience')}</p>
-                    <p className="text-xs font-bold text-oc-ink">{t('dash.owner.contractors.yearsShort', { n: Number(contractor.experience_years || 0) })}</p>
-                  </div>
-                  <div>
-                    <p className="truncate px-0.5 text-[9px] font-semibold text-oc-faint">{t('dash.owner.contractors.colCompleted')}</p>
-                    <p className="text-xs font-bold text-oc-ink">{Number(contractor.completed_projects || 0)}</p>
-                  </div>
-                  <div>
-                    <p className="text-[9px] font-semibold text-oc-faint">{t('dash.owner.contractors.colRating')}</p>
-                    <p className="flex items-center justify-center gap-1 text-xs font-bold text-oc-ink">
-                      <Star className="h-3 w-3 fill-amber-400 text-amber-400" /> {ratingLabel(contractor.rating, contractor.review_count, t)}
-                    </p>
-                    <p className="text-[9px] text-oc-faint">{t('dash.owner.contractors.reviews', { count: Number(contractor.review_count || 0) })}</p>
-                  </div>
-                </div>
-                <div className="mt-2 h-[22px] overflow-hidden">
-                  <ServicePills services={contractor.services_offered} small />
-                </div>
-                {/* mt-auto: the buttons sit at the bottom of every card. */}
-                <div className="mt-auto flex items-start gap-1.5 pt-2">
-                  <div className="min-w-0 flex-1 [&>*:first-child]:mt-0 [&_button]:rounded-lg [&_button]:py-1.5 [&_span]:rounded-lg [&>span]:py-1.5">{action}</div>
-                  {/* View: the builder's profile, as clicking the card opens it. */}
-                  <button
-                    type="button"
-                    onClick={(event) => { event.stopPropagation(); onViewProfile(contractor) }}
-                    className="inline-flex w-16 shrink-0 items-center justify-center gap-1 rounded-lg border border-oc-line bg-white py-1.5 text-xs font-bold text-oc-ink transition hover:bg-slate-50"
-                  >
-                    <Eye className="h-3.5 w-3.5" /> {t('dash.owner.contractors.view')}
-                  </button>
-                </div>
-              </EntityCard>
-              </div>
+                {unavailable && (
+                  <p className="mt-auto text-[11px] font-semibold leading-snug text-oc-faint">
+                    {t('dash.owner.contractors.builderAssignedNote')}
+                  </p>
+                )}
+              </ListCard>
             )
           }
           if (!contractorList.length) {
@@ -815,7 +852,7 @@ export function OwnerContractorsSection({ requestMessage, contractorList, sendin
               </table>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">{contractorList.map(renderBuilder)}</div>
+            <CardGrid testId="owner-builder-cards" label={t('dash.common.builder')}>{contractorList.map(renderBuilder)}</CardGrid>
           )
         })()}
       </div>

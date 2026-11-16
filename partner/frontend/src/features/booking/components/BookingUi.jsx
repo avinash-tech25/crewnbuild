@@ -1,32 +1,23 @@
+import { statusTone } from '../../../shared/ui/ListCard.jsx'
+
 /**
  * Small presentation pieces for the requester's booking pages only. The
  * technician screens and the landing page keep their own StatusPill and
  * CategoryCard; nothing here changes what a booking is or does.
  */
 
-// Each stored status, grouped by what it means to the person who booked:
-// still waiting (amber), confirmed and under way (green), done (emerald),
-// cancelled (red), or not matched (orange). Labels come from the API.
-const STATUS_TONES = {
-  SEARCHING: 'bg-amber-50 text-amber-800 ring-amber-200',
-  OFFERED: 'bg-amber-50 text-amber-800 ring-amber-200',
-  ACCEPTED: 'bg-green-50 text-green-800 ring-green-200',
-  EN_ROUTE: 'bg-green-50 text-green-800 ring-green-200',
-  ARRIVED: 'bg-green-50 text-green-800 ring-green-200',
-  IN_PROGRESS: 'bg-green-50 text-green-800 ring-green-200',
-  COMPLETED: 'bg-emerald-50 text-emerald-800 ring-emerald-200',
-  CANCELLED: 'bg-red-50 text-red-700 ring-red-200',
-  NO_TECHNICIAN_FOUND: 'bg-orange-50 text-orange-800 ring-orange-200',
-  EXPIRED: 'bg-orange-50 text-orange-800 ring-orange-200',
+// The same colour scheme as every card (shared/ui/ListCard.jsx): waiting amber, under way
+// blue, done green, refused or failed red, ended grey. Labels come from the API.
+const BADGE_TONES = {
+  amber: ['bg-amber-50 text-amber-800 ring-amber-200', 'bg-amber-500'],
+  green: ['bg-emerald-50 text-emerald-800 ring-emerald-200', 'bg-emerald-500'],
+  blue: ['bg-sky-50 text-sky-800 ring-sky-200', 'bg-sky-500'],
+  red: ['bg-rose-50 text-rose-700 ring-rose-200', 'bg-rose-500'],
+  grey: ['bg-slate-100 text-slate-700 ring-slate-200', 'bg-slate-400'],
+  violet: ['bg-violet-50 text-violet-800 ring-violet-200', 'bg-violet-500'],
 }
-const DOT_TONES = {
-  amber: 'bg-amber-500', green: 'bg-green-500', emerald: 'bg-emerald-500', red: 'bg-red-500', orange: 'bg-orange-500',
-}
-
-function dotFor(status) {
-  const tone = STATUS_TONES[status] || ''
-  return DOT_TONES[Object.keys(DOT_TONES).find((name) => tone.includes(`${name}-50`))] || 'bg-slate-400'
-}
+const badgeTone = (status) => BADGE_TONES[statusTone(status)] || BADGE_TONES.grey
+const dotFor = (status) => badgeTone(status)[1]
 
 function sentence(text) {
   const value = String(text || '').replaceAll('_', ' ').toLowerCase()
@@ -36,7 +27,7 @@ function sentence(text) {
 /** A compact status badge: a coloured dot and the API's own label. */
 export function BookingStatusBadge({ status, label }) {
   return (
-    <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-bold ring-1 ${STATUS_TONES[status] || 'bg-slate-50 text-slate-600 ring-slate-200'}`}>
+    <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-bold ring-1 ${badgeTone(status)[0]}`}>
       <span className={`h-1.5 w-1.5 rounded-full ${dotFor(status)}`} aria-hidden="true" />
       {sentence(label || status)}
     </span>

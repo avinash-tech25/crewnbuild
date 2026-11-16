@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { AlertTriangle, CreditCard, History, PackageCheck, ShoppingBag, ShoppingCart, Trash2 } from 'lucide-react'
 import EmptyState from '../../../shared/dashboard/EmptyState.jsx'
-import StatusPill from '../../../shared/dashboard/StatusPill.jsx'
+import { statusLabel } from '../../../shared/dashboard/StatusPill.jsx'
+import { CardAvatar, CardChip, CardGrid, CardStatus, ListCard, cardButtonClass, statusTone } from '../../../shared/ui/ListCard.jsx'
 import QuantityField from '../../shop/components/QuantityField.jsx'
 import { useLiveRefresh } from '../../../shared/hooks/useLiveRefresh.js'
 import { useLanguage } from '../../../i18n/LanguageContext.jsx'
@@ -12,7 +13,7 @@ import { formatDateTime } from '../../../shared/utils/formatters.js'
 import { isCountUnit } from '../../../shared/utils/quantityUnits.js'
 import { STORE_MANAGER_PATH } from '../../../shared/auth/accountPaths.js'
 import { formatQty, money } from '../../site-work/components/EngineerAnalyticsSection.jsx'
-import { OrderPill, PurchaseDetail, SupplierOrderStatus } from './StorePaymentsSection.jsx'
+import { PurchaseDetail } from './StorePaymentsSection.jsx'
 import { buyQuantityProblem, groupLinesBySupplier, matchesSearch, purchaseRef, supplierAvailable, transactionRef, validQuantity } from '../storeHelpers.js'
 import { useStorePurchaseCheckout } from './StorePurchaseCheckout.jsx'
 import { DetailModal, Notice, Panel, inputClass, labelClass, primaryButton, refusalText, secondaryButton } from './StoreUi.jsx'
@@ -21,6 +22,9 @@ import { DetailModal, Notice, Panel, inputClass, labelClass, primaryButton, refu
 // own stock figures are kept apart (`supplier_stock`, `available_quantity`), since
 // `quantity` on a line is what is ordered.
 const orderLine = (product, quantity) => ({ ...product, supplier_stock: product.supplier_stock ?? product.quantity, quantity: String(quantity) })
+
+// A purchase's payment / receipt state in the card's colours (as OrderPill shows it).
+const ORDER_TONES = { PAID: 'green', RECEIVED: 'green', PARTLY_PAID: 'amber', PARTLY_RECEIVED: 'amber' }
 
 // Buying: the products are those of the suppliers the selected project's builder
 // has accepted, and each supplier's lines are paid through the existing Razorpay
@@ -270,42 +274,49 @@ export default function StoreBuySection({ projects, purchases, purchasesFailed =
             {productGroups.length ? (
               // The Catalog's card, one per supplier offer: the offers of one product sit
               // side by side, each with its own size, supplier, price, stock and Add.
-              <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 2xl:grid-cols-4">
+              <CardGrid testId="store-buy-product-cards">
                 {productGroups.flat().map((product) => {
                   const added = lines.find((line) => line.id === product.id)
                   const available = supplierAvailable(product)
                   const supplier = td(product.store_name || product.supplier_name)
+                  const kind = [product.category, product.subcategory].filter(Boolean).map((value) => td(value)).join(' · ')
                   return (
-                    <li key={product.id} className="group flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-md">
-                      <div className="relative grid aspect-square place-items-center bg-slate-50">
-                        {product.image_url
-                          ? <img src={imageUrl(product.image_url)} alt={td(product.name)} loading="lazy" className="h-full w-full object-contain p-2 transition duration-300 group-hover:scale-[1.03]" />
-                          : <span className="grid h-full w-full place-items-center text-slate-300"><ShoppingBag className="h-8 w-8" /></span>}
-                        {available <= 0 && <span className="absolute start-2 top-2 rounded-md bg-rose-600 px-2 py-0.5 text-[10px] font-extrabold uppercase text-white">{t('store.buy.outOfStock')}</span>}
-                        {added && <span className="absolute end-2 top-2 rounded-md bg-brand-700 px-2 py-0.5 text-[10px] font-extrabold uppercase text-white">{t('store.buy.inOrder', { quantity: formatQty(added.quantity), unit: td(product.unit) })}</span>}
-                      </div>
-                      <div className="flex flex-1 flex-col gap-1 p-2.5">
-                        <span className="truncate text-[10px] font-extrabold uppercase tracking-wide text-brand-700">{product.brand ? td(product.brand) : t('store.catalog.noBrand')}</span>
-                        <span className="line-clamp-2 text-xs font-extrabold leading-snug text-graphite" title={td(product.name)}>{td(product.name)}</span>
-                        <span className="truncate text-[11px] font-semibold text-graphite/50">{[product.category, product.subcategory].filter(Boolean).map((value) => td(value)).join(' · ')}</span>
-                        {product.size && <span className="truncate text-[11px] font-bold text-graphite/70">{t('store.buy.sizeLabel', { size: td(product.size) })}</span>}
-                        {product.description && <span className="line-clamp-2 text-[11px] font-medium text-graphite/55">{td(product.description)}</span>}
-                        <span className="mt-auto truncate pt-1 text-[11px] font-bold text-graphite/70" title={supplier}>{t('store.buy.supplierLabel', { name: supplier })}</span>
-                        <span className="text-sm font-extrabold text-graphite">{t('store.buy.pricePer', { price: money(product.price, country), unit: td(product.unit) })}</span>
-                        {/* The supplier's own stock, less what other orders have already taken. */}
-                        <span className={`text-[11px] font-extrabold ${available > 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
-                          {available > 0 ? t('store.buy.supplierAvailable', { quantity: formatQty(available), unit: td(product.unit) }) : t('store.buy.noSupplierStock')}
-                        </span>
-                        <div className="pt-1.5">
-                          <button type="button" onClick={() => openAdd(product)} disabled={available <= 0} aria-label={`${t('store.buy.add')} ${td(product.name)} ${product.size ? td(product.size) : ''} ${supplier}`} className={`${primaryButton} !h-8 w-full !px-2`}>
-                            <ShoppingCart className="h-3.5 w-3.5" />{added ? t('store.buy.changeQuantity') : t('store.buy.add')}
-                          </button>
-                        </div>
-                      </div>
-                    </li>
+                    <ListCard
+                      key={product.id}
+                      avatar={<CardAvatar src={product.image_url ? imageUrl(product.image_url) : ''} fallback={<ShoppingBag aria-hidden="true" className="h-5 w-5" />} />}
+                      title={td(product.name)}
+                      subtitle={product.brand ? td(product.brand) : t('store.catalog.noBrand')}
+                      status={available <= 0 ? <CardStatus tone="red">{t('store.buy.outOfStock')}</CardStatus> : null}
+                      rows={[
+                        product.size && { key: 'size', label: t('store.col.variant'), value: td(product.size) },
+                        { key: 'supplier', label: t('store.col.supplier'), value: supplier },
+                        { key: 'price', label: t('store.col.unitPrice'), value: t('store.buy.pricePer', { price: money(product.price, country), unit: td(product.unit) }) },
+                        // The supplier's own stock, less what other orders have already taken.
+                        {
+                          key: 'available',
+                          label: t('store.col.available'),
+                          value: available > 0 ? t('store.buy.supplierAvailable', { quantity: formatQty(available), unit: td(product.unit) }) : t('store.buy.noSupplierStock'),
+                        },
+                      ]}
+                      chips={[
+                        kind && <CardChip key="kind">{kind}</CardChip>,
+                        added && <CardChip key="added" tone="green">{t('store.buy.inOrder', { quantity: formatQty(added.quantity), unit: td(product.unit) })}</CardChip>,
+                      ]}
+                      primary={(
+                        <button type="button" onClick={() => openAdd(product)} disabled={available <= 0} aria-label={`${t('store.buy.add')} ${td(product.name)} ${product.size ? td(product.size) : ''} ${supplier}`} className={cardButtonClass('primary')}>
+                          <ShoppingCart className="h-3.5 w-3.5" />{added ? t('store.buy.changeQuantity') : t('store.buy.add')}
+                        </button>
+                      )}
+                    >
+                      {/* The picture at a fixed height, so every tile is the same size. */}
+                      {product.image_url
+                        ? <img src={imageUrl(product.image_url)} alt={td(product.name)} loading="lazy" className="h-32 w-full rounded-xl bg-slate-50 object-contain p-2" />
+                        : <span className="grid h-32 w-full place-items-center rounded-xl bg-slate-50 text-slate-300"><ShoppingBag className="h-8 w-8" /></span>}
+                      {product.description && <p className="line-clamp-2 text-[11px] font-medium text-graphite/55" title={td(product.description)}>{td(product.description)}</p>}
+                    </ListCard>
                   )
                 })}
-              </ul>
+              </CardGrid>
             ) : (
               <EmptyState icon={ShoppingCart} title={t('store.buy.noProducts')} message={t('store.buy.noProductsSub')} />
             )}
@@ -426,27 +437,29 @@ export default function StoreBuySection({ projects, purchases, purchasesFailed =
         {purchasesFailed && !purchases.length ? (
           <Notice message={{ text: t('store.loadFailed'), error: true }} />
         ) : purchases.length ? (
-          <ul className="space-y-2">
+          <CardGrid testId="store-purchase-cards">
             {purchases.map((order) => (
-              <li key={order.request_code} className="rounded-xl border border-slate-200 p-3">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="min-w-0 truncate text-sm font-extrabold text-graphite">{t('store.buy.purchaseId', { id: purchaseRef(order) })} · {td(order.supplier_name)} · {td(order.project_name)}</p>
-                  <span className="flex items-center gap-2">
-                    <span className="text-xs font-extrabold text-graphite">{money(order.total, country)}</span>
-                    <button type="button" onClick={() => setOpenedCode(order.request_code)} className={`${secondaryButton} !h-7 whitespace-nowrap !px-2 !text-[11px]`}>{t('store.viewDetails')}</button>
-                  </span>
-                </div>
-                <div className="mt-1 flex flex-wrap items-center gap-1">
-                  <OrderPill kind="paymentStatus" status={order.payment_status} />
-                  <SupplierOrderStatus order={order} />
-                  <OrderPill kind="receiptStatus" status={order.receipt_status} />
-                </div>
-                <p className="text-[11px] font-semibold text-graphite/55">
-                  {t('store.buy.orderedOn', { date: formatDateTime(order.created_at) })}
-                  {order.builder_name && ` · ${t('store.requests.builder')}: ${td(order.builder_name)}`}
-                  {' · '}{t(`store.buy.paymentStatus.${order.payment_status}`)}
-                  {' · '}{t(`store.buy.receiptStatus.${order.receipt_status}`)}
-                </p>
+              <ListCard
+                key={order.request_code}
+                avatar={<CardAvatar fallback={<ShoppingBag aria-hidden="true" className="h-5 w-5" />} />}
+                title={t('store.buy.purchaseId', { id: purchaseRef(order) })}
+                subtitle={`${td(order.supplier_name)} · ${td(order.project_name)}`}
+                status={<CardStatus tone={ORDER_TONES[order.payment_status] || 'grey'}>{t(`store.buy.paymentStatus.${order.payment_status}`)}</CardStatus>}
+                rows={[
+                  { key: 'total', label: t('store.col.totalAmount'), value: money(order.total, country) },
+                  { key: 'date', label: t('store.col.purchaseDate'), value: formatDateTime(order.created_at) },
+                  order.builder_name && { key: 'builder', label: t('store.requests.builder'), value: td(order.builder_name) },
+                  { key: 'receipt', label: t('store.col.receiptStatus'), value: t(`store.buy.receiptStatus.${order.receipt_status}`) },
+                ]}
+                // The supplier's side (one status, or each one when its lines differ), and the receipt.
+                chips={[
+                  ...[...new Set(order.lines.map((line) => line.status))].map((status) => (
+                    <CardChip key={`supplier-${status}`} tone={statusTone(status)}>{statusLabel(status, t)}</CardChip>
+                  )),
+                  <CardChip key="receipt" tone={ORDER_TONES[order.receipt_status] || 'grey'}>{t(`store.buy.receiptStatus.${order.receipt_status}`)}</CardChip>,
+                ]}
+                secondary={<button type="button" onClick={() => setOpenedCode(order.request_code)} className={cardButtonClass('secondary')}>{t('store.viewDetails')}</button>}
+              >
                 {/* The payments for this purchase, with the gateway's own identifiers. */}
                 {order.payments?.map((payment) => (
                   <p key={payment.id} className="text-[11px] font-semibold text-graphite/55">
@@ -455,10 +468,10 @@ export default function StoreBuySection({ projects, purchases, purchasesFailed =
                     {payment.paid_at && ` · ${t('store.payments.paidOn', { date: formatDateTime(payment.paid_at) })}`}
                   </p>
                 ))}
-                <ul className="mt-2 divide-y divide-slate-100 rounded-lg bg-slate-50/70 px-3">
+                <ul className="divide-y divide-slate-100 rounded-lg bg-slate-50/70 px-3">
                   {order.lines.map((line) => (
-                    <li key={line.id} className="flex flex-wrap items-center justify-between gap-2 py-1.5 text-xs">
-                      <span className="min-w-0">
+                    <li key={line.id} className="space-y-1.5 py-1.5 text-xs">
+                      <span className="block min-w-0">
                         <span className="block font-bold text-graphite">{td(line.material_name)}{line.size ? ` · ${td(line.size)}` : ''} × {formatQty(line.quantity)} {td(line.unit)}</span>
                         <span className="block text-[11px] font-semibold text-graphite/55">
                           {t('store.buy.orderLineId', { id: line.id })}
@@ -467,7 +480,7 @@ export default function StoreBuySection({ projects, purchases, purchasesFailed =
                         </span>
                       </span>
                       <span className="flex flex-wrap items-center gap-2">
-                        <StatusPill status={line.status} soft />
+                        <CardStatus status={line.status}>{statusLabel(line.status, t)}</CardStatus>
                         {line.fully_received && <span className="font-extrabold text-emerald-700">{t('store.buy.inStock')}</span>}
                         {line.status === 'PENDING' && <span className="font-semibold text-amber-700">{t('store.buy.awaitingSupplier')}</span>}
                         {line.can_receive && <span className="font-semibold text-amber-700">{t('store.buy.notInStockYet')}</span>}
@@ -475,14 +488,14 @@ export default function StoreBuySection({ projects, purchases, purchasesFailed =
                           <input className={`${inputClass} !h-9 !w-20`} inputMode="decimal" aria-label={`${t('store.buy.receivedQty')} ${td(line.material_name)}`} title={t('store.buy.receivedQty')}
                             value={receiveQty[line.id] ?? String(line.pending_quantity ?? line.quantity)} onChange={(event) => setReceiveQty((current) => ({ ...current, [line.id]: event.target.value }))} />
                         )}
-                        {line.can_receive && <button type="button" onClick={() => receive(line)} disabled={receivingId !== null} className={primaryButton}><PackageCheck className="h-3.5 w-3.5" />{t('store.buy.receive')}</button>}
+                        {line.can_receive && <button type="button" onClick={() => receive(line)} disabled={receivingId !== null} className={cardButtonClass('primary')}><PackageCheck className="h-3.5 w-3.5" />{t('store.buy.receive')}</button>}
                       </span>
                     </li>
                   ))}
                 </ul>
-              </li>
+              </ListCard>
             ))}
-          </ul>
+          </CardGrid>
         ) : (
           <EmptyState icon={ShoppingBag} title={t('store.buy.noPurchases')} message={t('store.buy.noPurchasesSub')} />
         )}

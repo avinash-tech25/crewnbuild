@@ -39,6 +39,7 @@ import { ExpandableText, sellingBasis } from '../../catalog/components/CatalogMe
 import { Chip, StoredImage } from '../../catalog/components/CatalogProductBrowser.jsx'
 import { BrandManager, CategoryManager, ProductEditor, SubcategoryManager } from './CatalogManage.jsx'
 import { BrandLogo } from '../../catalog/components/BrandPicker.jsx'
+import { CardAvatar, CardChip, CardGrid, CardStatus, ListCard, cardButtonClass } from '../../../shared/ui/ListCard.jsx'
 import { ProductDetailView } from '../../catalog/components/ProductDetailView.jsx'
 import {
   loadAdminCatalogProduct,
@@ -84,8 +85,23 @@ function AdminProductCard({ product, onOpen, canManage }) {
   const complete = count >= required
   const sizes = (product.variants || []).map((variant) => variant.name).filter(Boolean)
   return (
-    <article className="group flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_6px_20px_-16px_rgba(15,23,42,0.35)] transition hover:-translate-y-0.5 hover:border-brand-300">
-      <button type="button" onClick={onOpen} className="relative block aspect-[4/3] w-full bg-slate-50" aria-label={canManage ? `Manage images of ${product.name}` : `View ${product.name}`}>
+    <ListCard
+      title={product.name}
+      subtitle={product.brand_name || 'Generic'}
+      avatar={<CardAvatar fallback={<BrandLogo src={product.brand_logo_url} name={product.brand_name || 'Generic'} size="sm" className="border-0" />} />}
+      status={!product.is_active && <CardStatus status="inactive">Inactive</CardStatus>}
+      chips={[
+        <CardChip key="images" tone={complete ? 'green' : 'amber'} icon={Images}>{count}/{required} images</CardChip>,
+        product.subcategory_name && <CardChip key="subcategory">{product.subcategory_name}</CardChip>,
+        (sizes.length || product.unit?.name) && <CardChip key="sizes">{sizes.length ? sizes.join(' / ') : product.unit?.name}</CardChip>,
+      ]}
+      primary={
+        <button type="button" onClick={onOpen} className={cardButtonClass('primary')}>
+          {canManage ? <><ImagePlus className="h-3.5 w-3.5" /> Manage Images</> : 'View product'}
+        </button>
+      }
+    >
+      <button type="button" onClick={onOpen} className="block h-36 w-full overflow-hidden rounded-lg bg-slate-50" aria-label={canManage ? `Manage images of ${product.name}` : `View ${product.name}`}>
         {product.image_url ? (
           <StoredImage src={product.image_url} alt="" className="h-full w-full object-contain p-3" />
         ) : (
@@ -94,34 +110,8 @@ function AdminProductCard({ product, onOpen, canManage }) {
             <span className="text-[11px] font-bold text-slate-400">No image yet</span>
           </span>
         )}
-        <span
-          className={`absolute left-2.5 top-2.5 inline-flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-extrabold uppercase tracking-wide ${
-            complete ? 'bg-emerald-600 text-white' : 'bg-oc-amber text-graphite'
-          }`}
-        >
-          <Images className="h-3 w-3" aria-hidden="true" /> {count}/{required} images
-        </span>
-        {!product.is_active && (
-          <span className="absolute right-2.5 top-2.5 rounded-md bg-slate-800 px-2 py-1 text-[10px] font-extrabold uppercase tracking-wide text-white">Inactive</span>
-        )}
       </button>
-      <div className="flex flex-1 flex-col gap-1 p-3">
-        <span className="flex min-w-0 items-center gap-1.5">
-          <BrandLogo src={product.brand_logo_url} name={product.brand_name || 'Generic'} size="xs" />
-          <span className="truncate text-[11px] font-extrabold uppercase tracking-wide text-brand-700">{product.brand_name || 'Generic'}</span>
-        </span>
-        <h3 className="line-clamp-2 font-display text-sm font-extrabold leading-snug text-graphite">{product.name}</h3>
-        <p className="truncate text-xs font-semibold text-graphite/55">{product.subcategory_name}</p>
-        <p className="truncate text-xs font-semibold text-graphite/55">{sizes.length ? sizes.join(' / ') : product.unit?.name}</p>
-        <button
-          type="button"
-          onClick={onOpen}
-          className="mt-auto inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-brand-200 bg-brand-50 text-xs font-extrabold text-brand-800 transition hover:bg-brand-100"
-        >
-          {canManage ? <><ImagePlus className="h-3.5 w-3.5" /> Manage Images</> : 'View product'}
-        </button>
-      </div>
-    </article>
+    </ListCard>
   )
 }
 
@@ -323,11 +313,11 @@ export function CatalogPage({ Panel, canManage = false }) {
                 )}
               </div>
             ) : (
-              <div className="grid grid-cols-1 gap-4 min-[420px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              <CardGrid testId="admin-catalog-product-cards" label="Catalog products">
                 {products.map((product) => (
                   <AdminProductCard key={product.id} product={product} canManage={canManage} onOpen={() => openProduct(product.id)} />
                 ))}
-              </div>
+              </CardGrid>
             )}
           </div>
         </>

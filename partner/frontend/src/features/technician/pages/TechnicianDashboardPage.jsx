@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import { Ban, BellRing, BriefcaseBusiness, Volume2, VolumeX, ChevronRight, Coffee, IndianRupee, CheckCircle2, CircleCheckBig, Inbox, LocateFixed, LogOut, MapPin, MessageSquare, Power, Radio, ShieldAlert, ShieldCheck, UserRound, Wallet } from 'lucide-react'
 import Logo from '../../../shared/ui/Logo.jsx'
+import { CardGrid } from '../../../shared/ui/ListCard.jsx'
 import { Alert, EmptyState, Spinner } from '../../../shared/ui/ui.jsx'
 import { technicianTypeByCode } from '../../../shared/constants/technicianTypes.js'
 import useJobOffers from '../useJobOffers.js'
@@ -528,14 +529,16 @@ export default function TechnicianDashboard() {
             {dispatchOffers.offers.length === 0 ? (
               <EmptyState icon={Inbox} title={activeTab.empty}>{activeTab.emptyBody}</EmptyState>
             ) : (
-              dispatchOffers.offers.map((offer) => (
-                <OfferCard
-                  key={offer.booking_id}
-                  offer={offer}
-                  busy={dispatchOffers.busyId === offer.booking_id}
-                  onAnswer={dispatchOffers.answer}
-                />
-              ))
+              <CardGrid label="New job requests" testId="offer-list">
+                {dispatchOffers.offers.map((offer) => (
+                  <OfferCard
+                    key={offer.booking_id}
+                    offer={offer}
+                    busy={dispatchOffers.busyId === offer.booking_id}
+                    onAnswer={dispatchOffers.answer}
+                  />
+                ))}
+              </CardGrid>
             )}
           </div>
         ) : loadingJobs ? (
@@ -543,7 +546,7 @@ export default function TechnicianDashboard() {
         ) : jobs.length === 0 ? (
           <EmptyState icon={activeTab.icon} title={activeTab.empty}>{activeTab.emptyBody}</EmptyState>
         ) : (
-          <div className="space-y-3">
+          <CardGrid label={activeTab.label} testId="job-list">
             {jobs.map((job) => (
               <JobCard
                 key={job.id}
@@ -553,7 +556,7 @@ export default function TechnicianDashboard() {
                 location={location}
               />
             ))}
-          </div>
+          </CardGrid>
         )}
       </main>
 

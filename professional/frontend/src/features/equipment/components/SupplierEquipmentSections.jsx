@@ -29,8 +29,9 @@ import {
   rejectEquipmentRequest, updateEquipmentItem,
 } from '../equipmentApi.js'
 import {
-  formatLaborDate as formatDate, LaborDialog as Dialog, LaborStatusBadge as StatusBadge, REQUEST_FILTERS, requestFilterLabel,
+  formatLaborDate as formatDate, LaborDialog as Dialog, REQUEST_FILTERS, requestFilterLabel,
 } from '../../labour/components/SupplierLaborSections.jsx'
+import { CardAvatar, CardChip, CardGrid, CardStatus, ListCard, cardButtonClass } from '../../../shared/ui/ListCard.jsx'
 
 const inputClass = 'h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-graphite outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20'
 const labelClass = 'mb-1 block text-[11px] font-extrabold uppercase tracking-wide text-graphite/55'
@@ -309,44 +310,57 @@ export function EquipmentInventorySection({ items, onChanged }) {
       </div>
       <Notice notice={notice} />
       {items.length ? (
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        <CardGrid testId="equipment-item-cards">
           {items.map((item) => (
-            <article key={item.id} className={`flex min-w-0 flex-col rounded-2xl border bg-white p-4 ${item.is_active ? 'border-slate-200' : 'border-dashed border-slate-300 opacity-75'}`}>
-              {/* Image on the left at the full height of the details beside it,
-                  shown whole (object-contain); the details take the rest. */}
-              <div className="flex items-stretch gap-3">
-                <div className="relative min-h-[6rem] w-[42%] shrink-0">
-                  <EquipmentImage src={item.image_url} className="absolute inset-0 h-full w-full" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-start justify-between gap-2">
-                    <p className="min-w-0 truncate text-base font-extrabold text-graphite" title={item.name}>{item.name}</p>
-                    <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-extrabold ${item.is_active ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'}`}>{item.is_active ? t('labor.active') : t('labor.inactive')}</span>
-                  </div>
-                  <p className="truncate text-xs font-semibold text-graphite/60">{item.category}{[item.brand, item.model].filter(Boolean).length ? ` · ${[item.brand, item.model].filter(Boolean).join(' ')}` : ''}</p>
-                  <div className="mt-1 flex flex-wrap gap-1">
-                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-extrabold text-graphite/70">{conditionLabel(item.condition)}</span>
-                    <span className="rounded-full bg-brand-50 px-2 py-0.5 text-[10px] font-extrabold text-brand-800">{modeLabel(item.mode)}</span>
-                  </div>
-                  <div className="mt-2"><EquipmentPrices item={item} /></div>
-                </div>
-              </div>
-              <dl className="mt-[13px] grid grid-cols-2 gap-2 rounded-xl bg-slate-50 p-2.5 text-center">
-                {allowsRent(item) && <div><dt className="text-[10px] font-bold text-graphite/50">{t('equipment.inventory.availableRentToday')}</dt><dd className="font-display text-lg font-extrabold text-emerald-700">{item.available_to_rent} / {item.quantity_total}</dd></div>}
-                {allowsBuy(item) && <div><dt className="text-[10px] font-bold text-graphite/50">{t('equipment.inventory.availableSell')}</dt><dd className="font-display text-lg font-extrabold text-teal-700">{item.available_to_buy} / {item.quantity_total}</dd></div>}
-              </dl>
-              {item.specifications && <p className="mt-2 line-clamp-2 text-xs font-semibold text-graphite/60">{item.specifications}</p>}
-              <div className="mt-auto flex gap-2 pt-3">
-                <button type="button" onClick={() => { setNotice({ tone: '', text: '' }); setEditing(item) }} className="inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg border border-slate-200 text-xs font-extrabold text-graphite/75 hover:bg-slate-50">
-                  <Pencil className="h-3.5 w-3.5" /> {t('labor.action.edit')}
+            <ListCard
+              key={item.id}
+              avatar={(
+                <CardAvatar
+                  src={item.image_url ? imageUrl(item.image_url) : null}
+                  alt={item.name}
+                  fallback={<Construction aria-hidden="true" className="h-5 w-5" />}
+                />
+              )}
+              title={item.name}
+              subtitle={`${item.category}${[item.brand, item.model].filter(Boolean).length ? ` · ${[item.brand, item.model].filter(Boolean).join(' ')}` : ''}`}
+              status={(
+                <CardStatus status={item.is_active ? 'active' : 'inactive'} tone={item.is_active ? 'green' : 'grey'}>
+                  {item.is_active ? t('labor.active') : t('labor.inactive')}
+                </CardStatus>
+              )}
+              rows={[
+                allowsRent(item) && { key: 'rent', label: t('equipment.inventory.availableRentToday'), value: `${item.available_to_rent} / ${item.quantity_total}` },
+                allowsBuy(item) && { key: 'sell', label: t('equipment.inventory.availableSell'), value: `${item.available_to_buy} / ${item.quantity_total}` },
+              ]}
+              chips={[
+                <CardChip key="condition">{conditionLabel(item.condition)}</CardChip>,
+                <CardChip key="mode" tone="green">{modeLabel(item.mode)}</CardChip>,
+              ]}
+              secondary={(
+                <>
+                  <button type="button" onClick={() => { setNotice({ tone: '', text: '' }); setEditing(item) }} className={cardButtonClass('secondary')}>
+                    <Pencil className="h-3.5 w-3.5" /> {t('labor.action.edit')}
+                  </button>
+                  {item.is_active && (
+                    <button type="button" disabled={busyId === item.id} onClick={() => toggleActive(item)} className={cardButtonClass('danger')}>
+                      {busyId === item.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Power className="h-3.5 w-3.5" />} {t('labor.action.deactivate')}
+                    </button>
+                  )}
+                </>
+              )}
+              primary={item.is_active ? null : (
+                <button type="button" disabled={busyId === item.id} onClick={() => toggleActive(item)} className={cardButtonClass('primary')}>
+                  {busyId === item.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Power className="h-3.5 w-3.5" />} {t('labor.action.activate')}
                 </button>
-                <button type="button" disabled={busyId === item.id} onClick={() => toggleActive(item)} className={`inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg text-xs font-extrabold disabled:opacity-50 ${item.is_active ? 'border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100' : 'bg-brand-700 text-white hover:bg-brand-800'}`}>
-                  {busyId === item.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Power className="h-3.5 w-3.5" />} {item.is_active ? t('labor.action.deactivate') : t('labor.action.activate')}
-                </button>
-              </div>
-            </article>
+              )}
+            >
+              {/* The photo, whole (object-contain), at one height on every card. */}
+              <EquipmentImage src={item.image_url} className="h-32 w-full" />
+              <EquipmentPrices item={item} />
+              {item.specifications && <p className="line-clamp-2 text-xs font-semibold text-graphite/60">{item.specifications}</p>}
+            </ListCard>
           ))}
-        </div>
+        </CardGrid>
       ) : (
         <EmptyState icon={Construction} title={t('equipment.inventory.emptyTitle')} message={t('equipment.inventory.emptyMessage')} />
       )}
@@ -390,6 +404,37 @@ export function EquipmentRequestFacts({ request }) {
     </dl>
   )
 }
+
+// What was asked, as card rows (unit_price is the request's snapshot): the
+// equipment, quantity, rental period and rate, or the sale price. The request
+// type is the card's chip.
+function equipmentFactRows(request, t, money) {
+  const rent = request.request_kind === 'RENT'
+  return [
+    { key: 'equipment', label: t('equipment.field.equipment'), value: request.item_name },
+    { key: 'quantity', label: t('equipment.field.quantity'), value: request.quantity },
+    rent && { key: 'period', label: t('equipment.field.rentalPeriod'), value: `${formatDate(request.start_date)} – ${formatDate(request.end_date)}` },
+    rent && { key: 'rate', label: t('equipment.field.rate'), value: `${money(request.unit_price)} / ${ratePer(request.rate_unit)}` },
+    !rent && { key: 'price', label: t('equipment.field.salePrice'), value: money(request.unit_price) },
+  ]
+}
+
+const kindChip = (request, t) => (
+  <CardChip key="kind" tone="blue" icon={request.request_kind === 'RENT' ? Truck : ShoppingCart}>
+    {`${t('equipment.field.requestType')}: ${kindLabel(request.request_kind)}`}
+  </CardChip>
+)
+
+// An equipment request's status pill, in the word the status badge shows.
+function EquipmentCardStatus({ status }) {
+  const { t } = useLanguage()
+  return <CardStatus status={status}>{EQUIPMENT_STATUS_KEYS.includes(status) ? t(`labor.status.${status}`) : status}</CardStatus>
+}
+const EQUIPMENT_STATUS_KEYS = ['PENDING', 'ACCEPTED', 'REJECTED', 'CANCELLED', 'COMPLETED']
+
+// An empty footer for a card with nothing to do, so every card in a list that
+// has actions keeps the same footer edge.
+const NO_ACTIONS = <span aria-hidden="true" />
 
 function AcceptDialog({ request, onClose, onDone }) {
   const { t } = useLanguage()
@@ -481,6 +526,7 @@ function RejectDialog({ request, onClose, onDone }) {
 
 export function EquipmentRequestsSection({ requests, onChanged, compact = false }) {
   const { t } = useLanguage()
+  const money = useMoney()
   // The status filter, in the address (?status=ACCEPTED).
   const [filter, setFilter] = useUrlState('status', 'PENDING', REQUEST_FILTERS)
   const [accepting, setAccepting] = useState(null)
@@ -521,40 +567,40 @@ export function EquipmentRequestsSection({ requests, onChanged, compact = false 
       )}
       <Notice notice={notice} />
       {visible.length ? (
-        <div className="grid gap-3 md:grid-cols-2">
-          {visible.map((request) => (
-            <article key={request.id} className={`flex min-w-0 flex-col rounded-2xl border bg-white p-4 ${request.status === 'PENDING' ? 'border-oc-amber shadow-[0_0_0_3px_rgba(244,183,64,0.18)]' : 'border-slate-200'}`}>
-              <div className="flex items-start justify-between gap-3">
-                <p className="inline-flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-wide text-brand-800">
-                  {request.request_kind === 'RENT' ? <Truck className="h-3.5 w-3.5" /> : <ShoppingCart className="h-3.5 w-3.5" />}
-                  {heading(request)}
-                </p>
-                <StatusBadge status={request.status} />
-              </div>
-              <p className="mt-2 truncate text-base font-extrabold text-graphite">{request.project_title || t('labor.project')}</p>
-              <p className="text-xs font-semibold text-graphite/60">
-                {t('labor.siteEngineerName', { name: request.engineer_name || '—' })}
-                {request.contractor_name ? ` · ${t('labor.builderName', { name: request.contractor_name })}` : ''}
-              </p>
-              <EquipmentRequestFacts request={request} />
-              {request.notes && <p className="mt-2 whitespace-pre-line rounded-xl bg-slate-50 px-3 py-2 text-xs font-semibold text-graphite/70">{request.notes}</p>}
-              {request.decision_note && <p className="mt-2 text-[11px] font-bold text-graphite/55">{t('labor.noteLine', { note: request.decision_note })}</p>}
-              {request.status === 'PENDING' && (
-                <>
-                  {!request.supplier_assignment_active && <p className="mt-2 text-[11px] font-bold text-amber-700">{t('labor.requests.unassigned')}</p>}
-                  <div className="mt-auto flex gap-2 pt-3">
-                    <button type="button" onClick={() => { setNotice({ tone: '', text: '' }); setAccepting(request) }} className="inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg bg-brand-700 text-xs font-extrabold text-white hover:bg-brand-800">
-                      <CheckCircle2 className="h-3.5 w-3.5" /> {t('labor.action.accept')}
-                    </button>
-                    <button type="button" onClick={() => { setNotice({ tone: '', text: '' }); setRejecting(request) }} className="inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg border border-rose-200 bg-rose-50 text-xs font-extrabold text-rose-700 hover:bg-rose-100">
-                      <XCircle className="h-3.5 w-3.5" /> {t('labor.action.reject')}
-                    </button>
-                  </div>
-                </>
-              )}
-            </article>
-          ))}
-        </div>
+        <CardGrid testId="equipment-request-cards">
+          {visible.map((request) => {
+            const pending = request.status === 'PENDING'
+            return (
+              <ListCard
+                key={request.id}
+                highlighted={pending}
+                avatar={<CardAvatar fallback={request.request_kind === 'RENT' ? <Truck aria-hidden="true" className="h-5 w-5" /> : <ShoppingCart aria-hidden="true" className="h-5 w-5" />} />}
+                title={request.project_title || t('labor.project')}
+                subtitle={`${t('labor.siteEngineerName', { name: request.engineer_name || '—' })}${request.contractor_name ? ` · ${t('labor.builderName', { name: request.contractor_name })}` : ''}`}
+                status={<EquipmentCardStatus status={request.status} />}
+                rows={equipmentFactRows(request, t, money)}
+                chips={[
+                  <CardChip key="heading" tone={pending ? 'amber' : 'grey'}>{heading(request)}</CardChip>,
+                  kindChip(request, t),
+                ]}
+                secondary={pending ? (
+                  <button type="button" onClick={() => { setNotice({ tone: '', text: '' }); setRejecting(request) }} className={cardButtonClass('danger')}>
+                    <XCircle className="h-3.5 w-3.5" /> {t('labor.action.reject')}
+                  </button>
+                ) : NO_ACTIONS}
+                primary={pending ? (
+                  <button type="button" onClick={() => { setNotice({ tone: '', text: '' }); setAccepting(request) }} className={cardButtonClass('primary')}>
+                    <CheckCircle2 className="h-3.5 w-3.5" /> {t('labor.action.accept')}
+                  </button>
+                ) : null}
+              >
+                {request.notes && <p className="whitespace-pre-line rounded-xl bg-slate-50 px-3 py-2 text-xs font-semibold text-graphite/70">{request.notes}</p>}
+                {request.decision_note && <p className="text-[11px] font-bold text-graphite/55">{t('labor.noteLine', { note: request.decision_note })}</p>}
+                {pending && !request.supplier_assignment_active && <p className="text-[11px] font-bold text-amber-700">{t('labor.requests.unassigned')}</p>}
+              </ListCard>
+            )
+          })}
+        </CardGrid>
       ) : (
         <EmptyState
           icon={ClipboardList}
@@ -618,6 +664,7 @@ const ASSIGNMENT_TABS = [
 
 export function EquipmentAssignmentsSection({ requests, onChanged, refreshKey = 0 }) {
   const { t } = useLanguage()
+  const money = useMoney()
   // The tab and the open assignment, in the address (?tab=purchases&assignment=<id>).
   const [params, patchParams] = useUrlParams()
   const [tab] = useUrlState('tab', 'rentals', ASSIGNMENT_TABS.map((item) => item.id))
@@ -656,42 +703,40 @@ export function EquipmentAssignmentsSection({ requests, onChanged, refreshKey = 
       </div>
       <Notice notice={notice} />
       {list.length ? (
-        <div className="space-y-3">
+        <CardGrid testId="equipment-assignment-cards">
           {list.map((request) => {
             const rent = request.request_kind === 'RENT'
             return (
-              <article key={request.id} className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="truncate text-base font-extrabold text-graphite">{request.project_title || t('labor.project')}</p>
-                    <p className="text-xs font-semibold text-graphite/60">{t('labor.siteEngineerName', { name: request.engineer_name || '—' })}</p>
-                  </div>
-                  <StatusBadge status={request.status} />
-                </div>
-                <EquipmentRequestFacts request={request} />
+              <ListCard
+                key={request.id}
+                avatar={<CardAvatar fallback={rent ? <Truck aria-hidden="true" className="h-5 w-5" /> : <ShoppingCart aria-hidden="true" className="h-5 w-5" />} />}
+                title={request.project_title || t('labor.project')}
+                subtitle={t('labor.siteEngineerName', { name: request.engineer_name || '—' })}
+                status={<EquipmentCardStatus status={request.status} />}
+                rows={equipmentFactRows(request, t, money)}
+                chips={[kindChip(request, t)]}
+                secondary={rent ? (
+                  <button type="button" onClick={() => setOpenId(openId === request.id ? null : request.id)} className={cardButtonClass('secondary')}>
+                    <CalendarDays className="h-3.5 w-3.5" /> {openId === request.id ? t('equipment.usage.hide') : t('equipment.usage.view')}
+                  </button>
+                ) : NO_ACTIONS}
+                primary={request.status === 'ACCEPTED' ? (
+                  <button type="button" disabled={busyId === request.id} onClick={() => complete(request)} className={cardButtonClass('primary')}>
+                    {busyId === request.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : rent ? <Undo2 className="h-3.5 w-3.5" /> : <Truck className="h-3.5 w-3.5" />} {rent ? t('equipment.action.markReturned') : t('equipment.action.markDelivered')}
+                  </button>
+                ) : null}
+              >
                 {request.status === 'COMPLETED' && request.completed_at && (
-                  <p className="mt-2 text-[11px] font-bold text-sky-800">{t(rent ? 'equipment.returnedOn' : 'equipment.deliveredOn', { date: formatDate(request.completed_at) })}</p>
+                  <p className="text-[11px] font-bold text-sky-800">{t(rent ? 'equipment.returnedOn' : 'equipment.deliveredOn', { date: formatDate(request.completed_at) })}</p>
                 )}
                 {request.status === 'ACCEPTED' && !request.supplier_assignment_active && (
-                  <p className="mt-2 text-[11px] font-bold text-amber-700">{t('equipment.assignments.unassignedContinues')}</p>
+                  <p className="text-[11px] font-bold text-amber-700">{t('equipment.assignments.unassignedContinues')}</p>
                 )}
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {rent && (
-                    <button type="button" onClick={() => setOpenId(openId === request.id ? null : request.id)} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-slate-200 px-3 text-xs font-extrabold text-graphite/75 hover:bg-slate-50">
-                      <CalendarDays className="h-3.5 w-3.5" /> {openId === request.id ? t('equipment.usage.hide') : t('equipment.usage.view')}
-                    </button>
-                  )}
-                  {request.status === 'ACCEPTED' && (
-                    <button type="button" disabled={busyId === request.id} onClick={() => complete(request)} className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-brand-700 px-3 text-xs font-extrabold text-white hover:bg-brand-800 disabled:opacity-50">
-                      {busyId === request.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : rent ? <Undo2 className="h-3.5 w-3.5" /> : <Truck className="h-3.5 w-3.5" />} {rent ? t('equipment.action.markReturned') : t('equipment.action.markDelivered')}
-                    </button>
-                  )}
-                </div>
-                {openId === request.id && <div className="mt-3"><EquipmentUsageHistory requestId={request.id} refreshKey={refreshKey} /></div>}
-              </article>
+                {openId === request.id && <EquipmentUsageHistory requestId={request.id} refreshKey={refreshKey} />}
+              </ListCard>
             )
           })}
-        </div>
+        </CardGrid>
       ) : (
         <EmptyState
           icon={tab === 'purchases' ? ShoppingCart : Truck}

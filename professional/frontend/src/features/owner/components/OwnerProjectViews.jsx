@@ -3,8 +3,7 @@ import { AlertTriangle, Calculator, Calendar, Globe2, HardHat, Home, IndianRupee
 import PincodeAreaHint from '../../../shared/ui/PincodeAreaHint.jsx'
 import BudgetInWords from '../../../shared/ui/BudgetInWords.jsx'
 import StatusPill from '../../../shared/dashboard/StatusPill.jsx'
-import { EntityCard } from '../../../shared/ui/EntityCard.jsx'
-import { EntityAvatar } from '../../../shared/ui/EntityPill.jsx'
+import { CardAvatar, CardChip, CardGrid, ListCard, cardButtonClass } from '../../../shared/ui/ListCard.jsx'
 import { usePincodeAreaLookup } from '../../../shared/hooks/usePincodeAreaLookup.js'
 import { SmartImage } from '../../../shared/ui/ui.jsx'
 import ProjectCameraPanel from '../../cameras/components/LazyProjectCameraPanel.jsx'
@@ -1362,13 +1361,11 @@ export function ProjectListTable({
 
   return (
     <>
-      {/* Every project card is the same size whatever it says. Rows are equal
-          (auto-rows-fr) and never shorter than the card with all its content
-          (title, address, pills, the description line, completion/budget,
-          progress and actions): 211px in the one-column phone layout, 215px
-          from two columns up. Each card fills its row (EntityCard `fill`), so a
-          short project no longer comes out shorter than the others. */}
-      <div className="owner-project-cards grid auto-rows-[minmax(211px,1fr)] grid-cols-1 gap-3 sm:auto-rows-[minmax(215px,1fr)] sm:grid-cols-2 lg:grid-cols-3">
+      {/* Every project card has the same anatomy and the row's height (the
+          shared CardGrid / ListCard). Turning a card to its Project Analysis
+          shows the analysis in that card's body; the header and the actions
+          stay where they are. */}
+      <CardGrid testId="owner-project-cards">
         {entries.map(({ project, estimate }) => {
           const elapsed = scheduleWidth(project)
           const schedule = scheduleText(project, t)
@@ -1400,196 +1397,113 @@ export function ProjectListTable({
                 : t('dash.owner.estimates.lookingForBuilder')
           const cardTitle = td(project.title)
           const flipped = !isDraft && flippedIds.has(project.id)
+          // Completion once it can be measured; until then Progress, the
+          // schedule percentage the bar shows -- but only once work has
+          // actually started on site (`work_started`, the app's one rule).
+          // Before that the card says "Not started yet". A draft has no
+          // project, so it shows none.
+          const progressRow = isDraft
+            ? null
+            : completionPercent(project) !== null
+              ? { key: 'progress', label: t('dash.owner.projectList.completion'), value: completionText(project, t) }
+              : {
+                  key: 'progress',
+                  label: t('dash.contractor.progress'),
+                  value: project.work_started !== true
+                    ? t('progress.scheduleNotStarted')
+                    : ['in_progress', 'end_date_passed', 'not_started'].includes(project.schedule_status) ? formatPercent(elapsed) : t('dash.common.notSet'),
+                }
           return (
-            // Front: the project card as it was. Back (real projects only):
-            // its Project Analysis. Each card turns on its own.
-            <div key={project.id} className="relative h-full [perspective:1200px]">
-            {deleteMessageOnCard && entryKey(estimate) === deleteTargetId && (
-              <p
-                role={deleteSucceeded ? 'status' : 'alert'}
-                className={`absolute inset-x-2 bottom-2 z-10 rounded-lg border px-3 py-2 text-center text-xs font-bold shadow-md ${deleteSucceeded ? 'border-emerald-100 bg-emerald-50 text-emerald-800' : 'border-red-100 bg-red-50 text-red-700'}`}
-              >
-                {deleteMessage}
-              </p>
-            )}
-            <div className={`relative h-full transition-transform duration-300 ease-out [transform-style:preserve-3d] motion-reduce:transition-none ${flipped ? '[transform:rotateY(180deg)]' : ''}`}>
-            <div className="h-full [backface-visibility:hidden]" aria-hidden={flipped || undefined} inert={flipped ? '' : undefined}>
-            <EntityCard
-              compact
-              // Fills its grid row, so every card is the row's (fixed) height
-              // rather than the height of its own text. The content keeps its
-              // place at the top; a shorter card has the room below it.
-              fill
-              onClick={isDraft ? undefined : () => onSelect(project)}
-              // No `action`, so EntityCard renders no header row at all. That
-              // row existed only to carry the budget in its top corner, and
-              // with nothing beside it the card opened on a band of empty
-              // space. The budget now sits low in the body instead, and the
-              // title starts at the top of the card.
-              avatar={
-                <EntityAvatar
+            <ListCard
+              key={project.id}
+              // Turned to its analysis, a click in the card does not open the project.
+              onClick={isDraft || flipped ? undefined : () => onSelect(project)}
+              avatar={(
+                <CardAvatar
                   src={project.cover_image_url ? imageUrl(project.cover_image_url) : defaultProjectImage}
                   alt={cardTitle}
                   // The first letter of the name as it is READ, so the mark
                   // matches the title beside it instead of an English "P".
                   fallback={cardTitle.trim().slice(0, 1).toUpperCase() || '•'}
                 />
-              }
+              )}
               title={cardTitle}
-              // The location the requirement card listed as its third fact. It
-              // is the card's subtitle here rather than a pill, so the address
-              // is not printed twice on one card.
+              // The location, as the card's subtitle.
               subtitle={`${td(project.address) || t('dash.owner.estimates.locationNotSet')} ${project.pincode || ''}`.trim()}
-              pills={[
-                { key: 'builder', text: builderText, icon: MapPin, tone: 'positive' },
-                { key: 'area', text: t('dash.owner.sqft', { area: estimate?.land_area ?? project.land_area ?? 0 }), tone: 'info' },
-                {
-                  key: 'build',
-                  tone: 'accent',
-                  text: (estimate?.floor_type ? optionLabel(t, FLOOR_TYPE_KEYS, estimate.floor_type) : '')
-                    || buildingTypeText(project.building_type, t)
-                    || t('dash.owner.floorsCount', { floors: project.floors || 1 }),
-                },
+              rows={flipped ? [] : [
+                progressRow,
+                { key: 'budget', label: t('dash.common.budget'), value: budgetLabel },
               ]}
-            >
-              {describes && <p className="mt-1.5 line-clamp-1 text-[11px] font-medium text-oc-muted">{td(estimate.project_description)}</p>}
-
-              {/* Completion on the left, the amount on the right of the same
-                  row — the amount no longer has a line of its own lower down.
-                  Both keep the chip they already used. `justify-between` puts
-                  the amount on the right edge, and the row wraps rather than
-                  overlapping when the card gets narrow. */}
-              {/* `mt-auto` pins this row, the bar, the schedule line and the
-                  actions to the foot of the card, so Edit / Delete sit in the
-                  same place on every card however much text is above them. */}
-              <div className="mt-auto flex flex-wrap items-center justify-between gap-x-2 gap-y-1 pt-2">
-                {/* Completion once it can be measured; until then Progress, the
-                    schedule percentage the bar shows -- but only once work has
-                    actually started on site (`work_started`, the app's one
-                    rule). Before that a passed start date is no progress, so
-                    the card says "Not started yet". "Not set" without usable
-                    dates. A draft has no project, so it shows none; the empty
-                    span keeps the amount on the right. */}
-                <span className="text-[11px] font-semibold text-oc-muted">{isDraft
-                  ? ''
-                  : completionPercent(project) !== null
-                    ? `${t('dash.owner.projectList.completion')}: ${completionText(project, t)}`
-                    : project.work_started !== true
-                      ? `${t('dash.contractor.progress')}: ${t('progress.scheduleNotStarted')}`
-                      : `${t('dash.contractor.progress')}: ${['in_progress', 'end_date_passed', 'not_started'].includes(project.schedule_status) ? formatPercent(elapsed) : t('dash.common.notSet')}`}</span>
-                <span className="text-sm font-extrabold text-oc-ink">
-                  {budgetLabel}
-                </span>
-              </div>
-
-              {/* The progress bar sits directly under that row and doubles as
-                  the rule above the actions, so the card carries one line
-                  there rather than the bar and a separate divider. It fills to
-                  the schedule figure on the line below (elapsed planned time). */}
-              <div className="owner-project-progress mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-slate-200">
-                <div className="h-full rounded-full bg-emerald-500" style={{ width: `${project.work_started === true ? elapsed : 0}%` }} />
-              </div>
-              {/* Elapsed planned time, labelled as schedule: it is not completion.
-                  The line keeps its height when there is no schedule, so the
-                  actions below do not move up. */}
-              <div className="mt-1 flex min-h-[15px] items-center gap-2">
-                <p aria-hidden={schedule ? undefined : true} className="min-w-0 flex-1 truncate text-[10px] font-semibold text-oc-muted">{schedule ? `${t('progress.schedule')}: ${schedule}` : ''}</p>
-                {/* Turns this card over to its Project Analysis. A button, so
-                    EntityCard does not treat the click as opening the project. */}
-                {!isDraft && (
-                  <button
-                    ref={(node) => { analysisToggleRefs.current[project.id] = node }}
-                    type="button"
-                    onClick={(event) => { event.stopPropagation(); setFlipped(project.id, true) }}
-                    className="inline-flex shrink-0 items-center gap-1 rounded text-[10px] font-extrabold text-oc-green hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oc-green/40"
-                  >
-                    {t('owner.analysis.view')} <RotateCw aria-hidden="true" className="h-3 w-3" />
-                  </button>
-                )}
-              </div>
-
-              {/* The actions the requirement card carried, on the one card that
-                  is left. EntityCard ignores clicks that land on a button, so
-                  none of these opens the project. They sit at the foot of the
-                  card with the block above them (see `mt-auto`). */}
-              <div className="mt-2.5 flex flex-wrap items-center gap-2">
-                {isDraft && (
-                  <span className="text-[10px] font-medium text-oc-muted">{t('dash.owner.estimates.draftSyncNote')}</span>
-                )}
-                {isDraft && convertDatesFor !== estimate.id && (
-                  <button
-                    type="button"
-                    disabled={convertingEstimateId === estimate.id}
-                    onClick={() => openConvertDates(estimate)}
-                    className="inline-flex h-7 items-center gap-1.5 rounded-lg bg-oc-deep px-2.5 text-[11px] font-extrabold text-white transition hover:bg-oc-green disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    <Plus className="h-3 w-3" /> {convertingEstimateId === estimate.id ? t('dash.owner.estimates.converting') : t('dash.owner.estimates.convertToProject')}
-                  </button>
-                )}
-                {isDraft && convertDatesFor === estimate.id && (
-                  <form onSubmit={(event) => submitConvertDates(event, estimate)} className="flex w-full flex-wrap items-end gap-2">
-                    <label className="block">
-                      <span className="block text-[10px] font-bold text-oc-muted">{t('dash.owner.projectDetails.startDate')}</span>
-                      <input type="date" required value={convertDates.start_date} max={convertDates.end_date || undefined} onChange={(event) => setConvertDates((current) => ({ ...current, start_date: event.target.value }))} className="mt-0.5 h-7 rounded-lg border border-oc-line bg-white px-2 text-[11px] outline-none focus:border-ocbrand-400" />
-                    </label>
-                    <label className="block">
-                      <span className="block text-[10px] font-bold text-oc-muted">{t('dash.owner.projectDetails.endDate')}</span>
-                      <input type="date" required value={convertDates.end_date} min={convertDates.start_date || undefined} onChange={(event) => setConvertDates((current) => ({ ...current, end_date: event.target.value }))} className="mt-0.5 h-7 rounded-lg border border-oc-line bg-white px-2 text-[11px] outline-none focus:border-ocbrand-400" />
-                    </label>
+              chips={flipped ? [] : [
+                <CardChip key="builder" tone="green" icon={MapPin}>{builderText}</CardChip>,
+                <CardChip key="area" tone="blue">{t('dash.owner.sqft', { area: estimate?.land_area ?? project.land_area ?? 0 })}</CardChip>,
+                <CardChip key="build" tone="amber">
+                  {(estimate?.floor_type ? optionLabel(t, FLOOR_TYPE_KEYS, estimate.floor_type) : '')
+                    || buildingTypeText(project.building_type, t)
+                    || t('dash.owner.floorsCount', { floors: project.floors || 1 })}
+                </CardChip>,
+              ]}
+              secondary={(
+                <>
+                  {!isDraft && (
                     <button
-                      type="submit"
-                      disabled={convertingEstimateId === estimate.id}
-                      className="inline-flex h-7 items-center gap-1.5 rounded-lg bg-oc-deep px-2.5 text-[11px] font-extrabold text-white transition hover:bg-oc-green disabled:cursor-not-allowed disabled:opacity-60"
+                      type="button"
+                      onClick={() => onEditProject?.(project)}
+                      className={`owner-card-btn-edit ${cardButtonClass('secondary')}`}
                     >
-                      <Plus className="h-3 w-3" /> {convertingEstimateId === estimate.id ? t('dash.owner.estimates.converting') : t('dash.owner.projectForm.create')}
+                      <Pencil className="h-3.5 w-3.5" /> {t('dash.owner.estimates.edit')}
                     </button>
-                    <button type="button" onClick={closeConvertDates} className="inline-flex h-7 items-center rounded-lg border border-oc-line bg-white px-2.5 text-[11px] font-extrabold text-oc-muted transition hover:bg-slate-50">
-                      {t('dash.common.cancel')}
-                    </button>
-                    {convertDatesMessage && <p role="alert" className="w-full text-[10px] font-bold text-red-600">{convertDatesMessage}</p>}
-                  </form>
-                )}
-                {!isDraft && (
+                  )}
                   <button
                     type="button"
-                    onClick={() => onEditProject?.(project)}
-                    className="owner-card-btn-edit inline-flex h-7 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 text-[11px] font-extrabold text-oc-ink transition hover:bg-slate-50"
+                    disabled={isDeleting}
+                    onClick={() => setPendingDelete(estimate)}
+                    className={`owner-card-btn-delete ${cardButtonClass('danger')}`}
                   >
-                    <Pencil className="h-3 w-3" /> {t('dash.owner.estimates.edit')}
+                    <Trash2 className="h-3.5 w-3.5" /> {isDeleting ? t('dash.common.deleting') : t('dash.common.delete')}
                   </button>
-                )}
-                <button
-                  type="button"
-                  disabled={isDeleting}
-                  onClick={() => setPendingDelete(estimate)}
-                  className="owner-card-btn-delete inline-flex h-7 items-center gap-1.5 rounded-lg border border-red-100 bg-red-50 px-2.5 text-[11px] font-extrabold text-red-600 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  <Trash2 className="h-3 w-3" /> {isDeleting ? t('dash.common.deleting') : t('dash.common.delete')}
-                </button>
-                {/* A shortcut into this project's existing Assigned Builders
-                    section -- the same accepted quotations and the same Assign
-                    Project action as opening the project. Only on a real
-                    project that is built by a builder: a draft has no project
-                    yet, and a self-construction project takes no builder. */}
-                {!isDraft && project.construction_type !== 'SELF_CONSTRUCTION' && onAssignBuilder && (
-                  <button
-                    type="button"
-                    onClick={() => onAssignBuilder(project)}
-                    className="owner-card-btn-assign ms-auto inline-flex h-7 items-center gap-1.5 rounded-lg border border-emerald-100 bg-emerald-50 px-2.5 text-[11px] font-extrabold text-oc-deep transition hover:bg-emerald-100"
-                  >
-                    {/* Assigned means awarded: projects.contractor_id, the same
-                        field the Assigned Builders section reads -- not merely
-                        an accepted quotation. The list reloads after an
-                        assignment, so the label follows the saved state. */}
-                    <HardHat className="h-3 w-3" /> {project.contractor_id ? t('quote.builderAssignedButton') : t('quote.assignBuilder')}
-                  </button>
-                )}
-              </div>
-            </EntityCard>
-            </div>
-            {!isDraft && (
-              <div className="absolute inset-0 overflow-hidden rounded-[18px] border border-oc-line bg-white shadow-ocsoft [backface-visibility:hidden] [transform:rotateY(180deg)]" aria-hidden={!flipped || undefined} inert={flipped ? undefined : ''}>
-                {(flipped || analysisById[project.id]) && (
+                  {/* Turns this card to its Project Analysis. */}
+                  {!isDraft && !flipped && (
+                    <button
+                      ref={(node) => { analysisToggleRefs.current[project.id] = node }}
+                      type="button"
+                      onClick={(event) => { event.stopPropagation(); setFlipped(project.id, true) }}
+                      className={cardButtonClass('secondary')}
+                    >
+                      {t('owner.analysis.view')} <RotateCw aria-hidden="true" className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </>
+              )}
+              primary={(
+                <>
+                  {isDraft && convertDatesFor !== estimate.id && (
+                    <button
+                      type="button"
+                      disabled={convertingEstimateId === estimate.id}
+                      onClick={() => openConvertDates(estimate)}
+                      className={cardButtonClass('primary')}
+                    >
+                      <Plus className="h-3.5 w-3.5" /> {convertingEstimateId === estimate.id ? t('dash.owner.estimates.converting') : t('dash.owner.estimates.convertToProject')}
+                    </button>
+                  )}
+                  {/* A shortcut into this project's existing Assigned Builders
+                      section. Only on a real project built by a builder. */}
+                  {!isDraft && project.construction_type !== 'SELF_CONSTRUCTION' && onAssignBuilder && (
+                    <button
+                      type="button"
+                      onClick={() => onAssignBuilder(project)}
+                      className={`owner-card-btn-assign ${cardButtonClass('primary')}`}
+                    >
+                      {/* Assigned means awarded: projects.contractor_id. */}
+                      <HardHat className="h-3.5 w-3.5" /> {project.contractor_id ? t('quote.builderAssignedButton') : t('quote.assignBuilder')}
+                    </button>
+                  )}
+                </>
+              )}
+            >
+              {flipped ? (
+                <div className="-mx-3 -mb-3 flex min-h-0 flex-1 flex-col">
                   <OwnerProjectAnalysisPanel
                     ref={(node) => { analysisBackRefs.current[project.id] = node }}
                     project={project}
@@ -1598,14 +1512,63 @@ export function ProjectListTable({
                     onRetry={() => loadAnalysis(project.id)}
                     onBack={() => setFlipped(project.id, false)}
                   />
-                )}
-              </div>
-            )}
-            </div>
-            </div>
+                </div>
+              ) : (
+                <>
+                  {describes && <p className="line-clamp-1 text-[11px] font-medium text-oc-muted">{td(estimate.project_description)}</p>}
+                  {/* The schedule bar (elapsed planned time) and its figure, at
+                      the foot of the body. The line keeps its height when there
+                      is no schedule. */}
+                  {!isDraft && (
+                    <div className="mt-auto">
+                      <div className="owner-project-progress h-1.5 w-full overflow-hidden rounded-full bg-slate-200">
+                        <div className="h-full rounded-full bg-emerald-500" style={{ width: `${project.work_started === true ? elapsed : 0}%` }} />
+                      </div>
+                      <p aria-hidden={schedule ? undefined : true} className="mt-1 min-h-[15px] truncate text-[10px] font-semibold text-oc-muted">{schedule ? `${t('progress.schedule')}: ${schedule}` : ''}</p>
+                    </div>
+                  )}
+                  {isDraft && (
+                    <p className="mt-auto text-[10px] font-medium text-oc-muted">{t('dash.owner.estimates.draftSyncNote')}</p>
+                  )}
+                  {/* Convert to Project asks for the project's dates first. */}
+                  {isDraft && convertDatesFor === estimate.id && (
+                    <form onSubmit={(event) => submitConvertDates(event, estimate)} className="flex w-full flex-wrap items-end gap-2">
+                      <label className="block">
+                        <span className="block text-[10px] font-bold text-oc-muted">{t('dash.owner.projectDetails.startDate')}</span>
+                        <input type="date" required value={convertDates.start_date} max={convertDates.end_date || undefined} onChange={(event) => setConvertDates((current) => ({ ...current, start_date: event.target.value }))} className="mt-0.5 h-7 rounded-lg border border-oc-line bg-white px-2 text-[11px] outline-none focus:border-ocbrand-400" />
+                      </label>
+                      <label className="block">
+                        <span className="block text-[10px] font-bold text-oc-muted">{t('dash.owner.projectDetails.endDate')}</span>
+                        <input type="date" required value={convertDates.end_date} min={convertDates.start_date || undefined} onChange={(event) => setConvertDates((current) => ({ ...current, end_date: event.target.value }))} className="mt-0.5 h-7 rounded-lg border border-oc-line bg-white px-2 text-[11px] outline-none focus:border-ocbrand-400" />
+                      </label>
+                      <button
+                        type="submit"
+                        disabled={convertingEstimateId === estimate.id}
+                        className={cardButtonClass('primary')}
+                      >
+                        <Plus className="h-3.5 w-3.5" /> {convertingEstimateId === estimate.id ? t('dash.owner.estimates.converting') : t('dash.owner.projectForm.create')}
+                      </button>
+                      <button type="button" onClick={closeConvertDates} className={cardButtonClass('secondary')}>
+                        {t('dash.common.cancel')}
+                      </button>
+                      {convertDatesMessage && <p role="alert" className="w-full text-[10px] font-bold text-red-600">{convertDatesMessage}</p>}
+                    </form>
+                  )}
+                </>
+              )}
+              {/* A refused delete leaves the card in place: the reason shows on it. */}
+              {deleteMessageOnCard && entryKey(estimate) === deleteTargetId && (
+                <p
+                  role={deleteSucceeded ? 'status' : 'alert'}
+                  className={`rounded-lg border px-3 py-2 text-center text-xs font-bold ${deleteSucceeded ? 'border-emerald-100 bg-emerald-50 text-emerald-800' : 'border-red-100 bg-red-50 text-red-700'}`}
+                >
+                  {deleteMessage}
+                </p>
+              )}
+            </ListCard>
           )
         })}
-      </div>
+      </CardGrid>
 
       {convertMessage && <p className="rounded-xl border border-oc-line bg-oc-mint px-4 py-2.5 text-sm font-bold text-oc-deep">{convertMessage}</p>}
       {/* Only when the card itself is gone; otherwise the message is on the

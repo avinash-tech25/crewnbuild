@@ -25,6 +25,7 @@ import {
 // query string. Visitors get the public /ads/{id}/image address instead.
 import { imageUrl } from '../../../shared/api/apiClient.js'
 
+import { CardChip, CardGrid, CardStatus, ListCard, cardButtonClass } from '../../../shared/ui/ListCard.jsx'
 import BudgetInWords from '../../../shared/ui/BudgetInWords.jsx'
 import { shrinkAdvertImage } from '../advertImage.js'
 import { cropAdvertImage, shapeFor } from '../advertCrop.js'
@@ -100,20 +101,6 @@ const PREVIEW_PATHS = {
 const field =
   'mt-1 h-10 w-full rounded-lg border border-oc-line bg-white px-3 text-sm font-semibold text-graphite'
 const label = 'block text-[11px] font-extrabold uppercase tracking-wide text-oc-faint'
-
-function StatusPill({ value }) {
-  const tone =
-    value === 'ACTIVE'
-      ? 'bg-ocbrand-50 text-ocbrand-700'
-      : value === 'PAUSED'
-        ? 'bg-amber-50 text-amber-700'
-        : 'bg-slate-100 text-slate-500'
-  return (
-    <span className={`rounded-md px-2 py-0.5 text-[11px] font-bold uppercase ${tone}`}>
-      {value}
-    </span>
-  )
-}
 
 function ScreenChip({ chosen, onToggle, screenKey, name, muted }) {
   return (
@@ -909,125 +896,108 @@ export function AdsPage({ identity, Panel }) {
           </p>
         </div>
       ) : (
-        <div className="grid gap-3">
-          {adverts.map((advert) =>
-            editingId === advert.id ? (
-              <AdvertForm
-                key={advert.id}
-                identity={identity}
-                placements={placements}
-                existing={advert}
-                onDone={() => {
-                  setEditingId(null)
-                  load()
-                }}
-                onCancel={() => setEditingId(null)}
-              />
-            ) : (
-              <div
-                key={advert.id}
-                className="flex flex-wrap items-center gap-3 rounded-2xl border border-oc-line bg-white p-3"
-              >
-                <img
-                  src={imageUrl(advert.image_url)}
-                  alt=""
-                  className="h-14 w-24 shrink-0 rounded-lg border border-oc-line object-cover"
-                  onError={(event) => {
-                    event.currentTarget.style.visibility = 'hidden'
+        <>
+          {/* The advert being edited opens its form above the cards, full width. */}
+          {adverts
+            .filter((advert) => advert.id === editingId)
+            .map((advert) => (
+              <div key={advert.id} className="mb-3">
+                <AdvertForm
+                  identity={identity}
+                  placements={placements}
+                  existing={advert}
+                  onDone={() => {
+                    setEditingId(null)
+                    load()
                   }}
+                  onCancel={() => setEditingId(null)}
                 />
-
-                <div className="min-w-48 flex-1">
-                  <div className="flex items-center gap-2">
-                    <p className="font-display text-sm font-bold text-graphite">{advert.title}</p>
-                    <StatusPill value={advert.status} />
-                    <span className="rounded-md bg-oc-mint px-2 py-0.5 text-[11px] font-bold uppercase text-oc-deep">
-                      {advert.scope === 'GLOBAL' ? 'Global' : advert.scope}
-                    </span>
-                  </div>
-                  <p className="mt-0.5 text-[11px] font-semibold text-oc-muted">
-                    {advert.placements.map(nameFor).join(' · ')}
-                  </p>
-                  {(advert.starts_on || advert.ends_on) && (
-                    <p className="mt-0.5 text-[11px] font-medium text-oc-faint">
-                      {advert.starts_on || 'now'} → {advert.ends_on || 'until stopped'}
-                    </p>
-                  )}
-                </div>
-
-                {/* Views and clicks sit on the row rather than behind a report:
-                    an advert nobody clicks is what you want to notice while
-                    scanning the list. */}
-                <div className="flex gap-4 text-center">
-                  <div>
-                    <p className="font-display text-base font-bold tabular-nums text-graphite">
-                      {advert.views}
-                    </p>
-                    <p className="text-[10px] font-extrabold uppercase tracking-wide text-oc-faint">
-                      Views
-                    </p>
-                  </div>
-                  <div>
-                    <p className="font-display text-base font-bold tabular-nums text-graphite">
-                      {advert.clicks}
-                    </p>
-                    <p className="text-[10px] font-extrabold uppercase tracking-wide text-oc-faint">
-                      Clicks
-                    </p>
-                  </div>
-                  {/* Only for an advert that carries a rate. A house advert
-                      showing "0" would read as one that earned nothing rather
-                      than one that was never sold. */}
-                  {advert.earned !== null && advert.earned !== undefined && (
-                    <div>
-                      <p className="font-display text-base font-bold tabular-nums text-oc-deep">
-                        {advert.currency} {Number(advert.earned).toLocaleString()}
-                      </p>
-                      <p className="text-[10px] font-extrabold uppercase tracking-wide text-oc-faint">
-                        {PRICING_MODELS.find((m) => m.key === advert.pricing_model)?.label || 'Earned'}
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                {mayManage && (
-                  <div className="flex gap-1.5">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setEditingId(advert.id)
-                        setCreating(false)
-                      }}
-                      className="h-8 rounded-lg border border-oc-line px-3 text-xs font-extrabold text-oc-deep hover:bg-brand-50"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      type="button"
-                      disabled={busyId === advert.id}
-                      onClick={() => toggleRunning(advert)}
-                      className={`inline-flex h-8 items-center gap-1 rounded-lg border px-3 text-xs font-extrabold disabled:opacity-50 ${
-                        advert.status === 'ACTIVE'
-                          ? 'border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100'
-                          : 'border-ocbrand-200 bg-ocbrand-50 text-ocbrand-700 hover:bg-ocbrand-100'
-                      }`}
-                    >
-                      {advert.status === 'ACTIVE' ? (
-                        <>
-                          <Pause className="h-3 w-3" /> Pause
-                        </>
-                      ) : (
-                        <>
-                          <Play className="h-3 w-3" /> Start
-                        </>
-                      )}
-                    </button>
-                  </div>
-                )}
               </div>
-            ),
-          )}
-        </div>
+            ))}
+          <CardGrid testId="admin-advert-cards" label="Adverts">
+            {adverts
+              .filter((advert) => advert.id !== editingId)
+              .map((advert) => {
+                // Views and clicks sit on the card rather than behind a report:
+                // an advert nobody clicks is what you want to notice while
+                // scanning the list.
+                const rows = [
+                  { key: 'views', label: 'Views', value: advert.views },
+                  { key: 'clicks', label: 'Clicks', value: advert.clicks },
+                ]
+                // Only for an advert that carries a rate. A house advert showing
+                // "0" would read as one that earned nothing rather than one that
+                // was never sold.
+                if (advert.earned !== null && advert.earned !== undefined) {
+                  rows.push({
+                    key: 'earned',
+                    label: PRICING_MODELS.find((m) => m.key === advert.pricing_model)?.label || 'Earned',
+                    value: `${advert.currency} ${Number(advert.earned).toLocaleString()}`,
+                  })
+                }
+                return (
+                  <ListCard
+                    key={advert.id}
+                    title={advert.title}
+                    subtitle={advert.placements.map(nameFor).join(' · ')}
+                    status={<CardStatus status={advert.status}>{advert.status}</CardStatus>}
+                    rows={rows}
+                    chips={[
+                      <CardChip key="scope" tone="green">{advert.scope === 'GLOBAL' ? 'Global' : advert.scope}</CardChip>,
+                      (advert.starts_on || advert.ends_on) && (
+                        <CardChip key="dates">{advert.starts_on || 'now'} → {advert.ends_on || 'until stopped'}</CardChip>
+                      ),
+                    ]}
+                    secondary={
+                      mayManage && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingId(advert.id)
+                            setCreating(false)
+                          }}
+                          className={cardButtonClass('secondary')}
+                        >
+                          Edit
+                        </button>
+                      )
+                    }
+                    primary={
+                      mayManage && (
+                        <button
+                          type="button"
+                          disabled={busyId === advert.id}
+                          onClick={() => toggleRunning(advert)}
+                          className={cardButtonClass('primary')}
+                        >
+                          {advert.status === 'ACTIVE' ? (
+                            <>
+                              <Pause className="h-3 w-3" /> Pause
+                            </>
+                          ) : (
+                            <>
+                              <Play className="h-3 w-3" /> Start
+                            </>
+                          )}
+                        </button>
+                      )
+                    }
+                  >
+                    <div className="h-28 w-full overflow-hidden rounded-lg border border-oc-line bg-slate-50">
+                      <img
+                        src={imageUrl(advert.image_url)}
+                        alt=""
+                        className="h-full w-full object-cover"
+                        onError={(event) => {
+                          event.currentTarget.style.visibility = 'hidden'
+                        }}
+                      />
+                    </div>
+                  </ListCard>
+                )
+              })}
+          </CardGrid>
+        </>
       )}
     </Panel>
   )

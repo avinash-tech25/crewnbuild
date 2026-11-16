@@ -14,13 +14,14 @@ import useUrlState from '../../../shared/hooks/useUrlState.js'
 import { useEffect, useMemo, useState } from 'react'
 import { CalendarDays, CheckCircle2, HardHat, History, Loader2, Pencil, Send, UserRound, XCircle } from 'lucide-react'
 import EmptyState from '../../../shared/dashboard/EmptyState.jsx'
+import { CardAvatar, CardGrid, CardStatus, ListCard, cardButtonClass } from '../../../shared/ui/ListCard.jsx'
 import { useLanguage } from '../../../i18n/LanguageContext.jsx'
 import { fetchProjectSuppliers } from '../../engineers/engineersApi.js'
 import {
   cancelLaborRequest, completeLaborRequest, createLaborRequest, fetchLaborDailyRecords, fetchLaborTrades,
   fetchProjectLaborRequests, fetchProjectLaborSupplierServices, LABOR_SUPPLIER_CATEGORY, laborErrorMessage, localIsoDate, saveLaborDailyRecord,
 } from '../../labour/labourApi.js'
-import { formatLaborDate, LaborDailyRecordsTable, LaborDialog, LaborStatusBadge } from '../../labour/components/SupplierLaborSections.jsx'
+import { formatLaborDate, LaborDailyRecordsTable, LaborDialog } from '../../labour/components/SupplierLaborSections.jsx'
 import { allocationSummary, availableCount, MAX_WORKERS, offeredServices, workersRequestError } from '../../labour/laborRequestRules.js'
 import { useLatestOnly, useLiveRefresh } from '../../../shared/hooks/useLiveRefresh.js'
 
@@ -298,9 +299,10 @@ function DailyAttendance({ request, refreshKey, onSaved }) {
 
 // ------------------------------------------------------------- requests
 
-function RequestCard({ request, refreshKey, onChanged, setNotice }) {
+// The daily attendance a card opens is drawn full width under the card list
+// (`open` / `onToggle`), where its form has room.
+function RequestCard({ request, open, onToggle, onChanged, setNotice }) {
   const { t } = useLanguage()
-  const [open, setOpen] = useState(false)
   const [busy, setBusy] = useState(false)
 
   const act = async (action) => {
@@ -323,60 +325,62 @@ function RequestCard({ request, refreshKey, onChanged, setNotice }) {
   const accepted = request.status === 'ACCEPTED'
   const allocation = allocationSummary(request)
   const heading = accepted ? t('labor.engineer.assigned') : request.status === 'COMPLETED' ? t('labor.engineer.completedAssignment') : t('labor.requests.label')
+  const cancel = request.status === 'PENDING' ? (
+    <button type="button" disabled={busy} onClick={() => act('cancel')} className={cardButtonClass('danger')}>
+      <XCircle className="h-3.5 w-3.5" /> {t('labor.action.cancelRequest')}
+    </button>
+  ) : null
+  const records = (accepted || request.status === 'COMPLETED') ? (
+    <button type="button" onClick={onToggle} aria-expanded={open} className={cardButtonClass('secondary')}>
+      <CalendarDays className="h-3.5 w-3.5" /> {accepted ? (open ? t('labor.engineer.hideAttendance') : t('labor.engineer.dailyAttendance')) : (open ? t('labor.engineer.hideRecords') : t('labor.engineer.dailyRecords'))}
+    </button>
+  ) : null
+  const complete = accepted ? (
+    <button type="button" disabled={busy} onClick={() => act('complete')} className={cardButtonClass('primary')}>
+      {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />} {t('labor.action.completeAssignment')}
+    </button>
+  ) : null
   return (
-    <article className={`rounded-2xl border bg-white p-4 ${accepted ? 'border-emerald-200' : 'border-slate-200'}`}>
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="inline-flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-wide text-brand-800">
-            <HardHat className="h-3.5 w-3.5" /> {heading}
-          </p>
-          <p className="truncate text-base font-extrabold text-graphite">{request.trade} · {request.supplier_name}</p>
-        </div>
-        <LaborStatusBadge status={request.status} />
-      </div>
-      <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs sm:grid-cols-4">
-        <div><dt className="font-bold text-graphite/50">{t('labor.field.workersRequired')}</dt><dd className="font-extrabold text-graphite">{request.workers_required}</dd></div>
-        <div><dt className="font-bold text-graphite/50">{t('labor.field.allocatedWorkers')}</dt><dd className="font-extrabold text-emerald-700">{request.workers_allocated ?? '—'}</dd></div>
-        <div><dt className="font-bold text-graphite/50">{t('labor.field.startDate')}</dt><dd className="font-extrabold text-graphite">{formatLaborDate(request.start_date)}</dd></div>
-        <div><dt className="font-bold text-graphite/50">{t('labor.field.endDate')}</dt><dd className="font-extrabold text-graphite">{formatLaborDate(request.end_date)}</dd></div>
-      </dl>
+    <ListCard
+      highlighted={accepted}
+      avatar={<CardAvatar fallback={<HardHat aria-hidden="true" className="h-5 w-5" />} />}
+      title={`${request.trade} · ${request.supplier_name}`}
+      subtitle={heading}
+      status={<CardStatus status={request.status}>{laborStatusWord(request.status, t)}</CardStatus>}
+      rows={[
+        { key: 'required', label: t('labor.field.workersRequired'), value: request.workers_required },
+        { key: 'allocated', label: t('labor.field.allocatedWorkers'), value: request.workers_allocated ?? '—' },
+        { key: 'start', label: t('labor.field.startDate'), value: formatLaborDate(request.start_date) },
+        { key: 'end', label: t('labor.field.endDate'), value: formatLaborDate(request.end_date) },
+      ]}
+      secondary={(cancel || records) ? <>{cancel}{records}</> : null}
+      // A request with no action still draws the footer, so every card in the list
+      // keeps the same shape.
+      primary={complete || ((cancel || records) ? null : <span aria-hidden="true" className="h-9" />)}
+    >
       {allocation.partial && (
-        <p className="mt-2 rounded-xl bg-amber-50 px-3 py-2 text-xs font-bold text-amber-800">
+        <p className="rounded-xl bg-amber-50 px-3 py-2 text-xs font-bold text-amber-800">
           {t('labor.allocation.partial', { allocated: allocation.allocated, required: allocation.required, shortfall: allocation.shortfall })}
         </p>
       )}
-      {request.work_description && <p className="mt-2 whitespace-pre-line rounded-xl bg-slate-50 px-3 py-2 text-xs font-semibold text-graphite/70">{request.work_description}</p>}
+      {request.work_description && <p className="line-clamp-3 whitespace-pre-line rounded-xl bg-slate-50 px-3 py-2 text-xs font-semibold text-graphite/70" title={request.work_description}>{request.work_description}</p>}
       {request.status === 'REJECTED' && (
-        <p className="mt-2 text-xs font-bold text-rose-700">{request.decision_note ? t('labor.engineer.rejectedNote', { note: request.decision_note }) : t('labor.engineer.rejected')}</p>
+        <p className="text-xs font-bold text-rose-700">{request.decision_note ? t('labor.engineer.rejectedNote', { note: request.decision_note }) : t('labor.engineer.rejected')}</p>
       )}
-      {accepted && request.decision_note && <p className="mt-2 text-[11px] font-bold text-graphite/55">{t('labor.engineer.supplierNote', { note: request.decision_note })}</p>}
+      {accepted && request.decision_note && <p className="text-[11px] font-bold text-graphite/55">{t('labor.engineer.supplierNote', { note: request.decision_note })}</p>}
       {request.status === 'COMPLETED' && request.completed_at && (
-        <p className="mt-2 text-[11px] font-bold text-sky-800">{t('labor.engineer.completedOn', { date: formatLaborDate(request.completed_at) })}</p>
+        <p className="text-[11px] font-bold text-sky-800">{t('labor.engineer.completedOn', { date: formatLaborDate(request.completed_at) })}</p>
       )}
       {accepted && !request.supplier_assignment_active && (
-        <p className="mt-2 text-[11px] font-bold text-amber-700">{t('labor.engineer.unassignedContinues')}</p>
+        <p className="text-[11px] font-bold text-amber-700">{t('labor.engineer.unassignedContinues')}</p>
       )}
-      <div className="mt-3 flex flex-wrap gap-2">
-        {request.status === 'PENDING' && (
-          <button type="button" disabled={busy} onClick={() => act('cancel')} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-rose-200 bg-rose-50 px-3 text-xs font-extrabold text-rose-700 hover:bg-rose-100 disabled:opacity-50">
-            <XCircle className="h-3.5 w-3.5" /> {t('labor.action.cancelRequest')}
-          </button>
-        )}
-        {(accepted || request.status === 'COMPLETED') && (
-          <button type="button" onClick={() => setOpen((value) => !value)} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-slate-200 px-3 text-xs font-extrabold text-graphite/75 hover:bg-slate-50">
-            <CalendarDays className="h-3.5 w-3.5" /> {accepted ? (open ? t('labor.engineer.hideAttendance') : t('labor.engineer.dailyAttendance')) : (open ? t('labor.engineer.hideRecords') : t('labor.engineer.dailyRecords'))}
-          </button>
-        )}
-        {accepted && (
-          <button type="button" disabled={busy} onClick={() => act('complete')} className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-brand-700 px-3 text-xs font-extrabold text-white hover:bg-brand-800 disabled:opacity-50">
-            {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />} {t('labor.action.completeAssignment')}
-          </button>
-        )}
-      </div>
-      {open && <div className="mt-3"><DailyAttendance request={request} refreshKey={refreshKey} onSaved={onChanged} /></div>}
-    </article>
+    </ListCard>
   )
 }
+
+// The word for a labor request's status, as LaborStatusBadge names it.
+const LABOR_STATUSES = ['PENDING', 'ACCEPTED', 'REJECTED', 'CANCELLED', 'COMPLETED']
+const laborStatusWord = (status, t) => (LABOR_STATUSES.includes(status) ? t(`labor.status.${status}`) : status)
 
 // ------------------------------------------------------------------ panel
 
@@ -397,6 +401,9 @@ export default function EngineerLaborPanel({ projects = [], activeProjectId = nu
   // The list shown, in the address (?list=...).
   const [tab, setTab] = useUrlState('list', 'active', ['active', 'pending', 'history'])
   const [refreshKey, setRefreshKey] = useState(0)
+  // The requests whose daily attendance is open (each card's toggle).
+  const [openIds, setOpenIds] = useState([])
+  const toggleOpen = (id) => setOpenIds((current) => (current.includes(id) ? current.filter((item) => item !== id) : [...current, id]))
   const guard = useLatestOnly()
 
   const load = async () => {
@@ -475,24 +482,31 @@ export default function EngineerLaborPanel({ projects = [], activeProjectId = nu
       ) : (
         <>
           {suppliers.length ? (
-            <div className="grid gap-3 md:grid-cols-2">
+            <CardGrid testId="engineer-labor-supplier-cards">
               {suppliers.map((supplier) => {
                 const services = servicesBySupplier[supplier.user_id] || []
                 const servicesError = serviceErrors[supplier.user_id] || ''
                 return (
-                  <article key={supplier.user_id} className="flex min-w-0 flex-col rounded-2xl border border-slate-200 bg-white p-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex min-w-0 items-center gap-3">
-                        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-brand-50 text-brand-700"><UserRound className="h-5 w-5" /></span>
-                        <div className="min-w-0">
-                          <p className="truncate text-base font-extrabold text-graphite">{supplier.store_name || supplier.name}</p>
-                          <p className="truncate text-xs font-semibold text-graphite/55">{t('labor.engineer.assignedSupplier')}</p>
-                        </div>
-                      </div>
-                      <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-extrabold text-emerald-800">{t('labor.assigned')}</span>
-                    </div>
+                  <ListCard
+                    key={supplier.user_id}
+                    avatar={<CardAvatar fallback={<UserRound aria-hidden="true" className="h-5 w-5" />} />}
+                    title={supplier.store_name || supplier.name}
+                    subtitle={t('labor.engineer.assignedSupplier')}
+                    status={<CardStatus tone="green">{t('labor.assigned')}</CardStatus>}
+                    primary={(
+                      <button
+                        type="button"
+                        disabled={!services.length}
+                        onClick={() => { setNotice({ tone: '', text: '' }); setRequesting(supplier) }}
+                        className={cardButtonClass('primary')}
+                      >
+                        <Send className="h-3.5 w-3.5" /> {t('labor.engineer.requestLabor')}
+                      </button>
+                    )}
+                  >
+                    {/* The trades this supplier offers, each with its available count. */}
                     {services.length ? (
-                      <ul className="mt-3 divide-y divide-slate-100 rounded-xl border border-slate-100">
+                      <ul className="divide-y divide-slate-100 rounded-xl border border-slate-100">
                         {services.map((service) => (
                           <li key={service.id} className="flex items-center justify-between gap-3 px-3 py-2 text-xs">
                             <span className="min-w-0 truncate font-extrabold text-graphite">{service.trade}{service.skill_level ? <span className="font-semibold text-graphite/50"> · {service.skill_level}</span> : null}</span>
@@ -501,24 +515,14 @@ export default function EngineerLaborPanel({ projects = [], activeProjectId = nu
                         ))}
                       </ul>
                     ) : servicesError ? (
-                      <p className="mt-3 rounded-xl bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700" role="alert">{servicesError}</p>
+                      <p className="rounded-xl bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700" role="alert">{servicesError}</p>
                     ) : (
-                      <p className="mt-3 rounded-xl bg-slate-50 px-3 py-2 text-xs font-semibold text-graphite/55">{t('labor.engineer.noTrades')}</p>
+                      <p className="rounded-xl bg-slate-50 px-3 py-2 text-xs font-semibold text-graphite/55">{t('labor.engineer.noTrades')}</p>
                     )}
-                    <div className="mt-auto pt-3">
-                      <button
-                        type="button"
-                        disabled={!services.length}
-                        onClick={() => { setNotice({ tone: '', text: '' }); setRequesting(supplier) }}
-                        className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-brand-700 px-4 text-xs font-extrabold text-white hover:bg-brand-800 disabled:opacity-50 sm:w-auto"
-                      >
-                        <Send className="h-3.5 w-3.5" /> {t('labor.engineer.requestLabor')}
-                      </button>
-                    </div>
-                  </article>
+                  </ListCard>
                 )
               })}
-            </div>
+            </CardGrid>
           ) : (
             <div className="rounded-2xl border border-slate-200 bg-white p-4">
               <EmptyState icon={HardHat} title={t('labor.engineer.noSupplierTitle')} message={t('labor.engineer.noSupplierMessage')} />
@@ -541,8 +545,23 @@ export default function EngineerLaborPanel({ projects = [], activeProjectId = nu
           </div>
           {shown.list.length ? (
             <div className="space-y-3">
-              {shown.list.map((request) => (
-                <RequestCard key={request.id} request={request} refreshKey={refreshKey} onChanged={load} setNotice={setNotice} />
+              <CardGrid testId="engineer-labor-request-cards">
+                {shown.list.map((request) => (
+                  <RequestCard
+                    key={request.id}
+                    request={request}
+                    open={openIds.includes(request.id)}
+                    onToggle={() => toggleOpen(request.id)}
+                    onChanged={load}
+                    setNotice={setNotice}
+                  />
+                ))}
+              </CardGrid>
+              {shown.list.filter((request) => openIds.includes(request.id)).map((request) => (
+                <section key={request.id} aria-label={`${request.trade} · ${request.supplier_name}`} className="rounded-2xl border border-slate-200 bg-white p-4">
+                  <p className="mb-3 truncate text-sm font-extrabold text-graphite">{request.trade} · {request.supplier_name}</p>
+                  <DailyAttendance request={request} refreshKey={refreshKey} onSaved={load} />
+                </section>
               ))}
             </div>
           ) : (

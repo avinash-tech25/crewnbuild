@@ -32,8 +32,7 @@ import BuyerProductCard from './BuyerProductCard.jsx'
 import ProductCard from './ProductCard.jsx'
 import { categoryImage, categorySlug } from './categoryImagery.js'
 import { fetchCatalogCategories } from '../../catalog/catalogApi.js'
-import { EntityCard } from '../../../shared/ui/EntityCard.jsx'
-import { EntityAvatar, EntityPill } from '../../../shared/ui/EntityPill.jsx'
+import { CardAvatar, CardChip, CardGrid, ListCard, cardButtonClass } from '../../../shared/ui/ListCard.jsx'
 import { userAvatarSrc } from '../../../shared/ui/avatars.js'
 import { addProductToCart, selectCartCount } from '../cartSlice.js'
 import { imageUrl } from '../../../shared/api/apiClient.js'
@@ -57,6 +56,10 @@ const SUPPLIER_TYPE_ICONS = {
   'Equipment Supplier': { chip: Settings, availability: Package },
 }
 const supplierTypeIcons = (supplier) => SUPPLIER_TYPE_ICONS[supplier?.supplier_category] || { chip: Store, availability: Truck }
+
+// An empty footer for a card with nothing to do, so every card in a list that
+// has actions keeps the same footer edge.
+const NO_ACTIONS = <span aria-hidden="true" />
 
 function EmptyState({ icon: Icon, title, hint, action }) {
   return (
@@ -115,7 +118,7 @@ export default function SupplierBrowser({
   requestMessage = '',
   // Opt-in. Draws the supplier cards and type tabs in the Suppliers reference
   // layout (the Site Engineer's Suppliers tab). Same data, same click and the
-  // same actions; every other caller keeps the EntityCard it has today.
+  // same actions; every other caller keeps the default card it has today.
   referenceCards = false,
   // Opt-out. false makes the catalogue browse-only: no Add to Cart and no Buy (a
   // Site Engineer asks the Store Manager instead). Every other caller can buy.
@@ -544,171 +547,102 @@ export default function SupplierBrowser({
               </div>
             </div>
           )}
-          <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-3">
+          <CardGrid testId="supplier-browser-cards">
             {filteredSuppliers.map((supplier) => {
               const products = supplier.products || []
               const shoppable = canShop(supplier)
               const inStockCount = products.filter((product) => Number(product.quantity) > 0).length
-              const stockPill = !shoppable
-                ? <EntityPill tone="warning">{t('dash.common.lockedUntilAccepted')}</EntityPill>
+              const stockText = !shoppable
+                ? t('dash.common.lockedUntilAccepted')
                 : products.length === 0
-                ? <EntityPill>{t(offeringKeys(supplier).none)}</EntityPill>
-                : inStockCount === 0
-                  ? <EntityPill tone="warning">{t('dash.supplier.outOfStock')}</EntityPill>
-                  : <EntityPill tone="positive" dot>{`${inStockCount} ${t('dash.engineer.suppliers.items')}`}</EntityPill>
-              if (referenceCards) {
-                // The Suppliers reference card: avatar with
-                // the person and their store, the type / pincode / rating
-                // chips, then Availability with the stock chip and an arrow.
-                // Every value is one the EntityCard below already shows.
-                const icons = supplierTypeIcons(supplier)
-                const TypeIcon = icons.chip
-                const AvailabilityIcon = icons.availability
-                // A Labor / Equipment supplier's real trades or equipment, when
-                // the caller supplied them; otherwise the material stock pill.
-                const offerings = Array.isArray(supplier.offerings) ? supplier.offerings : null
-                const availabilityPill = !offerings || !shoppable
-                  ? stockPill
-                  : offerings.length === 0
-                    ? <EntityPill>{t(supplier.supplier_category === 'Labor Supplier' ? 'dash.engineer.suppliers.noServicesAvailable' : 'dash.engineer.suppliers.noEquipmentAvailable')}</EntityPill>
-                    : (
-                      <span title={offerings.map((name) => td(name)).join(', ')}>
-                        <EntityPill tone="positive" dot>
-                          <span className="block max-w-[8.5rem] truncate sm:max-w-[11rem]">
-                            {offerings.slice(0, 2).map((name) => td(name)).join(', ')}{offerings.length > 2 ? ` +${offerings.length - 2}` : ''}
-                          </span>
-                        </EntityPill>
-                      </span>
-                    )
-                const storeLine = supplier.store_name && supplier.store_name !== supplier.name ? td(supplier.store_name) : ''
-                const chip = 'inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold'
-                return (
-                  <article
-                    key={supplier.user_id}
-                    onClick={shoppable ? (event) => { if (!event.target.closest('button, a, input, select, textarea')) viewSupplier(supplier) } : undefined}
-                    className={`oc-entity-card flex flex-col rounded-2xl border border-oc-line bg-white p-3 shadow-ocsoft transition-[border-color,box-shadow,transform] duration-300 ${shoppable ? 'cursor-pointer hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-[0_18px_38px_-24px_rgba(18,107,69,0.38)]' : ''}`}
-                  >
-                    {/* No SUPPLIER eyebrow: every card on this tab is a
-                        supplier, so the card opens on the avatar and name. */}
-                    <div className="flex items-center gap-2.5">
-                      <EntityAvatar
-                        src={supplier.store_logo_url ? imageUrl(supplier.store_logo_url) : userAvatarSrc(supplier, 'SUPPLIER')}
-                        alt={td(supplier.store_name || supplier.name)}
-                        className="!h-11 !w-11"
-                      />
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-extrabold text-oc-ink">{td(supplier.name || supplier.store_name)}</p>
-                        {storeLine && <p className="truncate text-xs font-medium text-oc-muted">{storeLine}</p>}
-                      </div>
-                    </div>
-
-                    <div className="mb-2.5 mt-2.5 flex flex-wrap gap-1.5">
-                      {supplier.supplier_category && (
-                        <span className={`${chip} bg-emerald-50 font-bold text-oc-deep`}>
-                          <TypeIcon className="h-3.5 w-3.5" /> {optionLabel(t, SUPPLIER_TYPE_KEYS, supplier.supplier_category)}
-                        </span>
-                      )}
-                      <span className={`${chip} bg-oc-sunken text-oc-muted`}>
-                        <MapPin className="h-3 w-3" /> {`${t('dash.common.pincode')} ${supplier.pincode || '—'}`}
-                      </span>
-                      <span className={`${chip} bg-emerald-50 font-bold text-oc-deep`}>
-                        <Star className="h-3 w-3" /> {String(supplier.rating || t('dash.common.new'))}
-                      </span>
-                    </div>
-
-                    <div className="mt-auto flex items-center gap-1.5 border-t border-oc-line pt-2">
-                      <AvailabilityIcon className="h-4 w-4 shrink-0 text-oc-muted" />
-                      <span className="text-xs font-medium text-oc-muted">{t('dash.engineer.suppliers.availability')}</span>
-                      <span className="ms-auto min-w-0">{availabilityPill}</span>
-                      {shoppable && (
-                        <button
-                          type="button"
-                          aria-label={td(supplier.store_name || supplier.name)}
-                          onClick={() => viewSupplier(supplier)}
-                          className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-oc-ink transition hover:bg-emerald-50"
-                        >
-                          <ChevronRight className="h-4 w-4 rtl:-scale-x-100" />
-                        </button>
-                      )}
-                    </div>
-                  </article>
-                )
-              }
+                  ? t(offeringKeys(supplier).none)
+                  : inStockCount === 0
+                    ? t('dash.supplier.outOfStock')
+                    : `${inStockCount} ${t('dash.engineer.suppliers.items')}`
+              // In the Suppliers reference layout (the Site Engineer's Suppliers
+              // tab) a Labor / Equipment supplier's real trades or equipment,
+              // when the caller supplied them; otherwise the material stock.
+              const offerings = referenceCards && Array.isArray(supplier.offerings) ? supplier.offerings : null
+              const availability = !offerings || !shoppable
+                ? { value: stockText }
+                : offerings.length === 0
+                  ? { value: t(supplier.supplier_category === 'Labor Supplier' ? 'dash.engineer.suppliers.noServicesAvailable' : 'dash.engineer.suppliers.noEquipmentAvailable') }
+                  : {
+                      value: `${offerings.slice(0, 2).map((name) => td(name)).join(', ')}${offerings.length > 2 ? ` +${offerings.length - 2}` : ''}`,
+                      title: offerings.map((name) => td(name)).join(', '),
+                    }
+              const TypeIcon = referenceCards ? supplierTypeIcons(supplier).chip : Store
+              // The person first, their business under it -- only when it says
+              // something the name does not (a supplier who never set a store
+              // name has it equal to their own).
+              const storeLine = supplier.store_name && supplier.store_name !== supplier.name ? td(supplier.store_name) : null
+              // The action reflects the request state the API reports for this
+              // supplier, so it stays correct across refresh and sign-in.
+              const requestAction = supplier.request_status === 'accepted' ? (
+                <span className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-emerald-50 px-3 text-xs font-bold text-emerald-700 ring-1 ring-emerald-100">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> {t('dash.common.accepted')}
+                </span>
+              ) : supplier.request_status === 'pending' ? (
+                <span className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-ocaccent-50 px-3 text-xs font-bold text-ocaccent-600 ring-1 ring-ocaccent-100">
+                  <span className="h-1.5 w-1.5 rounded-full bg-ocaccent-400" /> {t('dash.common.requestPending')}
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  disabled={sendingReceiverId === supplier.user_id}
+                  onClick={() => onSendRequest(supplier)}
+                  className={cardButtonClass('primary')}
+                >
+                  {sendingReceiverId === supplier.user_id ? t('dash.common.sending') : t('dash.common.sendRequest')}
+                  <Send className="h-3.5 w-3.5" strokeWidth={2.25} />
+                </button>
+              )
               return (
-                <EntityCard
+                <ListCard
                   key={supplier.user_id}
-                  compact
-                  icon={Store}
-                  label={t('role.supplier')}
                   onClick={shoppable ? () => viewSupplier(supplier) : undefined}
-                  avatar={
-                    /* The store mark when the shop has one, otherwise the
-                        supplier's own avatar -- the card is titled with their
-                        name. */
-                    <EntityAvatar
+                  // The store mark when the shop has one, otherwise the
+                  // supplier's own avatar -- the card is titled with their name.
+                  avatar={(
+                    <CardAvatar
                       src={supplier.store_logo_url ? imageUrl(supplier.store_logo_url) : userAvatarSrc(supplier, 'SUPPLIER')}
                       alt={td(supplier.store_name || supplier.name)}
                     />
-                  }
-                  // The person first, their business under it. Both come from
-                  // the supplier payload already loaded here -- `name` is the
-                  // users row, `store_name` the supplier profile.
+                  )}
                   title={td(supplier.name || supplier.store_name)}
-                  // EntityCard styles the subtitle muted and light, so the store
-                  // name carries its own weight and ink colour to read as the
-                  // business rather than a caption. Shown only when it says
-                  // something the line above does not: a supplier who never set
-                  // a store name has it equal to their own, and printing that
-                  // twice looks like a fault rather than data.
-                  subtitle={
-                    supplier.store_name && supplier.store_name !== supplier.name
-                      ? <span className="font-bold text-oc-ink">{td(supplier.store_name)}</span>
-                      : undefined
-                  }
-                  pills={[
+                  subtitle={storeLine}
+                  rows={[
+                    { key: 'availability', label: t('dash.engineer.suppliers.availability'), ...availability },
+                    { key: 'pincode', label: t('dash.common.pincode'), value: supplier.pincode || '—' },
+                    { key: 'rating', label: t('dash.common.rating'), value: String(supplier.rating || t('dash.common.new')) },
+                  ]}
+                  chips={[
+                    // Every card here is a supplier; the reference layout drops
+                    // that eyebrow, the default card keeps it.
+                    !referenceCards && <CardChip key="role" icon={Store}>{t('role.supplier')}</CardChip>,
                     // What kind of supplier this is, from their own saved
                     // profile. Absent until that supplier chooses one.
-                    ...(supplier.supplier_category
-                      ? [{
-                          key: 'supplierCategory',
-                          text: optionLabel(t, SUPPLIER_TYPE_KEYS, supplier.supplier_category),
-                          tone: 'brand',
-                          icon: Store,
-                        }]
-                      : []),
-                    { key: 'pincode', text: `${t('dash.common.pincode')} ${supplier.pincode || '—'}`, icon: MapPin },
-                    { key: 'rating', text: String(supplier.rating || t('dash.common.new')), tone: 'brand', icon: Star },
+                    supplier.supplier_category && (
+                      <CardChip key="type" tone="green" icon={TypeIcon}>{optionLabel(t, SUPPLIER_TYPE_KEYS, supplier.supplier_category)}</CardChip>
+                    ),
                   ]}
-                  footerLabel={t('dash.engineer.suppliers.availability')}
-                  footerValue={stockPill}
-                >
-                  {onSendRequest && (
-                    // The action reflects the request state the API reports for
-                    // this supplier, so it stays correct across refresh and
-                    // sign-in rather than only changing after a click.
-                    supplier.request_status === 'accepted' ? (
-                      <span className="mt-2.5 inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700 ring-1 ring-emerald-100">
-                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> {t('dash.common.accepted')}
-                      </span>
-                    ) : supplier.request_status === 'pending' ? (
-                      <span className="mt-2.5 inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-ocaccent-50 px-3 py-2 text-xs font-bold text-ocaccent-600 ring-1 ring-ocaccent-100">
-                        <span className="h-1.5 w-1.5 rounded-full bg-ocaccent-400" /> {t('dash.common.requestPending')}
-                      </span>
-                    ) : (
+                  primary={referenceCards ? (
+                    shoppable ? (
                       <button
                         type="button"
-                        disabled={sendingReceiverId === supplier.user_id}
-                        onClick={() => onSendRequest(supplier)}
-                        className="mt-2.5 inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-oc-green px-3 py-2 text-xs font-bold text-white transition hover:bg-oc-deep disabled:cursor-not-allowed disabled:opacity-60"
+                        aria-label={td(supplier.store_name || supplier.name)}
+                        onClick={() => viewSupplier(supplier)}
+                        className={cardButtonClass('primary')}
                       >
-                        {sendingReceiverId === supplier.user_id ? t('dash.common.sending') : t('dash.common.sendRequest')}
-                        <Send className="h-3.5 w-3.5" strokeWidth={2.25} />
+                        <ChevronRight className="h-4 w-4 rtl:-scale-x-100" />
                       </button>
-                    )
-                  )}
-                </EntityCard>
+                    ) : NO_ACTIONS
+                  ) : onSendRequest ? requestAction : null}
+                />
               )
             })}
+          </CardGrid>
           </div>
           </>
         )}
@@ -892,9 +826,7 @@ export default function SupplierBrowser({
                     {cartMessage && (
                       <p className="mb-3 rounded-xl border border-brand-200 bg-brand-50 px-3 py-2 text-xs font-bold text-brand-800">{td(cartMessage)}</p>
                     )}
-                    {/* Denser than before, to match the compact card: the
-                        narrower column is what makes the card small. */}
-                    <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                    <CardGrid testId="supplier-product-cards">
                       {filteredMaterialProducts.map((product) => (
                         <ProductCard
                           key={product.id}
@@ -904,7 +836,7 @@ export default function SupplierBrowser({
                           onAddToCart={canBuy ? addToCart : undefined}
                         />
                       ))}
-                    </div>
+                    </CardGrid>
                   </div>
                 )}
               </div>

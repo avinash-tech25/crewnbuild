@@ -31,6 +31,7 @@ import { BrandLogo } from '../../catalog/components/BrandPicker.jsx'
 import { AppDownloadBanner } from '../../catalog/components/AppDownloadBanner.jsx'
 import { StockBadge } from '../../catalog/components/StockBadge.jsx'
 import { StorefrontProductCard } from './StorefrontProductCard.jsx'
+import { CardGrid } from '../../../shared/ui/ListCard.jsx'
 import { ProductServiceBadges } from '../../catalog/components/ProductServiceBadges.jsx'
 import { BulkPricingList } from '../../catalog/components/BulkPricing.jsx'
 import { productServiceItems } from '../../../shared/utils/productServiceDefaults.js'
@@ -326,7 +327,8 @@ export function StorefrontProductDetail({
       {related.length > 0 && (
         <section aria-label="You may also like">
           <h2 className="!text-xl font-extrabold !tracking-tight text-graphite">You may also like</h2>
-          <div className="mt-4 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+          <div className="mt-4">
+          <CardGrid testId="storefront-related-cards">
             {related.map((item) => (
               <StorefrontProductCard
                 key={item.id}
@@ -337,6 +339,7 @@ export function StorefrontProductDetail({
                 layout="row"
               />
             ))}
+          </CardGrid>
           </div>
         </section>
       )}

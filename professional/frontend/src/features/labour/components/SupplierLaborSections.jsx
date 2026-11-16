@@ -22,6 +22,11 @@ import {
   acceptLaborRequest, createLaborService, fetchSupplierLaborDailyRecords, laborErrorMessage, rejectLaborRequest, updateLaborService,
 } from '../labourApi.js'
 import { allocationSummary } from '../laborRequestRules.js'
+import { CardAvatar, CardChip, CardGrid, CardStatus, ListCard, cardButtonClass } from '../../../shared/ui/ListCard.jsx'
+
+// An empty footer for a card with nothing to do, so every card in a list that
+// has actions keeps the same footer edge.
+const NO_ACTIONS = <span aria-hidden="true" />
 
 export const LABOR_STATUS_STYLE = {
   PENDING: 'bg-amber-100 text-amber-800',
@@ -234,35 +239,45 @@ export function LaborServicesSection({ services, trades, onChanged }) {
       </div>
       <Notice notice={notice} />
       {services.length ? (
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        <CardGrid testId="labor-service-cards">
           {services.map((service) => (
-            <article key={service.id} className={`flex min-w-0 flex-col rounded-2xl border bg-white p-4 ${service.is_active ? 'border-slate-200' : 'border-dashed border-slate-300 opacity-75'}`}>
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <p className="truncate text-base font-extrabold text-graphite">{service.trade}</p>
-                  <p className="truncate text-xs font-semibold text-graphite/55">{service.skill_level || t('labor.services.skillNotSet')}</p>
-                </div>
-                <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-extrabold ${service.is_active ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'}`}>
+            <ListCard
+              key={service.id}
+              avatar={<CardAvatar fallback={<Wrench aria-hidden="true" className="h-5 w-5" />} />}
+              title={service.trade}
+              subtitle={service.skill_level || t('labor.services.skillNotSet')}
+              status={(
+                <CardStatus status={service.is_active ? 'active' : 'inactive'} tone={service.is_active ? 'green' : 'grey'}>
                   {service.is_active ? t('labor.active') : t('labor.inactive')}
-                </span>
-              </div>
-              <dl className="mt-3 grid grid-cols-3 gap-2 rounded-xl bg-slate-50 p-2.5 text-center">
-                <div><dt className="text-[10px] font-bold text-graphite/50">{t('labor.services.capacity')}</dt><dd className="font-display text-lg font-extrabold text-graphite">{service.worker_capacity}</dd></div>
-                <div><dt className="text-[10px] font-bold text-graphite/50">{t('labor.services.available')}</dt><dd className="font-display text-lg font-extrabold text-emerald-700">{service.available_workers}</dd></div>
-                <div><dt className="text-[10px] font-bold text-graphite/50">{t('labor.services.deployed')}</dt><dd className="font-display text-lg font-extrabold text-orange-600">{service.allocated_workers}</dd></div>
-              </dl>
-              {service.notes && <p className="mt-2 line-clamp-2 text-xs font-semibold text-graphite/60">{service.notes}</p>}
-              <div className="mt-auto flex gap-2 pt-3">
-                <button type="button" onClick={() => { setNotice({ tone: '', text: '' }); setEditing(service) }} className="inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg border border-slate-200 text-xs font-extrabold text-graphite/75 hover:bg-slate-50">
-                  <Pencil className="h-3.5 w-3.5" /> {t('labor.action.edit')}
+                </CardStatus>
+              )}
+              rows={[
+                { key: 'capacity', label: t('labor.services.capacity'), value: service.worker_capacity },
+                { key: 'available', label: t('labor.services.available'), value: service.available_workers },
+                { key: 'deployed', label: t('labor.services.deployed'), value: service.allocated_workers },
+              ]}
+              secondary={(
+                <>
+                  <button type="button" onClick={() => { setNotice({ tone: '', text: '' }); setEditing(service) }} className={cardButtonClass('secondary')}>
+                    <Pencil className="h-3.5 w-3.5" /> {t('labor.action.edit')}
+                  </button>
+                  {service.is_active && (
+                    <button type="button" disabled={busyId === service.id} onClick={() => toggleActive(service)} className={cardButtonClass('danger')}>
+                      {busyId === service.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Power className="h-3.5 w-3.5" />} {t('labor.action.deactivate')}
+                    </button>
+                  )}
+                </>
+              )}
+              primary={service.is_active ? null : (
+                <button type="button" disabled={busyId === service.id} onClick={() => toggleActive(service)} className={cardButtonClass('primary')}>
+                  {busyId === service.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Power className="h-3.5 w-3.5" />} {t('labor.action.activate')}
                 </button>
-                <button type="button" disabled={busyId === service.id} onClick={() => toggleActive(service)} className={`inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg text-xs font-extrabold disabled:opacity-50 ${service.is_active ? 'border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100' : 'bg-brand-700 text-white hover:bg-brand-800'}`}>
-                  {busyId === service.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Power className="h-3.5 w-3.5" />} {service.is_active ? t('labor.action.deactivate') : t('labor.action.activate')}
-                </button>
-              </div>
-            </article>
+              )}
+            >
+              {service.notes && <p className="line-clamp-2 text-xs font-semibold text-graphite/60">{service.notes}</p>}
+            </ListCard>
           ))}
-        </div>
+        </CardGrid>
       ) : (
         <EmptyState icon={Wrench} title={t('labor.services.emptyTitle')} message={t('labor.services.emptyMessage')} />
       )}
@@ -286,24 +301,33 @@ export function LaborServicesSection({ services, trades, onChanged }) {
 
 // --------------------------------------------------------------- requests
 
-function RequestFacts({ request, showAllocated = false }) {
+// A labor request's facts as card rows: workers required, allocated (once
+// known), start and end; the trade is the card's chip.
+function requestFactRows(request, t, showAllocated = false) {
+  return [
+    { key: 'required', label: t('labor.field.workersRequired'), value: request.workers_required },
+    showAllocated && { key: 'allocated', label: t('labor.field.allocated'), value: request.workers_allocated ?? '—' },
+    { key: 'start', label: t('labor.field.start'), value: formatLaborDate(request.start_date) },
+    { key: 'end', label: t('labor.field.end'), value: formatLaborDate(request.end_date) },
+  ]
+}
+
+const tradeChip = (request, t) => <CardChip key="trade" tone="blue" icon={HardHat}>{`${t('labor.field.trade')}: ${request.trade}`}</CardChip>
+
+// A labor request's status pill, in the word LaborStatusBadge shows.
+function LaborCardStatus({ status }) {
+  const { t } = useLanguage()
+  return <CardStatus status={status}>{STATUS_KEYS.includes(status) ? t(`labor.status.${status}`) : status}</CardStatus>
+}
+
+function PartialAllocationNote({ request, showAllocated = false }) {
   const { t } = useLanguage()
   const allocation = allocationSummary(request)
+  if (!showAllocated || !allocation.partial) return null
   return (
-    <>
-    <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs sm:grid-cols-3">
-      <div><dt className="font-bold text-graphite/50">{t('labor.field.trade')}</dt><dd className="font-extrabold text-graphite">{request.trade}</dd></div>
-      <div><dt className="font-bold text-graphite/50">{t('labor.field.workersRequired')}</dt><dd className="font-extrabold text-graphite">{request.workers_required}</dd></div>
-      {showAllocated && <div><dt className="font-bold text-graphite/50">{t('labor.field.allocated')}</dt><dd className="font-extrabold text-emerald-700">{request.workers_allocated ?? '—'}</dd></div>}
-      <div><dt className="font-bold text-graphite/50">{t('labor.field.start')}</dt><dd className="font-extrabold text-graphite">{formatLaborDate(request.start_date)}</dd></div>
-      <div><dt className="font-bold text-graphite/50">{t('labor.field.end')}</dt><dd className="font-extrabold text-graphite">{formatLaborDate(request.end_date)}</dd></div>
-    </dl>
-    {showAllocated && allocation.partial && (
-      <p className="mt-2 rounded-xl bg-amber-50 px-3 py-2 text-xs font-bold text-amber-800">
-        {t('labor.allocation.partial', { allocated: allocation.allocated, required: allocation.required, shortfall: allocation.shortfall })}
-      </p>
-    )}
-    </>
+    <p className="rounded-xl bg-amber-50 px-3 py-2 text-xs font-bold text-amber-800">
+      {t('labor.allocation.partial', { allocated: allocation.allocated, required: allocation.required, shortfall: allocation.shortfall })}
+    </p>
   )
 }
 
@@ -455,45 +479,48 @@ export function LaborRequestsSection({ requests, services, onChanged, compact = 
       )}
       <Notice notice={notice} />
       {visible.length ? (
-        <div className="grid gap-3 md:grid-cols-2">
+        <CardGrid testId="labor-request-cards">
           {visible.map((request) => {
             const service = serviceByTrade[request.trade]
+            const pending = request.status === 'PENDING'
+            const showAllocated = request.workers_allocated != null
             return (
-              <article key={request.id} className={`flex min-w-0 flex-col rounded-2xl border bg-white p-4 ${request.status === 'PENDING' ? 'border-oc-amber shadow-[0_0_0_3px_rgba(244,183,64,0.18)]' : 'border-slate-200'}`}>
-                <div className="flex items-start justify-between gap-3">
-                  <p className="inline-flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-wide text-brand-800">
-                    <HardHat className="h-3.5 w-3.5" /> {request.status === 'PENDING' ? t('labor.requests.newLabel') : t('labor.requests.label')}
+              <ListCard
+                key={request.id}
+                highlighted={pending}
+                avatar={<CardAvatar fallback={<HardHat aria-hidden="true" className="h-5 w-5" />} />}
+                title={request.project_title || t('labor.project')}
+                subtitle={`${t('labor.siteEngineerName', { name: request.engineer_name || '—' })}${request.contractor_name ? ` · ${t('labor.builderName', { name: request.contractor_name })}` : ''}`}
+                status={<LaborCardStatus status={request.status} />}
+                rows={requestFactRows(request, t, showAllocated)}
+                chips={[
+                  <CardChip key="label" tone={pending ? 'amber' : 'grey'}>{pending ? t('labor.requests.newLabel') : t('labor.requests.label')}</CardChip>,
+                  tradeChip(request, t),
+                ]}
+                secondary={pending ? (
+                  <button type="button" onClick={() => { setNotice({ tone: '', text: '' }); setRejecting(request) }} className={cardButtonClass('danger')}>
+                    <XCircle className="h-3.5 w-3.5" /> {t('labor.action.reject')}
+                  </button>
+                ) : NO_ACTIONS}
+                primary={pending ? (
+                  <button type="button" onClick={() => { setNotice({ tone: '', text: '' }); setAccepting(request) }} className={cardButtonClass('primary')}>
+                    <CheckCircle2 className="h-3.5 w-3.5" /> {t('labor.action.accept')}
+                  </button>
+                ) : null}
+              >
+                <PartialAllocationNote request={request} showAllocated={showAllocated} />
+                {request.work_description && <p className="whitespace-pre-line rounded-xl bg-slate-50 px-3 py-2 text-xs font-semibold text-graphite/70">{request.work_description}</p>}
+                {request.decision_note && <p className="text-[11px] font-bold text-graphite/55">{t('labor.noteLine', { note: request.decision_note })}</p>}
+                {pending && (
+                  <p className="text-[11px] font-bold text-graphite/55">
+                    {availabilityText(t, request, service)}
+                    {!request.supplier_assignment_active && ` · ${t('labor.requests.unassigned')}`}
                   </p>
-                  <LaborStatusBadge status={request.status} />
-                </div>
-                <p className="mt-2 text-base font-extrabold text-graphite">{request.project_title || t('labor.project')}</p>
-                <p className="text-xs font-semibold text-graphite/60">
-                  {t('labor.siteEngineerName', { name: request.engineer_name || '—' })}
-                  {request.contractor_name ? ` · ${t('labor.builderName', { name: request.contractor_name })}` : ''}
-                </p>
-                <RequestFacts request={request} showAllocated={request.workers_allocated != null} />
-                {request.work_description && <p className="mt-2 whitespace-pre-line rounded-xl bg-slate-50 px-3 py-2 text-xs font-semibold text-graphite/70">{request.work_description}</p>}
-                {request.decision_note && <p className="mt-2 text-[11px] font-bold text-graphite/55">{t('labor.noteLine', { note: request.decision_note })}</p>}
-                {request.status === 'PENDING' && (
-                  <>
-                    <p className="mt-2 text-[11px] font-bold text-graphite/55">
-                      {availabilityText(t, request, service)}
-                      {!request.supplier_assignment_active && ` · ${t('labor.requests.unassigned')}`}
-                    </p>
-                    <div className="mt-auto flex gap-2 pt-3">
-                      <button type="button" onClick={() => { setNotice({ tone: '', text: '' }); setAccepting(request) }} className="inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg bg-brand-700 text-xs font-extrabold text-white hover:bg-brand-800">
-                        <CheckCircle2 className="h-3.5 w-3.5" /> {t('labor.action.accept')}
-                      </button>
-                      <button type="button" onClick={() => { setNotice({ tone: '', text: '' }); setRejecting(request) }} className="inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg border border-rose-200 bg-rose-50 text-xs font-extrabold text-rose-700 hover:bg-rose-100">
-                        <XCircle className="h-3.5 w-3.5" /> {t('labor.action.reject')}
-                      </button>
-                    </div>
-                  </>
                 )}
-              </article>
+              </ListCard>
             )
           })}
-        </div>
+        </CardGrid>
       ) : (
         <EmptyState
           icon={ClipboardList}
@@ -595,31 +622,34 @@ export function LaborAssignmentsSection({ requests, services, refreshKey = 0 }) 
         ))}
       </div>
       {list.length ? (
-        <div className="space-y-3">
+        <CardGrid testId="labor-assignment-cards">
           {list.map((request) => (
-            <article key={request.id} className="rounded-2xl border border-slate-200 bg-white p-4">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="truncate text-base font-extrabold text-graphite">{request.project_title || t('labor.project')}</p>
-                  <p className="text-xs font-semibold text-graphite/60">{t('labor.siteEngineerName', { name: request.engineer_name || '—' })}</p>
-                </div>
-                <LaborStatusBadge status={request.status} />
-              </div>
-              <RequestFacts request={request} showAllocated />
-              {!request.supplier_assignment_active && request.status === 'ACCEPTED' && (
-                <p className="mt-2 text-[11px] font-bold text-amber-700">{t('labor.assignments.unassignedContinues')}</p>
+            <ListCard
+              key={request.id}
+              avatar={<CardAvatar fallback={<HardHat aria-hidden="true" className="h-5 w-5" />} />}
+              title={request.project_title || t('labor.project')}
+              subtitle={t('labor.siteEngineerName', { name: request.engineer_name || '—' })}
+              status={<LaborCardStatus status={request.status} />}
+              rows={requestFactRows(request, t, true)}
+              chips={[tradeChip(request, t)]}
+              secondary={(
+                <button
+                  type="button"
+                  onClick={() => setOpenId(openId === request.id ? null : request.id)}
+                  className={cardButtonClass('secondary')}
+                >
+                  <CalendarDays className="h-3.5 w-3.5" /> {openId === request.id ? t('labor.attendance.hide') : t('labor.attendance.view')}
+                </button>
               )}
-              <button
-                type="button"
-                onClick={() => setOpenId(openId === request.id ? null : request.id)}
-                className="mt-3 inline-flex h-9 items-center gap-1.5 rounded-lg border border-slate-200 px-3 text-xs font-extrabold text-graphite/75 hover:bg-slate-50"
-              >
-                <CalendarDays className="h-3.5 w-3.5" /> {openId === request.id ? t('labor.attendance.hide') : t('labor.attendance.view')}
-              </button>
-              {openId === request.id && <div className="mt-3"><SupplierAttendance requestId={request.id} refreshKey={refreshKey} /></div>}
-            </article>
+            >
+              <PartialAllocationNote request={request} showAllocated />
+              {!request.supplier_assignment_active && request.status === 'ACCEPTED' && (
+                <p className="text-[11px] font-bold text-amber-700">{t('labor.assignments.unassignedContinues')}</p>
+              )}
+              {openId === request.id && <SupplierAttendance requestId={request.id} refreshKey={refreshKey} />}
+            </ListCard>
           ))}
-        </div>
+        </CardGrid>
       ) : (
         <EmptyState
           icon={HardHat}

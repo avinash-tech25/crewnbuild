@@ -15,6 +15,8 @@ import useUrlState from '../../../shared/hooks/useUrlState.js'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { CalendarDays, Construction, History, Loader2, Send, ShoppingCart, Truck, XCircle } from 'lucide-react'
 import EmptyState from '../../../shared/dashboard/EmptyState.jsx'
+import { CardAvatar, CardChip, CardGrid, CardStatus, ListCard, cardButtonClass } from '../../../shared/ui/ListCard.jsx'
+import { imageUrl } from '../../../shared/api/apiClient.js'
 import { useLanguage } from '../../../i18n/LanguageContext.jsx'
 import { fetchProjectSuppliers } from '../../engineers/engineersApi.js'
 import {
@@ -22,7 +24,7 @@ import {
   fetchProjectEquipmentItems, fetchProjectEquipmentRequests, modeLabel, rentableUnits, saveEquipmentUsage,
 } from '../../equipment/equipmentApi.js'
 import { localIsoDate } from '../../labour/labourApi.js'
-import { formatLaborDate as formatDate, LaborDialog as Dialog, LaborStatusBadge as StatusBadge } from '../../labour/components/SupplierLaborSections.jsx'
+import { formatLaborDate as formatDate, LaborDialog as Dialog } from '../../labour/components/SupplierLaborSections.jsx'
 import {
   conditionLabel, EquipmentImage, EquipmentPrices, EquipmentRequestFacts, EquipmentUsageHistory, MoneyCountryContext, useMoney,
 } from '../../equipment/components/SupplierEquipmentSections.jsx'
@@ -268,9 +270,10 @@ function RentalUsage({ request, refreshKey, onSaved }) {
 
 // ---------------------------------------------------------------- requests
 
-function RequestCard({ request, refreshKey, onChanged, setNotice }) {
+// The daily usage a rental card opens is drawn full width under the card list
+// (`open` / `onToggle`), where its form has room.
+function RequestCard({ request, open, onToggle, onChanged, setNotice }) {
   const { t } = useLanguage()
-  const [open, setOpen] = useState(false)
   const [busy, setBusy] = useState(false)
   const rent = request.request_kind === 'RENT'
 
@@ -295,44 +298,49 @@ function RequestCard({ request, refreshKey, onChanged, setNotice }) {
       ? t(rent ? 'equipment.engineer.rentalReturned' : 'equipment.engineer.purchaseDelivered')
       : t(rent ? 'equipment.requests.rental' : 'equipment.requests.purchase')
 
+  const cancelButton = request.status === 'PENDING' ? (
+    <button type="button" disabled={busy} onClick={cancel} className={cardButtonClass('danger')}>
+      <XCircle className="h-3.5 w-3.5" /> {t('labor.action.cancelRequest')}
+    </button>
+  ) : null
+  const usageButton = rent && (request.status === 'ACCEPTED' || request.status === 'COMPLETED') ? (
+    <button type="button" onClick={onToggle} aria-expanded={open} className={cardButtonClass('secondary')}>
+      <CalendarDays className="h-3.5 w-3.5" /> {open ? t('equipment.usage.hide') : t('equipment.usage.label')}
+    </button>
+  ) : null
+  const KindIcon = rent ? Truck : ShoppingCart
+
   return (
-    <article className={`min-w-0 rounded-2xl border bg-white p-4 ${request.status === 'ACCEPTED' ? 'border-emerald-200' : 'border-slate-200'}`}>
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="inline-flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-wide text-brand-800">
-            {rent ? <Truck className="h-3.5 w-3.5" /> : <ShoppingCart className="h-3.5 w-3.5" />} {heading}
-          </p>
-          <p className="truncate text-base font-extrabold text-graphite">{request.item_name} · {request.supplier_name}</p>
-        </div>
-        <StatusBadge status={request.status} />
-      </div>
+    <ListCard
+      highlighted={request.status === 'ACCEPTED'}
+      avatar={<CardAvatar fallback={<KindIcon aria-hidden="true" className="h-5 w-5" />} />}
+      title={`${request.item_name} · ${request.supplier_name}`}
+      subtitle={heading}
+      status={<CardStatus status={request.status}>{equipmentStatusWord(request.status, t)}</CardStatus>}
+      secondary={(cancelButton || usageButton) ? <>{cancelButton}{usageButton}</> : null}
+      // A request with no action still draws the footer, so every card in the list
+      // keeps the same shape.
+      primary={(cancelButton || usageButton) ? null : <span aria-hidden="true" className="h-9" />}
+    >
+      {/* The request's facts (equipment, type, quantity, period / price). */}
       <EquipmentRequestFacts request={request} />
-      {request.notes && <p className="mt-2 whitespace-pre-line rounded-xl bg-slate-50 px-3 py-2 text-xs font-semibold text-graphite/70">{request.notes}</p>}
+      {request.notes && <p className="line-clamp-3 whitespace-pre-line rounded-xl bg-slate-50 px-3 py-2 text-xs font-semibold text-graphite/70" title={request.notes}>{request.notes}</p>}
       {request.status === 'REJECTED' && (
-        <p className="mt-2 text-xs font-bold text-rose-700">{request.decision_note ? t('labor.engineer.rejectedNote', { note: request.decision_note }) : t('labor.engineer.rejected')}</p>
+        <p className="text-xs font-bold text-rose-700">{request.decision_note ? t('labor.engineer.rejectedNote', { note: request.decision_note }) : t('labor.engineer.rejected')}</p>
       )}
       {request.status === 'COMPLETED' && request.completed_at && (
-        <p className="mt-2 text-[11px] font-bold text-sky-800">{t(rent ? 'equipment.returnedOn' : 'equipment.deliveredOn', { date: formatDate(request.completed_at) })}</p>
+        <p className="text-[11px] font-bold text-sky-800">{t(rent ? 'equipment.returnedOn' : 'equipment.deliveredOn', { date: formatDate(request.completed_at) })}</p>
       )}
       {request.status === 'ACCEPTED' && !request.supplier_assignment_active && (
-        <p className="mt-2 text-[11px] font-bold text-amber-700">{t(rent ? 'equipment.engineer.unassignedRental' : 'equipment.engineer.unassignedPurchase')}</p>
+        <p className="text-[11px] font-bold text-amber-700">{t(rent ? 'equipment.engineer.unassignedRental' : 'equipment.engineer.unassignedPurchase')}</p>
       )}
-      <div className="mt-3 flex flex-wrap gap-2">
-        {request.status === 'PENDING' && (
-          <button type="button" disabled={busy} onClick={cancel} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-rose-200 bg-rose-50 px-3 text-xs font-extrabold text-rose-700 hover:bg-rose-100 disabled:opacity-50">
-            <XCircle className="h-3.5 w-3.5" /> {t('labor.action.cancelRequest')}
-          </button>
-        )}
-        {rent && (request.status === 'ACCEPTED' || request.status === 'COMPLETED') && (
-          <button type="button" onClick={() => setOpen((value) => !value)} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-slate-200 px-3 text-xs font-extrabold text-graphite/75 hover:bg-slate-50">
-            <CalendarDays className="h-3.5 w-3.5" /> {open ? t('equipment.usage.hide') : t('equipment.usage.label')}
-          </button>
-        )}
-      </div>
-      {open && <div className="mt-3"><RentalUsage request={request} refreshKey={refreshKey} onSaved={onChanged} /></div>}
-    </article>
+    </ListCard>
   )
 }
+
+// The word for a request's status, as the labor status badge names it.
+const REQUEST_STATUSES = ['PENDING', 'ACCEPTED', 'REJECTED', 'CANCELLED', 'COMPLETED']
+const equipmentStatusWord = (status, t) => (REQUEST_STATUSES.includes(status) ? t(`labor.status.${status}`) : status)
 
 // ------------------------------------------------------------------- panel
 
@@ -354,6 +362,9 @@ export default function EngineerEquipmentPanel({ projects = [], activeProjectId 
   // The list shown, in the address (?list=...).
   const [tab, setTab] = useUrlState('list', 'active', ['active', 'pending', 'history'])
   const [refreshKey, setRefreshKey] = useState(0)
+  // The rentals whose daily usage is open (each card's toggle).
+  const [openIds, setOpenIds] = useState([])
+  const toggleOpen = (id) => setOpenIds((current) => (current.includes(id) ? current.filter((item) => item !== id) : [...current, id]))
   const guard = useLatestOnly()
 
   const load = async () => {
@@ -430,77 +441,86 @@ export default function EngineerEquipmentPanel({ projects = [], activeProjectId 
           <p className="rounded-xl bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700">{loadError}</p>
         ) : (
           <>
-            {suppliers.length ? suppliers.map((supplier) => {
-              const items = itemsBySupplier[supplier.user_id] || []
-              const availableCount = items.filter((item) => (allowsRent(item) && item.available_to_rent > 0) || (allowsBuy(item) && item.available_to_buy > 0)).length
-              const open = openSupplierId === supplier.user_id
-              return (
-                <section key={supplier.user_id} className="space-y-3">
-                  <article className="flex min-w-0 flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-4">
-                    <div className="flex min-w-0 items-center gap-3">
-                      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-brand-50 text-brand-700"><Construction className="h-5 w-5" /></span>
-                      <div className="min-w-0">
-                        <p className="truncate text-base font-extrabold text-graphite">{supplier.store_name || supplier.name}</p>
-                        <p className="truncate text-xs font-semibold text-graphite/55">{t('equipment.engineer.assignedSupplier', { count: availableCount, total: items.length })}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-extrabold text-emerald-800">{t('labor.assigned')}</span>
-                      <button type="button" onClick={() => setOpenSupplierId(open ? null : supplier.user_id)} className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-brand-700 px-3 text-xs font-extrabold text-white hover:bg-brand-800">
-                        <Construction className="h-3.5 w-3.5" /> {open ? t('equipment.engineer.hideEquipment') : t('equipment.engineer.viewEquipment')}
-                      </button>
-                    </div>
-                  </article>
-                  {open && (items.length ? (
-                    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                      {items.map((item) => (
-                        <article key={item.id} className="flex min-w-0 flex-col rounded-2xl border border-slate-200 bg-white p-4">
-                          {/* Image on the left at the full height of the details beside it,
-                              shown whole (object-contain); the details take the rest. */}
-                          <div className="flex items-stretch gap-3">
-                            <div className="relative min-h-[6rem] w-[42%] shrink-0">
-                              <EquipmentImage src={item.image_url} className="absolute inset-0 h-full w-full" />
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <p className="truncate text-base font-extrabold text-graphite" title={item.name}>{item.name}</p>
-                              <p className="truncate text-xs font-semibold text-graphite/60">{item.category}{[item.brand, item.model].filter(Boolean).length ? ` · ${[item.brand, item.model].filter(Boolean).join(' ')}` : ''}</p>
-                              <div className="mt-1 flex flex-wrap gap-1">
-                                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-extrabold text-graphite/70">{conditionLabel(item.condition)}</span>
-                                <span className="rounded-full bg-brand-50 px-2 py-0.5 text-[10px] font-extrabold text-brand-800">{modeLabel(item.mode)}</span>
-                              </div>
-                              <div className="mt-2"><EquipmentPrices item={item} /></div>
-                            </div>
-                          </div>
-                          <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs font-bold">
-                            {allowsRent(item) && <span className="text-emerald-700">{t('equipment.engineer.toRentToday', { count: item.available_to_rent, total: item.quantity_total })}</span>}
-                            {allowsBuy(item) && <span className="text-teal-700">{t('equipment.engineer.toBuy', { count: item.available_to_buy })}</span>}
-                          </div>
-                          {item.specifications && <p className="mt-2 line-clamp-2 text-xs font-semibold text-graphite/60">{item.specifications}</p>}
-                          <div className="mt-auto flex gap-2 pt-3">
-                            {allowsRent(item) && (
-                              <button type="button" onClick={() => { setNotice({ tone: '', text: '' }); setDialog({ kind: 'RENT', item, supplierId: supplier.user_id }) }} className="inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg bg-brand-700 text-xs font-extrabold text-white hover:bg-brand-800">
-                                <Truck className="h-3.5 w-3.5" /> {allowsBuy(item) ? t('equipment.mode.rent') : t('equipment.engineer.requestRental')}
-                              </button>
-                            )}
-                            {allowsBuy(item) && (
-                              <button type="button" disabled={item.available_to_buy < 1} onClick={() => { setNotice({ tone: '', text: '' }); setDialog({ kind: 'BUY', item, supplierId: supplier.user_id }) }} className="inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg border border-slate-200 text-xs font-extrabold text-graphite/80 hover:bg-slate-50 disabled:opacity-50">
-                                <ShoppingCart className="h-3.5 w-3.5" /> {allowsRent(item) ? t('equipment.mode.buy') : t('equipment.engineer.requestPurchase')}
-                              </button>
-                            )}
-                          </div>
-                        </article>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="rounded-2xl border border-slate-200 bg-white p-4"><EmptyState icon={Construction} title={t('equipment.engineer.noItemsTitle')} message={t('equipment.engineer.noItemsMessage')} /></div>
-                  ))}
-                </section>
-              )
-            }) : (
+            {suppliers.length ? (
+              <CardGrid testId="engineer-equipment-supplier-cards">
+                {suppliers.map((supplier) => {
+                  const items = itemsBySupplier[supplier.user_id] || []
+                  const availableCount = items.filter((item) => (allowsRent(item) && item.available_to_rent > 0) || (allowsBuy(item) && item.available_to_buy > 0)).length
+                  const open = openSupplierId === supplier.user_id
+                  return (
+                    <ListCard
+                      key={supplier.user_id}
+                      highlighted={open}
+                      avatar={<CardAvatar fallback={<Construction aria-hidden="true" className="h-5 w-5" />} />}
+                      title={supplier.store_name || supplier.name}
+                      subtitle={t('equipment.engineer.assignedSupplier', { count: availableCount, total: items.length })}
+                      status={<CardStatus tone="green">{t('labor.assigned')}</CardStatus>}
+                      primary={(
+                        <button type="button" onClick={() => setOpenSupplierId(open ? null : supplier.user_id)} aria-expanded={open} className={cardButtonClass('primary')}>
+                          <Construction className="h-3.5 w-3.5" /> {open ? t('equipment.engineer.hideEquipment') : t('equipment.engineer.viewEquipment')}
+                        </button>
+                      )}
+                    />
+                  )
+                })}
+              </CardGrid>
+            ) : (
               <div className="rounded-2xl border border-slate-200 bg-white p-4">
                 <EmptyState icon={Construction} title={t('equipment.engineer.noSupplierTitle')} message={t('equipment.engineer.noSupplierMessage')} />
               </div>
             )}
+
+            {/* The opened supplier's equipment, full width under the supplier cards. */}
+            {suppliers.filter((supplier) => supplier.user_id === openSupplierId).map((supplier) => {
+              const items = itemsBySupplier[supplier.user_id] || []
+              return (
+                <section key={supplier.user_id} aria-label={supplier.store_name || supplier.name} className="space-y-3">
+                  {items.length ? (
+                    <CardGrid testId="engineer-equipment-item-cards">
+                      {items.map((item) => {
+                        const rentButton = allowsRent(item) ? (
+                          <button type="button" onClick={() => { setNotice({ tone: '', text: '' }); setDialog({ kind: 'RENT', item, supplierId: supplier.user_id }) }} className={cardButtonClass('primary')}>
+                            <Truck className="h-3.5 w-3.5" /> {allowsBuy(item) ? t('equipment.mode.rent') : t('equipment.engineer.requestRental')}
+                          </button>
+                        ) : null
+                        // Buy sits beside Rent as the second choice; on a sale-only item it is the main one.
+                        const buyButton = allowsBuy(item) ? (
+                          <button type="button" disabled={item.available_to_buy < 1} onClick={() => { setNotice({ tone: '', text: '' }); setDialog({ kind: 'BUY', item, supplierId: supplier.user_id }) }} className={cardButtonClass(rentButton ? 'secondary' : 'primary')}>
+                            <ShoppingCart className="h-3.5 w-3.5" /> {allowsRent(item) ? t('equipment.mode.buy') : t('equipment.engineer.requestPurchase')}
+                          </button>
+                        ) : null
+                        const makeModel = [item.brand, item.model].filter(Boolean)
+                        return (
+                          <ListCard
+                            key={item.id}
+                            avatar={<CardAvatar src={item.image_url ? imageUrl(item.image_url) : ''} alt={item.name} fallback={<Construction aria-hidden="true" className="h-5 w-5" />} />}
+                            title={item.name}
+                            subtitle={`${item.category}${makeModel.length ? ` · ${makeModel.join(' ')}` : ''}`}
+                            chips={[
+                              <CardChip key="condition">{conditionLabel(item.condition)}</CardChip>,
+                              <CardChip key="mode" tone="green">{modeLabel(item.mode)}</CardChip>,
+                            ]}
+                            secondary={rentButton ? buyButton : null}
+                            primary={rentButton || buyButton || <span aria-hidden="true" className="h-9" />}
+                          >
+                            {/* The photo, shown whole at a fixed height so every tile is the same size. */}
+                            <EquipmentImage src={item.image_url} className="h-32 w-full" />
+                            <EquipmentPrices item={item} />
+                            <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs font-bold">
+                              {allowsRent(item) && <span className="text-emerald-700">{t('equipment.engineer.toRentToday', { count: item.available_to_rent, total: item.quantity_total })}</span>}
+                              {allowsBuy(item) && <span className="text-teal-700">{t('equipment.engineer.toBuy', { count: item.available_to_buy })}</span>}
+                            </div>
+                            {item.specifications && <p className="line-clamp-2 text-xs font-semibold text-graphite/60" title={item.specifications}>{item.specifications}</p>}
+                          </ListCard>
+                        )
+                      })}
+                    </CardGrid>
+                  ) : (
+                    <div className="rounded-2xl border border-slate-200 bg-white p-4"><EmptyState icon={Construction} title={t('equipment.engineer.noItemsTitle')} message={t('equipment.engineer.noItemsMessage')} /></div>
+                  )}
+                </section>
+              )
+            })}
 
             <Notice notice={notice} />
 
@@ -518,8 +538,23 @@ export default function EngineerEquipmentPanel({ projects = [], activeProjectId 
             </div>
             {shown.list.length ? (
               <div className="space-y-3">
-                {shown.list.map((request) => (
-                  <RequestCard key={request.id} request={request} refreshKey={refreshKey} onChanged={load} setNotice={setNotice} />
+                <CardGrid testId="engineer-equipment-request-cards">
+                  {shown.list.map((request) => (
+                    <RequestCard
+                      key={request.id}
+                      request={request}
+                      open={openIds.includes(request.id)}
+                      onToggle={() => toggleOpen(request.id)}
+                      onChanged={load}
+                      setNotice={setNotice}
+                    />
+                  ))}
+                </CardGrid>
+                {shown.list.filter((request) => openIds.includes(request.id)).map((request) => (
+                  <section key={request.id} aria-label={`${request.item_name} · ${request.supplier_name}`} className="rounded-2xl border border-slate-200 bg-white p-4">
+                    <p className="mb-3 truncate text-sm font-extrabold text-graphite">{request.item_name} · {request.supplier_name}</p>
+                    <RentalUsage request={request} refreshKey={refreshKey} onSaved={load} />
+                  </section>
                 ))}
               </div>
             ) : (

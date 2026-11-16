@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowRight, Building2, CalendarDays, Check, ChevronDown, FileText, HardHat, Store, Home, Inbox, IndianRupee, LayoutGrid, LayoutList, MapPin, Maximize2, Search, SlidersHorizontal, Sparkles, User, X } from 'lucide-react'
+import { ArrowRight, Building2, CalendarDays, Check, ChevronDown, FileText, HardHat, Home, Inbox, LayoutGrid, LayoutList, MapPin, Maximize2, Search, SlidersHorizontal, Sparkles, User, X } from 'lucide-react'
 import { buildingTypeText, inr } from '../builderHelpers.js'
 import { constructionTypeLabel } from '../../../shared/utils/roleLabels.js'
 import BudgetInWords from '../../../shared/ui/BudgetInWords.jsx'
@@ -12,6 +12,7 @@ import { FLOW_TONES, hasAssignmentFlow, requestFlowStatus, useRequestAwards } fr
 import { formatDate } from '../../../shared/utils/formatters.js'
 import { isPartyRequest, offerSummary, partyHeading, partyLocation, supplierCategoryLabel } from '../../requests/counterparty.js'
 import PartyDetails from '../../requests/components/PartyDetails.jsx'
+import { CardAvatar, CardChip, CardGrid, CardStatus, ListCard, cardButtonClass } from '../../../shared/ui/ListCard.jsx'
 
 // The request's workflow status (quotation / assignment / negotiation /
 // contract), shown wherever the request's plain status would otherwise be.
@@ -23,6 +24,15 @@ function RequestFlowBadge({ flow }) {
       {t(flow.key)}
     </span>
   )
+}
+
+// A workflow status's tone on a card's status pill (FLOW_TONES, in the shared card colours).
+const FLOW_CARD_TONES = {
+  action: 'red',
+  waiting: 'amber',
+  negotiating: 'blue',
+  confirmed: 'green',
+  closed: 'grey',
 }
 
 const STATUS_TONES = {
@@ -486,12 +496,6 @@ export function ContractorRequestsBoard({ requestList, onAccept, onReject, onWit
     return list
   }, [visibleRequests, searchText, sortOrder])
 
-  const outlineButton = 'inline-flex h-8 items-center justify-center gap-1 rounded-lg border border-slate-300 bg-white px-2 text-xs font-extrabold text-slate-800 transition hover:bg-slate-50'
-  // Every card's "view" action -- View request or View details -- is this one
-  // button: same size, same style, same case.
-  const viewButton = 'inline-flex h-8 shrink-0 items-center justify-center gap-1 rounded-lg border border-brand-700 bg-white px-2.5 text-xs font-extrabold text-brand-800 transition hover:bg-brand-50'
-  const solidButton = 'inline-flex h-8 items-center justify-center gap-1 rounded-lg bg-brand-800 px-2 text-xs font-extrabold text-white shadow-sm transition hover:bg-brand-900'
-
   return (
     <div className="contractor-board-dark space-y-3">
       {/* Status chips, search and order */}
@@ -783,7 +787,7 @@ export function ContractorRequestsBoard({ requestList, onAccept, onReject, onWit
             </div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2 lg:grid-cols-3">
+            <CardGrid testId="builder-request-cards">
               {shownRequests.map((request) => {
                 const category = categorizeRequest(request)
                 const pendingIncoming = category === 'pending'
@@ -800,185 +804,127 @@ export function ContractorRequestsBoard({ requestList, onAccept, onReject, onWit
                   : request.created_at
                     ? t(request.is_sender ? 'req.board.sentOn' : 'req.board.receivedOn', { date: dateOnly(request.created_at) })
                     : ''
+                const party = isPartyRequest(request)
+                // For a supplier request the status is the badge alone; a House
+                // Owner request also says what the row means for the builder.
+                const rowNote = variant !== 'supplier' ? t(board.rowNote[category]) : ''
+                // A supplier's request with no project: headed by its store name,
+                // then who it is and what it supplies. A supplier's company (store)
+                // name sits under their own name when the two differ.
+                const cardTitle = party ? partyHeading(request, td) : ownerName
+                const storeName = variant === 'supplier' && td(request.profile_title) && td(request.profile_title) !== ownerName ? td(request.profile_title) : ''
+                const subtitle = party
+                  ? [partyHeading(request, td) !== ownerName ? ownerName : '', supplierCategoryLabel(request, t)].filter(Boolean).join(' · ')
+                  : storeName || rowNote
+                const shownLocation = party ? partyLocation(request, td) || location : location
+                const viewLabel = flow ? t('req.board.viewRequest') : t('dash.contractor.viewDetails')
+                // View details is the card's main action unless the request is
+                // waiting on the builder's answer, which then takes that place.
+                const viewDetails = (kind) => (
+                  <button type="button" onClick={() => toggleDetails(request)} className={cardButtonClass(kind)}>
+                    {pendingIncoming ? t('dash.contractor.viewDetails') : viewLabel} <ArrowRight className="h-3.5 w-3.5" />
+                  </button>
+                )
+                const withdraw = canWithdraw && (
+                  <button type="button" onClick={() => onWithdraw(request.id)} className={cardButtonClass('danger')}>
+                    {t('property.action.withdraw')}
+                  </button>
+                )
                 return (
-                  <article key={request.id} className="flex flex-col rounded-xl border border-slate-200 bg-white p-3 shadow-[0_14px_40px_-32px_rgba(15,23,42,0.45)]">
-                    {/* Counterparty, status and the card menu */}
-                    <div className="flex items-start gap-2">
-                      <HomeownerAvatar name={ownerName} request={request} role={board.role} size="h-9 w-9" />
-                      <div className="min-w-0 flex-1">
-                        {isPartyRequest(request) ? (
-                          <>
-                            {/* A supplier's request with no project: headed by its
-                                store name, then who it is and what it supplies. */}
-                            <p className="truncate text-[13px] font-extrabold text-slate-900" title={partyHeading(request, td)}>{partyHeading(request, td)}</p>
-                            <p className="flex min-w-0 items-center gap-1 text-[11px] text-slate-600">
-                              <Store className="h-3 w-3 shrink-0 text-brand-700" />
-                              <span className="truncate">{[partyHeading(request, td) !== ownerName ? ownerName : '', supplierCategoryLabel(request, t)].filter(Boolean).join(' · ')}</span>
-                              {request.profile_verified && <span className="shrink-0 rounded-full bg-emerald-50 px-1.5 text-[10px] font-extrabold text-emerald-700">{t('req.party.verifiedYes')}</span>}
-                            </p>
-                          </>
-                        ) : (
-                          <>
-                            <p className="truncate text-[13px] font-extrabold text-slate-900">{ownerName}</p>
-                            {/* A supplier's company (store) name, under their own name,
-                                when the two differ. */}
-                            {variant === 'supplier' && td(request.profile_title) && td(request.profile_title) !== ownerName && (
-                              <p className="flex min-w-0 items-center gap-1 text-[11px] text-slate-600" title={td(request.profile_title)}><Store className="h-3 w-3 shrink-0 text-brand-700" /> <span className="truncate">{td(request.profile_title)}</span></p>
-                            )}
-                          </>
-                        )}
-                        {/* For a supplier request the status is the badge alone. */}
-                        {variant !== 'supplier' && <p className="truncate text-[11px] text-slate-500">{t(board.rowNote[category])}</p>}
-                      </div>
-                      <div className="flex shrink-0 items-center gap-1.5">
-                        {flow ? <RequestFlowBadge flow={flow} /> : <RequestStatusBadge status={category} labels={board.statusLabels} />}
-                      </div>
-                    </div>
-
-                    {/* Project */}
-                    {variant === 'supplier' ? (
-                      // A supplier card is compact: its buttons sit beside the
-                      // title, and there is no bottom row.
-                      <div className="mt-2 flex items-center gap-2">
-                        <div className="min-w-0 flex-1">
-                          {/* A supplier request with no project shows no title
-                              (the server's "General" stand-in); one tied to a
-                              project shows that project's name. */}
-                          {/* The project, if the request has one. */}
-                          {request.project_id && <p className="truncate text-xs font-bold text-slate-700" title={title}>{title}</p>}
-                          {/* What the supplier offers, when it has said. */}
-                          {isPartyRequest(request) && offerSummary(request, t) && (
-                            <p className="truncate text-xs font-bold text-slate-700" title={offerSummary(request, t)}>{offerSummary(request, t)}</p>
-                          )}
-                          {dateLine && (
-                            <p className="mt-0.5 flex min-w-0 items-center gap-1 text-[11px] text-slate-500"><CalendarDays className="h-3 w-3 shrink-0 text-slate-400" /> <span className="truncate">{dateLine}</span></p>
-                          )}
-                          <p className="mt-0.5 flex items-center gap-1 truncate text-[11px] text-slate-500" title={isPartyRequest(request) ? partyLocation(request, td) || location : location}>
-                            <MapPin className="h-3 w-3 shrink-0 text-slate-400" /> {isPartyRequest(request) ? partyLocation(request, td) || location : location}
-                          </p>
-                        </div>
-                        <div className="flex shrink-0 items-center gap-1.5">
-                          {canWithdraw && (
-                            <button type="button" onClick={() => onWithdraw(request.id)} className={outlineButton}>
-                              {t('property.action.withdraw')}
-                            </button>
-                          )}
-                          <button type="button" onClick={() => toggleDetails(request)} className={viewButton}>
-                            {t('dash.contractor.viewDetails')} <ArrowRight className="h-3.5 w-3.5" />
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
+                  <ListCard
+                    key={request.id}
+                    avatar={<CardAvatar fallback={<HomeownerAvatar name={ownerName} request={request} role={board.role} size="h-full w-full" />} />}
+                    title={cardTitle}
+                    subtitle={subtitle || null}
+                    status={flow
+                      ? <CardStatus tone={FLOW_CARD_TONES[flow.tone]}>{t(flow.key)}</CardStatus>
+                      : <CardStatus status={category} tone={category === 'sent' ? 'blue' : undefined}>{t(board.statusLabels[category] || category)}</CardStatus>}
+                    rows={variant === 'supplier' ? [
+                      // The project, if the request has one (a request with no
+                      // project shows no title: the server's "General" stand-in).
+                      request.project_id && { key: 'project', label: t('dash.common.project'), value: title },
+                      // What the supplier offers, when it has said.
+                      party && offerSummary(request, t) && { key: 'offers', label: t('req.party.offers'), value: offerSummary(request, t) },
+                      { key: 'location', label: t('ce.col.location'), value: shownLocation },
+                    ] : [
+                      { key: 'project', label: t('dash.common.project'), value: title },
+                      { key: 'location', label: t('ce.col.location'), value: shownLocation },
+                      { key: 'budget', label: t('dash.common.budget'), value: request.budget ? inr(request.budget) : '—' },
+                      hasQuote && { key: 'quote', label: t('request.flow.builderQuotation'), value: inr(request.quotation_amount) },
+                    ]}
+                    chips={[
+                      party && request.profile_verified && <CardChip key="verified" tone="green">{t('req.party.verifiedYes')}</CardChip>,
+                      party && rowNote && <CardChip key="note">{rowNote}</CardChip>,
+                      dateLine && <CardChip key="date" icon={CalendarDays}>{dateLine}</CardChip>,
+                    ]}
+                    secondary={pendingIncoming ? (
+                      // A new request's answer -- the same handlers the table uses.
                       <>
-                        <p className="mt-2 truncate text-sm font-extrabold text-slate-950" title={title}>{title}</p>
-                        <p className="mt-0.5 flex items-center gap-1 truncate text-[11px] text-slate-500" title={location}>
-                          <MapPin className="h-3 w-3 shrink-0 text-slate-400" /> {location}
-                        </p>
-                      </>
-                    )}
-
-                    {/* Quotation and date on the left; for a request already
-                        answered or sent, its button on the right of the same row. */}
-                    {variant !== 'supplier' && (
-                    <div className="mt-auto flex items-end gap-2 pt-2">
-                      <div className="min-w-0 flex-1 space-y-0.5 text-[11px] text-slate-600">
-                        {/* The owner's budget, on one small line; a supplier request has none. */}
-                        {variant !== 'supplier' && <p className="flex items-center gap-1.5"><IndianRupee className="h-3.5 w-3.5 shrink-0 text-slate-500" /><span className="truncate"><b className="text-slate-800">{t('dash.common.budget')}:</b> {request.budget ? inr(request.budget) : '—'}</span></p>}
-                        {hasQuote && (
-                          <p className="flex items-center gap-1.5"><FileText className="h-3.5 w-3.5 shrink-0 text-slate-500" /><span className="truncate"><b className="text-slate-800">{t('request.flow.builderQuotation')}:</b> {inr(request.quotation_amount)}</span></p>
-                        )}
-                        {dateLine && variant !== 'supplier' && <p className="flex min-w-0 items-center gap-1.5"><CalendarDays className="h-3.5 w-3.5 shrink-0 text-slate-400" /> <span className="truncate">{dateLine}</span></p>}
-                      </div>
-                      {pendingIncoming ? (
-                        // A new request's buttons are Accept / Not interested,
-                        // so its details open from here.
-                        <button type="button" onClick={() => toggleDetails(request)} className={viewButton}>
-                          {t('dash.contractor.viewDetails')} <ArrowRight className="h-3.5 w-3.5" />
-                        </button>
-                      ) : (
-                        <div className="flex shrink-0 items-center gap-1.5">
-                          {/* The sender's own request, still unanswered, can be taken back. */}
-                          {canWithdraw && (
-                            <button type="button" onClick={() => onWithdraw(request.id)} className={outlineButton}>
-                              {t('property.action.withdraw')}
-                            </button>
-                          )}
-                          {/* The request is where an assignment is decided; an
-                              action waiting on the builder is the filled button. */}
-                          <button
-                            type="button"
-                            onClick={() => toggleDetails(request)}
-                            className={viewButton}
-                          >
-                            {flow ? t('req.board.viewRequest') : t('dash.contractor.viewDetails')} <ArrowRight className="h-3.5 w-3.5" />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                    )}
-
-                    {/* A new request's answer -- the same handlers the table uses */}
-                    {pendingIncoming && (
-                    <div className="pt-2.5">
-                      {!board.quoteOnAccept ? (
-                        <div className="grid grid-cols-2 gap-2">
-                          <button type="button" onClick={() => onReject(request.id)} className={outlineButton}>
+                        {!board.quoteOnAccept ? (
+                          <button type="button" onClick={() => onReject(request.id)} className={cardButtonClass('danger')}>
                             <X className="h-3.5 w-3.5" /> {t('ce.reject')}
                           </button>
-                          <button type="button" onClick={() => onAccept(request.id)} className={solidButton}>
-                            <Check className="h-3.5 w-3.5" /> {t('ce.accept')}
+                        ) : isQuoting ? (
+                          <button type="button" onClick={() => setQuotingRequestId(null)} className={cardButtonClass('danger')}>
+                            <X className="h-3.5 w-3.5" /> {t('dash.common.cancel')}
                           </button>
-                        </div>
-                      ) : isQuoting ? (
-                        <div className="space-y-2">
-                          <div>
-                            <input
-                              type="number"
-                              min="1"
-                              autoFocus
-                              value={quotationAmount}
-                              onChange={(event) => {
-                                setActionError('')
-                                setQuotationAmounts((currentAmounts) => ({ ...currentAmounts, [request.id]: event.target.value }))
-                              }}
-                              onKeyDown={(event) => {
-                                if (event.key === 'Enter') confirmQuote(request)
-                                if (event.key === 'Escape') setQuotingRequestId(null)
-                              }}
-                              placeholder={t('dash.contractor.amount')}
-                              className="h-8 w-full rounded-lg border border-brand-300 bg-white px-2.5 text-xs font-bold text-slate-800 outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-50"
-                            />
-                            {/* The request feed carries no project country,
-                                so the builder's own market is used rather
-                                than defaulting silently to rupees. */}
-                            <BudgetInWords value={quotationAmount} country={country} />
-                          </div>
-                          {actionError && <p className="text-[11px] font-bold text-red-600">{actionError}</p>}
-                          <div className="grid grid-cols-2 gap-2">
-                            <button type="button" onClick={() => setQuotingRequestId(null)} className={outlineButton}>
-                              <X className="h-3.5 w-3.5" /> {t('dash.common.cancel')}
-                            </button>
-                            <button type="button" onClick={() => confirmQuote(request)} className={solidButton}>
-                              <Check className="h-3.5 w-3.5" /> {t('dash.common.accept')}
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="grid grid-cols-2 gap-2">
-                          <button type="button" onClick={() => onReject(request.id)} className={outlineButton}>
+                        ) : (
+                          <button type="button" onClick={() => onReject(request.id)} className={cardButtonClass('danger')}>
                             {t('dash.contractor.notInterested')}
                           </button>
-                          <button type="button" onClick={() => startQuoting(request.id)} className={solidButton}>
-                            {t('dash.contractor.quoteAccept')} <ArrowRight className="h-3.5 w-3.5" />
-                          </button>
+                        )}
+                        {withdraw}
+                        {viewDetails('secondary')}
+                      </>
+                    ) : withdraw || null}
+                    primary={pendingIncoming ? (
+                      !board.quoteOnAccept ? (
+                        <button type="button" onClick={() => onAccept(request.id)} className={cardButtonClass('primary')}>
+                          <Check className="h-3.5 w-3.5" /> {t('ce.accept')}
+                        </button>
+                      ) : isQuoting ? (
+                        <button type="button" onClick={() => confirmQuote(request)} className={cardButtonClass('primary')}>
+                          <Check className="h-3.5 w-3.5" /> {t('dash.common.accept')}
+                        </button>
+                      ) : (
+                        <button type="button" onClick={() => startQuoting(request.id)} className={cardButtonClass('primary')}>
+                          {t('dash.contractor.quoteAccept')} <ArrowRight className="h-3.5 w-3.5" />
+                        </button>
+                      )
+                    ) : viewDetails('primary')}
+                  >
+                    {/* The quotation amount a House Owner request is accepted with. */}
+                    {pendingIncoming && board.quoteOnAccept && isQuoting && (
+                      <div className="mt-auto space-y-2">
+                        <div>
+                          <input
+                            type="number"
+                            min="1"
+                            autoFocus
+                            value={quotationAmount}
+                            onChange={(event) => {
+                              setActionError('')
+                              setQuotationAmounts((currentAmounts) => ({ ...currentAmounts, [request.id]: event.target.value }))
+                            }}
+                            onKeyDown={(event) => {
+                              if (event.key === 'Enter') confirmQuote(request)
+                              if (event.key === 'Escape') setQuotingRequestId(null)
+                            }}
+                            placeholder={t('dash.contractor.amount')}
+                            className="h-8 w-full rounded-lg border border-brand-300 bg-white px-2.5 text-xs font-bold text-slate-800 outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-50"
+                          />
+                          {/* The request feed carries no project country,
+                              so the builder's own market is used rather
+                              than defaulting silently to rupees. */}
+                          <BudgetInWords value={quotationAmount} country={country} />
                         </div>
-                      )}
-                    </div>
+                        {actionError && <p className="text-[11px] font-bold text-red-600">{actionError}</p>}
+                      </div>
                     )}
-                  </article>
+                  </ListCard>
                 )
               })}
-            </div>
+            </CardGrid>
           )}
         </motion.div>
       </AnimatePresence>

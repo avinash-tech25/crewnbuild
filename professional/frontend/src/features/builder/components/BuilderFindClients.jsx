@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { ArrowRight, BrickWall, Check, CheckCircle2, FileText, HardHat, Home, IndianRupee, MapPin, Send, Tractor, Truck, X } from 'lucide-react'
+import { ArrowRight, BrickWall, Check, CheckCircle2, HardHat, Home, IndianRupee, MapPin, Send, Tractor, Truck, X } from 'lucide-react'
 import { EmptyState } from '../../../shared/dashboard/RoleDashboardUi.jsx'
 import { avatarFromPath } from '../../../shared/ui/avatars.js'
-import { EntityPill } from '../../../shared/ui/EntityPill.jsx'
+import { CardAvatar, CardChip, CardGrid, CardStatus, ListCard, cardButtonClass } from '../../../shared/ui/ListCard.jsx'
 import BudgetInWords from '../../../shared/ui/BudgetInWords.jsx'
 import { buildingTypeText, inr, OWNER_REQUEST_TYPES } from '../builderHelpers.js'
 import { ClientProfilePanel, SupplierProfilePanel } from './BuilderProfilePanels.jsx'
@@ -115,16 +115,6 @@ export function ContractorFindClientsSection({
   )
 }
 
-// Each lead card's soft background, in turn, as in the reference.
-const LEAD_TINTS = [
-  'from-emerald-50/80 to-white',
-  'from-white to-slate-50',
-  'from-orange-50/80 to-white',
-  'from-pink-50/80 to-white',
-  'from-sky-50/80 to-white',
-  'from-teal-50/70 to-white',
-]
-
 function HomeownerLeadList({ clientList, clientRequestState, findClientRequest, sendingReceiverId, onAcceptRequest, onRejectRequest, onSelectClient, onSendRequest, subscriptionStatus = null }) {
   const { t, td } = useLanguage()
   const [quotingClientId, setQuotingClientId] = useState(null)
@@ -137,11 +127,9 @@ function HomeownerLeadList({ clientList, clientRequestState, findClientRequest, 
   }
   return (
     <>
-      {/* Three to a row on a desktop, and no height cap: the list used to sit
-          in its own 620px scroller, so the page scrolled and then the cards
-          scrolled again inside it. The page is the only scroller now. */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
-        {clientList.map((project, index) => {
+      {/* No height cap: the page is the only scroller. */}
+      <CardGrid testId="builder-owner-lead-cards">
+        {clientList.map((project) => {
           // Both owner↔builder directions: an incoming OWNER_TO_CONTRACTOR
           // request (owner contacted the builder) and an outgoing
           // CONTRACTOR_TO_OWNER request describe the same lead, and either one
@@ -158,78 +146,92 @@ function HomeownerLeadList({ clientList, clientRequestState, findClientRequest, 
           const area = Number(project.land_area || 0)
           const budget = Number(project.budget || 0)
           const location = `${td(project.address) || t('dash.owner.estimates.locationNotSet')}${project.pincode ? ` - ${project.pincode}` : ''}`
-          const tint = LEAD_TINTS[index % LEAD_TINTS.length]
+          const quoting = quotingClientId === project.id
           return (
-            <div
+            <ListCard
               key={project.id}
-              role="button"
-              tabIndex={0}
               // The whole card opens the owner's details, as before; a click on
               // one of its own buttons or the quotation field does not.
-              onClick={(event) => { if (!event.target.closest('button, a, input, select, textarea')) onSelectClient(project) }}
-              onKeyDown={(event) => { if (event.key === 'Enter' && event.target === event.currentTarget) onSelectClient(project) }}
-              className={`group flex h-full cursor-pointer flex-col rounded-xl border bg-gradient-to-br p-3 shadow-[0_14px_40px_-30px_rgba(15,23,42,0.35)] transition hover:-translate-y-0.5 hover:shadow-[0_20px_44px_-28px_rgba(15,23,42,0.45)] focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-300 ${
-                accepted ? 'border-emerald-300 from-emerald-50 to-white' : `border-slate-200 ${tint}`
-              }`}
-            >
-              {/* Owner and project */}
-              <div className="flex items-start gap-2.5">
-                <img
-                  src={avatarFromPath(project.owner_profile_image_url, 'OWNER')}
-                  alt={displayOwnerName}
-                  className="h-11 w-11 shrink-0 rounded-full bg-white object-cover ring-2 ring-white/80"
-                />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-display text-[15px] font-extrabold leading-tight text-slate-950" title={displayOwnerName}>{displayOwnerName}</p>
-                  <p className="truncate text-xs text-slate-500" title={displayProjectTitle}>{displayProjectTitle}</p>
-                </div>
-                {/* The building type the owner gave, small, in the corner. */}
-                {project.building_type && (
-                  <span className="shrink-0 rounded-full bg-white/80 px-2 py-0.5 text-[10px] font-semibold text-emerald-800 ring-1 ring-emerald-100">
-                    {buildingTypeText(project.building_type, t)}
-                  </span>
-                )}
-              </div>
-
-              {/* Area and budget */}
-              <div className="mt-2.5 flex items-center gap-2 border-b border-slate-200/70 pb-2.5">
-                <div className="flex min-w-0 items-center gap-2">
-                  <span className="leading-tight">
-                    <span className="block text-sm font-extrabold text-slate-950">{area ? formatNumber(area) : '—'}</span>
-                    <span className="block text-[11px] text-slate-500">{t('dash.contractor.sqftUnit')}</span>
-                  </span>
-                </div>
-                <span className="h-8 w-px shrink-0 bg-slate-200" aria-hidden="true" />
-                <div className="flex min-w-0 items-center gap-2 rounded-lg bg-white/70 px-2 py-1.5 ring-1 ring-slate-100">
-                  <span className="shrink-0 text-[11px] font-semibold text-slate-500">{t('dash.contractor.budgetAmount')}</span>
-                  <span className="truncate text-sm font-extrabold text-slate-950">{budget > 0 ? inr(budget, project.project_country) : '—'}</span>
-                </div>
-              </div>
-
-              {/* Location */}
-              <p className="mt-2 flex items-start gap-1.5 text-xs leading-snug text-slate-600" title={location}>
-                <MapPin className="mt-px h-3.5 w-3.5 shrink-0 text-emerald-700" />
-                <span className="truncate">{location}</span>
-              </p>
-
-              {accepted && (
-                <div className="mt-2 flex flex-wrap items-center gap-2">
-                  <EntityPill tone="positive" dot>{t('ui.status.accepted')}</EntityPill>
-                  <span className="text-xs text-slate-500">{t('dash.contractor.contactUnlockedProfile')}</span>
-                </div>
+              onClick={() => onSelectClient(project)}
+              highlighted={accepted}
+              avatar={<CardAvatar src={avatarFromPath(project.owner_profile_image_url, 'OWNER')} alt={displayOwnerName} />}
+              title={displayOwnerName}
+              subtitle={displayProjectTitle}
+              status={accepted ? <CardStatus status="accepted">{t('ui.status.accepted')}</CardStatus> : null}
+              rows={[
+                { key: 'area', label: t('dash.contractor.sqftUnit'), value: area ? formatNumber(area) : '—' },
+                { key: 'budget', label: t('dash.contractor.budgetAmount'), value: budget > 0 ? inr(budget, project.project_country) : '—' },
+                { key: 'location', label: t('ce.col.location'), value: location },
+              ]}
+              // The building type the owner gave.
+              chips={project.building_type ? [<CardChip key="type" tone="green">{buildingTypeText(project.building_type, t)}</CardChip>] : []}
+              secondary={accepted ? (
+                <span className="text-xs text-oc-muted">{t('dash.contractor.contactUnlockedProfile')}</span>
+              ) : incomingPending ? (
+                quoting ? (
+                  <button type="button" onClick={cancelQuote} className={cardButtonClass('danger')}>
+                    <X className="h-3 w-3" /> {t('dash.common.cancel')}
+                  </button>
+                ) : (
+                  <button type="button" onClick={() => onRejectRequest(matchedRequest.id)} className={cardButtonClass('danger')}>
+                    {t('dash.contractor.notInterested')}
+                  </button>
+                )
+              ) : null}
+              primary={accepted ? null : incomingPending ? (
+                quoting ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (Number(quotationAmount || 0) <= 0) return setQuoteError(t('ui.requests.quoteRequired'))
+                      onAcceptRequest(matchedRequest.id, quotationAmount)
+                      cancelQuote()
+                    }}
+                    className={cardButtonClass('primary')}
+                  >
+                    <Check className="h-3 w-3" /> {t('dash.common.accept')}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setQuoteError('')
+                      setQuotationAmount('')
+                      setQuotingClientId(project.id)
+                    }}
+                    className={cardButtonClass('primary')}
+                  >
+                    {t('dash.contractor.quoteAccept')} <ArrowRight className="h-3 w-3" />
+                  </button>
+                )
+              ) : (
+                <button
+                  type="button"
+                  // A location at its open-lead limit takes no new request (the server refuses it too).
+                  disabled={sendingReceiverId === project.owner_id || requestSent || Boolean(leadUsage(subscriptionStatus, project.pincode)?.atLimit)}
+                  onClick={() => onSendRequest(project)}
+                  className={cardButtonClass('primary')}
+                >
+                  {!requestSent && <Send className="h-3.5 w-3.5" strokeWidth={2.25} />}
+                  {requestState === 'rejected'
+                    ? t('ui.status.rejected')
+                    : requestState === 'pending'
+                      ? t('ui.status.pending')
+                      : requestSent
+                        ? t('dash.contractor.status.proposalSent')
+                        : sendingReceiverId === project.owner_id
+                          ? t('dash.common.sending')
+                          : t('dash.common.sendRequest')}
+                </button>
               )}
-
-              {/* The request controls, unchanged, at the bottom of every card. */}
-              <div className="mt-auto pt-2.5 [&>*:first-child]:mt-0">
-              {!accepted && (incomingPending ? (
-                // The owner's request is waiting on this builder: accept it
-                // (a quotation amount is required, as on the Requests board) or
-                // decline it right from this card.
-                <div className="mt-2.5 space-y-1.5">
+            >
+              {/* The owner's request is waiting on this builder: accepting it
+                  needs a quotation amount, as on the Requests board. */}
+              {!accepted && incomingPending && (quoteError || quoting) && (
+                <div className="mt-auto space-y-1.5">
                   {quoteError && <p className="text-[11px] font-bold text-rose-600">{quoteError}</p>}
-                  {quotingClientId === project.id ? (
-                    <div className="flex items-start gap-1.5">
-                      <div className="min-w-0 flex-1">
+                  {quoting && (
+                    <div className="min-w-0">
                       <input
                         type="number"
                         min="1"
@@ -251,89 +253,28 @@ function HomeownerLeadList({ clientList, clientRequestState, findClientRequest, 
                         placeholder={t('dash.contractor.amount')}
                         className="h-8 w-full min-w-0 rounded-lg border border-brand-300 bg-white px-2.5 text-xs font-bold text-slate-800 outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-50"
                       />
-                        <BudgetInWords value={quotationAmount} country={project.project_country} />
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (Number(quotationAmount || 0) <= 0) return setQuoteError(t('ui.requests.quoteRequired'))
-                          onAcceptRequest(matchedRequest.id, quotationAmount)
-                          cancelQuote()
-                        }}
-                        className="inline-flex h-8 items-center justify-center gap-1 rounded-lg bg-emerald-600 px-2.5 text-xs font-extrabold text-white transition hover:bg-emerald-700"
-                      >
-                        <Check className="h-3 w-3" /> {t('dash.common.accept')}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={cancelQuote}
-                        className="inline-flex h-8 items-center justify-center rounded-lg border border-slate-200 bg-white px-2.5 text-xs font-extrabold text-slate-600 transition hover:bg-slate-50"
-                      >
-                        <X className="h-3 w-3" /> {t('dash.common.cancel')}
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-1.5">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setQuoteError('')
-                          setQuotationAmount('')
-                          setQuotingClientId(project.id)
-                        }}
-                        className="inline-flex h-8 flex-1 items-center justify-center gap-1 rounded-lg bg-brand-600 px-2.5 text-xs font-extrabold text-white transition hover:bg-brand-700"
-                      >
-                        {t('dash.contractor.quoteAccept')} <ArrowRight className="h-3 w-3" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => onRejectRequest(matchedRequest.id)}
-                        className="inline-flex h-8 items-center justify-center rounded-lg border border-slate-200 bg-white px-2.5 text-xs font-extrabold text-slate-600 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600"
-                      >
-                        {t('dash.contractor.notInterested')}
-                      </button>
+                      <BudgetInWords value={quotationAmount} country={project.project_country} />
                     </div>
                   )}
                 </div>
-              ) : (
-                <button
-                  // A location at its open-lead limit takes no new request (the server refuses it too).
-                  disabled={sendingReceiverId === project.owner_id || requestSent || Boolean(leadUsage(subscriptionStatus, project.pincode)?.atLimit)}
-                  onClick={() => onSendRequest(project)}
-                  className={`mt-2.5 inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-lg px-3 text-[13px] font-bold transition disabled:cursor-not-allowed ${
-                    requestSent ? 'bg-ocbrand-50 text-ocbrand-700 ring-1 ring-ocbrand-100' : 'bg-[#0f5132] text-white shadow-sm hover:bg-[#0b3f27] disabled:opacity-60'
-                  }`}
-                >
-                  {!requestSent && <Send className="h-3.5 w-3.5" strokeWidth={2.25} />}
-                  {requestState === 'rejected'
-                    ? t('ui.status.rejected')
-                    : requestState === 'pending'
-                      ? t('ui.status.pending')
-                      : requestSent
-                        ? t('dash.contractor.status.proposalSent')
-                        : sendingReceiverId === project.owner_id
-                          ? t('dash.common.sending')
-                          : t('dash.common.sendRequest')}
-                </button>
-              ))}
-              </div>
-            </div>
+              )}
+            </ListCard>
           )
         })}
-      </div>
+      </CardGrid>
       {!clientList.length && <EmptyState title={t('dash.contractor.noClientsTitle')} message={t('dash.contractor.noClientsSub')} />}
     </>
   )
 }
 
-// Each supplier card's header band, icon and products box follow the
-// supplier's own category, as in the reference: one colour per category.
+// Each supplier card's category chip follows the supplier's own category:
+// one icon and colour per category.
 const SUPPLIER_CARD_THEMES = {
-  'Material Supplier': { icon: BrickWall, band: 'bg-emerald-50', label: 'text-emerald-800', iconTone: 'text-emerald-700', box: 'bg-emerald-50/60', avatar: 'bg-emerald-50 ring-emerald-100' },
-  'Equipment Supplier': { icon: Tractor, band: 'bg-violet-50', label: 'text-slate-700', iconTone: 'text-violet-600', box: 'bg-violet-50/60', avatar: 'bg-violet-50 ring-violet-100' },
-  'Labor Supplier': { icon: HardHat, band: 'bg-sky-50', label: 'text-slate-700', iconTone: 'text-sky-700', box: 'bg-sky-50/60', avatar: 'bg-sky-50 ring-sky-100' },
+  'Material Supplier': { icon: BrickWall, tone: 'green' },
+  'Equipment Supplier': { icon: Tractor, tone: 'violet' },
+  'Labor Supplier': { icon: HardHat, tone: 'blue' },
 }
-const OTHER_SUPPLIER_CARD_THEME = { icon: Truck, band: 'bg-slate-50', label: 'text-slate-700', iconTone: 'text-slate-600', box: 'bg-slate-50', avatar: 'bg-slate-50 ring-slate-100' }
+const OTHER_SUPPLIER_CARD_THEME = { icon: Truck, tone: 'grey' }
 
 function SupplierLeadList({ supplierList, clientRequestState, sendingReceiverId, openSupplierProfile, onSendRequest }) {
   const { t, td } = useLanguage()
@@ -342,7 +283,7 @@ function SupplierLeadList({ supplierList, clientRequestState, sendingReceiverId,
     <>
       {/* The same grid as the House Owner list, so cards on both tabs are the
           same size; the page is the only scroller. */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+      <CardGrid testId="builder-supplier-lead-cards">
         {supplierList.map((supplier) => {
           const requestState = clientRequestState(supplier, 'CONTRACTOR_TO_SUPPLIER')
           const requestSent = requestState !== 'none'
@@ -360,97 +301,58 @@ function SupplierLeadList({ supplierList, clientRequestState, sendingReceiverId,
           // back to that caption only for a supplier who never set one.
           const categoryLabel = supplier.supplier_category ? optionLabel(t, SUPPLIER_TYPE_KEYS, supplier.supplier_category) : t('role.supplier')
           const theme = SUPPLIER_CARD_THEMES[supplier.supplier_category] || OTHER_SUPPLIER_CARD_THEME
-          const CategoryIcon = theme.icon
           // The products/services list the supplier offers.
           const offerings = (Array.isArray(supplier.categories) ? supplier.categories : String(supplier.categories || '').split(','))
             .map((category) => String(category).trim()).filter(Boolean)
             .map((category) => optionLabel(t, SUPPLIER_CATEGORY_KEYS, category)).join(', ')
           return (
-            <div
+            <ListCard
               key={supplier.id}
-              role="button"
-              tabIndex={0}
               // The whole card opens the supplier's profile, as before; a click
               // on the Send Request button does not.
-              onClick={(event) => { if (!event.target.closest('button, a, input, select, textarea')) openSupplierProfile(supplier) }}
-              onKeyDown={(event) => { if (event.key === 'Enter' && event.target === event.currentTarget) openSupplierProfile(supplier) }}
-              className={`group flex h-full cursor-pointer flex-col rounded-xl border bg-white p-3 shadow-[0_14px_40px_-30px_rgba(15,23,42,0.35)] transition hover:-translate-y-0.5 hover:shadow-[0_20px_44px_-28px_rgba(15,23,42,0.45)] focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-300 ${
-                accepted ? 'border-emerald-300' : 'border-slate-200'
-              }`}
-            >
-              {/* Category band */}
-              {/* Kept compact so the card is the same size as a House Owner card. */}
-              <div className={`flex items-center gap-2.5 rounded-lg px-2.5 pb-[7px] pt-1.5 ${theme.band}`}>
-                <CategoryIcon className={`h-4 w-4 shrink-0 ${theme.iconTone}`} />
-                <span className={`min-w-0 flex-1 truncate text-[11px] font-extrabold uppercase tracking-[0.18em] ${theme.label}`}>{categoryLabel}</span>
-                {/* The supplier's pincode, in the band's right corner. */}
-                <span className="inline-flex h-5 shrink-0 items-center gap-1 text-xs font-semibold text-slate-600">
-                  <MapPin className="h-3.5 w-3.5 shrink-0 text-slate-700" />
-                  {supplier.pincode || t('dash.owner.estimates.locationNotSet')}
+              onClick={() => openSupplierProfile(supplier)}
+              highlighted={accepted}
+              // `cover_image_url` on a supplier lead is that supplier's own
+              // store logo or profile picture, which is what this card has
+              // always shown; the Supplier default stands in when they have neither.
+              avatar={<CardAvatar src={avatarFromPath(supplier.cover_image_url, 'SUPPLIER')} alt={supplierName} />}
+              title={supplierName}
+              subtitle={storeName && storeName !== supplierName ? storeName : null}
+              rows={[
+                { key: 'location', label: t('ce.col.location'), value: supplier.pincode || t('dash.owner.estimates.locationNotSet') },
+                // Products / services — one line; the full list shows on hover.
+                offerings && { key: 'offerings', label: t('ui.products'), value: offerings },
+              ]}
+              // The supplier's category, in its own colour.
+              chips={[<CardChip key="category" tone={theme.tone} icon={theme.icon}>{categoryLabel}</CardChip>]}
+              primary={accepted ? (
+                // Where Send Request was: the request is accepted.
+                <span className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-emerald-50 px-3.5 text-xs font-extrabold text-emerald-800 ring-1 ring-emerald-200">
+                  <CheckCircle2 className="h-3.5 w-3.5" /> {t('ui.status.accepted')}
                 </span>
-              </div>
-
-              <div className="flex flex-1 flex-col pt-1.5">
-                {/* Supplier and store */}
-                <div className="flex items-start gap-3 border-b border-slate-200/80 px-1 pb-2">
-                  {/* `cover_image_url` on a supplier lead is that supplier's own
-                      store logo or profile picture, which is what this card has
-                      always shown; the Supplier default stands in when they have
-                      neither. */}
-                  <img
-                    src={avatarFromPath(supplier.cover_image_url, 'SUPPLIER')}
-                    alt={supplierName}
-                    className={`h-11 w-11 shrink-0 rounded-full object-cover ring-1 ${theme.avatar}`}
-                  />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-display text-[15px] font-extrabold leading-tight text-slate-950" title={supplierName}>{supplierName}</p>
-                    {storeName && storeName !== supplierName && (
-                      <p className="truncate text-xs text-slate-600" title={storeName}>{storeName}</p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Products / services — one line; the full list shows on hover. */}
-                {offerings && (
-                  <div className={`mt-2 flex items-center gap-2 rounded-lg px-2.5 py-1 ${theme.box}`}>
-                    <FileText className="h-3.5 w-3.5 shrink-0 text-slate-600" />
-                    <p className="truncate text-xs font-medium leading-snug text-slate-800" title={offerings}>{offerings}</p>
-                  </div>
-                )}
-
-                {accepted && (
-                  <div className="mt-2">
-                    <EntityPill tone="positive" dot>{t('ui.status.accepted')}</EntityPill>
-                  </div>
-                )}
-
-                <div className="mt-auto">
-                  {!accepted && (
-                    <button
-                      disabled={sendingReceiverId === supplier.owner_id || requestSent}
-                      onClick={() => onSendRequest(supplier)}
-                      className={`mt-2 inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-lg px-3 text-[13px] font-bold transition disabled:cursor-not-allowed ${
-                        requestSent ? 'bg-ocbrand-50 text-ocbrand-700 ring-1 ring-ocbrand-100' : 'bg-[#0f5132] text-white shadow-sm hover:bg-[#0b3f27] disabled:opacity-60'
-                      }`}
-                    >
-                      {!requestSent && <Send className="h-3.5 w-3.5" strokeWidth={2.25} />}
-                      {requestState === 'rejected'
-                        ? t('ui.status.rejected')
-                        : requestState === 'pending'
-                          ? t('ui.status.pending')
-                          : requestSent
-                            ? t('dash.contractor.requestSent')
-                            : sendingReceiverId === supplier.owner_id
-                              ? t('dash.common.sending')
-                              : t('dash.common.sendRequest')}
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
+              ) : (
+                <button
+                  type="button"
+                  disabled={sendingReceiverId === supplier.owner_id || requestSent}
+                  onClick={() => onSendRequest(supplier)}
+                  className={cardButtonClass('primary')}
+                >
+                  {!requestSent && <Send className="h-3.5 w-3.5" strokeWidth={2.25} />}
+                  {requestState === 'rejected'
+                    ? t('ui.status.rejected')
+                    : requestState === 'pending'
+                      ? t('ui.status.pending')
+                      : requestSent
+                        ? t('dash.contractor.requestSent')
+                        : sendingReceiverId === supplier.owner_id
+                          ? t('dash.common.sending')
+                          : t('dash.common.sendRequest')}
+                </button>
+              )}
+            />
           )
         })}
-      </div>
+      </CardGrid>
       {!supplierList.length && <EmptyState title={t('dash.owner.suppliers.emptyTitle')} message={t('dash.contractor.suppliersEmpty')} />}
     </>
   )

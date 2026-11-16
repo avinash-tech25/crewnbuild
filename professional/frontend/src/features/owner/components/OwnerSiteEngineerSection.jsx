@@ -15,9 +15,9 @@
  */
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { AnimatePresence } from 'framer-motion'
-import { HardHat, MapPin, Send, Star } from 'lucide-react'
-import { EntityCard } from '../../../shared/ui/EntityCard.jsx'
-import { EntityAvatar } from '../../../shared/ui/EntityPill.jsx'
+import { HardHat, Send, Star } from 'lucide-react'
+import { CardAvatar, CardChip, CardGrid, CardStatus, ListCard, cardButtonClass } from '../../../shared/ui/ListCard.jsx'
+import { userAvatarSrc } from '../../../shared/ui/avatars.js'
 import EmptyState from '../../../shared/dashboard/EmptyState.jsx'
 import SiteEngineerDashboard from '../../site-work/components/SiteEngineerDashboard.jsx'
 // The engineer profile window the builder's Find Site Engineers already opens,
@@ -169,47 +169,48 @@ export default function OwnerSiteEngineerSection({ project }) {
           component and props the project's Site Activity tab already renders. */}
       {assigned ? (
         <>
-          <EntityCard
-            compact
-            onClick={() => setProfileEngineer({ engineer: assigned, canRequest: false })}
-            avatar={<EntityAvatar user={assigned} role="ENGINEER" alt={td(assigned.name)} />}
-            title={td(assigned.name)}
-            subtitle={specializationText(assigned.specialization)}
-            pills={[
-              { key: 'pincode', text: `${t('dash.common.pincode')} ${assigned.pincode || '—'}`, icon: MapPin },
-              { key: 'assigned', text: t('ui.owner.assignedToThisProject'), tone: 'positive', dot: true },
-            ]}
-          />
-          <div className="flex flex-wrap items-center justify-end gap-2">
-            {!confirmRemove ? (
-              <button
-                type="button"
-                disabled={busyId === assigned.user_id}
-                onClick={() => setConfirmRemove(true)}
-                className="inline-flex h-9 items-center justify-center rounded-lg border border-rose-200 bg-white px-4 text-xs font-extrabold text-rose-600 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {t('dash.contractor.unassign')}
-              </button>
-            ) : (
-              <>
-                <p className="text-xs font-extrabold text-oc-ink">{t('dash.contractor.removeEngineer', { name: td(assigned.name) })}</p>
+          <CardGrid testId="owner-assigned-engineer">
+            <ListCard
+              key={assigned.user_id}
+              onClick={() => setProfileEngineer({ engineer: assigned, canRequest: false })}
+              avatar={<CardAvatar src={userAvatarSrc(assigned, 'ENGINEER')} alt={td(assigned.name)} />}
+              title={td(assigned.name)}
+              subtitle={specializationText(assigned.specialization)}
+              status={<CardStatus status="assigned">{t('ui.owner.assignedToThisProject')}</CardStatus>}
+              rows={[{ key: 'pincode', label: t('dash.common.pincode'), value: assigned.pincode || '—' }]}
+              secondary={!confirmRemove ? (
+                <button
+                  type="button"
+                  disabled={busyId === assigned.user_id}
+                  onClick={() => setConfirmRemove(true)}
+                  className={cardButtonClass('danger')}
+                >
+                  {t('dash.contractor.unassign')}
+                </button>
+              ) : (
                 <button
                   type="button"
                   onClick={() => setConfirmRemove(false)}
-                  className="inline-flex h-9 items-center rounded-lg border border-slate-200 bg-white px-3 text-xs font-extrabold text-slate-600 transition hover:bg-slate-100"
+                  className={cardButtonClass('secondary')}
                 >
                   {t('dash.common.cancel')}
                 </button>
+              )}
+              primary={confirmRemove ? (
                 <button
                   type="button"
                   onClick={remove}
-                  className="inline-flex h-9 items-center rounded-lg bg-rose-600 px-3 text-xs font-extrabold text-white transition hover:bg-rose-700"
+                  className={cardButtonClass('danger')}
                 >
                   {t('dash.contractor.confirm')}
                 </button>
-              </>
-            )}
-          </div>
+              ) : null}
+            >
+              {confirmRemove && (
+                <p className="mt-auto text-xs font-extrabold text-oc-ink">{t('dash.contractor.removeEngineer', { name: td(assigned.name) })}</p>
+              )}
+            </ListCard>
+          </CardGrid>
           <div className="site-calendar-dark">
             <SiteEngineerDashboard projectList={[project]} photoOnly />
           </div>
@@ -223,46 +224,39 @@ export default function OwnerSiteEngineerSection({ project }) {
               <h3 className="font-display text-base font-extrabold text-oc-ink">
                 {t('ui.owner.acceptedChooseOne', { count: acceptedRequests.length })}
               </h3>
-              <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {acceptedRequests.map((item) => (
-                  workingIds.has(item.receiver_id) ? (
+              <div className="mt-2">
+                <CardGrid testId="owner-accepted-engineers" label={t('ui.owner.acceptedChooseOne', { count: acceptedRequests.length })}>
+                  {acceptedRequests.map((item) => {
                     // Accepted earlier, but put on another project since: the
-                    // same dimmed card and label, with no Assign button.
-                    <div key={item.id} aria-disabled="true" className="select-none opacity-60 grayscale">
-                      <EntityCard
-                        compact
+                    // same label, with no Assign button.
+                    const working = workingIds.has(item.receiver_id)
+                    return (
+                      <ListCard
+                        // Already working on a project: shown dimmed, as before.
+                        dimmed={working}
+                        key={item.id}
                         onClick={engineerById(item.receiver_id) ? () => setProfileEngineer({ engineer: engineerById(item.receiver_id), canRequest: false }) : undefined}
-                        avatar={<EntityAvatar user={item} role="ENGINEER" alt={td(item.sender_name)} />}
+                        avatar={<CardAvatar src={userAvatarSrc(item, 'ENGINEER')} alt={td(item.sender_name)} />}
                         title={td(item.sender_name)}
                         subtitle={t('role.engineer')}
-                        pills={[{ key: 'accepted', text: t('dash.common.accepted'), tone: 'positive', dot: true }]}
-                      >
-                        <span className="mt-2.5 inline-flex w-full items-center justify-center rounded-full bg-slate-100 px-3 py-2 text-xs font-bold text-slate-700 ring-1 ring-slate-200">
-                          {t('ui.owner.alreadyWorkingOnProject')}
-                        </span>
-                      </EntityCard>
-                    </div>
-                  ) : (
-                  <EntityCard
-                    key={item.id}
-                    compact
-                    onClick={engineerById(item.receiver_id) ? () => setProfileEngineer({ engineer: engineerById(item.receiver_id), canRequest: false }) : undefined}
-                    avatar={<EntityAvatar user={item} role="ENGINEER" alt={td(item.sender_name)} />}
-                    title={td(item.sender_name)}
-                    subtitle={t('role.engineer')}
-                    pills={[{ key: 'accepted', text: t('dash.common.accepted'), tone: 'positive', dot: true }]}
-                  >
-                    <button
-                      type="button"
-                      disabled={busyId === item.id}
-                      onClick={(event) => { event.stopPropagation(); assign(item) }}
-                      className="mt-2.5 inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-oc-green px-3 py-2 text-xs font-bold text-white transition hover:bg-oc-deep disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      {busyId === item.id ? t('ui.owner.assigning') : t('ui.owner.assignThisProject')}
-                    </button>
-                  </EntityCard>
-                  )
-                ))}
+                        status={<CardStatus status="accepted">{t('dash.common.accepted')}</CardStatus>}
+                        secondary={working ? (
+                          <span className="text-xs font-bold text-slate-700">{t('ui.owner.alreadyWorkingOnProject')}</span>
+                        ) : null}
+                        primary={working ? null : (
+                          <button
+                            type="button"
+                            disabled={busyId === item.id}
+                            onClick={(event) => { event.stopPropagation(); assign(item) }}
+                            className={cardButtonClass('primary')}
+                          >
+                            {busyId === item.id ? t('ui.owner.assigning') : t('ui.owner.assignThisProject')}
+                          </button>
+                        )}
+                      />
+                    )
+                  })}
+                </CardGrid>
               </div>
             </section>
           )}
@@ -273,64 +267,48 @@ export default function OwnerSiteEngineerSection({ project }) {
               {t('ui.owner.siteEngineersNear', { place: project.pincode || t('ui.owner.yourProject') })}
             </p>
             {loading ? null : browseList.length ? (
-              <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {browseList.map((engineer) => {
-                  const status = statusFor(engineer.user_id)
-                  // Already on another running project, as the server reports
-                  // it: the card is dimmed and offers no request. Every other
-                  // card is rendered exactly as before.
-                  if (engineer.working_on_project) {
+              <div className="mt-2">
+                <CardGrid testId="owner-engineer-cards" label={t('ui.owner.findSiteEngineer')}>
+                  {browseList.map((engineer) => {
+                    const status = statusFor(engineer.user_id)
+                    // Already on another running project, as the server reports
+                    // it: the card says so and offers no request.
+                    const working = Boolean(engineer.working_on_project)
                     return (
-                      <div key={engineer.user_id} aria-disabled="true" className="select-none opacity-60 grayscale">
-                        <EntityCard
-                          compact
-                          onClick={() => setProfileEngineer({ engineer, canRequest: false })}
-                          avatar={<EntityAvatar user={engineer} role="ENGINEER" alt={td(engineer.name)} />}
-                          title={td(engineer.name)}
-                          subtitle={specializationText(engineer.specialization)}
-                          pills={[
-                            { key: 'pincode', text: `${t('dash.common.pincode')} ${engineer.pincode || '—'}`, icon: MapPin },
-                            { key: 'rating', text: String(engineer.rating || t('dash.common.new')), tone: 'brand', icon: Star },
-                          ]}
-                        >
-                          <span className="mt-2.5 inline-flex w-full items-center justify-center rounded-full bg-slate-100 px-3 py-2 text-xs font-bold text-slate-700 ring-1 ring-slate-200">
-                            {t('ui.owner.alreadyWorkingOnProject')}
-                          </span>
-                        </EntityCard>
-                      </div>
+                      <ListCard
+                        key={engineer.user_id}
+                        // Already working on a project: shown dimmed, as before.
+                        dimmed={working}
+                        onClick={() => setProfileEngineer({ engineer, canRequest: !working })}
+                        avatar={<CardAvatar src={userAvatarSrc(engineer, 'ENGINEER')} alt={td(engineer.name)} />}
+                        title={td(engineer.name)}
+                        subtitle={specializationText(engineer.specialization)}
+                        rows={[
+                          { key: 'pincode', label: t('dash.common.pincode'), value: engineer.pincode || '—' },
+                        ]}
+                        chips={[
+                          <CardChip key="rating" tone="blue" icon={Star}>{String(engineer.rating || t('dash.common.new'))}</CardChip>,
+                        ]}
+                        secondary={working ? (
+                          <span className="text-xs font-bold text-slate-700">{t('ui.owner.alreadyWorkingOnProject')}</span>
+                        ) : status === 'pending' ? (
+                          <CardStatus status="pending">{t('dash.common.requestPending')}</CardStatus>
+                        ) : null}
+                        primary={working || status === 'pending' ? null : (
+                          <button
+                            type="button"
+                            disabled={busyId === engineer.user_id}
+                            onClick={(event) => { event.stopPropagation(); send(engineer) }}
+                            className={cardButtonClass('primary')}
+                          >
+                            {busyId === engineer.user_id ? t('dash.common.sending') : t('dash.common.sendRequest')}
+                            <Send className="h-3.5 w-3.5" strokeWidth={2.25} />
+                          </button>
+                        )}
+                      />
                     )
-                  }
-                  return (
-                    <EntityCard
-                      key={engineer.user_id}
-                      compact
-                      onClick={() => setProfileEngineer({ engineer, canRequest: true })}
-                      avatar={<EntityAvatar user={engineer} role="ENGINEER" alt={td(engineer.name)} />}
-                      title={td(engineer.name)}
-                      subtitle={specializationText(engineer.specialization)}
-                      pills={[
-                        { key: 'pincode', text: `${t('dash.common.pincode')} ${engineer.pincode || '—'}`, icon: MapPin },
-                        { key: 'rating', text: String(engineer.rating || t('dash.common.new')), tone: 'brand', icon: Star },
-                      ]}
-                    >
-                      {status === 'pending' ? (
-                        <span className="mt-2.5 inline-flex w-full items-center justify-center rounded-full bg-ocaccent-50 px-3 py-2 text-xs font-bold text-ocaccent-600 ring-1 ring-ocaccent-100">
-                          {t('dash.common.requestPending')}
-                        </span>
-                      ) : (
-                        <button
-                          type="button"
-                          disabled={busyId === engineer.user_id}
-                          onClick={(event) => { event.stopPropagation(); send(engineer) }}
-                          className="mt-2.5 inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-oc-green px-3 py-2 text-xs font-bold text-white transition hover:bg-oc-deep disabled:cursor-not-allowed disabled:opacity-60"
-                        >
-                          {busyId === engineer.user_id ? t('dash.common.sending') : t('dash.common.sendRequest')}
-                          <Send className="h-3.5 w-3.5" strokeWidth={2.25} />
-                        </button>
-                      )}
-                    </EntityCard>
-                  )
-                })}
+                  })}
+                </CardGrid>
               </div>
             ) : (
               <div className="mt-2">

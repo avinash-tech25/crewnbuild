@@ -1178,43 +1178,8 @@ html.dark .dash-canvas .border-ocaccent-100 {
 html.dark .dash-canvas [class~="hover:border-ocbrand-300"]:hover {
   border-color: #2f6d51;
 }
-/* On the amber hover surface the card keeps its light-theme ink, so the dark
-   theme's light text tones are put back to the deep ink for that moment. */
-html.dark .dash-canvas .oc-entity-card:hover .text-oc-ink,
-html.dark .dash-canvas .oc-entity-card:hover .text-oc-muted,
-html.dark .dash-canvas .oc-entity-card:hover .text-oc-faint {
-  color: #17201c;
-}
-
-/* Owner Projects cards: the clean white/green look of the projects reference.
-   Colours only, scoped to these grids (Owner, Builder and Site Engineer Projects).
-   Hover uses the dashboard's shared yellow (.dash-gold-hover) like every other card. */
-:is(.owner-project-cards, .builder-project-cards, .engineer-project-cards, .supplier-client-cards) .oc-entity-card {
-  border-color: #e6ebe8;
-  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 10px 28px -20px rgba(16, 24, 40, 0.18);
-}
-:is(.owner-project-cards, .builder-project-cards, .engineer-project-cards, .supplier-client-cards) .oc-entity-card:hover {
-  background: linear-gradient(180deg, #f9c85f 0%, #f4b740 52%, #e9a92f 100%);
-  border-color: rgba(8, 62, 43, 0.22);
-  box-shadow: 0 18px 38px -24px rgba(18, 107, 69, 0.38);
-}
-:is(.owner-project-cards, .builder-project-cards, .engineer-project-cards, .supplier-client-cards) .oc-entity-card:hover .text-oc-muted { color: #083e2b; }
-:is(.owner-project-cards, .builder-project-cards, .engineer-project-cards, .supplier-client-cards) .oc-entity-card:hover .text-oc-faint { color: rgba(8, 62, 43, 0.75); }
-
-/* Builder cards in supplier Find Clients: the services line reads in the
-   card's mid grey, as in the reference, rather than the faint grey. */
-.supplier-client-cards .oc-entity-card .text-oc-faint { color: #61736a; }
-html.dark .dash-canvas .supplier-client-cards .oc-entity-card .text-oc-faint { color: rgba(226, 232, 240, 0.72); }
 html.dark .dash-canvas .supplier-client-cards .bg-amber-50 { background-color: #2a2212; }
 
-html.dark .dash-canvas :is(.owner-project-cards, .builder-project-cards, .engineer-project-cards, .supplier-client-cards) .oc-entity-card { border-color: #1e293b; }
-html.dark .dash-canvas :is(.owner-project-cards, .builder-project-cards, .engineer-project-cards, .supplier-client-cards) .oc-entity-card:hover {
-  background: linear-gradient(180deg, #f9c85f 0%, #f4b740 52%, #e9a92f 100%);
-  border-color: rgba(8, 62, 43, 0.22);
-}
-html.dark .dash-canvas :is(.owner-project-cards, .builder-project-cards, .engineer-project-cards, .supplier-client-cards) .oc-entity-card:hover .text-oc-ink { color: #17201c; }
-html.dark .dash-canvas :is(.owner-project-cards, .builder-project-cards, .engineer-project-cards, .supplier-client-cards) .oc-entity-card:hover .text-oc-muted { color: #17201c; }
-html.dark .dash-canvas :is(.owner-project-cards, .builder-project-cards, .engineer-project-cards, .supplier-client-cards) .oc-entity-card:hover .text-oc-faint { color: #17201c; }
 html.dark .dash-canvas :is(.owner-project-cards, .builder-project-cards, .supplier-client-cards, .engineer-project-cards, .engineer-supplier-cards) .bg-emerald-50 { background-color: #0f2a20; }
 html.dark .dash-canvas :is(.owner-project-cards, .builder-project-cards, .engineer-project-cards, .supplier-client-cards) .border-emerald-100 { border-color: #1c4535; }
 html.dark .dash-canvas :is(.owner-project-cards, .builder-project-cards, .supplier-client-cards, .engineer-project-cards) .text-emerald-700 { color: #7bc2a2; }

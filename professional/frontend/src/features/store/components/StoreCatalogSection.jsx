@@ -1,7 +1,8 @@
-import { Fragment, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { AlertTriangle, Archive, ArchiveRestore, CreditCard, History, Package, PackagePlus, Pencil, Search } from 'lucide-react'
 import { imageUrl } from '../../../shared/api/apiClient.js'
 import EmptyState from '../../../shared/dashboard/EmptyState.jsx'
+import { CardAvatar, CardChip, CardGrid, CardStatus, ListCard, cardButtonClass } from '../../../shared/ui/ListCard.jsx'
 import QuantityField from '../../shop/components/QuantityField.jsx'
 import { useLanguage } from '../../../i18n/LanguageContext.jsx'
 import { createStoreItem, fetchStoreBuyProducts, fetchStoreMovements, updateStoreItem, updateStoreStock } from '../storeManagerApi.js'
@@ -15,7 +16,8 @@ import { Notice, Panel, inputClass, labelClass, primaryButton, refusalText, seco
 // No opening stock: a product added here starts empty, and stock only ever enters
 // by receiving a paid supplier purchase.
 const EMPTY_FORM = { name: '', category: STORE_CATEGORIES[0], brand: '', variant: '', unit: '', unit_cost: '0', low_stock_threshold: '0' }
-const STATE_TONES = { IN_STOCK: 'bg-emerald-50 text-emerald-700', LOW_STOCK: 'bg-amber-50 text-amber-700', OUT_OF_STOCK: 'bg-rose-50 text-rose-700' }
+// A stock state's tone on the item card.
+const STATE_TONES = { IN_STOCK: 'green', LOW_STOCK: 'amber', OUT_OF_STOCK: 'red' }
 
 function ItemForm({ item, onDone, onCancel, guard }) {
   const { t, td } = useLanguage()
@@ -393,47 +395,59 @@ export default function StoreCatalogSection({ items, projects = [], searchQuery,
         {visible.length ? (
           // The product catalog's card: picture, brand, name, category and size, then
           // the store's own figures and the Store Manager's actions.
-          <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
-            {visible.map((item) => (
-              <Fragment key={item.id}>
-                <li className={`group flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-md ${item.is_active ? '' : 'opacity-60'}`}>
-                  <div className="relative grid aspect-square place-items-center bg-slate-50">
-                    {/* The picture of the supplier product received into this item. */}
+          <div className="space-y-3">
+            <CardGrid testId="store-catalog-cards">
+              {visible.map((item) => {
+                const kind = [item.category, item.subcategory, item.variant].filter(Boolean).map((value) => td(value)).join(' · ')
+                const archiveLabel = t(item.is_active ? 'store.catalog.archive' : 'store.catalog.restore')
+                return (
+                  <ListCard
+                    // An archived item stays listed, faded, as before.
+                    dimmed={!item.is_active}
+                    key={item.id}
+                    highlighted={panel?.id === item.id}
+                    avatar={<CardAvatar src={item.image_url ? imageUrl(item.image_url) : ''} fallback={<Package aria-hidden="true" className="h-5 w-5" />} />}
+                    title={td(item.name)}
+                    subtitle={item.brand ? td(item.brand) : t('store.catalog.noBrand')}
+                    status={<CardStatus tone={STATE_TONES[item.stock_state] || 'grey'}>{t(STOCK_STATE_KEYS[item.stock_state])}</CardStatus>}
+                    rows={[
+                      { key: 'quantity', label: t('store.col.available'), value: `${formatQty(item.quantity)} ${td(item.unit)}` },
+                      { key: 'cost', label: t('store.catalog.unitCost'), value: t('store.catalog.perUnit', { price: money(item.unit_cost, country), unit: td(item.unit) }) },
+                    ]}
+                    chips={[
+                      kind && <CardChip key="kind">{kind}</CardChip>,
+                      !item.is_active && <CardChip key="archived">{t('store.catalog.archivedBadge')}</CardChip>,
+                    ]}
+                    secondary={(
+                      <>
+                        <button type="button" onClick={() => toggle('edit', item.id)} aria-label={t('store.edit')} title={t('store.edit')} className={cardButtonClass('secondary')}><Pencil className="h-3.5 w-3.5" /></button>
+                        <button type="button" onClick={() => toggle('history', item.id)} aria-label={t('store.catalog.history')} title={t('store.catalog.history')} className={cardButtonClass('secondary')}><History className="h-3.5 w-3.5" /></button>
+                        <button type="button" onClick={() => setArchived(item, item.is_active)} aria-label={archiveLabel} title={archiveLabel} className={cardButtonClass(item.is_active ? 'danger' : 'secondary')}>
+                          {item.is_active ? <Archive className="h-3.5 w-3.5" /> : <ArchiveRestore className="h-3.5 w-3.5" />}
+                        </button>
+                      </>
+                    )}
+                    primary={<button type="button" onClick={() => toggle('stock', item.id)} aria-expanded={panel?.id === item.id && panel.kind === 'stock'} className={cardButtonClass('primary')}>{t('store.catalog.updateStock')}</button>}
+                  >
+                    {/* The picture of the supplier product received into this item, at a fixed height. */}
                     {item.image_url
-                      ? <img src={imageUrl(item.image_url)} alt={td(item.name)} loading="lazy" className="h-full w-full object-contain p-2 transition duration-300 group-hover:scale-[1.03]" />
-                      : <span className="grid h-full w-full place-items-center text-slate-300"><Package className="h-8 w-8" /></span>}
-                    <span className={`absolute start-2 top-2 rounded-md px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide ${STATE_TONES[item.stock_state]}`}>{t(STOCK_STATE_KEYS[item.stock_state])}</span>
-                    {!item.is_active && <span className="absolute end-2 top-2 rounded-md bg-slate-700 px-2 py-0.5 text-[10px] font-extrabold uppercase text-white">{t('store.catalog.archivedBadge')}</span>}
-                  </div>
-                  <div className="flex flex-1 flex-col gap-1 p-2.5">
-                    <span className="truncate text-[10px] font-extrabold uppercase tracking-wide text-brand-700">{item.brand ? td(item.brand) : t('store.catalog.noBrand')}</span>
-                    <span className="line-clamp-2 text-xs font-extrabold leading-snug text-graphite" title={td(item.name)}>{td(item.name)}</span>
-                    <span className="truncate text-[11px] font-semibold text-graphite/50">{[item.category, item.subcategory, item.variant].filter(Boolean).map((value) => td(value)).join(' · ')}</span>
-                    {item.description && <span className="line-clamp-2 text-[11px] font-medium text-graphite/55">{td(item.description)}</span>}
-                    <span className="mt-auto pt-1 text-sm font-extrabold text-graphite">{formatQty(item.quantity)} {td(item.unit)}</span>
-                    <span className="text-[11px] font-semibold text-graphite/55">{t('store.catalog.perUnit', { price: money(item.unit_cost, country), unit: td(item.unit) })}</span>
-                    <div className="flex flex-wrap gap-1 pt-1.5">
-                      <button type="button" onClick={() => toggle('stock', item.id)} aria-expanded={panel?.id === item.id && panel.kind === 'stock'} className={`${secondaryButton} !h-8 flex-1 !px-2`}>{t('store.catalog.updateStock')}</button>
-                      <button type="button" onClick={() => toggle('edit', item.id)} aria-label={t('store.edit')} title={t('store.edit')} className={`${secondaryButton} !h-8 !px-2`}><Pencil className="h-3.5 w-3.5" /></button>
-                      <button type="button" onClick={() => toggle('history', item.id)} aria-label={t('store.catalog.history')} title={t('store.catalog.history')} className={`${secondaryButton} !h-8 !px-2`}><History className="h-3.5 w-3.5" /></button>
-                      <button type="button" onClick={() => setArchived(item, item.is_active)} aria-label={t(item.is_active ? 'store.catalog.archive' : 'store.catalog.restore')} title={t(item.is_active ? 'store.catalog.archive' : 'store.catalog.restore')} className={`${secondaryButton} !h-8 !px-2`}>
-                        {item.is_active ? <Archive className="h-3.5 w-3.5" /> : <ArchiveRestore className="h-3.5 w-3.5" />}
-                      </button>
-                    </div>
-                  </div>
-                </li>
-                {/* The chosen action opens full width under its card's row. */}
-                {panel?.id === item.id && (
-                  <li className="col-span-full rounded-2xl border border-brand-200 bg-white p-3">
-                    <p className="text-xs font-extrabold text-graphite">{td(item.name)}{item.variant ? ` · ${td(item.variant)}` : ''}</p>
-                    {panel.kind === 'stock' && <UpdateStockPanel item={item} projects={projects} country={country} guard={guard} onDone={finished} onCancel={() => setPanel(null)} onChanged={onChanged} />}
-                    {panel.kind === 'edit' && <div className="mt-2"><ItemForm item={item} guard={guard} onDone={finished} onCancel={() => setPanel(null)} /></div>}
-                    {panel.kind === 'history' && <MovementList item={item} />}
-                  </li>
-                )}
-              </Fragment>
+                      ? <img src={imageUrl(item.image_url)} alt={td(item.name)} loading="lazy" className="h-32 w-full rounded-xl bg-slate-50 object-contain p-2" />
+                      : <span className="grid h-32 w-full place-items-center rounded-xl bg-slate-50 text-slate-300"><Package className="h-8 w-8" /></span>}
+                    {item.description && <p className="line-clamp-2 text-[11px] font-medium text-graphite/55" title={td(item.description)}>{td(item.description)}</p>}
+                  </ListCard>
+                )
+              })}
+            </CardGrid>
+            {/* The chosen action opens full width under the cards. */}
+            {visible.filter((item) => panel?.id === item.id).map((item) => (
+              <section key={item.id} aria-label={td(item.name)} className="rounded-2xl border border-brand-200 bg-white p-3">
+                <p className="text-xs font-extrabold text-graphite">{td(item.name)}{item.variant ? ` · ${td(item.variant)}` : ''}</p>
+                {panel.kind === 'stock' && <UpdateStockPanel item={item} projects={projects} country={country} guard={guard} onDone={finished} onCancel={() => setPanel(null)} onChanged={onChanged} />}
+                {panel.kind === 'edit' && <div className="mt-2"><ItemForm item={item} guard={guard} onDone={finished} onCancel={() => setPanel(null)} /></div>}
+                {panel.kind === 'history' && <MovementList item={item} />}
+              </section>
             ))}
-          </ul>
+          </div>
         ) : (
           <EmptyState icon={PackagePlus} title={t('store.catalog.none')} message={t('store.catalog.noneSub')} />
         )}

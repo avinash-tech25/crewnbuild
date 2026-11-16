@@ -17,6 +17,7 @@ import useUrlState from '../../../shared/hooks/useUrlState.js'
 import { useEffect, useState } from 'react'
 import { ClipboardList, Package, Search, ShoppingCart, Trash2, Truck, X } from 'lucide-react'
 import EmptyState from '../../../shared/dashboard/EmptyState.jsx'
+import { CardAvatar, CardChip, CardGrid, CardStatus, ListCard, cardButtonClass } from '../../../shared/ui/ListCard.jsx'
 import QuantityField from '../../shop/components/QuantityField.jsx'
 import { useLiveRefresh } from '../../../shared/hooks/useLiveRefresh.js'
 import { useProfileGate } from '../../../shared/hooks/useProfileGate.js'
@@ -315,46 +316,48 @@ export default function EngineerStorePanel({ projects, stores, activeProjectId, 
               </div>
               {/* The product catalog's card: picture, brand, name, category, then each
                   size the store holds with its stock. The whole card opens the details. */}
-              <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
+              <CardGrid testId="engineer-store-product-cards">
                 {shownProducts.map((product) => {
                   const first = product.items[0]
                   const pictured = product.items.find((item) => item.image_url)
                   const described = product.items.find((item) => item.description)
                   const inCart = product.items.filter((item) => cart[item.id])
+                  const kind = [first.category, first.subcategory].filter(Boolean).map((value) => td(value)).join(' · ')
                   return (
-                    <li key={product.key}>
-                      <article onClick={() => openDetails(product)} className="group flex h-full cursor-pointer flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-md">
-                        <div className="relative grid aspect-square place-items-center bg-slate-50">
-                          {pictured
-                            ? <img src={imageUrl(pictured.image_url)} alt={td(first.name)} loading="lazy" className="h-full w-full object-contain p-2 transition duration-300 group-hover:scale-[1.03]" />
-                            : <span className="grid h-full w-full place-items-center text-slate-300"><Package className="h-8 w-8" /></span>}
-                          {inCart.length > 0 && <span className="absolute end-2 top-2 rounded-md bg-brand-700 px-2 py-0.5 text-[10px] font-extrabold uppercase text-white">{t('store.engineer.inCartBadge')}</span>}
-                        </div>
-                        <div className="flex flex-1 flex-col gap-1 p-2.5">
-                          <span className="truncate text-[10px] font-extrabold uppercase tracking-wide text-brand-700">{first.brand ? td(first.brand) : t('store.catalog.noBrand')}</span>
-                          <span className="line-clamp-2 text-xs font-extrabold leading-snug text-graphite" title={td(first.name)}>{td(first.name)}</span>
-                          <span className="truncate text-[11px] font-semibold text-graphite/50">{[first.category, first.subcategory].filter(Boolean).map((value) => td(value)).join(' · ')}</span>
-                          {described && <span className="line-clamp-2 text-[11px] font-medium text-graphite/55">{td(described.description)}</span>}
-                          <span className="mt-auto space-y-0.5 pt-1">
-                            {product.items.map((item) => (
-                              <span key={item.id} className="block text-[11px] font-semibold text-graphite/60">
-                                {item.variant && <span className="font-extrabold text-graphite">{td(item.variant)}: </span>}
-                                {t('store.requests.available', { quantity: `${formatQty(item.quantity)} ${td(item.unit)}` })}
-                                {item.stock_state && <span className={`font-extrabold ${STATE_TONES[item.stock_state] || ''}`}> · {t(STOCK_STATE_KEYS[item.stock_state])}</span>}
-                              </span>
-                            ))}
-                          </span>
-                          <button type="button" onClick={(event) => { event.stopPropagation(); openDetails(product) }} aria-label={`${t('store.engineer.addToCart')} ${td(first.name)}`}
-                            className="mt-1.5 inline-flex h-8 w-full items-center justify-center gap-1.5 rounded-lg bg-brand-700 px-2 text-[11px] font-extrabold text-white transition hover:bg-brand-800">
-                            <ShoppingCart className="h-3.5 w-3.5" />
-                            {inCart.length ? t('store.engineer.inCart', { quantity: inCart.map((item) => `${cart[item.id]} ${td(item.unit)}`).join(' + ') }) : t('store.engineer.addToCart')}
-                          </button>
-                        </div>
-                      </article>
-                    </li>
+                    <ListCard
+                      key={product.key}
+                      onClick={() => openDetails(product)}
+                      avatar={<CardAvatar src={pictured ? imageUrl(pictured.image_url) : ''} fallback={<Package aria-hidden="true" className="h-5 w-5" />} />}
+                      title={td(first.name)}
+                      subtitle={first.brand ? td(first.brand) : t('store.catalog.noBrand')}
+                      status={inCart.length > 0 ? <CardStatus tone="green">{t('store.engineer.inCartBadge')}</CardStatus> : null}
+                      chips={kind ? [<CardChip key="kind">{kind}</CardChip>] : []}
+                      primary={(
+                        <button type="button" onClick={() => openDetails(product)} aria-label={`${t('store.engineer.addToCart')} ${td(first.name)}`} className={cardButtonClass('primary')}>
+                          <ShoppingCart className="h-3.5 w-3.5" />
+                          <span className="truncate">{inCart.length ? t('store.engineer.inCart', { quantity: inCart.map((item) => `${cart[item.id]} ${td(item.unit)}`).join(' + ') }) : t('store.engineer.addToCart')}</span>
+                        </button>
+                      )}
+                    >
+                      {/* The picture at a fixed height, so every tile is the same size. */}
+                      {pictured
+                        ? <img src={imageUrl(pictured.image_url)} alt={td(first.name)} loading="lazy" className="h-32 w-full rounded-xl bg-slate-50 object-contain p-2" />
+                        : <span className="grid h-32 w-full place-items-center rounded-xl bg-slate-50 text-slate-300"><Package className="h-8 w-8" /></span>}
+                      {described && <p className="line-clamp-2 text-[11px] font-medium text-graphite/55" title={td(described.description)}>{td(described.description)}</p>}
+                      {/* Each size the store holds, with its stock. */}
+                      <div className="mt-auto space-y-0.5">
+                        {product.items.map((item) => (
+                          <p key={item.id} className="text-[11px] font-semibold text-graphite/60">
+                            {item.variant && <span className="font-extrabold text-graphite">{td(item.variant)}: </span>}
+                            {t('store.requests.available', { quantity: `${formatQty(item.quantity)} ${td(item.unit)}` })}
+                            {item.stock_state && <span className={`font-extrabold ${STATE_TONES[item.stock_state] || ''}`}> · {t(STOCK_STATE_KEYS[item.stock_state])}</span>}
+                          </p>
+                        ))}
+                      </div>
+                    </ListCard>
                   )
                 })}
-              </ul>
+              </CardGrid>
             </>
           )}
         </div>

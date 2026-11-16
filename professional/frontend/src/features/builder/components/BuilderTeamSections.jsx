@@ -1,13 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import {
-  CalendarDays,
   Check,
   CheckCircle2,
   ChevronDown,
   Clock,
   BriefcaseBusiness,
-  FileText,
   Home,
   LayoutGrid,
   List,
@@ -19,7 +17,6 @@ import {
   Phone,
   Search,
   Send,
-  Star,
   Trash2,
   Truck,
   UserRound,
@@ -28,15 +25,16 @@ import {
 } from 'lucide-react'
 import { SmartImage } from '../../../shared/ui/ui.jsx'
 import { EntityAvatar } from '../../../shared/ui/EntityPill.jsx'
+import { CardAvatar, CardChip, CardGrid, CardStatus, ListCard, cardButtonClass } from '../../../shared/ui/ListCard.jsx'
 import { userAvatarSrc } from '../../../shared/ui/avatars.js'
 import { useLanguage } from '../../../i18n/LanguageContext.jsx'
-import { optionLabel, SUPPLIER_CATEGORY_KEYS } from '../../../i18n/optionKeys.js'
+import { optionLabel, SUPPLIER_CATEGORY_KEYS, SUPPLIER_TYPE_KEYS } from '../../../i18n/optionKeys.js'
 import { ENGINEER_CATEGORY_LABEL_KEYS, isStoreManagerCategory } from '../../onboarding/profileConstants.js'
 import { formatDate } from '../../../shared/utils/formatters.js'
 import { projectStatusText } from '../builderHelpers.js'
 import { assignmentCoverage } from '../supplierAssignment.js'
 
-function CopyButton({ text, label }) {
+function CopyButton({ text, label, className = 'inline-flex h-9 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-xs font-extrabold text-slate-700 transition hover:border-brand-300 hover:bg-brand-50 hover:text-brand-800' }) {
   const { t } = useLanguage()
   const [copied, setCopied] = useState(false)
   const copy = async () => {
@@ -52,7 +50,7 @@ function CopyButton({ text, label }) {
     <button
       type="button"
       onClick={copy}
-      className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-xs font-extrabold text-slate-700 transition hover:border-brand-300 hover:bg-brand-50 hover:text-brand-800"
+      className={className}
     >
       {copied ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
       {copied ? t('ce.copied') : label}
@@ -180,6 +178,39 @@ function MyTeamEngineers({ engineers, onViewEngineer, onAssignProject, onUnassig
     </button>
   ))
 
+  // The same action as actionButton, placed on a card's footer: Unassign on the
+  // left (red text), Assign Project on the right; a Store Manager's category or
+  // the "working on another project" note sit on the left where there is no action.
+  const cardAction = (engineer, side) => {
+    if (isStoreManagerCategory(engineer.specialization)) {
+      return side === 'secondary' ? (
+        <span className="inline-flex h-9 items-center rounded-lg border border-slate-200 bg-slate-50 px-3 text-[11px] font-extrabold text-slate-600">
+          {optionLabel(t, ENGINEER_CATEGORY_LABEL_KEYS, engineer.specialization)}
+        </span>
+      ) : null
+    }
+    if (isWorkingElsewhere(engineer)) {
+      return side === 'secondary' ? (
+        <span role="note" onClick={(event) => event.stopPropagation()} className="inline-flex h-9 cursor-not-allowed items-center rounded-lg border border-amber-200 bg-amber-50 px-3 text-[11px] font-extrabold text-amber-700">
+          {t('ce.workingOnAnotherProject')}
+        </span>
+      ) : null
+    }
+    if ((engineer.assigned_projects || []).length > 0) {
+      return side === 'secondary' ? (
+        <button type="button" onClick={() => onUnassignProject(engineer)} className={cardButtonClass('danger')}>
+          <X className="h-3.5 w-3.5" /> {t('ce.unassign')}
+        </button>
+      ) : null
+    }
+    return side === 'primary' ? (
+      <button type="button" onClick={() => onAssignProject(engineer)} className={cardButtonClass('primary')}>
+        <HardHat className="h-3.5 w-3.5" /> {t('ce.assignProject')}
+      </button>
+    ) : null
+  }
+  const cityOf = (address) => String(address || '').split(',').map((part) => part.trim()).filter(Boolean).pop() || ''
+
   return (
     <div className="space-y-3">
       {/* Search, filters and the grid / list switch */}
@@ -282,56 +313,38 @@ function MyTeamEngineers({ engineers, onViewEngineer, onAssignProject, onUnassig
           </table>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2 lg:grid-cols-3">
+        <CardGrid testId="builder-team-engineer-cards">
           {shown.map((engineer) => {
-            const busy = isBusy(engineer)
             const elsewhere = isWorkingElsewhere(engineer)
             const assigned = engineer.assigned_projects || []
             return (
-              <article
+              <ListCard
                 key={engineer.user_id}
-                role="button"
-                tabIndex={0}
                 onClick={() => onViewEngineer(engineer)}
-                onKeyDown={(event) => { if (event.key === 'Enter' && event.target === event.currentTarget) onViewEngineer(engineer) }}
-                className="relative flex cursor-pointer flex-col overflow-hidden rounded-xl border border-slate-200 bg-white p-3 pl-4 shadow-[0_14px_40px_-32px_rgba(15,23,42,0.45)] transition hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-300"
+                // Working on another builder's project: shown, details dimmed, as before.
+                dimmed={elsewhere}
+                avatar={<CardAvatar src={userAvatarSrc(engineer, 'ENGINEER')} alt={engineer.name} />}
+                title={td(engineer.name)}
+                subtitle={isStoreManagerCategory(engineer.specialization) ? optionLabel(t, ENGINEER_CATEGORY_LABEL_KEYS, engineer.specialization) : t('role.engineer')}
+                status={isBusy(engineer)
+                  ? <CardStatus status="busy" tone="amber">{t('ce.busy')}</CardStatus>
+                  : <CardStatus status="active" tone="green">{t('ce.active')}</CardStatus>}
+                rows={[
+                  { key: 'location', label: t('ce.col.location'), value: [engineer.pincode, td(cityOf(engineer.address))].filter(Boolean).join(' · ') || '—', title: td(engineer.address || '') || undefined },
+                  { key: 'experience', label: t('ce.filter.experience'), value: t('ce.yearsCount', { years: engineer.experience_years || 0 }) },
+                  { key: 'projects', label: t('ce.filter.projects'), value: engineer.project_count || 0 },
+                ]}
+                secondary={cardAction(engineer, 'secondary')}
+                primary={cardAction(engineer, 'primary')}
               >
-                {/* Status colour down the left edge: green Active, amber Busy. */}
-                <span className={`absolute inset-y-0 left-0 w-1 ${busy ? 'bg-amber-400' : 'bg-emerald-500'}`} aria-hidden="true" />
-                <div className="flex items-start gap-2.5">
-                  <EntityAvatar user={engineer} role="ENGINEER" alt={engineer.name} />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-extrabold text-slate-900">{td(engineer.name)}</p>
-                    <p className="truncate text-[11px] text-slate-500">{isStoreManagerCategory(engineer.specialization) ? optionLabel(t, ENGINEER_CATEGORY_LABEL_KEYS, engineer.specialization) : t('role.engineer')}</p>
-                  </div>
-                  {statusPill(engineer)}
-                </div>
-                {/* An engineer working on someone else's project is shown, but
-                    their details are dimmed and the action is replaced by the
-                    reason it is not available. */}
-                <div className={`mt-2.5 grid grid-cols-3 gap-2 text-[11px] ${elsewhere ? 'pointer-events-none opacity-50 blur-[0.5px]' : ''}`}>
-                  <div className="flex min-w-0 items-start gap-1.5">
-                    <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-500" />
-                    <div className="min-w-0"><p className="truncate font-extrabold text-slate-900">{engineer.pincode || '—'}</p><p className="truncate text-slate-500" title={td(engineer.address || '')}>{td(String(engineer.address || '').split(',').map((part) => part.trim()).filter(Boolean).pop() || '') || '—'}</p></div>
-                  </div>
-                  <div className="flex min-w-0 items-start gap-1.5">
-                    <CalendarDays className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-500" />
-                    <div className="min-w-0"><p className="truncate font-extrabold text-slate-900">{t('ce.yearsCount', { years: engineer.experience_years || 0 })}</p><p className="truncate text-slate-500">{t('ce.filter.experience')}</p></div>
-                  </div>
-                  <div className="flex min-w-0 items-start gap-1.5">
-                    <FileText className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-500" />
-                    <div className="min-w-0"><p className="truncate font-extrabold text-slate-900">{engineer.project_count || 0}</p><p className="truncate text-slate-500">{t('ce.filter.projects')}</p></div>
-                  </div>
-                </div>
                 {/* The project(s) this engineer holds, from the same assigned_projects data. */}
                 {assigned.length > 0 && !elsewhere && (
-                  <p className="mt-1.5 truncate text-[11px] text-slate-500" title={assigned.map((project) => td(project.title)).join(', ')}>{assigned.map((project) => td(project.title)).join(', ')}</p>
+                  <p className="truncate text-[11px] text-oc-muted" title={assigned.map((project) => td(project.title)).join(', ')}>{assigned.map((project) => td(project.title)).join(', ')}</p>
                 )}
-                <div className="mt-auto pt-2.5">{actionButton(engineer)}</div>
-              </article>
+              </ListCard>
             )
           })}
-        </div>
+        </CardGrid>
       )}
     </div>
   )
@@ -438,7 +451,7 @@ function FindEngineers({ engineers, pincode, onPincodeChange, onFind, onViewEngi
       ) : shown.length === 0 ? (
         <p className="rounded-xl border border-dashed border-slate-200 bg-white p-6 text-center text-sm font-semibold text-slate-500">{t('ce.filter.noMatch')}</p>
       ) : (
-        <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2 lg:grid-cols-3">
+        <CardGrid testId="builder-find-engineer-cards">
           {shown.map((engineer) => {
             // request_status comes from the engineer's pending membership row:
             // INCOMING (the engineer asked to join) or SENT (this builder asked).
@@ -447,86 +460,53 @@ function FindEngineers({ engineers, pincode, onPincodeChange, onFind, onViewEngi
             const isSending = sendingEngineerId === engineer.user_id
             const projects = Number(engineer.project_count || 0)
             return (
-              <article
+              <ListCard
                 key={engineer.user_id}
-                role="button"
-                tabIndex={0}
                 onClick={() => onViewEngineer(engineer)}
-                onKeyDown={(event) => { if (event.key === 'Enter' && event.target === event.currentTarget) onViewEngineer(engineer) }}
-                className="flex cursor-pointer flex-col rounded-xl border border-slate-200 bg-white p-3 shadow-[0_14px_40px_-32px_rgba(15,23,42,0.45)] transition hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-300"
-              >
-                <div className="flex items-start gap-2.5">
-                  <EntityAvatar user={engineer} role="ENGINEER" alt={engineer.name} />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-extrabold text-slate-900">{td(engineer.name)}</p>
-                    <p className="truncate text-[11px] text-slate-500">{engineer.specialization ? skillLabel(engineer.specialization) : t('role.engineer')}</p>
-                  </div>
-                  {incoming
-                    ? <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-sky-50 px-2 py-0.5 text-[11px] font-bold text-sky-700"><span className="h-1.5 w-1.5 rounded-full bg-sky-500" />{t('ui.status.pending')}</span>
-                    : <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-700"><span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />{t('ce.available')}</span>}
-                </div>
-                <div className="mt-2.5 grid grid-cols-3 gap-2 border-b border-slate-100 pb-2.5 text-[11px]">
-                  <div className="flex min-w-0 items-start gap-1.5">
-                    <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-500" />
-                    <div className="min-w-0"><p className="truncate font-extrabold text-slate-900">{engineer.pincode || '—'}</p><p className="truncate text-slate-500" title={td(engineer.address || '')}>{td(cityOf(engineer.address)) || '—'}</p></div>
-                  </div>
-                  <div className="flex min-w-0 items-start gap-1.5">
-                    <CalendarDays className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-500" />
-                    <div className="min-w-0"><p className="truncate font-extrabold text-slate-900">{t('ce.yearsCount', { years: engineer.experience_years || 0 })}</p><p className="truncate text-slate-500">{t('ce.filter.experience')}</p></div>
-                  </div>
-                  <div className="flex min-w-0 items-start gap-1.5">
-                    <FileText className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-500" />
-                    <div className="min-w-0"><p className="truncate font-extrabold text-slate-900">{projects}</p><p className="truncate text-slate-500">{t('ce.filter.projects')}</p></div>
-                  </div>
-                </div>
-                <div className="mt-auto pt-2.5">
-                  {incoming ? (
-                    // The same Accept / Reject as Pending Requests, on the same membership row.
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        type="button"
-                        onClick={(event) => { event.stopPropagation(); onRespond?.(engineer.relationship_id, 'REJECT') }}
-                        className="inline-flex h-8 items-center justify-center gap-1 rounded-lg border border-rose-200 bg-rose-50 text-xs font-extrabold text-rose-600 transition hover:bg-rose-100"
-                      >
-                        <X className="h-3.5 w-3.5" /> {t('ce.reject')}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={(event) => { event.stopPropagation(); onRespond?.(engineer.relationship_id, 'ACCEPT') }}
-                        className="inline-flex h-8 items-center justify-center gap-1 rounded-lg bg-brand-800 text-xs font-extrabold text-white transition hover:bg-brand-900"
-                      >
-                        <CheckCircle2 className="h-3.5 w-3.5" /> {t('ce.accept')}
-                      </button>
-                    </div>
-                  ) : requestSent ? (
-                    <div className="inline-flex h-8 w-full items-center justify-center gap-1.5 rounded-lg bg-brand-50 text-xs font-bold text-brand-700 ring-1 ring-brand-100">
-                      <Check className="h-3.5 w-3.5" /> {t('ce.requestSent')}
-                    </div>
-                  ) : (
-                    <button
-                      type="button"
-                      disabled={isSending}
-                      onClick={(event) => { event.stopPropagation(); onSendRequest?.(engineer) }}
-                      className="inline-flex h-8 w-full items-center justify-center gap-1.5 rounded-lg bg-brand-800 text-xs font-extrabold text-white transition hover:bg-brand-900 disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      <Send className="h-3.5 w-3.5" /> {isSending ? t('ce.sending') : t('ce.sendRequest')}
-                    </button>
-                  )}
-                </div>
-              </article>
+                avatar={<CardAvatar src={userAvatarSrc(engineer, 'ENGINEER')} alt={engineer.name} />}
+                title={td(engineer.name)}
+                subtitle={engineer.specialization ? skillLabel(engineer.specialization) : t('role.engineer')}
+                status={incoming
+                  ? <CardStatus status="pending">{t('ui.status.pending')}</CardStatus>
+                  : <CardStatus status="available">{t('ce.available')}</CardStatus>}
+                rows={[
+                  { key: 'location', label: t('ce.col.location'), value: [engineer.pincode, td(cityOf(engineer.address))].filter(Boolean).join(' · ') || '—', title: td(engineer.address || '') || undefined },
+                  { key: 'experience', label: t('ce.filter.experience'), value: t('ce.yearsCount', { years: engineer.experience_years || 0 }) },
+                  { key: 'projects', label: t('ce.filter.projects'), value: projects },
+                ]}
+                // The same Accept / Reject as Pending Requests, on the same membership row.
+                secondary={incoming ? (
+                  <button type="button" onClick={() => onRespond?.(engineer.relationship_id, 'REJECT')} className={cardButtonClass('danger')}>
+                    <X className="h-3.5 w-3.5" /> {t('ce.reject')}
+                  </button>
+                ) : null}
+                primary={incoming ? (
+                  <button type="button" onClick={() => onRespond?.(engineer.relationship_id, 'ACCEPT')} className={cardButtonClass('primary')}>
+                    <CheckCircle2 className="h-3.5 w-3.5" /> {t('ce.accept')}
+                  </button>
+                ) : requestSent ? (
+                  <span className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-brand-50 px-3.5 text-xs font-bold text-brand-700 ring-1 ring-brand-100">
+                    <Check className="h-3.5 w-3.5" /> {t('ce.requestSent')}
+                  </span>
+                ) : (
+                  <button type="button" disabled={isSending} onClick={() => onSendRequest?.(engineer)} className={cardButtonClass('primary')}>
+                    <Send className="h-3.5 w-3.5" /> {isSending ? t('ce.sending') : t('ce.sendRequest')}
+                  </button>
+                )}
+              />
             )
           })}
-        </div>
+        </CardGrid>
       )}
     </div>
   )
 }
 
-// The stripe down a supplier card's left edge, by the supplier's own type.
-const SUPPLIER_STRIPES = {
-  'Material Supplier': 'bg-emerald-500',
-  'Labor Supplier': 'bg-amber-400',
-  'Equipment Supplier': 'bg-sky-500',
+// The tone of a supplier's type chip, by the supplier's own type.
+const SUPPLIER_TYPE_TONES = {
+  'Material Supplier': 'green',
+  'Labor Supplier': 'amber',
+  'Equipment Supplier': 'blue',
 }
 
 /**
@@ -712,65 +692,62 @@ function MySuppliers({ suppliers, projectList = [], onOpenSupplierProfile, onAss
           </table>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2 lg:grid-cols-3">
+        <CardGrid testId="builder-supplier-cards">
           {shown.map((supplier) => {
             const assignments = supplier.assigned_projects || []
             const servicesText = (supplier.categories || []).map(serviceLabel).join(', ')
+            const coverage = coverageOf(supplier)
+            const titles = (coverage.projects.length ? coverage.projects.map((project) => project.title) : assignments.map((project) => project.project_title))
+              .map((title) => td(title)).filter(Boolean)
             return (
-              <article
+              <ListCard
                 key={supplier.id}
-                role="button"
-                tabIndex={0}
                 onClick={() => onOpenSupplierProfile?.(supplier)}
-                onKeyDown={(event) => { if (event.key === 'Enter' && event.target === event.currentTarget) onOpenSupplierProfile?.(supplier) }}
-                className="relative flex cursor-pointer flex-col overflow-hidden rounded-xl border border-slate-200 bg-white p-3 pl-4 shadow-[0_14px_40px_-32px_rgba(15,23,42,0.45)] transition hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-300"
+                avatar={<CardAvatar src={userAvatarSrc(supplier, 'SUPPLIER')} alt={nameOf(supplier)} />}
+                title={nameOf(supplier)}
+                subtitle={servicesText || t('role.supplier')}
+                status={<CardStatus status="accepted">{t('ui.status.accepted')}</CardStatus>}
+                rows={[
+                  { key: 'location', label: t('ce.col.location'), value: [supplier.pincode, td(cityOf(supplier.address))].filter(Boolean).join(' · ') || '—', title: td(supplier.address || '') || undefined },
+                  { key: 'rating', label: t('ce.sup.rating'), value: Number(supplier.rating || 0).toFixed(1) },
+                  { key: 'projects', label: t('ce.filter.projects'), value: assignments.length },
+                ]}
+                // The supplier's own type, which the card's coloured edge used to carry.
+                chips={supplier.supplier_category ? [
+                  <CardChip key="type" tone={SUPPLIER_TYPE_TONES[supplier.supplier_category] || 'grey'}>{optionLabel(t, SUPPLIER_TYPE_KEYS, supplier.supplier_category)}</CardChip>,
+                ] : []}
+                secondary={assignments.length > 0 ? (
+                  <button type="button" onClick={() => onUnassignSupplier?.(supplier)} className={cardButtonClass('danger')}>
+                    <X className="h-3.5 w-3.5" /> {t('ce.unassign')}
+                  </button>
+                ) : null}
+                primary={coverage.state === 'all' ? (
+                  // On every project already: nothing left to assign, so no active button.
+                  <button type="button" disabled className={cardButtonClass('primary')}>
+                    <CheckCircle2 className="h-3.5 w-3.5" /> {t('ce.assignedAllProjects')}
+                  </button>
+                ) : (
+                  <button type="button" onClick={() => onAssignSupplier?.(supplier)} className={cardButtonClass('primary')}>
+                    <BriefcaseBusiness className="h-3.5 w-3.5" /> {t('ce.assignProject')}
+                  </button>
+                )}
               >
-                <span className={`absolute inset-y-0 left-0 w-1 ${SUPPLIER_STRIPES[supplier.supplier_category] || 'bg-slate-300'}`} aria-hidden="true" />
-                <div className="flex items-start gap-2.5">
-                  <EntityAvatar user={supplier} role="SUPPLIER" alt={nameOf(supplier)} />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-extrabold text-slate-900">{nameOf(supplier)}</p>
-                    <p className="truncate text-[11px] text-slate-500" title={servicesText}>{servicesText || t('role.supplier')}</p>
-                  </div>
-                  {acceptedPill}
-                </div>
-                <div className="mt-2.5 grid grid-cols-3 gap-2 border-b border-slate-100 pb-2.5 text-[11px]">
-                  <div className="flex min-w-0 items-start gap-1.5">
-                    <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-500" />
-                    <div className="min-w-0"><p className="truncate font-extrabold text-slate-900">{supplier.pincode || '—'}</p><p className="truncate text-slate-500" title={td(supplier.address || '')}>{td(cityOf(supplier.address)) || '—'}</p></div>
-                  </div>
-                  <div className="flex min-w-0 items-start gap-1.5">
-                    <Star className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-500" />
-                    <div className="min-w-0"><p className="truncate font-extrabold text-slate-900">{Number(supplier.rating || 0).toFixed(1)}</p><p className="truncate text-slate-500">{t('ce.sup.rating')}</p></div>
-                  </div>
-                  <div className="flex min-w-0 items-start gap-1.5">
-                    <BriefcaseBusiness className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-500" />
-                    <div className="min-w-0"><p className="truncate font-extrabold text-slate-900">{assignments.length}</p><p className="truncate text-slate-500">{t('ce.filter.projects')}</p></div>
-                  </div>
-                </div>
                 {/* How many of the builder's projects this supplier is on, and which. */}
-                {(() => {
-                  const coverage = coverageOf(supplier)
-                  const titles = (coverage.projects.length ? coverage.projects.map((project) => project.title) : assignments.map((project) => project.project_title))
-                    .map((title) => td(title)).filter(Boolean)
-                  if (!titles.length) return null
-                  return (
-                    <div className="mt-2 min-w-0 text-[11px]" data-testid="supplier-coverage">
-                      {coverage.total > 0 && (
-                        <p className={`font-extrabold ${coverage.state === 'all' ? 'text-emerald-800' : 'text-slate-800'}`}>{coverageText(coverage)}</p>
-                      )}
-                      <p className="mt-0.5 flex min-w-0 items-center gap-1.5 text-slate-600" title={titles.join(', ')}>
-                        <Home className="h-3.5 w-3.5 shrink-0 text-slate-500" />
-                        <span className="truncate">{titles.join(', ')}</span>
-                      </p>
-                    </div>
-                  )
-                })()}
-                <div className="mt-auto pt-2.5">{buttons(supplier)}</div>
-              </article>
+                {titles.length > 0 && (
+                  <div className="min-w-0 text-[11px]" data-testid="supplier-coverage">
+                    {coverage.total > 0 && (
+                      <p className={`font-extrabold ${coverage.state === 'all' ? 'text-emerald-800' : 'text-slate-800'}`}>{coverageText(coverage)}</p>
+                    )}
+                    <p className="mt-0.5 flex min-w-0 items-center gap-1.5 text-slate-600" title={titles.join(', ')}>
+                      <Home className="h-3.5 w-3.5 shrink-0 text-slate-500" />
+                      <span className="truncate">{titles.join(', ')}</span>
+                    </p>
+                  </div>
+                )}
+              </ListCard>
             )
           })}
-        </div>
+        </CardGrid>
       )}
     </div>
   )
@@ -795,49 +772,28 @@ function PendingPartnerRequests({ pendingRequests, invitations, outgoingRequests
   const nothingAtAll = pendingRequests.length === 0 && invitations.length === 0 && outgoingRequests.length === 0
   const cityOf = (address) => String(address || '').split(',').map((part) => part.trim()).filter(Boolean).pop() || ''
 
-  const pill = (tone, text) => (
-    <span className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold ${tone}`}><span className="h-1.5 w-1.5 rounded-full bg-current" />{text}</span>
-  )
   const SectionTitle = ({ title, count }) => (
     <div className="flex items-center gap-2">
       <p className="text-xs font-extrabold uppercase tracking-wide text-slate-400">{title}</p>
       <span className="grid h-5 min-w-5 place-items-center rounded-full bg-slate-100 px-1.5 text-[10px] font-extrabold text-slate-600">{count}</span>
     </div>
   )
-  const engineerCard = (engineer, { stripe, status, children, dateLabel }) => (
-    <article
+  const engineerCard = (engineer, { status, secondary = null, primary = null, dateLabel }) => (
+    <ListCard
       key={engineer.relationship_id || engineer.user_id}
-      role="button"
-      tabIndex={0}
       onClick={() => onViewEngineer(engineer)}
-      onKeyDown={(event) => { if (event.key === 'Enter' && event.target === event.currentTarget) onViewEngineer(engineer) }}
-      className="relative flex cursor-pointer flex-col overflow-hidden rounded-xl border border-slate-200 bg-white p-3 pl-4 shadow-[0_14px_40px_-32px_rgba(15,23,42,0.45)] transition hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-300"
-    >
-      <span className={`absolute inset-y-0 left-0 w-1 ${stripe}`} aria-hidden="true" />
-      <div className="flex items-start gap-2.5">
-        <EntityAvatar user={engineer} role="ENGINEER" alt={engineer.name} />
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-extrabold text-slate-900">{td(engineer.name)}</p>
-          <p className="truncate text-[11px] text-slate-500">{t('role.engineer')}</p>
-        </div>
-        {status}
-      </div>
-      <div className={`mt-2.5 grid grid-cols-3 gap-2 text-[11px] ${children ? 'border-b border-slate-100 pb-2.5' : ''}`}>
-        <div className="flex min-w-0 items-start gap-1.5">
-          <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-500" />
-          <div className="min-w-0"><p className="truncate font-extrabold text-slate-900">{engineer.pincode || '—'}</p><p className="truncate text-slate-500" title={td(engineer.address || '')}>{td(cityOf(engineer.address)) || '—'}</p></div>
-        </div>
-        <div className="flex min-w-0 items-start gap-1.5">
-          <CalendarDays className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-500" />
-          <div className="min-w-0"><p className="truncate font-extrabold text-slate-900">{t('ce.yearsCount', { years: engineer.experience_years || 0 })}</p><p className="truncate text-slate-500">{t('ce.filter.experience')}</p></div>
-        </div>
-        <div className="flex min-w-0 items-start gap-1.5">
-          <Clock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-500" />
-          <div className="min-w-0"><p className="truncate font-extrabold text-slate-900">{formatDate(engineer.created_at, '—')}</p><p className="truncate text-slate-500">{dateLabel || t('ce.pend.received')}</p></div>
-        </div>
-      </div>
-      {children && <div className="mt-auto pt-2.5">{children}</div>}
-    </article>
+      avatar={<CardAvatar src={userAvatarSrc(engineer, 'ENGINEER')} alt={engineer.name} />}
+      title={td(engineer.name)}
+      subtitle={t('role.engineer')}
+      status={status}
+      rows={[
+        { key: 'location', label: t('ce.col.location'), value: [engineer.pincode, td(cityOf(engineer.address))].filter(Boolean).join(' · ') || '—', title: td(engineer.address || '') || undefined },
+        { key: 'experience', label: t('ce.filter.experience'), value: t('ce.yearsCount', { years: engineer.experience_years || 0 }) },
+        { key: 'date', label: dateLabel || t('ce.pend.received'), value: formatDate(engineer.created_at, '—') },
+      ]}
+      secondary={secondary}
+      primary={primary}
+    />
   )
 
   return (
@@ -873,30 +829,21 @@ function PendingPartnerRequests({ pendingRequests, invitations, outgoingRequests
       {joinShown.length > 0 && (
         <section className="space-y-2">
           <SectionTitle title={t('ce.pendingJoinRequests')} count={joinShown.length} />
-          <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2 lg:grid-cols-3">
+          <CardGrid testId="builder-pending-join-cards">
             {joinShown.map((engineer) => engineerCard(engineer, {
-              stripe: 'bg-sky-500',
-              status: pill('bg-sky-50 text-sky-700', t('ui.status.pending')),
-              children: (
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={(event) => { event.stopPropagation(); onRespond(engineer.relationship_id, 'REJECT') }}
-                    className="inline-flex h-8 items-center justify-center gap-1 rounded-lg border border-rose-200 bg-rose-50 text-xs font-extrabold text-rose-600 transition hover:bg-rose-100"
-                  >
-                    <X className="h-3.5 w-3.5" /> {t('ce.reject')}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={(event) => { event.stopPropagation(); onRespond(engineer.relationship_id, 'ACCEPT') }}
-                    className="inline-flex h-8 items-center justify-center gap-1 rounded-lg bg-brand-800 text-xs font-extrabold text-white transition hover:bg-brand-900"
-                  >
-                    <CheckCircle2 className="h-3.5 w-3.5" /> {t('ce.accept')}
-                  </button>
-                </div>
+              status: <CardStatus status="pending">{t('ui.status.pending')}</CardStatus>,
+              secondary: (
+                <button type="button" onClick={() => onRespond(engineer.relationship_id, 'REJECT')} className={cardButtonClass('danger')}>
+                  <X className="h-3.5 w-3.5" /> {t('ce.reject')}
+                </button>
+              ),
+              primary: (
+                <button type="button" onClick={() => onRespond(engineer.relationship_id, 'ACCEPT')} className={cardButtonClass('primary')}>
+                  <CheckCircle2 className="h-3.5 w-3.5" /> {t('ce.accept')}
+                </button>
               ),
             }))}
-          </div>
+          </CardGrid>
         </section>
       )}
 
@@ -904,48 +851,42 @@ function PendingPartnerRequests({ pendingRequests, invitations, outgoingRequests
       {inviteShown.length > 0 && (
         <section className="space-y-2">
           <SectionTitle title={t('ce.pendingInvitations')} count={inviteShown.length} />
-          <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2 lg:grid-cols-3">
+          <CardGrid testId="builder-pending-invite-cards">
             {inviteShown.map((invitation) => (
-              <article key={invitation.id} className="relative flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white p-3 pl-4 shadow-[0_14px_40px_-32px_rgba(15,23,42,0.45)]">
-                <span className="absolute inset-y-0 left-0 w-1 bg-violet-500" aria-hidden="true" />
-                <div className="flex items-start gap-2.5">
-                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-violet-50 text-violet-700"><Mail className="h-4 w-4" /></span>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-extrabold text-slate-900">{invitation.phone || invitation.email || t('ce.waitingForEngineer')}</p>
-                    <p className="truncate text-[11px] text-slate-500">{t('ce.pend.inviteCode')}: <span className="font-mono font-extrabold tracking-wider text-brand-800">{invitation.invite_code}</span></p>
-                  </div>
-                  {pill('bg-violet-50 text-violet-700', t('ui.status.pending'))}
-                </div>
-                <div className="mt-auto flex flex-wrap items-center gap-1.5 pt-2.5">
-                  <CopyButton text={invitation.invite_code} label={t('ce.copyCode')} />
-                  <CopyButton text={invitation.invite_link} label={t('ce.copyLink')} />
-                  <a
-                    href={`https://wa.me/?text=${encodeURIComponent(t('ce.shareMessage', { name: shareFrom, code: invitation.invite_code, link: invitation.invite_link }))}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex h-8 items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 text-xs font-extrabold text-slate-700 transition hover:bg-slate-50"
-                  >
-                    <MessageCircle className="h-3.5 w-3.5" /> {t('ce.whatsapp')}
-                  </a>
-                  <a
-                    href={`sms:?body=${encodeURIComponent(t('ui.contractor.smsInviteMessage', { code: invitation.invite_code, name: shareFrom, link: invitation.invite_link }))}`}
-                    className="inline-flex h-8 items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 text-xs font-extrabold text-slate-700 transition hover:bg-slate-50"
-                  >
-                    <Send className="h-3.5 w-3.5" /> {t('ui.contractor.sms')}
-                  </a>
-                  {onRevokeInvitation && (
-                    <button
-                      type="button"
-                      onClick={() => onRevokeInvitation(invitation.id)}
-                      className="inline-flex h-8 items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-2.5 text-xs font-extrabold text-rose-600 transition hover:bg-rose-100"
+              <ListCard
+                key={invitation.id}
+                avatar={<CardAvatar fallback={<Mail className="h-4 w-4 text-violet-700" />} />}
+                title={invitation.phone || invitation.email || t('ce.waitingForEngineer')}
+                subtitle={<>{t('ce.pend.inviteCode')}: <span className="font-mono font-extrabold tracking-wider text-brand-800">{invitation.invite_code}</span></>}
+                status={<CardStatus status="pending" tone="violet">{t('ui.status.pending')}</CardStatus>}
+                secondary={(
+                  <>
+                    <CopyButton text={invitation.invite_code} label={t('ce.copyCode')} className={cardButtonClass('secondary')} />
+                    <CopyButton text={invitation.invite_link} label={t('ce.copyLink')} className={cardButtonClass('secondary')} />
+                    <a
+                      href={`https://wa.me/?text=${encodeURIComponent(t('ce.shareMessage', { name: shareFrom, code: invitation.invite_code, link: invitation.invite_link }))}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className={cardButtonClass('secondary')}
                     >
-                      <Trash2 className="h-3.5 w-3.5" /> {t('ui.contractor.revoke')}
-                    </button>
-                  )}
-                </div>
-              </article>
+                      <MessageCircle className="h-3.5 w-3.5" /> {t('ce.whatsapp')}
+                    </a>
+                    <a
+                      href={`sms:?body=${encodeURIComponent(t('ui.contractor.smsInviteMessage', { code: invitation.invite_code, name: shareFrom, link: invitation.invite_link }))}`}
+                      className={cardButtonClass('secondary')}
+                    >
+                      <Send className="h-3.5 w-3.5" /> {t('ui.contractor.sms')}
+                    </a>
+                    {onRevokeInvitation && (
+                      <button type="button" onClick={() => onRevokeInvitation(invitation.id)} className={cardButtonClass('danger')}>
+                        <Trash2 className="h-3.5 w-3.5" /> {t('ui.contractor.revoke')}
+                      </button>
+                    )}
+                  </>
+                )}
+              />
             ))}
-          </div>
+          </CardGrid>
         </section>
       )}
 
@@ -953,13 +894,12 @@ function PendingPartnerRequests({ pendingRequests, invitations, outgoingRequests
       {sentShown.length > 0 && (
         <section className="space-y-2">
           <SectionTitle title={t('ce.sentRequests')} count={sentShown.length} />
-          <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2 lg:grid-cols-3">
+          <CardGrid testId="builder-pending-sent-cards">
             {sentShown.map((engineer) => engineerCard(engineer, {
-              stripe: 'bg-amber-400',
-              status: pill('bg-amber-50 text-amber-700', t('ce.requestSent')),
+              status: <CardStatus status="requested" tone="amber">{t('ce.requestSent')}</CardStatus>,
               dateLabel: t('dash.contractor.filter.sent'),
             }))}
-          </div>
+          </CardGrid>
         </section>
       )}
     </div>

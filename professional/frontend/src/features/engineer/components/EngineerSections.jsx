@@ -23,8 +23,7 @@ import {
 import DashboardHero from '../../../shared/dashboard/DashboardHero.jsx'
 import HeroConstructionScene from '../../../shared/dashboard/HeroConstructionScene.jsx'
 import { SmartImage } from '../../../shared/ui/ui.jsx'
-import { EntityCard } from '../../../shared/ui/EntityCard.jsx'
-import { EntityAvatar, EntityPill } from '../../../shared/ui/EntityPill.jsx'
+import { CardAvatar, CardChip, CardGrid, CardStatus, ListCard, cardButtonClass } from '../../../shared/ui/ListCard.jsx'
 import { imageUrl } from '../../../shared/api/apiClient.js'
 import { avatarFromPath, userAvatarSrc } from '../../../shared/ui/avatars.js'
 import { buildingTypeText, inr, projectStatusText } from '../../builder/builderHelpers.js'
@@ -134,13 +133,11 @@ export function EngineerMyProjectsSection({ projectList, onOpenProject }) {
           </p>
         </section>
       ) : (
-        // The compact project cards the Builder and House Owner dashboards use:
-        // cover, project, builder company / person and the status in the
-        // corner; then pincode, building type and end date pills, progress
-        // and amount, the completion bar, the schedule and Open Project. Every value is one the
-        // /engineers/my-projects payload already sends; a missing one is
-        // simply not drawn.
-        <div className="engineer-project-cards grid auto-rows-[minmax(178px,1fr)] grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        // The shared list card: cover, project, builder company / person and
+        // the status; then pincode, building type, end date and amount, the
+        // progress, completion bar and schedule, and Open Project. Every value
+        // is one the /engineers/my-projects payload already sends.
+        <CardGrid testId="engineer-project-cards">
           {projectList.map((project) => {
             // Who the engineer answers to, from the fields /engineers/my-projects
             // already sends: the builder's company leads, the project sits under
@@ -163,7 +160,6 @@ export function EngineerMyProjectsSection({ projectList, onOpenProject }) {
             const buildingType = buildingTypeText(project.building_type, t)
             const status = String(project.status || '').toLowerCase()
             const statusText = status ? projectStatusText(project.status, t) : ''
-            const statusLive = status === 'active' || status === 'in_progress' || status === 'accepted'
             const subtitle = identityBottom ? `${identityTop} · ${identityBottom}` : identityTop
             const progressValue = completionPercent(project) !== null
               ? completionText(project, t)
@@ -172,63 +168,68 @@ export function EngineerMyProjectsSection({ projectList, onOpenProject }) {
                 : ['in_progress', 'end_date_passed'].includes(project.schedule_status) ? formatPercent(elapsed) : ''
             const progressLabel = completionPercent(project) !== null ? t('dash.engineer.complete') : t('dash.contractor.progress')
             return (
-              <div key={project.id} className="relative h-full">
-                {/* The project status, in the card's top corner beside the title. */}
-                {statusText && (
-                  <span className={`pointer-events-none absolute end-3 top-3 z-[1] inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-bold max-wide:end-2.5 max-wide:top-2.5 ${statusLive ? 'bg-emerald-50 text-emerald-700' : 'bg-oc-sunken text-oc-muted'}`}>
-                    <span aria-hidden="true" className={`h-1.5 w-1.5 rounded-full ${statusLive ? 'bg-emerald-500' : 'bg-oc-faint'}`} />
-                    {statusText}
-                  </span>
+              <ListCard
+                key={project.id}
+                onClick={() => onOpenProject(project)}
+                avatar={(
+                  <CardAvatar
+                    src={project.cover_image_url ? imageUrl(project.cover_image_url) : ''}
+                    alt={projectTitle}
+                    fallback={avatarInitials(project.title, t('dash.common.project'), 1)}
+                  />
                 )}
-                <EntityCard
-                  compact
-                  fill
-                  onClick={() => onOpenProject(project)}
-                  avatar={
-                    <EntityAvatar
-                      src={project.cover_image_url ? imageUrl(project.cover_image_url) : ''}
-                      alt={projectTitle}
-                      fallback={avatarInitials(project.title, t('dash.common.project'), 1)}
-                    />
-                  }
-                  // Room on the right of the name for the status in the corner.
-                  title={<span className={`block truncate ${statusText ? 'pe-20' : ''}`}>{projectTitle}</span>}
-                  // The builder company and the builder (or the owner who hired
-                  // the engineer on a self-construction project).
-                  subtitle={subtitle}
-                  pills={[
-                    { key: 'pincode', text: project.pincode || '—', icon: MapPin, tone: 'positive' },
-                    ...(buildingType ? [{ key: 'type', text: buildingType, tone: 'info' }] : []),
-                    ...(endDate ? [{ key: 'end', text: endDate, icon: CalendarDays, tone: 'accent' }] : []),
-                  ]}
-                >
-                  {/* Progress on the left, the amount on the right, pinned to the
-                      foot of the card. */}
-                  <div className="mt-auto flex flex-wrap items-center justify-between gap-x-2 gap-y-1 pt-2">
-                    <span className="text-[11px] font-semibold text-oc-muted">{progressValue ? `${progressLabel}: ${progressValue}` : ''}</span>
-                    {amount ? <span className="text-sm font-extrabold text-oc-ink">{inr(amount)}</span> : null}
-                  </div>
+                title={projectTitle}
+                // The builder company and the builder (or the owner who hired
+                // the engineer on a self-construction project).
+                subtitle={subtitle}
+                status={statusText ? <CardStatus status={status}>{statusText}</CardStatus> : null}
+                rows={[
+                  { key: 'pincode', label: t('dash.common.pincode'), value: project.pincode || '—' },
+                  { key: 'type', label: t('dash.common.buildingType'), value: buildingType || '—' },
+                  { key: 'end', label: t('dash.owner.projectDetails.endDate'), value: endDate || '—' },
+                  { key: 'amount', label: t('dash.common.budget'), value: amount ? inr(amount) : '—' },
+                ]}
+                primary={(
+                  <button type="button" onClick={() => onOpenProject(project)} className={cardButtonClass('primary')}>
+                    {t('dash.engineer.openProject')} <ArrowUpRight aria-hidden="true" className="h-3.5 w-3.5 rtl:-scale-x-100" />
+                  </button>
+                )}
+              >
+                {/* Progress, the completion bar and the schedule, at the foot of the body. */}
+                <div className="mt-auto">
+                  <p className="min-h-[16px] truncate text-[11px] font-semibold text-oc-muted">{progressValue ? `${progressLabel}: ${progressValue}` : ''}</p>
                   {/* Fills to the schedule figure (elapsed planned time). */}
                   <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-slate-200">
                     <div className="h-full rounded-full bg-emerald-500" style={{ width: `${elapsed}%` }} />
                   </div>
-                  <div className="mt-1 flex min-h-[15px] items-center gap-2">
-                    <p aria-hidden={schedule ? undefined : true} className="min-w-0 flex-1 truncate text-[10px] font-semibold text-oc-muted">{schedule ? `${t('progress.schedule')}: ${schedule}` : ''}</p>
-                    <button
-                      type="button"
-                      onClick={() => onOpenProject(project)}
-                      className="inline-flex shrink-0 items-center gap-1 rounded text-[10px] font-extrabold text-oc-green hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oc-green/40"
-                    >
-                      {t('dash.engineer.openProject')} <ArrowUpRight aria-hidden="true" className="h-3 w-3 rtl:-scale-x-100" />
-                    </button>
-                  </div>
-                </EntityCard>
-              </div>
+                  <p aria-hidden={schedule ? undefined : true} className="mt-1 min-h-[15px] truncate text-[10px] font-semibold text-oc-muted">{schedule ? `${t('progress.schedule')}: ${schedule}` : ''}</p>
+                </div>
+              </ListCard>
             )
           })}
-        </div>
+        </CardGrid>
       )}
     </div>
+  )
+}
+
+// The tone each team relationship's word reads in on a card.
+const TEAM_STATUS_TONES = { ACTIVE: 'green', PENDING: 'amber', REJECTED: 'red' }
+
+/** One builder team (or a request to join one) as a list card. */
+function TeamCard({ team, title, secondary = null, primary = null, showStatus = true }) {
+  const { t, td } = useLanguage()
+  return (
+    <ListCard
+      avatar={<CardAvatar fallback={avatarInitials(team.company_name || team.contractor_name, t('role.builder'))} />}
+      title={title}
+      subtitle={td(team.contractor_name)}
+      // No .toUpperCase() on the label: it is already translated.
+      status={showStatus ? <CardStatus tone={TEAM_STATUS_TONES[team.status] || 'grey'}>{teamStatusMeta(team.status, t).label}</CardStatus> : null}
+      rows={[{ key: 'pincode', label: t('dash.common.pincode'), value: team.pincode || '—' }]}
+      secondary={secondary}
+      primary={primary}
+    />
   )
 }
 
@@ -279,25 +280,11 @@ export function EngineerJoinTeamSection({ pendingCode, teams, incomingRequests, 
       {activeTeams.length > 0 && (
         <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_14px_40px_-30px_rgba(15,23,42,0.35)]">
           <p className="mb-2 text-xs font-extrabold uppercase tracking-wide text-slate-400">{t('dash.engineer.myTeam')}</p>
-          <div className="divide-y divide-slate-100 rounded-xl border border-slate-200">
+          <CardGrid testId="engineer-team-cards">
             {activeTeams.map((team) => (
-              <div key={team.relationship_id} className="flex items-center gap-3 px-3.5 py-2.5 transition hover:bg-brand-50/40">
-                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-brand-600 text-xs font-extrabold text-white">
-                  {avatarInitials(team.company_name || team.contractor_name, t('role.builder'))}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-extrabold text-slate-950">{td(team.company_name)}</p>
-                  <p className="truncate text-xs font-medium text-slate-500">{td(team.contractor_name)} · {t('dash.common.pincode')} {team.pincode || '—'}</p>
-                </div>
-                {/* No .toUpperCase(): the label is already translated, and
-                    upper-casing a translated string does nothing in Indic
-                    scripts and is wrong in Arabic. */}
-                <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-extrabold ring-1 ${teamStatusMeta(team.status).pill}`}>
-                  {teamStatusMeta(team.status, t).label}
-                </span>
-              </div>
+              <TeamCard key={team.relationship_id} team={team} title={td(team.company_name)} />
             ))}
-          </div>
+          </CardGrid>
         </section>
       )}
 
@@ -305,59 +292,37 @@ export function EngineerJoinTeamSection({ pendingCode, teams, incomingRequests, 
       {incomingRequests && incomingRequests.length > 0 && (
         <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_14px_40px_-30px_rgba(15,23,42,0.35)]">
           <p className="mb-2 text-xs font-extrabold uppercase tracking-wide text-slate-400">{t('dash.engineer.incomingBuilderRequests')}</p>
-          <div className="divide-y divide-slate-100 rounded-xl border border-slate-200">
+          <CardGrid testId="engineer-incoming-team-requests">
             {incomingRequests.map((request) => (
-              <div key={request.relationship_id} className="flex items-center gap-3 px-3.5 py-2.5 transition hover:bg-brand-50/40">
-                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-brand-600 text-xs font-extrabold text-white">
-                  {avatarInitials(request.company_name || request.contractor_name, t('role.builder'))}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-extrabold text-slate-950">{td(request.company_name || request.contractor_name)}</p>
-                  <p className="truncate text-xs font-medium text-slate-500">{td(request.contractor_name)} · {t('dash.common.pincode')} {request.pincode || '—'}</p>
-                </div>
-                {onRespondToBuilder && (
-                  <div className="flex shrink-0 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => onRespondToBuilder(request.relationship_id, 'ACCEPT')}
-                      className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-oc-green px-3 text-xs font-extrabold text-white transition hover:bg-oc-deep"
-                    >
-                      <CheckCircle2 className="h-3.5 w-3.5" /> {t('ce.accept')}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => onRespondToBuilder(request.relationship_id, 'REJECT')}
-                      className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-rose-200 bg-white px-3 text-xs font-extrabold text-rose-600 transition hover:border-rose-300 hover:bg-rose-50"
-                    >
-                      {t('ce.reject')}
-                    </button>
-                  </div>
-                )}
-              </div>
+              <TeamCard
+                key={request.relationship_id}
+                team={request}
+                title={td(request.company_name || request.contractor_name)}
+                showStatus={false}
+                secondary={onRespondToBuilder ? (
+                  <button type="button" onClick={() => onRespondToBuilder(request.relationship_id, 'REJECT')} className={cardButtonClass('danger')}>
+                    {t('ce.reject')}
+                  </button>
+                ) : null}
+                primary={onRespondToBuilder ? (
+                  <button type="button" onClick={() => onRespondToBuilder(request.relationship_id, 'ACCEPT')} className={cardButtonClass('primary')}>
+                    <CheckCircle2 className="h-3.5 w-3.5" /> {t('ce.accept')}
+                  </button>
+                ) : null}
+              />
             ))}
-          </div>
+          </CardGrid>
         </section>
       )}
 
       {pendingTeams.length > 0 && (
         <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_14px_40px_-30px_rgba(15,23,42,0.35)]">
           <p className="mb-2 text-xs font-extrabold uppercase tracking-wide text-slate-400">{t('ui.requests')}</p>
-          <div className="divide-y divide-slate-100 rounded-xl border border-slate-200">
+          <CardGrid testId="engineer-team-requests">
             {pendingTeams.map((team) => (
-              <div key={team.relationship_id} className="flex items-center gap-3 px-3.5 py-2.5 transition hover:bg-brand-50/40">
-                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-slate-200 text-xs font-extrabold text-slate-600">
-                  {avatarInitials(team.company_name || team.contractor_name, t('role.builder'))}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-extrabold text-slate-950">{td(team.company_name)}</p>
-                  <p className="truncate text-xs font-medium text-slate-500">{td(team.contractor_name)} · {t('dash.common.pincode')} {team.pincode || '—'}</p>
-                </div>
-                <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-extrabold ring-1 ${teamStatusMeta(team.status).pill}`}>
-                  {teamStatusMeta(team.status, t).label}
-                </span>
-              </div>
+              <TeamCard key={team.relationship_id} team={team} title={td(team.company_name)} />
             ))}
-          </div>
+          </CardGrid>
         </section>
       )}
     </div>
@@ -380,54 +345,45 @@ export function EngineerContractorsSection({ contractors, teamStatusByContractor
           </p>
         </section>
       ) : (
-        <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2 xl:grid-cols-3">
+        <CardGrid testId="engineer-builder-cards">
           {contractors.map((contractor) => {
             const teamState = teamStatusByContractor(contractor.user_id)
+            const name = td(displayName(contractor.company_name, contractor.name)) || t('role.builder')
             return (
-              <EntityCard
+              <ListCard
                 key={contractor.user_id}
-                compact
-                icon={Building2}
-                label={t('role.contractor')}
                 onClick={() => onViewContractor(contractor)}
                 avatar={
                   /* The company mark leads on a company card, as it always
                       has; without one this falls through to the builder's own
                       avatar instead of a generic icon. */
-                  <EntityAvatar
+                  <CardAvatar
                     src={contractor.company_logo_url ? imageUrl(contractor.company_logo_url) : userAvatarSrc(contractor, 'BUILDER')}
                     alt={td(displayName(contractor.company_name, contractor.name))}
                   />
                 }
-                title={<span className="inline-flex max-w-full items-center gap-1.5"><span className="truncate">{td(displayName(contractor.company_name, contractor.name)) || t('role.builder')}</span><BuilderTierBadge builderId={contractor.user_id} /></span>}
+                label={name}
+                title={<span className="inline-flex max-w-full items-center gap-1.5"><span className="truncate" title={name}>{name}</span><BuilderTierBadge builderId={contractor.user_id} /></span>}
                 subtitle={`${contractor.completed_projects || 0} ${t('dash.supplier.projects')}`}
-                pills={[
-                  { key: 'pincode', text: `${t('dash.common.pincode')} ${contractor.pincode || '—'}`, icon: MapPin },
-                  { key: 'experience', text: `${contractor.experience_years || 0} ${t('dash.supplier.yrs')}` },
-                  { key: 'rating', text: String(contractor.rating || t('dash.common.new')), tone: 'brand', icon: Star },
+                rows={[
+                  { key: 'pincode', label: t('dash.common.pincode'), value: contractor.pincode || '—' },
+                  { key: 'experience', label: t('ce.experience'), value: `${contractor.experience_years || 0} ${t('dash.supplier.yrs')}` },
+                  { key: 'rating', label: t('dash.common.rating'), value: String(contractor.rating || t('dash.common.new')) },
                 ]}
-              >
-                {teamState === 'active' ? (
-                  <div className="mt-3">
-                    <EntityPill tone="positive" icon={CheckCircle2}>{t('dash.engineer.inYourTeam')}</EntityPill>
-                  </div>
+                // In the team, request sent, or Request to Join: always in the footer.
+                primary={teamState === 'active' ? (
+                  <CardChip tone="green" icon={CheckCircle2}>{t('dash.engineer.inYourTeam')}</CardChip>
                 ) : teamState === 'pending' ? (
-                  <div className="mt-3">
-                    <EntityPill tone="accent" dot icon={Clock}>{t('dash.engineer.requestSent')}</EntityPill>
-                  </div>
+                  <CardChip tone="amber" icon={Clock}>{t('dash.engineer.requestSent')}</CardChip>
                 ) : (
-                  <button
-                    type="button"
-                    onClick={() => onRequestJoin(contractor)}
-                    className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-oc-green px-3 py-1.5 text-[11px] font-bold text-white transition hover:bg-oc-deep"
-                  >
+                  <button type="button" onClick={() => onRequestJoin(contractor)} className={cardButtonClass('primary')}>
                     <UserRound className="h-3.5 w-3.5" /> {t('dash.engineer.requestToJoin')}
                   </button>
                 )}
-              </EntityCard>
+              />
             )
           })}
-        </div>
+        </CardGrid>
       )}
     </div>
   )
@@ -449,50 +405,37 @@ export function EngineerOpportunitiesSection({ opportunities, appliedKeys, onApp
           </p>
         </section>
       ) : (
-        <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_14px_40px_-30px_rgba(15,23,42,0.35)]">
-          <div className="divide-y divide-slate-100">
-            {opportunities.map((opportunity) => {
-              const applied = appliedKeys.includes(String(opportunity.project_id))
-              return (
-                <div key={opportunity.project_id} className="flex flex-wrap items-center gap-3 px-4 py-3 transition hover:bg-brand-50/40">
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-extrabold text-slate-950">{td(opportunity.title)}</p>
-                    <p className="mt-0.5 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-xs font-medium text-slate-500">
-                      <span className="flex items-center gap-1">
-                        <Building2 className="h-3 w-3 shrink-0 text-brand-700" /> {td(opportunity.company_name)}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <MapPin className="h-3 w-3 shrink-0 text-brand-700" /> {td(opportunity.address)} · {opportunity.pincode}
-                      </span>
-                      {opportunity.construction_type && <span>{constructionTypeLabel(opportunity.construction_type)}</span>}
-                    </p>
-                  </div>
-                  <span className="shrink-0 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-extrabold text-slate-700">{inr(opportunity.budget)}</span>
-                  <button
-                    type="button"
-                    onClick={() => onView(opportunity)}
-                    className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-xs font-extrabold text-slate-700 transition hover:border-brand-300 hover:bg-brand-50 hover:text-brand-800"
-                  >
+        <CardGrid testId="engineer-opportunity-cards">
+          {opportunities.map((opportunity) => {
+            const applied = appliedKeys.includes(String(opportunity.project_id))
+            const title = td(opportunity.title)
+            return (
+              <ListCard
+                key={opportunity.project_id}
+                avatar={<CardAvatar fallback={<Briefcase aria-hidden="true" className="h-5 w-5" />} />}
+                title={title}
+                subtitle={td(opportunity.company_name)}
+                rows={[
+                  { key: 'location', label: t('dash.common.location'), value: `${td(opportunity.address)} · ${opportunity.pincode}` },
+                  opportunity.construction_type && { key: 'type', label: t('dash.common.constructionType'), value: constructionTypeLabel(opportunity.construction_type) },
+                  { key: 'budget', label: t('dash.common.budget'), value: inr(opportunity.budget) },
+                ]}
+                secondary={(
+                  <button type="button" onClick={() => onView(opportunity)} className={cardButtonClass('secondary')}>
                     {t('dash.engineer.viewOpportunity')}
                   </button>
-                  {applied ? (
-                    <span className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg bg-emerald-50 px-3 text-xs font-extrabold text-emerald-700">
-                      <CheckCircle2 className="h-3.5 w-3.5" /> {t('dash.engineer.applied')}
-                    </span>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => onApply(opportunity)}
-                      className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg bg-brand-600 px-3 text-xs font-extrabold text-white transition hover:bg-brand-700"
-                    >
-                      {t('dash.engineer.apply')} <ArrowRight className="h-3.5 w-3.5" />
-                    </button>
-                  )}
-                </div>
-              )
-            })}
-          </div>
-        </section>
+                )}
+                primary={applied ? (
+                  <CardChip tone="green" icon={CheckCircle2}>{t('dash.engineer.applied')}</CardChip>
+                ) : (
+                  <button type="button" onClick={() => onApply(opportunity)} className={cardButtonClass('primary')}>
+                    {t('dash.engineer.apply')} <ArrowRight className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              />
+            )
+          })}
+        </CardGrid>
       )}
     </div>
   )

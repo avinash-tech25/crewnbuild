@@ -14,6 +14,7 @@ import { AlertTriangle, ArrowRight, Building2, CheckCircle2, Clock, Flag, Shield
 import { fetchAdminOverview } from '../adminApi.js'
 import { CountryFlag } from './AdminCountry.jsx'
 import { mayOpen } from '../adminAccess.js'
+import { CardAvatar, CardChip, CardGrid, ListCard, cardButtonClass } from '../../../shared/ui/ListCard.jsx'
 
 const SCOPE_LABELS = { GLOBAL: 'Global', IN: 'India' }
 
@@ -105,46 +106,29 @@ function AttentionCard({ card, value, split, needsAction, onNav }) {
 
 function CountryCard({ country, onNav, canOpenAccounts }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
-      <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-5 py-3 dark:border-slate-800">
-        <h3 className="flex items-center gap-2 font-display text-[15px] font-bold text-graphite dark:text-white">
-          <CountryFlag country={country.country} className="h-4 w-6" />
-          {country.country}
-        </h3>
-        <span className="rounded-md bg-oc-mint px-2 py-0.5 text-[11px] font-bold uppercase text-oc-deep">
-          {country.scope}
-        </span>
-      </div>
-      <dl className="grid grid-cols-2 divide-x divide-y divide-slate-100 sm:grid-cols-4 sm:divide-y-0 dark:divide-slate-800">
-        {[
-          ['Accounts', country.accounts],
-          ['Projects', country.projects],
-          ['Open reports', country.open_reports],
-          ['Administrators', country.administrators],
-        ].map(([label, value]) => (
-          <div key={label} className="px-5 py-3">
-            <dt className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-600 dark:text-slate-300">
-              {label}
-            </dt>
-            <dd className="mt-1 font-display text-xl font-bold tabular-nums text-graphite dark:text-white">
-              {value}
-            </dd>
-          </div>
-        ))}
-      </dl>
-      {canOpenAccounts && (
-      <div className="border-t border-slate-100 px-5 py-2.5 dark:border-slate-800">
-        <button
-          type="button"
-          onClick={() => onNav(`users?country=${encodeURIComponent(country.country)}`)}
-          className="inline-flex items-center gap-1.5 rounded text-xs font-extrabold text-brand-800 hover:text-brand-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-oc-deep dark:text-brand-300"
-        >
-          <CountryFlag country={country.country} className="h-2.5 w-4" />
-          Open {country.country} accounts →
-        </button>
-      </div>
-      )}
-    </div>
+    <ListCard
+      title={country.country}
+      avatar={<CardAvatar fallback={<CountryFlag country={country.country} className="h-4 w-6" />} />}
+      chips={[<CardChip key="scope" tone="green">{country.scope}</CardChip>]}
+      rows={[
+        ['Accounts', country.accounts],
+        ['Projects', country.projects],
+        ['Open reports', country.open_reports],
+        ['Administrators', country.administrators],
+      ].map(([label, value]) => ({ key: label, label, value }))}
+      primary={
+        canOpenAccounts && (
+          <button
+            type="button"
+            onClick={() => onNav(`users?country=${encodeURIComponent(country.country)}`)}
+            className={cardButtonClass('primary')}
+          >
+            <CountryFlag country={country.country} className="h-2.5 w-4" />
+            Open {country.country} accounts →
+          </button>
+        )
+      }
+    />
   )
 }
 
@@ -233,12 +217,12 @@ export function Overview({ identity, Panel, useAsync, onNav }) {
               ? 'Each location administrator sees just their own.'
               : 'The market you are responsible for.'}
           </p>
-          <div
-            className={`mt-3 grid gap-3 ${identity.is_global ? 'lg:grid-cols-2' : 'sm:grid-cols-2'}`}
-          >
-            {data.countries.map((country) => (
-              <CountryCard key={country.scope} country={country} onNav={onNav} canOpenAccounts={mayOpen(identity, 'users')} />
-            ))}
+          <div className="mt-3">
+            <CardGrid testId="admin-country-cards" label="Countries">
+              {data.countries.map((country) => (
+                <CountryCard key={country.scope} country={country} onNav={onNav} canOpenAccounts={mayOpen(identity, 'users')} />
+              ))}
+            </CardGrid>
           </div>
         </section>
       )}

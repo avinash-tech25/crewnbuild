@@ -1,12 +1,11 @@
 import useUrlState from '../../../shared/hooks/useUrlState.js'
 import {
-  Briefcase, Building2, CheckCircle2, ChevronRight, Clock, Eye, FileText, Home, MapPin, Package, Search, Send, Star, Tags, Users,
+  Briefcase, Building2, CheckCircle2, ChevronRight, Clock, Eye, FileText, Home, Package, Search, Send, Tags, Users,
 } from 'lucide-react'
 import { Card, EmptyState } from '../../../shared/dashboard/RoleDashboardUi.jsx'
 import { SmartImage } from '../../../shared/ui/ui.jsx'
 import { userAvatarSrc } from '../../../shared/ui/avatars.js'
-import { EntityCard } from '../../../shared/ui/EntityCard.jsx'
-import { EntityAvatar, EntityPill } from '../../../shared/ui/EntityPill.jsx'
+import { CardAvatar, CardChip, CardGrid, CardStatus, ListCard, cardButtonClass } from '../../../shared/ui/ListCard.jsx'
 import { formatDate } from '../../../shared/utils/formatters.js'
 import { isPartyRequest, memberSinceLabel, partyDetailRows, partyLocation } from '../../requests/counterparty.js'
 import { constructionTypeLabel } from '../../../shared/utils/roleLabels.js'
@@ -85,6 +84,9 @@ const CLIENT_ROLE_KEYS = {
   ENGINEER: 'role.engineer',
   SUPPLIER: 'role.supplier',
 }
+// An empty footer for a card with nothing to do, so every card in a list that
+// has actions keeps the same footer edge.
+const NO_ACTIONS = <span aria-hidden="true" />
 const REQUEST_STATUS_TONE = {
   pending: 'bg-amber-400',
   accepted: 'bg-emerald-500',
@@ -222,93 +224,59 @@ export function SupplierRequestsSection({ requestMessage, requestList, viewMode 
               })}
         </DataTable>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        <CardGrid testId="supplier-request-cards">
           {requestList.map((request) => {
-            const { name, status, canAct, canOpen } = requestView(request)
+            const { name, status, canAct, canOpen, canWithdraw } = requestView(request)
+            // Who the builder is: only the rows that apply, each with a value.
+            const partyRows = isPartyRequest(request)
+              ? partyDetailRows(request, t, td).filter(([label]) => label !== t('req.party.builderName') && label !== t('req.party.company'))
+              : []
             return (
-            <article
-              key={request.id}
-              {...(canOpen ? {
-                role: 'button',
-                tabIndex: 0,
-                onClick: () => onOpen(request),
-                onKeyDown: (event) => {
-                  if (event.key === 'Enter' || event.key === ' ') {
-                    event.preventDefault()
-                    onOpen(request)
-                  }
-                },
-              } : {})}
-              className={`dash-gold-hover flex flex-col rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_14px_40px_-30px_rgba(15,23,42,0.35)] ${canOpen ? 'cursor-pointer transition' : ''}`}
-            >
-              <div className="flex items-center gap-3">
-                <SmartImage
-                  src={userAvatarSrc(request)}
-                  alt={td(name)}
-                  className="h-10 w-10 shrink-0 rounded-full object-cover"
-                />
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-extrabold text-graphite">{td(name)}</p>
-                  {isPartyRequest(request) ? (
-                    // A builder's request with no project: the builder's company, not
-                    // the server's "General" stand-in.
-                    request.profile_title && td(request.profile_title) !== td(name) && (
-                      <p className="truncate text-xs font-semibold text-graphite/55">{td(request.profile_title)}</p>
-                    )
-                  ) : (
-                    <p className="truncate text-xs font-semibold text-graphite/55">{td(request.project_title)}</p>
-                  )}
-                </div>
-              </div>
-              {isPartyRequest(request) && (
-                // Who the builder is: only the rows that apply, each with a value.
-                <dl className="mt-2.5 space-y-1 text-xs" data-testid="party-details">
-                  {partyDetailRows(request, t, td).filter(([label]) => label !== t('req.party.builderName') && label !== t('req.party.company')).map(([label, value]) => (
-                    <div key={label} className="flex items-start justify-between gap-3">
-                      <dt className="shrink-0 text-graphite/45">{label}</dt>
-                      <dd className="min-w-0 truncate text-right font-semibold text-graphite/80">{value}</dd>
-                    </div>
-                  ))}
-                </dl>
-              )}
-              <div className="mt-3 flex items-center justify-between gap-3 border-t border-slate-100 pt-3">
-                <span className="flex min-w-0 items-center gap-1.5 text-xs font-bold text-graphite/60">
-                  <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${REQUEST_STATUS_TONE[status] || 'bg-slate-300'}`} />
-                  <span className="truncate">
+              <ListCard
+                key={request.id}
+                onClick={canOpen ? () => onOpen(request) : undefined}
+                avatar={<CardAvatar src={userAvatarSrc(request)} alt={td(name)} />}
+                title={td(name)}
+                subtitle={isPartyRequest(request)
+                  // A builder's request with no project: the builder's company, not
+                  // the server's "General" stand-in.
+                  ? (request.profile_title && td(request.profile_title) !== td(name) ? td(request.profile_title) : null)
+                  : td(request.project_title)}
+                status={(
+                  <CardStatus status={status}>
                     {REQUEST_STATUS_KEYS[status] ? t(REQUEST_STATUS_KEYS[status]) : request.status}
                     {request.is_sender ? ` · ${t('dash.sent')}` : ''}
-                  </span>
-                </span>
-                {canOpen && (
-                  <span className="flex shrink-0 items-center gap-0.5 text-[11px] font-bold text-brand-700">
+                  </CardStatus>
+                )}
+                rows={partyRows.slice(0, 4).map(([label, value]) => ({ key: label, label, value }))}
+                chips={partyRows.slice(4).map(([label, value]) => <CardChip key={label}>{`${label}: ${value}`}</CardChip>)}
+                secondary={canAct ? (
+                  <button type="button" onClick={() => onReject(request.id)} className={cardButtonClass('danger')}>
+                    {t('dash.common.reject')}
+                  </button>
+                ) : canWithdraw ? (
+                  <button
+                    type="button"
+                    onClick={(event) => { event.stopPropagation(); onWithdraw(request.id) }}
+                    className={cardButtonClass('danger')}
+                  >
+                    {t('property.action.withdraw')}
+                  </button>
+                ) : NO_ACTIONS}
+                primary={canAct ? (
+                  <button type="button" onClick={() => onAccept(request.id)} className={cardButtonClass('primary')}>
+                    {t('dash.common.accept')}
+                  </button>
+                ) : canOpen ? (
+                  <button type="button" onClick={() => onOpen(request)} className={cardButtonClass('primary')}>
                     {t('dash.common.viewProfile')}
                     <ChevronRight className="h-3.5 w-3.5" />
-                  </span>
-                )}
-                {canAct && (
-                  <span className="flex shrink-0 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => onReject(request.id)}
-                      className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-bold text-rose-700 transition hover:bg-rose-100"
-                    >
-                      {t('dash.common.reject')}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => onAccept(request.id)}
-                      className="rounded-lg bg-brand-700 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-brand-800"
-                    >
-                      {t('dash.common.accept')}
-                    </button>
-                  </span>
-                )}
-                {requestView(request).canWithdraw && withdrawButton(request)}
-              </div>
-            </article>
-          )
-        })}
-        </div>
+                  </button>
+                ) : null}
+              />
+            )
+          })}
+        </CardGrid>
       )}
     </div>
   )
@@ -334,47 +302,39 @@ export function SupplierFindClientsSection({ clientList, requestList = [], reque
   ]
 
   const requestStatusPill = (status) => {
-    if (status === 'accepted') return <EntityPill tone="positive" dot>{t('ui.status.accepted')}</EntityPill>
-    if (status === 'rejected') return <EntityPill tone="danger" dot>{t('ui.status.rejected')}</EntityPill>
-    if (status === 'withdrawn') return <EntityPill dot>{t('ui.shared.statusWithdrawn')}</EntityPill>
-    return <EntityPill tone="accent" dot>{t('ui.status.pending')}</EntityPill>
+    if (status === 'accepted') return <CardStatus status="accepted">{t('ui.status.accepted')}</CardStatus>
+    if (status === 'rejected') return <CardStatus status="rejected">{t('ui.status.rejected')}</CardStatus>
+    if (status === 'withdrawn') return <CardStatus status="withdrawn">{t('ui.shared.statusWithdrawn')}</CardStatus>
+    return <CardStatus status="pending">{t('ui.status.pending')}</CardStatus>
   }
 
   const renderIncomingRequest = (request) => (
-    <EntityCard
+    <ListCard
       key={`req-${request.id}`}
-      compact
-      goldHover
-      icon={request.sender_role === 'OWNER' ? Home : Building2}
-      label={request.sender_role === 'OWNER' ? t('role.owner') : t('role.builder')}
-      avatar={<EntityAvatar user={request} alt={td(request.sender_name)} />}
+      avatar={<CardAvatar src={userAvatarSrc(request)} alt={td(request.sender_name)} />}
       title={request.sender_name ? td(request.sender_name) : t('dash.supplier.nearbyClient')}
       subtitle={td(request.project_title || '')}
-      pills={[
-        { key: 'pincode', text: request.project_pincode || request.sender_pincode || '—', icon: MapPin },
+      status={requestStatusPill(request.status)}
+      rows={[
+        { key: 'date', label: t('dash.common.date'), value: formatDate(request.created_at, '') },
+        { key: 'pincode', label: t('dash.common.location'), value: request.project_pincode || request.sender_pincode || '—' },
       ]}
-      footerLabel={formatDate(request.created_at, '')}
-      footerValue={requestStatusPill(request.status)}
-    >
-      {request.status === 'pending' && (
-        <div className="mt-2.5 grid grid-cols-2 gap-2">
-          <button
-            type="button"
-            onClick={() => onAcceptRequest(request.id)}
-            className="inline-flex items-center justify-center gap-1.5 rounded-full bg-oc-green px-3 py-2 text-xs font-bold text-white transition hover:bg-oc-deep"
-          >
-            <CheckCircle2 className="h-3.5 w-3.5" /> {t('ce.accept')}
-          </button>
-          <button
-            type="button"
-            onClick={() => onRejectRequest(request.id)}
-            className="inline-flex items-center justify-center gap-1.5 rounded-full border border-oc-line bg-white px-3 py-2 text-xs font-bold text-oc-muted transition hover:border-rose-300 hover:bg-rose-50 hover:text-rose-700"
-          >
-            {t('ce.reject')}
-          </button>
-        </div>
-      )}
-    </EntityCard>
+      chips={[
+        <CardChip key="role" tone="green" icon={request.sender_role === 'OWNER' ? Home : Building2}>
+          {request.sender_role === 'OWNER' ? t('role.owner') : t('role.builder')}
+        </CardChip>,
+      ]}
+      secondary={request.status === 'pending' ? (
+        <button type="button" onClick={() => onRejectRequest(request.id)} className={cardButtonClass('danger')}>
+          {t('ce.reject')}
+        </button>
+      ) : NO_ACTIONS}
+      primary={request.status === 'pending' ? (
+        <button type="button" onClick={() => onAcceptRequest(request.id)} className={cardButtonClass('primary')}>
+          <CheckCircle2 className="h-3.5 w-3.5" /> {t('ce.accept')}
+        </button>
+      ) : null}
+    />
   )
 
   const renderDiscoverClient = (client) => {
@@ -407,93 +367,59 @@ export function SupplierFindClientsSection({ clientList, requestList = [], reque
     const completedProjects = client.completed_project_details?.length
       ? client.completed_project_details.slice(0, 2).map((project) => (project.title ? td(project.title) : t('dash.common.project'))).join(' · ')
       : ''
-    // Client card, laid out like the Find Clients reference: avatar, name and
-    // company (builder) or project (house owner) with the pincode chip and an
-    // open arrow on the right; for a builder the experience, projects and
-    // rating chips and the services line; then Send Request beside View
-    // Profile. Same data and the same actions the card already had -- View
-    // Profile and the arrow are the card's own open-profile click. A house
-    // owner has no experience, projects, rating or services, so those parts
-    // are simply not drawn for one.
+    // Client card: avatar, name, the company (builder) or project (house owner),
+    // an open arrow top right; location, rating and completed projects as rows;
+    // experience, projects, construction type and tier as chips; Send Request
+    // and View Profile in the footer. Same data and the same actions the card
+    // already had -- a click on the card opens the profile.
     const sending = sendingReceiverId === client.user_id
     return (
-      <article
+      <ListCard
         key={requestKey}
-        onClick={(event) => { if (!event.target.closest('button, a')) onViewProfile(client) }}
-        className="oc-entity-card flex cursor-pointer flex-col rounded-[18px] border border-oc-line bg-white p-4 shadow-ocsoft transition-[border-color,box-shadow,transform] duration-300 hover:-translate-y-0.5"
-      >
-        <div className="flex items-start gap-3">
-          <EntityAvatar src={displayImage} alt={displayTitle} className="!h-14 !w-14 bg-ocbrand-50" />
-          <div className="min-w-0 flex-1 pt-1">
-            <p className="flex min-w-0 items-center gap-1.5 text-sm font-extrabold text-oc-ink"><span className="truncate">{displayTitle}</span>{!isOwner && <BuilderTierBadge builderId={client.user_id} />}</p>
-            {/* Under the name: a builder's company, or a house owner's
-                construction type chip (the project line sits lower down). */}
-            {!isOwner && infoLine && <p className="mt-0.5 truncate text-xs font-medium text-oc-muted">{infoLine}</p>}
-            {isOwner && client.construction_type && (
-              <span className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-oc-ink">
-                <Home className="h-3.5 w-3.5 text-amber-600" /> {constructionTypeLabel(client.construction_type, t)}
-              </span>
-            )}
-          </div>
-          <span className="mt-1 inline-flex shrink-0 items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-oc-ink">
-            <MapPin className="h-3.5 w-3.5 text-emerald-600" /> {client.pincode || '—'}
-          </span>
+        onClick={() => onViewProfile(client)}
+        avatar={<CardAvatar src={displayImage} alt={displayTitle} />}
+        title={displayTitle}
+        subtitle={infoLine || null}
+        status={(
           <button
             type="button"
             aria-label={t('dash.common.viewProfile')}
             onClick={() => onViewProfile(client)}
-            className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-oc-line bg-white text-oc-ink transition hover:border-emerald-200 hover:bg-emerald-50"
+            className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-oc-line bg-white text-oc-ink transition hover:border-emerald-200 hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oc-green"
           >
             <ChevronRight className="h-4 w-4" />
           </button>
-        </div>
-
-        {/* A house owner's project line, below the header, wrapping so the
-            whole project name shows. */}
-        {isOwner && infoLine && <p className="mt-3 whitespace-normal break-words text-xs font-medium leading-snug text-oc-muted">{infoLine}</p>}
-        {!isOwner && (
-          <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-semibold text-oc-ink">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-oc-sunken px-2.5 py-1">
-              <Clock className="h-3.5 w-3.5 text-oc-muted" /> {`${client.experience_years || 0} ${t('dash.supplier.yrs')}`}
-            </span>
-            <span aria-hidden="true" className="h-4 w-px bg-oc-line" />
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-oc-sunken px-2.5 py-1">
-              <Briefcase className="h-3.5 w-3.5 text-oc-muted" /> {`${client.completed_projects || 0} ${t('dash.supplier.projects')}`}
-            </span>
-            <span aria-hidden="true" className="h-4 w-px bg-oc-line" />
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 font-bold" title={t('dash.common.rating')}>
-              <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" /> {Number(client.rating || 0).toFixed(1)}
-            </span>
-          </div>
         )}
-
-        {builderMeta && <p className="mt-2.5 line-clamp-2 text-xs leading-relaxed text-oc-muted">{builderMeta}</p>}
-        {completedProjects && <p className="mt-1 truncate text-[11px] text-oc-faint">{`${t('dash.supplier.completed')}: ${completedProjects}`}</p>}
-
-        <div className="mt-auto grid grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] gap-2.5 pt-3">
-          {requestSent ? (
-            <span className="inline-flex min-h-10 items-center py-1 text-center leading-tight justify-center gap-1.5 rounded-lg border border-emerald-100 bg-emerald-50 px-3 text-xs font-bold text-emerald-700">
-              <CheckCircle2 className="h-4 w-4" /> {t('dash.common.requestSent')}
-            </span>
-          ) : (
-            <button
-              type="button"
-              disabled={sending}
-              onClick={() => onSendRequest(client)}
-              className="inline-flex min-h-10 items-center py-1 text-center leading-tight justify-center gap-1.5 rounded-lg bg-oc-deep px-3 text-xs font-bold text-white transition hover:bg-oc-green disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              <Send className="h-4 w-4" /> {sending ? t('dash.common.sending') : t('dash.common.sendRequest')}
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={() => onViewProfile(client)}
-            className="inline-flex min-h-10 items-center py-1 text-center leading-tight justify-center gap-1.5 rounded-lg border border-oc-line bg-white px-3 text-xs font-bold text-oc-ink transition hover:border-emerald-200 hover:bg-emerald-50"
-          >
+        rows={[
+          { key: 'pincode', label: t('dash.common.location'), value: client.pincode || '—' },
+          !isOwner && { key: 'rating', label: t('dash.common.rating'), value: Number(client.rating || 0).toFixed(1) },
+          completedProjects && { key: 'completed', label: t('dash.supplier.completed'), value: completedProjects },
+        ]}
+        chips={[
+          isOwner && client.construction_type && (
+            <CardChip key="construction" tone="amber" icon={Home}>{constructionTypeLabel(client.construction_type, t)}</CardChip>
+          ),
+          !isOwner && <CardChip key="experience" icon={Clock}>{`${client.experience_years || 0} ${t('dash.supplier.yrs')}`}</CardChip>,
+          !isOwner && <CardChip key="projects" icon={Briefcase}>{`${client.completed_projects || 0} ${t('dash.supplier.projects')}`}</CardChip>,
+          !isOwner && <BuilderTierBadge key="tier" builderId={client.user_id} />,
+        ]}
+        secondary={(
+          <button type="button" onClick={() => onViewProfile(client)} className={cardButtonClass('secondary')}>
             <Eye className="h-4 w-4" /> {t('dash.common.viewProfile')}
           </button>
-        </div>
-      </article>
+        )}
+        primary={requestSent ? (
+          <span className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-emerald-100 bg-emerald-50 px-3 text-xs font-bold text-emerald-700">
+            <CheckCircle2 className="h-4 w-4" /> {t('dash.common.requestSent')}
+          </span>
+        ) : (
+          <button type="button" disabled={sending} onClick={() => onSendRequest(client)} className={cardButtonClass('primary')}>
+            <Send className="h-4 w-4" /> {sending ? t('dash.common.sending') : t('dash.common.sendRequest')}
+          </button>
+        )}
+      >
+        {builderMeta && <p className="line-clamp-2 text-xs leading-relaxed text-oc-muted">{builderMeta}</p>}
+      </ListCard>
     )
   }
 
@@ -505,17 +431,17 @@ export function SupplierFindClientsSection({ clientList, requestList = [], reque
           {incomingOwnerRequests.length > 0 && (
             <section>
               <p className="mb-2 text-xs font-extrabold uppercase tracking-wide text-slate-400">{t('ce.pendingJoinRequests')}</p>
-              <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2 xl:grid-cols-3">
+              <CardGrid testId="supplier-owner-request-cards">
                 {incomingOwnerRequests.map(renderIncomingRequest)}
-              </div>
+              </CardGrid>
             </section>
           )}
           {ownerClients.length > 0 && (
             <section>
               <p className="mb-2 text-xs font-extrabold uppercase tracking-wide text-slate-400">{t('dash.supplier.nearbyClients')}</p>
-              <div className="supplier-client-cards grid grid-cols-1 gap-2.5 md:grid-cols-2 xl:grid-cols-3">
+              <CardGrid testId="supplier-owner-client-cards">
                 {ownerClients.map(renderDiscoverClient)}
-              </div>
+              </CardGrid>
             </section>
           )}
         </div>
@@ -528,17 +454,17 @@ export function SupplierFindClientsSection({ clientList, requestList = [], reque
           {incomingBuilderRequests.length > 0 && (
             <section>
               <p className="mb-2 text-xs font-extrabold uppercase tracking-wide text-slate-400">{t('ce.pendingJoinRequests')}</p>
-              <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2 xl:grid-cols-3">
+              <CardGrid testId="supplier-builder-request-cards">
                 {incomingBuilderRequests.map(renderIncomingRequest)}
-              </div>
+              </CardGrid>
             </section>
           )}
           {builderClients.length > 0 && (
             <section>
               <p className="mb-2 text-xs font-extrabold uppercase tracking-wide text-slate-400">{t('dash.supplier.nearbyClients')}</p>
-              <div className="supplier-client-cards grid grid-cols-1 gap-2.5 md:grid-cols-2 xl:grid-cols-3">
+              <CardGrid testId="supplier-builder-client-cards">
                 {builderClients.map(renderDiscoverClient)}
-              </div>
+              </CardGrid>
             </section>
           )}
         </div>
@@ -546,9 +472,9 @@ export function SupplierFindClientsSection({ clientList, requestList = [], reque
     }
     // Suppliers tab
     return incomingSupplierRequests.length > 0 ? (
-      <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2 xl:grid-cols-3">
+      <CardGrid testId="supplier-supplier-request-cards">
         {incomingSupplierRequests.map(renderIncomingRequest)}
-      </div>
+      </CardGrid>
     ) : <EmptyState title={t('dash.supplier.noClients')} message={t('dash.supplier.noClientsSub')} />
   }
 

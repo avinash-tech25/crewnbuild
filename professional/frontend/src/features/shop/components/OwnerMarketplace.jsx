@@ -27,14 +27,15 @@
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { ImageOff, Loader2, MapPin, PackageSearch, Search, ShoppingCart, Store, X } from 'lucide-react'
+import { ImageOff, Loader2, MapPin, PackageSearch, Search, ShoppingCart, X } from 'lucide-react'
 import { fetchNearbySuppliers } from '../../projects/projectsApi.js'
 import { fetchCatalogCategories, fetchCatalogProduct } from '../../catalog/catalogApi.js'
 import { SearchOverlay } from '../../storefront/components/SearchOverlay.jsx'
 import { imageUrl } from '../../../shared/api/apiClient.js'
 import { loadCart, selectCartCount } from '../cartSlice.js'
 import { BrandLogo } from '../../catalog/components/BrandPicker.jsx'
-import { StockBadge } from '../../catalog/components/StockBadge.jsx'
+import { stockState } from '../../catalog/components/StockBadge.jsx'
+import { CardAvatar, CardChip, CardGrid, CardStatus, ListCard } from '../../../shared/ui/ListCard.jsx'
 import { discountedPrice } from '../../catalog/components/PriceTag.jsx'
 import { ProductDetailView } from '../../catalog/components/ProductDetailView.jsx'
 import { CartStepper } from './CartStepper.jsx'
@@ -67,44 +68,57 @@ function CardImage({ src, alt }) {
   return <img src={imageUrl(src)} alt={alt} onError={() => setBroken(true)} className="h-full w-full object-contain p-2.5" />
 }
 
+// The stock word StockBadge shows, as the card's status pill.
+const STOCK_WORDS = { in: 'In stock', low: 'Low stock', out: 'Out of stock' }
+const STOCK_TONES = { in: 'green', low: 'amber', out: 'red' }
+function stockStatus(listing) {
+  const state = stockState(listing.quantity, listing.low_stock_threshold)
+  const detail = state === 'low' ? ` · only ${Number(listing.quantity || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })} left` : ''
+  return <CardStatus tone={STOCK_TONES[state]}>{`${STOCK_WORDS[state]}${detail}`}</CardStatus>
+}
+
 function ListingCard({ listing, country, projectId, onOpen, onMessage }) {
   const discount = Number(listing.discount_percentage || 0)
   return (
-    <article className="flex flex-col rounded-xl border border-slate-200 bg-white p-2.5 transition hover:border-brand-300 hover:shadow-sm">
-      <button type="button" onClick={onOpen} className="relative aspect-[5/4] w-full overflow-hidden rounded-lg bg-slate-50" aria-label={`View ${listing.name} from ${listing.supplier_name}`}>
+    <ListCard
+      onClick={onOpen}
+      avatar={<CardAvatar src={listing.image_url ? imageUrl(listing.image_url) : null} alt="" fallback={<ImageOff aria-hidden="true" className="h-5 w-5" />} />}
+      title={listing.name}
+      subtitle={`Sold by ${listing.supplier_name}`}
+      status={stockStatus(listing)}
+      chips={[
+        <CardChip key="brand" tone="green">{listing.brand || 'Generic'}</CardChip>,
+        [listing.subcategory_name, listing.size].filter(Boolean).length > 0 && (
+          <CardChip key="kind">{[listing.subcategory_name, listing.size].filter(Boolean).join(' · ')}</CardChip>
+        ),
+      ]}
+      primary={<CartStepper offer={listing} projectId={projectId} onMessage={onMessage} size="sm" />}
+    >
+      {/* The photo, at one height on every card. */}
+      <button type="button" onClick={onOpen} className="relative h-32 w-full shrink-0 overflow-hidden rounded-xl bg-slate-50" aria-label={`View ${listing.name} from ${listing.supplier_name}`}>
         <CardImage src={listing.image_url} alt={listing.name} />
         {discount > 0 && (
           <span className="absolute left-1.5 top-1.5 rounded bg-oc-amber px-1.5 py-0.5 text-[10px] font-extrabold text-graphite">{Number(discount.toFixed(2))}% OFF</span>
         )}
       </button>
-      <span className="mt-2 flex min-w-0 items-center gap-1.5">
+      <span className="flex min-w-0 items-center gap-1.5">
         <BrandLogo src={listing.brand_logo_url} name={listing.brand || 'Generic'} size="xs" />
-        <span className="truncate text-[10px] font-extrabold uppercase tracking-wide text-brand-700">{listing.brand || 'Generic'}</span>
+        <ProductServiceBadges />
       </span>
-      <button type="button" onClick={onOpen} className="text-left">
-        <h3 className="line-clamp-2 text-[13px] font-bold leading-snug text-graphite">{listing.name}</h3>
-      </button>
-      <p className="truncate text-[11px] text-graphite/55">{[listing.subcategory_name, listing.size].filter(Boolean).join(' · ')}</p>
-      <ProductServiceBadges className="mt-1" />
-      <p className="mt-0.5 flex min-w-0 items-center gap-1 text-[11px] font-semibold text-graphite/70">
-        <Store className="h-3 w-3 shrink-0 text-graphite/40" /> <span className="truncate">Sold by {listing.supplier_name}</span>
-      </p>
-      <p className="mt-1 text-[15px] font-extrabold leading-tight text-graphite">
-        {formatMoney(selling(listing), country)}
-        {listing.unit && <span className="text-[11px] font-semibold text-graphite/45"> / {listing.unit}</span>}
-      </p>
-      {discount > 0 && (
-        <p className="flex items-baseline gap-1.5 text-[11px]">
-          <span className="font-semibold text-graphite/40 line-through">{formatMoney(listing.price, country)}</span>
-          <span className="font-extrabold text-brand-700">{Number(discount.toFixed(2))}% OFF</span>
+      <div>
+        <p className="text-[15px] font-extrabold leading-tight text-graphite">
+          {formatMoney(selling(listing), country)}
+          {listing.unit && <span className="text-[11px] font-semibold text-graphite/45"> / {listing.unit}</span>}
         </p>
-      )}
-      <BulkPricingList tiers={listing.bulk_pricing} country={country} compact className="mt-1" />
-      <StockBadge quantity={listing.quantity} threshold={listing.low_stock_threshold} className="mt-1 self-start" />
-      <div className="mt-auto pt-2">
-        <CartStepper offer={listing} projectId={projectId} onMessage={onMessage} size="sm" full />
+        {discount > 0 && (
+          <p className="flex items-baseline gap-1.5 text-[11px]">
+            <span className="font-semibold text-graphite/40 line-through">{formatMoney(listing.price, country)}</span>
+            <span className="font-extrabold text-brand-700">{Number(discount.toFixed(2))}% OFF</span>
+          </p>
+        )}
+        <BulkPricingList tiers={listing.bulk_pricing} country={country} compact className="mt-1" />
       </div>
-    </article>
+    </ListCard>
   )
 }
 
@@ -238,10 +252,12 @@ export function OwnerMarketplace({ projectId, pincode, country = 'India', onOpen
         {related.length > 0 && (
           <section aria-label="You may also like" className="border-t border-slate-100 pt-4">
             <h4 className="font-display text-base font-extrabold text-graphite">You may also like</h4>
-            <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
-              {related.map((listing) => (
-                <ListingCard key={listing.id} listing={listing} country={country} projectId={projectId} onOpen={() => { setMessage(''); setOpenListing(listing) }} onMessage={setMessage} />
-              ))}
+            <div className="mt-3">
+              <CardGrid testId="marketplace-related-cards">
+                {related.map((listing) => (
+                  <ListingCard key={listing.id} listing={listing} country={country} projectId={projectId} onOpen={() => { setMessage(''); setOpenListing(listing) }} onMessage={setMessage} />
+                ))}
+              </CardGrid>
             </div>
           </section>
         )}
@@ -339,11 +355,11 @@ export function OwnerMarketplace({ projectId, pincode, country = 'India', onOpen
               <button type="button" onClick={() => { setSearch(''); setCategoryId('') }} className="mt-1 text-xs font-extrabold text-brand-800 hover:underline">Show all products</button>
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4 min-[1400px]:grid-cols-5">
+            <CardGrid testId="marketplace-listing-cards">
               {visible.map((listing) => (
                 <ListingCard key={listing.id} listing={listing} country={country} projectId={projectId} onOpen={() => { setMessage(''); setOpenListing(listing) }} onMessage={setMessage} />
               ))}
-            </div>
+            </CardGrid>
           )}
         </>
       )}

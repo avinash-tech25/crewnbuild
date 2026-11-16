@@ -59,18 +59,27 @@ export function EmptyState({ icon: Icon = Info, title, children }) {
   )
 }
 
-// Every service request status (partner.service_requests.status).
+// Every service request status (partner.service_requests.status), in the colour scheme
+// every card uses (see ListCard's STATUS_TONES): waiting amber, agreed or done green,
+// under way blue, refused or failed red, ended grey. AA on white: 700/800 text on a 50.
+const PILL_TONES = {
+  amber: 'border-amber-200 bg-amber-50 text-amber-800',
+  green: 'border-emerald-200 bg-emerald-50 text-emerald-800',
+  blue: 'border-sky-200 bg-sky-50 text-sky-800',
+  red: 'border-rose-200 bg-rose-50 text-rose-700',
+  grey: 'border-slate-200 bg-slate-100 text-slate-700',
+}
 const STATUS_STYLES = {
-  SEARCHING: 'bg-amber-50 text-amber-800 border-amber-200',
-  OFFERED: 'bg-orange-50 text-orange-800 border-orange-200',
-  ACCEPTED: 'bg-sky-50 text-sky-800 border-sky-200',
-  EN_ROUTE: 'bg-cyan-50 text-cyan-800 border-cyan-200',
-  ARRIVED: 'bg-teal-50 text-teal-800 border-teal-200',
-  IN_PROGRESS: 'bg-indigo-50 text-indigo-800 border-indigo-200',
-  COMPLETED: 'bg-emerald-50 text-emerald-800 border-emerald-200',
-  NO_TECHNICIAN_FOUND: 'bg-red-50 text-red-700 border-red-200',
-  EXPIRED: 'bg-red-50 text-red-700 border-red-200',
-  CANCELLED: 'bg-slate-100 text-slate-600 border-slate-200',
+  SEARCHING: PILL_TONES.amber,
+  OFFERED: PILL_TONES.amber,
+  ACCEPTED: PILL_TONES.green,
+  EN_ROUTE: PILL_TONES.blue,
+  ARRIVED: PILL_TONES.blue,
+  IN_PROGRESS: PILL_TONES.blue,
+  COMPLETED: PILL_TONES.green,
+  NO_TECHNICIAN_FOUND: PILL_TONES.red,
+  EXPIRED: PILL_TONES.red,
+  CANCELLED: PILL_TONES.grey,
 }
 
 export function StatusPill({ status, label }) {

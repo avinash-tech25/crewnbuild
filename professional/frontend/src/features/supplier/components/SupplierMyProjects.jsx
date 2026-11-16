@@ -6,8 +6,7 @@ import {
   ArrowRight, ChevronRight, FolderKanban, LayoutGrid, LayoutList, MapPin, Package, Search, X,
 } from 'lucide-react'
 import { useLanguage } from '../../../i18n/LanguageContext.jsx'
-import { EntityCard } from '../../../shared/ui/EntityCard.jsx'
-import { EntityAvatar, EntityPill } from '../../../shared/ui/EntityPill.jsx'
+import { CardAvatar, CardChip, CardGrid, CardStatus, ListCard, cardButtonClass } from '../../../shared/ui/ListCard.jsx'
 import { formatMoney as countryFormatMoney } from '../../../shared/utils/countryConfig.js'
 import { formatDate } from '../../../shared/utils/formatters.js'
 import { completionPercent, completionText } from '../../../shared/utils/projectProgress.js'
@@ -209,59 +208,35 @@ export default function SupplierMyProjects({ projectList = [], materialRequestLi
   )
 
   const renderCards = () => (
-    <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2 xl:grid-cols-3">
+    <CardGrid testId="supplier-my-project-cards">
       {visibleProjects.map((project) => {
         const role = project.requester?.role
         const status = statusOf(project)
         const metrics = metricsFor(project)
         return (
-          <EntityCard
+          <ListCard
             key={project.project_id}
-            compact
             onClick={() => setOpenProject(project)}
-            avatar={
-              // The requester's own profile photo, matching the name beside it.
-              // Falls back to their initial when they have not set one, which is
-              // what EntityAvatar already does elsewhere in the dashboard.
-              <EntityAvatar
-                user={project.requester}
-                alt={requesterName(project)}
-              />
-            }
+            // The requester's own profile photo, matching the name beside it.
+            avatar={<CardAvatar src={userAvatarSrc(project.requester)} alt={requesterName(project)} />}
             title={requesterName(project)}
-            subtitle={
-              requesterCompany(project) ? (
-                // Two block lines inside the subtitle EntityCard already
-                // renders, so the company sits under the name here too without
-                // the shared card component needing a change.
-                <>
-                  <span className="block truncate">{requesterCompany(project)}</span>
-                  <span className="block truncate">{td(project.title)}</span>
-                </>
-              ) : (
-                td(project.title)
-              )
-            }
-            pills={[
-              { key: 'requester', text: requesterLabel(role) },
-              { key: 'status', text: t(STATUS_LABEL_KEYS[status] || 'ui.status.active') },
+            // The requester's company when they have one, else the project.
+            subtitle={requesterCompany(project) || td(project.title)}
+            status={<CardStatus status={status}>{t(STATUS_LABEL_KEYS[status] || 'ui.status.active')}</CardStatus>}
+            rows={[
+              requesterCompany(project) && { key: 'project', label: t('dash.common.project'), value: td(project.title) },
+              { key: 'total', label: t('dash.supplier.totalValue'), value: countryFormatMoney(metrics.total) },
             ]}
-            footerLabel={t('dash.supplier.totalValue')}
-            footerValue={<EntityPill tone="positive">{countryFormatMoney(metrics.total)}</EntityPill>}
-          >
-            <div className="mt-3 flex gap-2">
-              <button
-                type="button"
-                onClick={() => setOpenProject(project)}
-                className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-full bg-oc-green px-3 py-1.5 text-[11px] font-bold text-white transition hover:bg-oc-deep"
-              >
+            chips={[<CardChip key="requester" tone="green">{requesterLabel(role)}</CardChip>]}
+            primary={(
+              <button type="button" onClick={() => setOpenProject(project)} className={cardButtonClass('primary')}>
                 {t('dash.supplier.viewDetails')} <ArrowRight className="h-3.5 w-3.5 rtl:-scale-x-100" />
               </button>
-            </div>
-          </EntityCard>
+            )}
+          />
         )
       })}
-    </div>
+    </CardGrid>
   )
 
   const openMetrics = openProject ? metricsFor(openProject) : { rows: [], items: 0, products: 0, total: 0 }

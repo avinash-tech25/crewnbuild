@@ -13,6 +13,7 @@ import { useDispatch } from 'react-redux'
 import { ArrowLeft, Boxes, ChevronRight, ImageOff, ImagePlus, Images, Loader2, PackageSearch, Plus, Save, Search, Trash2, X } from 'lucide-react'
 import { FittedImage, StoredImage } from '../../catalog/components/CatalogProductBrowser.jsx'
 import { BrandLogo, BrandPicker } from '../../catalog/components/BrandPicker.jsx'
+import { CardAvatar, CardChip, CardGrid, CardStatus, ListCard, cardButtonClass } from '../../../shared/ui/ListCard.jsx'
 import { createAdminCatalogVariant, fetchAdminCatalogProducts, fetchAdminCatalogSubcategories } from '../../catalog/catalogApi.js'
 import {
   saveAdminCatalogCategory,
@@ -80,8 +81,8 @@ function Status({ status }) {
 }
 
 /** A hidden file input behind a button; hands the chosen image back.
- *  `large`: a full-width button, for the subcategory cards. */
-function PictureButton({ label, onFile, busy, large = false }) {
+ *  `variant`: drawn as a card footer button (cardButtonClass). */
+function PictureButton({ label, onFile, busy, variant = null }) {
   const input = useRef(null)
   return (
     <>
@@ -90,12 +91,12 @@ function PictureButton({ label, onFile, busy, large = false }) {
         disabled={busy}
         onClick={() => input.current?.click()}
         className={
-          large
-            ? 'inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-lg border border-brand-200 bg-brand-50 px-3 text-xs font-extrabold text-brand-800 transition hover:bg-brand-100 disabled:opacity-50'
+          variant
+            ? cardButtonClass(variant)
             : 'inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-1 text-[10px] font-extrabold text-graphite/70 hover:bg-slate-50 disabled:opacity-50'
         }
       >
-        {busy ? <Loader2 className={large ? 'h-4 w-4 animate-spin' : 'h-3 w-3 animate-spin'} /> : <ImagePlus className={large ? 'h-4 w-4' : 'h-3 w-3'} />}
+        {busy ? <Loader2 className={variant ? 'h-3.5 w-3.5 animate-spin' : 'h-3 w-3 animate-spin'} /> : <ImagePlus className={variant ? 'h-3.5 w-3.5' : 'h-3 w-3'} />}
         {label}
       </button>
       <input
@@ -144,9 +145,10 @@ function ActiveSwitch({ name, active, busy, onToggle }) {
   )
 }
 
-// Exactly four cards a row on a desktop (the fifth starts the next row), two
-// on a tablet, one on a phone. Fixed columns, never horizontal scrolling.
-const cardGrid = 'grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4'
+/** A card's picture area: one fixed height, so cards in a row line up. */
+function CardPicture({ children }) {
+  return <div className="flex h-36 w-full items-center justify-center overflow-hidden rounded-lg bg-slate-50">{children}</div>
+}
 
 /**
  * Categories tab: a management area for the catalog's tree.
@@ -354,44 +356,46 @@ export function CategoryManager({ categories, onChanged, onOpenProduct }) {
               ) : openSubs.length === 0 ? (
                 <p className="mt-3 rounded-2xl border border-dashed border-slate-200 px-6 py-8 text-center text-xs font-semibold text-slate-500">This category has no subcategories yet.</p>
               ) : (
-                <ul aria-label={`${openCategory.name} subcategories`} className={`mt-3 ${cardGrid}`}>
-                  {openSubs.map((row) => (
-                    <li key={row.id} className={`flex flex-col overflow-hidden rounded-2xl border bg-white shadow-[0_6px_20px_-16px_rgba(15,23,42,0.35)] ${row.is_active ? 'border-slate-200' : 'border-dashed border-slate-300 opacity-70'}`}>
-                      {/* The large image area: master_subcategories.image_url. */}
-                      <div className="aspect-[4/3] w-full border-b border-slate-100 bg-slate-50">
-                        {row.image_url ? (
-                          // Trimmed to the subject, then fitted with a little
-                          // padding, so every subcategory's bag is the same size
-                          // however much empty space its upload had around it.
-                          <FittedImage src={row.image_url} alt={row.name} className="h-full w-full object-contain p-3" />
-                        ) : (
-                          <span className="flex h-full w-full flex-col items-center justify-center gap-1.5 text-slate-300">
-                            <ImageOff className="h-8 w-8" />
-                            <span className="text-[11px] font-bold text-slate-400">No image yet</span>
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex flex-1 flex-col gap-3 p-4">
-                        <div>
-                          <h5 className="line-clamp-2 font-display text-sm font-extrabold text-graphite">{row.name}</h5>
-                          {!row.is_active && <span className="text-[11px] font-extrabold text-slate-400">Inactive</span>}
-                        </div>
-                        <div className="mt-auto space-y-2">
+                <div className="mt-3">
+                  <CardGrid testId="admin-category-subcategory-cards" label={`${openCategory.name} subcategories`}>
+                    {openSubs.map((row) => (
+                      <ListCard
+                        key={row.id}
+                        title={row.name}
+                        status={!row.is_active && <CardStatus status="inactive">Inactive</CardStatus>}
+                        secondary={
+                          <button type="button" onClick={() => setOpenSubcategoryId(row.id)} className={cardButtonClass('secondary')}>
+                            View products
+                          </button>
+                        }
+                        primary={
                           <PictureButton
-                            large
+                            variant="primary"
                             label={row.image_url ? 'Change Image' : 'Upload Image'}
                             busy={busyKey === `subcategory-${row.id}`}
                             onFile={(file) => uploadSubcategoryImage(row, file)}
                           />
-                          <CardNote note={cardNotes[row.id]} />
-                          <button type="button" onClick={() => setOpenSubcategoryId(row.id)} className="w-full text-center text-[11px] font-extrabold text-brand-800 hover:underline">
-                            View products
-                          </button>
-                        </div>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
+                        }
+                      >
+                        {/* The large image area: master_subcategories.image_url. */}
+                        <CardPicture>
+                          {row.image_url ? (
+                            // Trimmed to the subject, then fitted with a little
+                            // padding, so every subcategory's bag is the same size
+                            // however much empty space its upload had around it.
+                            <FittedImage src={row.image_url} alt={row.name} className="h-full w-full object-contain p-3" />
+                          ) : (
+                            <span className="flex h-full w-full flex-col items-center justify-center gap-1.5 text-slate-300">
+                              <ImageOff className="h-8 w-8" />
+                              <span className="text-[11px] font-bold text-slate-400">No image yet</span>
+                            </span>
+                          )}
+                        </CardPicture>
+                        <CardNote note={cardNotes[row.id]} />
+                      </ListCard>
+                    ))}
+                  </CardGrid>
+                </div>
               )}
             </div>
           </>
@@ -424,13 +428,30 @@ export function CategoryManager({ categories, onChanged, onOpenProduct }) {
                 <p className="mt-2 text-xs font-semibold text-slate-500">No products in this subcategory yet.</p>
               </div>
             ) : (
-              <ul className={cardGrid}>
+              <CardGrid testId="admin-subcategory-product-cards" label={`${openSubcategory.name} products`}>
                 {products.rows.map((product) => {
                   const count = product.media?.image_count ?? (product.image_url ? 1 : 0)
                   const required = product.media?.images_required || 5
+                  const sizes = (product.variants || []).map((variant) => variant.name).join(' / ') || product.unit?.name
                   return (
-                    <li key={product.id} className="flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white">
-                      <span className="relative block aspect-[4/3] bg-slate-50">
+                    <ListCard
+                      key={product.id}
+                      title={product.name}
+                      subtitle={product.brand_name || 'Generic'}
+                      avatar={<CardAvatar fallback={<BrandLogo src={product.brand_logo_url} name={product.brand_name || 'Generic'} size="sm" className="border-0" />} />}
+                      chips={[
+                        <CardChip key="images" tone={count >= required ? 'green' : 'amber'} icon={Images}>{count}/{required} images</CardChip>,
+                        sizes && <CardChip key="sizes">{sizes}</CardChip>,
+                      ]}
+                      primary={
+                        onOpenProduct && (
+                          <button type="button" onClick={() => onOpenProduct(product.id)} className={cardButtonClass('primary')}>
+                            <ImagePlus className="h-3.5 w-3.5" /> Manage Images
+                          </button>
+                        )
+                      }
+                    >
+                      <CardPicture>
                         {product.image_url ? (
                           <StoredImage src={product.image_url} alt="" className="h-full w-full object-contain p-3" />
                         ) : (
@@ -439,33 +460,11 @@ export function CategoryManager({ categories, onChanged, onOpenProduct }) {
                             <span className="text-[11px] font-bold text-slate-400">No image yet</span>
                           </span>
                         )}
-                        <span className={`absolute left-2 top-2 inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-extrabold uppercase ${count >= required ? 'bg-emerald-600 text-white' : 'bg-oc-amber text-graphite'}`}>
-                          <Images className="h-3 w-3" /> {count}/{required} images
-                        </span>
-                      </span>
-                      <div className="flex flex-1 flex-col gap-1 p-3">
-                        <span className="flex min-w-0 items-center gap-1.5">
-                          <BrandLogo src={product.brand_logo_url} name={product.brand_name || 'Generic'} size="xs" />
-                          <span className="truncate text-[11px] font-extrabold uppercase text-brand-700">{product.brand_name || 'Generic'}</span>
-                        </span>
-                        <span className="line-clamp-2 text-sm font-extrabold text-graphite">{product.name}</span>
-                        <span className="truncate text-xs font-semibold text-slate-500">
-                          {(product.variants || []).map((variant) => variant.name).join(' / ') || product.unit?.name}
-                        </span>
-                        {onOpenProduct && (
-                          <button
-                            type="button"
-                            onClick={() => onOpenProduct(product.id)}
-                            className="mt-auto inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-brand-200 bg-brand-50 text-xs font-extrabold text-brand-800 hover:bg-brand-100"
-                          >
-                            <ImagePlus className="h-3.5 w-3.5" /> Manage Images
-                          </button>
-                        )}
-                      </div>
-                    </li>
+                      </CardPicture>
+                    </ListCard>
                   )
                 })}
-              </ul>
+              </CardGrid>
             )}
           </>
         )}
@@ -474,43 +473,38 @@ export function CategoryManager({ categories, onChanged, onOpenProduct }) {
     )
   }
 
-  const categoryCards = (rows) => (
-      <ul className={cardGrid}>
+  const categoryCards = (rows, testId) => (
+      <CardGrid testId={testId} label="Categories">
         {rows.map((category) => {
           const subs = subsOf(category.id)
           const busy = busyKey === `category-${category.id}`
           return (
-            <li
+            <ListCard
               key={category.id}
-              className={`flex flex-col items-center gap-3 rounded-2xl border bg-white p-5 text-center shadow-[0_6px_20px_-16px_rgba(15,23,42,0.35)] transition hover:border-brand-300 ${
-                category.is_active ? 'border-slate-200' : 'border-dashed border-slate-300 opacity-80'
-              }`}
-            >
-              <button type="button" onClick={() => setOpenCategoryId(category.id)} className="group flex flex-col items-center gap-3" aria-label={`Open ${category.name}`}>
-                <span className="rounded-full transition group-hover:ring-4 group-hover:ring-brand-100">
-                  <RoundPicture src={category.image_url} className="h-32 w-32" />
-                </span>
-                <span className="font-display text-base font-extrabold text-graphite group-hover:text-brand-800">{category.name}</span>
-              </button>
-              <ActiveSwitch name={category.name} active={category.is_active} busy={busy} onToggle={() => toggleCategory(category)} />
-              <button type="button" onClick={() => setOpenCategoryId(category.id)} className="text-xs font-bold text-slate-500 hover:text-brand-800">
-                {subs.length} subcategor{subs.length === 1 ? 'y' : 'ies'}
-                {subs.length > 0 && <span className="mt-0.5 line-clamp-2 block text-[11px] font-semibold text-slate-400">{subs.map((row) => row.name).join(' · ')}</span>}
-              </button>
-              <div className="mt-auto flex w-full flex-col items-center gap-2">
-                <PictureButton label={category.image_url ? 'Change Image' : 'Upload Image'} busy={busy} onFile={(file) => uploadCategoryImage(category, file)} />
-                <button
-                  type="button"
-                  onClick={() => setOpenCategoryId(category.id)}
-                  className="inline-flex h-9 w-full items-center justify-center gap-1 rounded-lg bg-brand-700 px-3 text-xs font-extrabold text-white transition hover:bg-brand-800"
-                >
+              title={category.name}
+              secondary={<PictureButton variant="secondary" label={category.image_url ? 'Change Image' : 'Upload Image'} busy={busy} onFile={(file) => uploadCategoryImage(category, file)} />}
+              primary={
+                <button type="button" onClick={() => setOpenCategoryId(category.id)} className={cardButtonClass('primary')}>
                   Manage Subcategories <ChevronRight className="h-3.5 w-3.5" />
                 </button>
+              }
+            >
+              <button type="button" onClick={() => setOpenCategoryId(category.id)} className="group flex h-36 w-full items-center justify-center rounded-lg bg-slate-50" aria-label={`Open ${category.name}`}>
+                <span className="rounded-full transition group-hover:ring-4 group-hover:ring-brand-100">
+                  <RoundPicture src={category.image_url} className="h-28 w-28" />
+                </span>
+              </button>
+              <div className="flex min-w-0 items-start justify-between gap-3">
+                <button type="button" onClick={() => setOpenCategoryId(category.id)} className="min-w-0 text-start text-xs font-bold text-slate-500 hover:text-brand-800">
+                  {subs.length} subcategor{subs.length === 1 ? 'y' : 'ies'}
+                  {subs.length > 0 && <span className="mt-0.5 line-clamp-2 block text-[11px] font-semibold text-slate-400">{subs.map((row) => row.name).join(' · ')}</span>}
+                </button>
+                <ActiveSwitch name={category.name} active={category.is_active} busy={busy} onToggle={() => toggleCategory(category)} />
               </div>
-            </li>
+            </ListCard>
           )
         })}
-      </ul>
+      </CardGrid>
   )
 
   // Active categories fill the 4-column grid; switched-off ones (kept, never
@@ -524,12 +518,12 @@ export function CategoryManager({ categories, onChanged, onOpenProduct }) {
       <p className="text-xs font-semibold text-slate-500">
         The category image is shown in the round category navigation suppliers and buyers use. Open a category to manage its subcategories.
       </p>
-      <div className="mt-4">{categoryCards(activeCategories)}</div>
+      <div className="mt-4">{categoryCards(activeCategories, 'admin-category-cards')}</div>
       {inactiveCategories.length > 0 && (
         <div className="mt-8">
           <h4 className="font-display text-sm font-extrabold text-slate-500">Inactive categories</h4>
           <p className="mb-3 text-xs font-semibold text-slate-400">Hidden from suppliers and buyers. Switch one on to bring it back.</p>
-          {categoryCards(inactiveCategories)}
+          {categoryCards(inactiveCategories, 'admin-inactive-category-cards')}
         </div>
       )}
       <div className="mt-3"><Status status={status} /></div>
@@ -639,26 +633,30 @@ export function SubcategoryManager({ categories, onCount }) {
           No active subcategories{categoryId ? ' in this category' : ''} yet. They appear here once the catalog SQL has created them.
         </p>
       ) : (
-        <ul aria-label="Subcategories" className={`mt-4 ${cardGrid}`}>
-          {shown.map((row) => (
-            <li key={row.id} className="flex flex-col items-center gap-3 rounded-2xl border border-slate-200 bg-white p-5 text-center shadow-[0_6px_20px_-16px_rgba(15,23,42,0.35)]">
-              <RoundPicture src={row.image_url} className="h-32 w-32" />
-              <div className="min-w-0">
-                <h5 className="line-clamp-2 font-display text-base font-extrabold text-graphite">{row.name}</h5>
-                <p className="text-xs font-bold text-slate-400">{categoryName.get(row.category_id)}</p>
-              </div>
-              <div className="mt-auto w-full space-y-2">
-                <PictureButton
-                  large
-                  label={row.image_url ? 'Change Image' : 'Upload Image'}
-                  busy={busyId === row.id}
-                  onFile={(file) => upload(row, file)}
-                />
+        <div className="mt-4">
+          <CardGrid testId="admin-subcategory-cards" label="Subcategories">
+            {shown.map((row) => (
+              <ListCard
+                key={row.id}
+                title={row.name}
+                subtitle={categoryName.get(row.category_id)}
+                primary={
+                  <PictureButton
+                    variant="primary"
+                    label={row.image_url ? 'Change Image' : 'Upload Image'}
+                    busy={busyId === row.id}
+                    onFile={(file) => upload(row, file)}
+                  />
+                }
+              >
+                <CardPicture>
+                  <RoundPicture src={row.image_url} className="h-28 w-28" />
+                </CardPicture>
                 <CardNote note={notes[row.id]} />
-              </div>
-            </li>
-          ))}
-        </ul>
+              </ListCard>
+            ))}
+          </CardGrid>
+        </div>
       )}
     </section>
   )
@@ -703,16 +701,20 @@ export function BrandManager({ brands }) {
       ) : shown.length === 0 ? (
         <p className="mt-6 text-center text-xs font-semibold text-slate-500">No brand matches “{query}”.</p>
       ) : (
-        <ul className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-          {shown.map((brand) => (
-            <li key={brand.id} className={`flex flex-col items-center gap-2 rounded-2xl border bg-white p-4 text-center ${brand.is_active === false ? 'border-dashed border-slate-300 opacity-70' : 'border-slate-200'}`}>
-              <span className="line-clamp-1 text-sm font-extrabold text-graphite">{brand.name}</span>
-              <BrandLogo src={brand.logo_url} name={brand.name} size="lg" />
-              {brand.manufacturer && <span className="line-clamp-2 text-[11px] font-semibold text-slate-400">{brand.manufacturer}</span>}
-              <PictureButton label={brand.logo_url ? 'Change logo' : 'Upload logo'} busy={busyId === brand.id} onFile={(file) => upload(brand, file)} />
-            </li>
-          ))}
-        </ul>
+        <div className="mt-4">
+          <CardGrid testId="admin-brand-cards" label="Brands">
+            {shown.map((brand) => (
+              <ListCard
+                key={brand.id}
+                title={brand.name}
+                subtitle={brand.manufacturer}
+                avatar={<CardAvatar fallback={<BrandLogo src={brand.logo_url} name={brand.name} size="md" className="border-0" />} />}
+                status={brand.is_active === false && <CardStatus status="inactive">Inactive</CardStatus>}
+                primary={<PictureButton variant="primary" label={brand.logo_url ? 'Change logo' : 'Upload logo'} busy={busyId === brand.id} onFile={(file) => upload(brand, file)} />}
+              />
+            ))}
+          </CardGrid>
+        </div>
       )}
       <div className="mt-3"><Status status={status} /></div>
     </section>

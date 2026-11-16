@@ -3,6 +3,7 @@ import { imageUrl } from '../../../shared/api/apiClient.js'
 import { ContactValue, formatMoney, profileList } from '../../messaging/messageHelpers.jsx'
 import { useLanguage } from '../../../i18n/LanguageContext.jsx'
 import { avatarFromPath } from '../../../shared/ui/avatars.js'
+import { CardAvatar, CardChip, CardGrid, ListCard } from '../../../shared/ui/ListCard.jsx'
 import { formatNumber } from '../../../shared/utils/formatters.js'
 import { documentFileUrl } from '../../../shared/utils/documentEntries.js'
 import { BUSINESS_TYPE_KEYS, SERVICE_OPTION_KEYS, SUPPLIER_CATEGORY_KEYS, optionLabel } from '../../../i18n/optionKeys.js'
@@ -163,40 +164,37 @@ export function RequestProfileDashboard({ details, participant, canViewContact, 
           {profileRole === 'SUPPLIER' && (
             <section className="mt-4 rounded-2xl border border-brand-100 bg-white p-4">
               <h3 className="text-sm font-extrabold uppercase tracking-wide text-graphite/55">{t('dash.msg.supplierProducts')}</h3>
-              <div className="mt-3 space-y-3">
-                {products.length ? products.map((product, index) => {
-                  const productFeatures = Array.isArray(product.features) ? product.features : profileList(product.features)
-                  return (
-                  <article key={product.id || `${product.name}-${index}`} className="grid gap-3 overflow-hidden rounded-xl border border-brand-100 bg-white p-3 sm:grid-cols-[150px_minmax(0,1fr)]">
-                    {product.image_url ? (
-                      <img src={imageUrl(product.image_url)} alt={td(product.name)} className="h-32 w-full rounded-lg object-cover sm:h-full" />
-                    ) : (
-                      <div className="grid h-32 place-items-center rounded-lg bg-brand-50 text-sm font-bold text-brand-700 sm:h-full">{t('dash.msg.noImage')}</div>
-                    )}
-                    <div className="space-y-2">
-                      <div className="flex flex-wrap items-start justify-between gap-2">
-                        <div>
-                          <p className="text-base font-extrabold text-graphite">{product.name ? td(product.name) : t('dash.owner.supplierModal.productN', { n: index + 1 })}</p>
-                          <p className="mt-1 text-xs font-bold uppercase text-brand-700">{product.category ? valueLabel(SUPPLIER_CATEGORY_KEYS, product.category) : t('dash.msg.categoryNotSet')}</p>
-                        </div>
-                        <span className="rounded-full bg-brand-50 px-3 py-1 text-xs font-bold text-brand-800">
-                          {/* Was pinned to en-IN, so the grouping never
-                              followed the selected language. */}
-                          {formatNumber(product.quantity || 0)} {td(product.unit || '')} {t('dash.owner.supplierModal.inStock')}
-                        </span>
-                      </div>
-                      <p className="font-display text-lg font-extrabold text-brand-800">{formatMoney(product.price)} <span className="text-xs text-graphite/45">/ {product.unit ? td(product.unit) : t('dash.msg.unit')}</span></p>
-                      {productFeatures.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5">
-                          {/* Feature bullets the supplier wrote. */}
-                          {productFeatures.map((feature) => (
-                            <span key={feature} className="rounded-full bg-slate-50 px-2 py-1 text-xs font-bold text-graphite/60 ring-1 ring-slate-200">{td(feature)}</span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </article>
-                )}) : <p className="text-sm text-graphite/55">{t('dash.msg.noProducts')}</p>}
+              <div className="mt-3">
+                {products.length ? (
+                  <CardGrid testId="profile-product-cards" label={t('dash.msg.supplierProducts')}>
+                    {products.map((product, index) => {
+                      const productFeatures = Array.isArray(product.features) ? product.features : profileList(product.features)
+                      const name = product.name ? td(product.name) : t('dash.owner.supplierModal.productN', { n: index + 1 })
+                      return (
+                        <ListCard
+                          key={product.id || `${product.name}-${index}`}
+                          avatar={<CardAvatar src={product.image_url ? imageUrl(product.image_url) : ''} alt={name} fallback={name.trim().slice(0, 1).toUpperCase()} />}
+                          title={name}
+                          subtitle={product.category ? valueLabel(SUPPLIER_CATEGORY_KEYS, product.category) : t('dash.msg.categoryNotSet')}
+                          rows={[
+                            { key: 'price', label: t('property.price'), value: `${formatMoney(product.price)} / ${product.unit ? td(product.unit) : t('dash.msg.unit')}` },
+                            // Was pinned to en-IN, so the grouping never followed the selected language.
+                            { key: 'stock', label: t('dash.owner.supplierModal.inStock'), value: `${formatNumber(product.quantity || 0)} ${td(product.unit || '')}`.trim() },
+                          ]}
+                          // Feature bullets the supplier wrote.
+                          chips={productFeatures.map((feature) => <CardChip key={feature}>{td(feature)}</CardChip>)}
+                        >
+                          {/* The product photo, at one fixed height so every card is the same size. */}
+                          {product.image_url ? (
+                            <img src={imageUrl(product.image_url)} alt={name} className="h-36 w-full rounded-xl object-cover" />
+                          ) : (
+                            <div className="grid h-36 w-full place-items-center rounded-xl bg-brand-50 text-sm font-bold text-brand-700">{t('dash.msg.noImage')}</div>
+                          )}
+                        </ListCard>
+                      )
+                    })}
+                  </CardGrid>
+                ) : <p className="text-sm text-graphite/55">{t('dash.msg.noProducts')}</p>}
               </div>
             </section>
           )}

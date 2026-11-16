@@ -15,8 +15,9 @@
  */
 import { useCallback, useEffect, useState } from 'react'
 import { MapPin, UserPlus, UserRound, Users } from 'lucide-react'
-import { EntityCard } from '../../../shared/ui/EntityCard.jsx'
-import { EntityAvatar, EntityPill } from '../../../shared/ui/EntityPill.jsx'
+import { EntityPill } from '../../../shared/ui/EntityPill.jsx'
+import { CardAvatar, CardChip, CardGrid, ListCard, cardButtonClass } from '../../../shared/ui/ListCard.jsx'
+import { userAvatarSrc } from '../../../shared/ui/avatars.js'
 import {
   fetchProjectSpecialistCandidates,
   fetchProjectSpecialistTeam,
@@ -182,48 +183,41 @@ export default function ContractorProjectSpecialistTeam({ project }) {
                       {t('specialist.noCandidates', { category: categoryLabel(row.category) })}
                     </p>
                   ) : (
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    <CardGrid testId="specialist-candidate-cards">
                       {candidates.map((engineer) => (
-                        <EntityCard
+                        <ListCard
                           key={engineer.user_id}
-                          compact
-                          icon={UserRound}
-                          label={categoryLabel(row.category)}
-                          avatar={
-                            <EntityAvatar user={engineer} role="ENGINEER" alt={engineer.name} />
-                          }
+                          avatar={<CardAvatar src={userAvatarSrc(engineer, 'ENGINEER')} alt={engineer.name} />}
                           title={td(engineer.name)}
                           subtitle={engineer.specialization ? categoryLabel(engineer.specialization) : categoryLabel(row.category)}
-                          pills={[{ key: 'pincode', text: engineer.pincode || '—', icon: MapPin }]}
-                        >
-                          {engineer.request_status === 'accepted' ? (
-                            <p className="mt-3 text-center text-[11px] font-extrabold text-emerald-700">
-                              {t('specialist.assigned')}
-                            </p>
+                          chips={[
+                            <CardChip key="category" icon={UserRound}>{categoryLabel(row.category)}</CardChip>,
+                            <CardChip key="pincode" icon={MapPin}>{engineer.pincode || '—'}</CardChip>,
+                          ]}
+                          // Where Send Request is: the request's state once there is one.
+                          primary={engineer.request_status === 'accepted' ? (
+                            <span className="text-[11px] font-extrabold text-emerald-700">{t('specialist.assigned')}</span>
                           ) : engineer.request_status === 'pending' ? (
-                            <p className="mt-3 text-center text-[11px] font-extrabold text-ocaccent-600">
-                              {t('specialist.pending')}
-                            </p>
+                            <span className="text-[11px] font-extrabold text-ocaccent-600">{t('specialist.pending')}</span>
                           ) : (
-                            <>
-                              <button
-                                type="button"
-                                disabled={busyEngineerId === engineer.user_id || engineer.can_request === false}
-                                onClick={() => sendRequest(engineer.user_id, row.category)}
-                                className="mt-3 inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-lg bg-brand-900 px-3 text-xs font-extrabold text-white transition hover:bg-brand-800 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
-                              >
-                                <UserPlus className="h-3.5 w-3.5" /> {t('specialist.sendRequest')}
-                              </button>
-                              {engineer.can_request === false && (
-                                <p className="mt-1.5 text-center text-[10px] font-semibold text-slate-500">
-                                  {t('specialist.categoryFilled')}
-                                </p>
-                              )}
-                            </>
+                            <button
+                              type="button"
+                              disabled={busyEngineerId === engineer.user_id || engineer.can_request === false}
+                              onClick={() => sendRequest(engineer.user_id, row.category)}
+                              className={cardButtonClass('primary')}
+                            >
+                              <UserPlus className="h-3.5 w-3.5" /> {t('specialist.sendRequest')}
+                            </button>
                           )}
-                        </EntityCard>
+                        >
+                          {engineer.request_status !== 'accepted' && engineer.request_status !== 'pending' && engineer.can_request === false && (
+                            <p className="mt-auto text-[10px] font-semibold text-slate-500">
+                              {t('specialist.categoryFilled')}
+                            </p>
+                          )}
+                        </ListCard>
                       ))}
-                    </div>
+                    </CardGrid>
                   )}
                 </div>
               )}

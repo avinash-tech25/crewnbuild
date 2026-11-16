@@ -34,6 +34,7 @@ import ProductDetailCard from '../../supplier/components/ProductDetailCard.jsx'
 import { StorefrontHeader } from './StorefrontHeader.jsx'
 import { SearchOverlay } from './SearchOverlay.jsx'
 import { StorefrontProductCard } from './StorefrontProductCard.jsx'
+import { CardGrid } from '../../../shared/ui/ListCard.jsx'
 import { StorefrontProductDetail } from './StorefrontProductDetail.jsx'
 import { matchesWords, sellingPrice } from '../storefrontShared.js'
 
@@ -371,7 +372,7 @@ export function SupplierStorefront({ productList = [], message = '', pincode = '
                 <button type="button" onClick={clearAll} className="mt-2 text-sm font-extrabold text-brand-800 hover:underline">Clear search and filters</button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 gap-4 min-[420px]:grid-cols-2 md:grid-cols-3 lg:grid-cols-[repeat(auto-fill,minmax(13rem,1fr))]">
+              <CardGrid testId="storefront-product-cards">
                 {visible.map((listing) => (
                   <StorefrontProductCard
                     key={listing.id}
@@ -383,7 +384,7 @@ export function SupplierStorefront({ productList = [], message = '', pincode = '
                     onDelete={() => onDeleteProduct(listing.id)}
                   />
                 ))}
-              </div>
+              </CardGrid>
             )}
           </div>
         </div>

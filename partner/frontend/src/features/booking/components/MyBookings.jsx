@@ -5,7 +5,8 @@ import { Alert, EmptyState, Spinner } from '../../../shared/ui/ui.jsx'
 import { technicianTypeByCode } from '../../../shared/constants/technicianTypes.js'
 import { apiErrorMessage } from '../../../shared/api/apiClient.js'
 import { fetchMyBookings } from '../bookingApi.js'
-import { BookingStatusBadge, TradeThumb } from './BookingUi.jsx'
+import { CardAvatar, CardGrid, CardStatus, ListCard, cardButtonClass } from '../../../shared/ui/ListCard.jsx'
+import { TradeThumb } from './BookingUi.jsx'
 
 // "Oct 1, 9:56 AM". The API sends UTC timestamps without a zone suffix, the
 // same rule formatDate in ui.jsx applies.
@@ -13,6 +14,12 @@ function bookingTime(value) {
   if (!value) return ''
   const date = new Date(/[zZ]|[+-]\d\d:?\d\d$/.test(value) ? value : `${value}Z`)
   return date.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
+}
+
+// The status word as the badge always said it: the API's own label, in sentence case.
+function statusText(text) {
+  const value = String(text || '').replaceAll('_', ' ').toLowerCase()
+  return value.charAt(0).toUpperCase() + value.slice(1)
 }
 
 // The filter only narrows the list already loaded; it asks the server nothing.
@@ -86,52 +93,49 @@ export default function MyBookings() {
       ) : shown.length === 0 ? (
         <p className="rounded-xl border border-dashed border-oc-line px-4 py-6 text-center text-sm text-oc-muted">No bookings in this list.</p>
       ) : (
-        <div className="space-y-2">
+        <CardGrid label="My bookings" testId="booking-list">
           {shown.map((booking) => {
             const type = technicianTypeByCode(booking.technician_type)
             return (
-              // One booking per row: who and what on the left, the contact in
-              // the middle, the actions on the right.
-              <article key={booking.id} className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl border border-oc-line bg-white px-3 py-2.5 sm:flex-nowrap">
-                <TradeThumb type={type} size="h-12 w-12" />
-                <div className="min-w-0 flex-1 sm:flex-none sm:basis-[300px]">
-                  <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
-                    <span className="font-display text-sm font-extrabold text-oc-ink">{type?.label}</span>
-                    <BookingStatusBadge status={booking.status} label={booking.status_label} />
-                  </div>
-                  <p className="mt-0.5 flex flex-wrap gap-x-3 text-xs text-oc-muted">
-                    {booking.technician && <span className="font-semibold text-oc-ink">{booking.technician.name}</span>}
-                    <span>{bookingTime(booking.created_at)}</span>
-                  </p>
-                </div>
-                <div className="flex w-full min-w-0 flex-wrap items-center justify-between gap-x-4 gap-y-2 sm:w-auto sm:flex-1">
-                  {booking.technician?.phone ? (
-                    <a href={`tel:${booking.technician.phone}`} className="inline-flex items-center gap-1.5 text-sm font-semibold text-oc-ink hover:text-oc-green">
-                      <Phone className="h-3.5 w-3.5 text-oc-muted" /> {booking.technician.phone}
-                    </a>
-                  ) : <span />}
-                  <div className="flex flex-wrap items-center justify-end gap-2">
-                    {booking.can_rate && (
-                      <Link
-                        to={`/book-technician/bookings/${booking.id}`}
-                        className="inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-amber-100 px-3 py-1 text-xs font-extrabold text-amber-900 hover:bg-amber-200"
-                        data-testid="rate-technician-badge"
-                      >
-                        <Star className="h-3.5 w-3.5 fill-current" /> Rate technician
-                      </Link>
-                    )}
-                    <Link
-                      to={`/book-technician/bookings/${booking.id}`}
-                      className="inline-flex h-9 items-center gap-1.5 whitespace-nowrap rounded-xl border border-oc-line bg-white px-3 text-xs font-extrabold text-oc-green transition hover:border-oc-green hover:bg-oc-mint sm:px-3.5 sm:text-sm"
-                    >
-                      Track booking <ArrowRight className="h-4 w-4" />
-                    </Link>
-                  </div>
-                </div>
-              </article>
+              <ListCard
+                key={booking.id}
+                testId="booking-card"
+                dataStatus={booking.status}
+                avatar={<CardAvatar fallback={<TradeThumb type={type} size="h-12 w-12" />} />}
+                title={type?.label}
+                subtitle={bookingTime(booking.created_at)}
+                status={<CardStatus status={booking.status}>{statusText(booking.status_label || booking.status)}</CardStatus>}
+                rows={[
+                  { key: 'technician', label: 'Technician', value: booking.technician?.name },
+                  {
+                    key: 'phone',
+                    label: 'Phone',
+                    title: booking.technician?.phone,
+                    value: booking.technician?.phone ? (
+                      <a href={`tel:${booking.technician.phone}`} className="inline-flex items-center gap-1.5 rounded hover:text-oc-green focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oc-green">
+                        <Phone className="h-3.5 w-3.5 text-oc-muted" aria-hidden="true" /> {booking.technician.phone}
+                      </a>
+                    ) : null,
+                  },
+                ]}
+                secondary={booking.can_rate && (
+                  <Link
+                    to={`/book-technician/bookings/${booking.id}`}
+                    className={cardButtonClass('secondary')}
+                    data-testid="rate-technician-badge"
+                  >
+                    <Star className="h-3.5 w-3.5 fill-current text-amber-500" aria-hidden="true" /> Rate technician
+                  </Link>
+                )}
+                primary={(
+                  <Link to={`/book-technician/bookings/${booking.id}`} className={cardButtonClass('primary')}>
+                    Track booking <ArrowRight className="h-4 w-4" />
+                  </Link>
+                )}
+              />
             )
           })}
-        </div>
+        </CardGrid>
       )}
     </section>
   )

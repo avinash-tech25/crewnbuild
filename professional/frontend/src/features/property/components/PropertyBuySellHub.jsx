@@ -16,6 +16,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { Loader2, Pencil, Plus, Search, Send, Store } from 'lucide-react'
 import SellListingCard from './SellListingCard.jsx'
+import { CardGrid } from '../../../shared/ui/ListCard.jsx'
 import PropertyDetailPanel from './PropertyDetailPanel.jsx'
 import PropertyForm from './PropertyForm.jsx'
 import BudgetInWords from '../../../shared/ui/BudgetInWords.jsx'
@@ -375,11 +376,11 @@ export default function PropertyBuySellHub({
           ) : feed.listings.length ? (
             /* The same card as Sell, so a property reads the same whether you
                are browsing the market or managing your own. */
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <CardGrid testId="property-feed-cards">
               {feed.listings.map((listing) => (
                 <SellListingCard key={listing.id} listing={listing} browse onOpen={() => openDetail(listing)} />
               ))}
-            </div>
+            </CardGrid>
           ) : (
             <EmptyState icon={Search} title={t('property.empty.noneTitle')} message={t('property.empty.noneMessage')} />
           )}
@@ -421,11 +422,11 @@ export default function PropertyBuySellHub({
             /* The seller's own listings: photo cards with the status on the
                photo and one "View & manage" button, which opens the same
                panel the card always opened. */
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <CardGrid testId="property-my-cards">
               {myListings.map((listing) => (
                 <SellListingCard key={listing.id} listing={listing} onOpen={() => openDetail(listing)} />
               ))}
-            </div>
+            </CardGrid>
           ) : (
             <EmptyState icon={Store} title={t('property.empty.mineTitle')} message={t('property.empty.mineMessage')} />
           )}

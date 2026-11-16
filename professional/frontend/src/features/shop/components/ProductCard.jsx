@@ -24,6 +24,7 @@ import { imageUrl } from '../../../shared/api/apiClient.js'
 import { changeCartQuantity, removeProductFromCart } from '../cartSlice.js'
 import { PriceTag } from '../../catalog/components/PriceTag.jsx'
 import { useLanguage } from '../../../i18n/LanguageContext.jsx'
+import { CardAvatar, ListCard, cardButtonClass } from '../../../shared/ui/ListCard.jsx'
 
 export default function ProductCard({ product, busy, onOpen, onAddToCart }) {
   const { t, td } = useLanguage()
@@ -47,59 +48,53 @@ export default function ProductCard({ product, busy, onOpen, onAddToCart }) {
   }
 
   return (
-    <article
-      onClick={(event) => { if (!event.target.closest('button, input')) onOpen(product) }}
-      className="group flex cursor-pointer flex-col overflow-hidden rounded-xl border border-slate-200 bg-white
-                 shadow-[0_10px_30px_-24px_rgba(15,23,42,0.4)] transition duration-200
-                 hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-[0_20px_40px_-24px_rgba(15,23,42,0.45)]"
+    <ListCard
+      onClick={() => onOpen(product)}
+      avatar={(
+        <CardAvatar
+          src={product.image_url ? imageUrl(product.image_url) : null}
+          alt=""
+          fallback={<Package aria-hidden="true" className="h-5 w-5" />}
+        />
+      )}
+      // The name the supplier gave their product; one line, ellipsised.
+      title={td(product.name)}
+      // One control, in one place: Add to Cart until the product is in the
+      // basket, then the basket's own quantity stepper. None without
+      // onAddToCart (a browse-only catalogue).
+      primary={onAddToCart ? (inCart ? (
+        <div className="flex h-9 items-center justify-between overflow-hidden rounded-lg border border-brand-200 bg-brand-50">
+          <button type="button" disabled={busy} onClick={() => step(-1)} aria-label={t('shop.decrease')} className="grid h-full w-9 place-items-center text-brand-800 transition hover:bg-brand-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oc-green disabled:opacity-40">
+            <Minus className="h-3.5 w-3.5" />
+          </button>
+          <span className="min-w-[2rem] text-center text-xs font-extrabold text-brand-900" aria-label={t('shop.quantity')}>{Number(line.quantity)}</span>
+          <button type="button" disabled={busy || Number(line.quantity) >= available} onClick={() => step(1)} aria-label={t('shop.increase')} className="grid h-full w-9 place-items-center text-brand-800 transition hover:bg-brand-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oc-green disabled:opacity-40">
+            <Plus className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          disabled={outOfStock || busy}
+          onClick={() => onAddToCart(product, 1)}
+          className={cardButtonClass('primary')}
+        >
+          <ShoppingCart className="h-3.5 w-3.5" />
+          {t('shop.addToCart')}
+        </button>
+      )) : null}
     >
-      <div className="relative aspect-[4/3] overflow-hidden bg-slate-50">
-        {product.image_url ? (
-          <img
-            src={imageUrl(product.image_url)}
-            alt={td(product.name)}
-            className="h-full w-full object-contain p-2 transition duration-300 group-hover:scale-105"
-          />
-        ) : (
-          <span className="grid h-full place-items-center text-slate-300"><Package className="h-7 w-7" /></span>
-        )}
-      </div>
-
-      <div className="flex flex-1 flex-col gap-1.5 p-2.5">
-        {/* One line, ellipsised: a long name must not make the card taller. */}
-        {/* The name the supplier gave their product. */}
-        <h3 className="truncate font-display text-[13px] font-extrabold leading-tight text-graphite" title={td(product.name)}>
-          {td(product.name)}
-        </h3>
-        <PriceTag price={product.price} discountPercentage={product.discount_percentage} size="sm" />
-
-        {/* One control, in one place: Add to Cart until the product is in the
-            basket, then the basket's own quantity stepper. None without
-            onAddToCart (a browse-only catalogue). */}
-        {onAddToCart && <div className="mt-auto pt-0.5">
-          {inCart ? (
-            <div className="flex h-8 w-full items-center justify-between overflow-hidden rounded-lg border border-brand-200 bg-brand-50">
-              <button type="button" disabled={busy} onClick={() => step(-1)} aria-label={t('shop.decrease')} className="grid h-full w-8 place-items-center text-brand-800 transition hover:bg-brand-100 disabled:opacity-40">
-                <Minus className="h-3.5 w-3.5" />
-              </button>
-              <span className="text-xs font-extrabold text-brand-900" aria-label={t('shop.quantity')}>{Number(line.quantity)}</span>
-              <button type="button" disabled={busy || Number(line.quantity) >= available} onClick={() => step(1)} aria-label={t('shop.increase')} className="grid h-full w-8 place-items-center text-brand-800 transition hover:bg-brand-100 disabled:opacity-40">
-                <Plus className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          ) : (
-            <button
-              type="button"
-              disabled={outOfStock || busy}
-              onClick={() => onAddToCart(product, 1)}
-              className="inline-flex h-8 w-full items-center justify-center gap-1.5 rounded-lg bg-brand-700 px-2 text-[11px] font-extrabold text-white transition hover:bg-brand-800 disabled:opacity-45"
-            >
-              <ShoppingCart className="h-3.5 w-3.5" />
-              {t('shop.addToCart')}
-            </button>
-          )}
-        </div>}
-      </div>
-    </article>
+      {/* The product photo, whole, at one height on every card. */}
+      {product.image_url ? (
+        <img
+          src={imageUrl(product.image_url)}
+          alt={td(product.name)}
+          className="h-32 w-full rounded-xl bg-slate-50 object-contain p-2"
+        />
+      ) : (
+        <span className="grid h-32 w-full place-items-center rounded-xl bg-slate-50 text-slate-300"><Package className="h-7 w-7" /></span>
+      )}
+      <PriceTag price={product.price} discountPercentage={product.discount_percentage} size="sm" />
+    </ListCard>
   )
 }
