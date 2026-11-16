@@ -475,6 +475,10 @@ const base = {
   'ui.findClients': 'Find Clients',
   'ui.settings': 'Settings',
   'ui.profile': 'Profile',
+  // The public header's controls for a visitor who is signed in.
+  'session.goToDashboard': 'Go to dashboard',
+  'session.signOut': 'Sign out',
+  'session.accountMenu': 'Account menu',
   'ui.profileSettings': 'Profile Settings',
   'ui.helpFeedback': 'Help & Feedback',
   'account.delete': 'Delete Account',

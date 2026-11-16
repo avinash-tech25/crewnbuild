@@ -57,7 +57,8 @@ const EVERY_SIGNED_IN = [...new Set([...SIGNED_IN_ROLES.filter((role) => role !=
 
 export const routes = [
   // ---- public site (ported) ----
-  { path: '/', Component: HomePage, access: 'public', signsOut: true },
+  // A signed-in visitor stays signed in here: only the explicit Sign out ends a session.
+  { path: '/', Component: HomePage, access: 'public' },
   { path: '/about', Component: AboutPage, access: 'public' },
   { path: '/services', Component: ServicesPage, access: 'public' },
   { path: '/projects', Component: ProjectsPage, access: 'public' },

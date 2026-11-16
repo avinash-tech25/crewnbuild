@@ -13,6 +13,7 @@ import { profileCompletionPercent } from '../../features/accounts/components/Pro
 import { SmartImage } from '../ui/ui.jsx'
 import { avatarFromPath } from '../ui/avatars.js'
 import { useLanguage } from '../../i18n/LanguageContext.jsx'
+import { useAccountLinks } from '../auth/sessionLinks.js'
 import { useLiveEventsConnection, useLiveRefresh } from '../hooks/useLiveRefresh.js'
 
 /*
@@ -164,6 +165,8 @@ const AD_PLACEMENT_BY_ROLE = {
 // puts its page title and breadcrumb there; its logo is in its own sidebar). Every other
 // dashboard leaves it out and keeps the logo.
 export function DashboardTopbar({ searchValue, onSearchChange, searchPlaceholder, showSearch = true, user, roleLabel, userMenu = [], onUserMenuSelect, onLogout, onMessagesClick, unreadMessageCount = 0, activeId, defaultTab = 'dashboard', activityItems = null, onProfileImageUpload, projectSwitcher = null, headerActions = null, onNotificationsClick = null, beforeLanguage = null, leading = null }) {
+  // The logo leads to the signed-in account's own dashboard home, not the public landing page.
+  const dashboardHome = useAccountLinks().links?.dashboard || '/'
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const { t, td } = useLanguage()
   const { theme, toggleTheme } = useTheme()
@@ -220,7 +223,8 @@ export function DashboardTopbar({ searchValue, onSearchChange, searchPlaceholder
               as on the landing header. In dark mode the bar turns dark, so the
               wordmark gets the landing's white pill to stay readable. */}
           <span className="inline-flex items-center rounded-full dark:bg-[#fff] dark:py-[5px] dark:ps-[10px] dark:pe-[14px]">
-            <Brand logoOnly small />
+            {/* Inside a dashboard the logo leads to this account's own dashboard home. */}
+            <Brand logoOnly small href={dashboardHome} />
           </span>
         </div>
         )}

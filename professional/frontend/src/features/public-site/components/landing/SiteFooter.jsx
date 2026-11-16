@@ -11,6 +11,8 @@ import { Brand, containerClass } from "./shared.jsx";
 import { roleDestination, roleMeta } from "./content.js";
 import { useEffect, useState } from "react";
 import { useLanguage } from "../../../../i18n/LanguageContext.jsx";
+import { Link } from "react-router-dom";
+import { useAccountLinks } from "../../../../shared/auth/sessionLinks.js";
 import { fetchSupportConfig } from "../../../support/supportApi.js";
 
 const columnHeading = "m-0 text-[10px] font-extrabold uppercase tracking-[.16em] text-oc-amber rtl:tracking-normal";
@@ -30,7 +32,8 @@ function ContactRow({ icon: Icon, children }) {
 }
 
 export function SiteFooter({ text, language, onSelectLanguage }) {
-  const { languages } = useLanguage();
+  const { languages, t } = useLanguage();
+  const accountHome = useAccountLinks().links?.home;
   // Email, phone and hours come from GET /support/config -- the backend's
   // SUPPORT_EMAIL / SUPPORT_PHONE / SUPPORT_HOURS, the same values the Contact &
   // Support page shows -- so the footer never carries its own (it showed a Kuwait
@@ -68,8 +71,15 @@ export function SiteFooter({ text, language, onSelectLanguage }) {
               <li><a className={columnLink} href="#roles">{text.nav.roles}</a></li>
               <li><a className={columnLink} href="#how">{text.nav.how}</a></li>
               <li><a className={columnLink} href="#world">{text.nav.world}</a></li>
-              <li><a className={columnLink} href="/signup">{text.nav.start}</a></li>
-              <li><a className={columnLink} href="/login">{text.nav.signIn}</a></li>
+              {accountHome ? (
+                // Signed in: the way back to the dashboard, not Sign in / Get started.
+                <li><Link className={columnLink} to={accountHome}>{t("session.goToDashboard")}</Link></li>
+              ) : (
+                <>
+                  <li><a className={columnLink} href="/signup">{text.nav.start}</a></li>
+                  <li><a className={columnLink} href="/login">{text.nav.signIn}</a></li>
+                </>
+              )}
             </ul>
           </div>
 

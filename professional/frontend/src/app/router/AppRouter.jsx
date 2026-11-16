@@ -8,20 +8,6 @@ import RequireAccess from './guards/RequireAccess.jsx'
 import RouteErrorBoundary from './RouteErrorBoundary.jsx'
 import { PROTECTED_PATH_PREFIXES, routes } from './routes.jsx'
 
-/**
- * Going to Home ends the session, as it did in the old app, through the same logoutUser
- * the Logout button uses; protected routes then send anyone without a session to /login,
- * so Back cannot reopen a dashboard.
- */
-function SignOutOnArrival({ children }) {
-  const dispatch = useDispatch()
-  const signedIn = useSelector((state) => Boolean(state.auth.user))
-  useEffect(() => {
-    if (signedIn) dispatch(logoutUser())
-  }, [dispatch, signedIn])
-  return children
-}
-
 /** The session's life in this tab (section 8.1). */
 export function useSessionLifecycle() {
   const dispatch = useDispatch()
@@ -61,7 +47,7 @@ export function AppRoutes() {
   return (
     <Suspense fallback={<FullPageLoader />}>
       <Routes>
-        {routes.map(({ path, Component, access, signsOut }) => {
+        {routes.map(({ path, Component, access }) => {
           const screen = <Component />
           return (
             <Route
@@ -69,7 +55,7 @@ export function AppRoutes() {
               path={path}
               element={
                 <RouteErrorBoundary>
-                  <RequireAccess access={access}>{signsOut ? <SignOutOnArrival>{screen}</SignOutOnArrival> : screen}</RequireAccess>
+                  <RequireAccess access={access}>{screen}</RequireAccess>
                 </RouteErrorBoundary>
               }
             />

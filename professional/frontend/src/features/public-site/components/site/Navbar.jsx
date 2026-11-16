@@ -4,6 +4,10 @@ import { Menu, Phone, X } from 'lucide-react'
 import Logo from '../../../../shared/ui/Logo.jsx'
 import LanguageSelector from '../../../../shared/ui/LanguageSelector.jsx'
 import { useLanguage } from '../../../../i18n/LanguageContext.jsx'
+import SessionNav from '../../../../shared/ui/SessionNav.jsx'
+import { useAccountLinks } from '../../../../shared/auth/sessionLinks.js'
+
+const GO_CLASS = 'inline-flex h-9 whitespace-nowrap items-center gap-2 rounded-full bg-brand-800 px-3.5 text-[13px] font-bold text-white shadow-orange transition hover:-translate-y-0.5 hover:bg-brand-700'
 
 const LINKS = [
   { labelKey: 'site.nav.home', to: '/' },
@@ -20,6 +24,8 @@ export default function Navbar() {
   const [open, setOpen] = useState(false)
   const { pathname } = useLocation()
   const { t } = useLanguage()
+  // Signed in: "Go to dashboard" and the account menu instead of Login / Sign Up.
+  const { user: signedInUser } = useAccountLinks()
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24)
@@ -71,18 +77,24 @@ export default function Navbar() {
             <Phone className="h-4 w-4" /> +91 40 1234 5678
           </a>
           <LanguageSelector compact variant="light" />
-          <NavLink
-            to="/login"
-            className="inline-flex h-9 items-center justify-center whitespace-nowrap rounded-full border border-brand-300 bg-white px-3 text-[13px] font-bold text-brand-800 transition hover:-translate-y-0.5 hover:border-brand-500 hover:bg-brand-50"
-          >
-            {t('site.nav.login')}
-          </NavLink>
-          <NavLink
-            to="/signup"
-            className="inline-flex h-9 whitespace-nowrap items-center gap-2 rounded-full bg-brand-800 px-3.5 text-[13px] font-bold text-white shadow-orange transition hover:-translate-y-0.5 hover:bg-brand-700"
-          >
-            {t('site.nav.signup')}
-          </NavLink>
+          {signedInUser ? (
+            <SessionNav goClassName={GO_CLASS} />
+          ) : (
+            <>
+              <NavLink
+                to="/login"
+                className="inline-flex h-9 items-center justify-center whitespace-nowrap rounded-full border border-brand-300 bg-white px-3 text-[13px] font-bold text-brand-800 transition hover:-translate-y-0.5 hover:border-brand-500 hover:bg-brand-50"
+              >
+                {t('site.nav.login')}
+              </NavLink>
+              <NavLink
+                to="/signup"
+                className={GO_CLASS}
+              >
+                {t('site.nav.signup')}
+              </NavLink>
+            </>
+          )}
         </div>
 
         <button
@@ -115,14 +127,20 @@ export default function Navbar() {
             <div className="mt-3 flex items-center justify-center">
               <LanguageSelector compact variant="light" />
             </div>
-            <div className="mt-3 grid grid-cols-2 gap-2">
-              <NavLink to="/login" className="btn-ghost">
-                {t('site.nav.login')}
-              </NavLink>
-              <NavLink to="/signup" className="btn-primary col-span-2">
-                {t('site.nav.signup')}
-              </NavLink>
-            </div>
+            {signedInUser ? (
+              <div className="mt-3">
+                <SessionNav stacked goClassName="btn-primary" onNavigate={() => setOpen(false)} />
+              </div>
+            ) : (
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <NavLink to="/login" className="btn-ghost">
+                  {t('site.nav.login')}
+                </NavLink>
+                <NavLink to="/signup" className="btn-primary col-span-2">
+                  {t('site.nav.signup')}
+                </NavLink>
+              </div>
+            )}
           </div>
         </div>
       )}

@@ -21,6 +21,9 @@ function useScrollActivatedRole(onActivate) {
       const { top, height } = track.getBoundingClientRect();
       const scrolledIntoTrack = -top;
       const perRole = Math.min(window.innerHeight * screensPerRole, height / roleMeta.length);
+      // A track with no height (not laid out, or hidden) has no step: keep the current role
+      // rather than dividing by zero into a role that does not exist.
+      if (!(perRole > 0)) return;
       const step = Math.floor(scrolledIntoTrack / perRole);
       onActivate(Math.min(roleMeta.length - 1, Math.max(0, step)));
     };

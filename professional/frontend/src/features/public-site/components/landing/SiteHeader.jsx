@@ -1,6 +1,8 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { ArrowRight, BadgeCheck, Crown, Globe, Handshake, LayoutGrid, Menu, Phone, Users, Workflow, X } from "lucide-react";
 import { Brand, smallButtonClass } from "./shared.jsx";
+import SessionNav from "../../../../shared/ui/SessionNav.jsx";
+import { useAccountLinks } from "../../../../shared/auth/sessionLinks.js";
 import { useLanguage } from "../../../../i18n/LanguageContext.jsx";
 import PublicWeatherIndicator from "../../../weather/components/PublicWeatherIndicator.jsx";
 
@@ -178,6 +180,8 @@ export function SiteHeader({ text, brandHref = "#top" }) {
   // language selection the whole app shares, and the page's own `text` already
   // follows it.
   const { language, setLanguage, languages, t } = useLanguage();
+  // Signed in: "Go to dashboard" and the account menu instead of Sign in / Get started.
+  const { user: signedInUser } = useAccountLinks();
   const languageLabel = t("language.label");
   const rowRef = useRef(null);
   const weatherRef = useRef(null);
@@ -256,15 +260,21 @@ export function SiteHeader({ text, brandHref = "#top" }) {
           ><Phone {...navIconProps} />{text.nav.contactUs}</a>
           {/* Phones have no room for these in the bar, so the menu carries them. */}
           <div className={`${crowded ? "" : "wide:hidden"} flex flex-col gap-[10px] pt-[14px] border-t border-[rgba(8,62,43,.16)]`}>
-            <a
-              className="inline-flex min-h-[42px] items-center justify-center rounded-full border border-[rgba(8,62,43,.3)] text-xs font-extrabold text-oc-deep"
-              href="/login"
-            >
-              {text.nav.signIn}
-            </a>
-            <a className={smallButtonClass} href="/signup">
-              {text.nav.start} <ArrowRight size={15} className="rtl:-scale-x-100" />
-            </a>
+            {signedInUser ? (
+              <SessionNav stacked goClassName={smallButtonClass} onNavigate={() => setMenuOpen(false)} />
+            ) : (
+              <>
+                <a
+                  className="inline-flex min-h-[42px] items-center justify-center rounded-full border border-[rgba(8,62,43,.3)] text-xs font-extrabold text-oc-deep"
+                  href="/login"
+                >
+                  {text.nav.signIn}
+                </a>
+                <a className={smallButtonClass} href="/signup">
+                  {text.nav.start} <ArrowRight size={15} className="rtl:-scale-x-100" />
+                </a>
+              </>
+            )}
           </div>
         </nav>
 
@@ -312,10 +322,16 @@ export function SiteHeader({ text, brandHref = "#top" }) {
         {!menuMode && <NavRule className={`-ms-[11px] -me-[5px] max-[1365px]:-mx-[6px] ${barItemClass}`} />}
 
         <div className={`hidden ${crowded ? "" : "wide:flex"} ${barItemClass} ${menuMode ? "gap-3" : "gap-5 max-[1365px]:gap-[10px]"} whitespace-nowrap items-center text-oc-deep text-xs leading-normal font-extrabold`}>
-          <a className={signInPillClass} href="/login">{text.nav.signIn}</a>
-          <a className={startPillClass} href="/signup">
-            {text.nav.start} <ArrowRight size={15} className="rtl:-scale-x-100" />
-          </a>
+          {signedInUser ? (
+            <SessionNav goClassName={startPillClass} />
+          ) : (
+            <>
+              <a className={signInPillClass} href="/login">{text.nav.signIn}</a>
+              <a className={startPillClass} href="/signup">
+                {text.nav.start} <ArrowRight size={15} className="rtl:-scale-x-100" />
+              </a>
+            </>
+          )}
         </div>
 
         <button className={`${menuMode ? "" : "hidden"} ${barItemClass} ms-2 wide:ms-4 text-oc-ink`} onClick={() => setMenuOpen(!menuOpen)} aria-label="Toggle menu">
