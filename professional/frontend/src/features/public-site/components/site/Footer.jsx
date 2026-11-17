@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { ArrowUpRight, Clock, Mail, MapPin, Phone } from 'lucide-react'
 import Logo from '../../../../shared/ui/Logo.jsx'
 import { useLanguage } from '../../../../i18n/LanguageContext.jsx'
+import { SUPPORT_PHONE, phoneHref } from '../../../../shared/constants/support.js'
 
 const COLUMNS = [
   {
@@ -36,8 +37,8 @@ const COLUMNS = [
   {
     titleKey: 'site.footer.col.legal',
     links: [
-      { labelKey: 'site.footer.link.privacy', to: '/' },
-      { labelKey: 'site.footer.link.terms', to: '/' },
+      { labelKey: 'site.footer.link.terms', to: '/terms' },
+      { labelKey: 'site.footer.link.privacy', to: '/privacy' },
       { labelKey: 'site.footer.link.rera', to: '/' },
       { labelKey: 'site.footer.link.security', to: '/' },
     ],
@@ -60,7 +61,8 @@ export default function Footer() {
                 <Mail className="h-4 w-4 text-brand-300" /> hello@octabuild.in
               </p>
               <p className="flex items-center gap-2.5">
-                <Phone className="h-4 w-4 text-brand-300" /> +91 40 1234 5678
+                <Phone className="h-4 w-4 text-brand-300" />
+                <a href={phoneHref(SUPPORT_PHONE)} className="hover:text-brand-200" dir="ltr">{SUPPORT_PHONE}</a>
               </p>
               <p className="flex items-center gap-2.5">
                 <MapPin className="h-4 w-4 text-brand-300" /> HITEC City, Hyderabad, India

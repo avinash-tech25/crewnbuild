@@ -29,7 +29,7 @@ from conftest import FRONTEND_ORIGIN, REQUESTERS_STAND_IN, make_settings
 from cryptography.fernet import Fernet
 from fastapi import HTTPException
 from fastapi.testclient import TestClient
-from helpers import key_pair
+from helpers import CONSENT, key_pair
 from sqlalchemy import text
 from sqlalchemy.engine import Connection
 from sqlalchemy.orm import Session
@@ -330,7 +330,7 @@ def onboard(client: TestClient, mailbox: RecordingEmail) -> Any:
         assert client.post("/auth/signup/send-code", json={"email": email}).status_code == 200
         verified = client.post(
             "/auth/signup/verify-code",
-            json={"email": email, "phone": "9876543210", "code": mailbox.last_code(email)},
+            json={"email": email, "phone": "9876543210", "code": mailbox.last_code(email), **CONSENT},
         )
         assert verified.status_code == 200, verified.text
         auth: dict[str, Any] = verified.json()

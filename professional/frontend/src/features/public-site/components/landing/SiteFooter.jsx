@@ -14,6 +14,7 @@ import { useLanguage } from "../../../../i18n/LanguageContext.jsx";
 import { Link } from "react-router-dom";
 import { useAccountLinks } from "../../../../shared/auth/sessionLinks.js";
 import { fetchSupportConfig } from "../../../support/supportApi.js";
+import { SUPPORT_PHONE, phoneHref } from "../../../../shared/constants/support.js";
 
 const columnHeading = "m-0 text-[10px] font-extrabold uppercase tracking-[.16em] text-oc-amber rtl:tracking-normal";
 const columnList = "flex flex-col gap-[13px] mt-[22px] p-0 list-none text-xs font-semibold leading-[1.6] text-[#b6bfb8]";
@@ -54,7 +55,7 @@ export function SiteFooter({ text, language, onSelectLanguage }) {
   return (
     <footer className="bg-oc-night text-[#f2f5f2] pt-[78px] pb-[26px] max-wide:pt-14 max-wide:pb-[22px]">
       <div className={containerClass}>
-        <div className="grid grid-cols-[1.6fr_1fr_1fr_1.15fr] gap-[46px] max-wide:grid-cols-2 max-wide:gap-[34px]">
+        <div className="grid grid-cols-[1.6fr_1fr_1fr_.8fr_1.15fr] gap-[46px] max-wide:grid-cols-2 max-wide:gap-[34px]">
           <div className="max-w-[340px] max-wide:col-span-full max-wide:max-w-none">
             <Brand href="#top" />
             <p className="mt-5 text-xs leading-[1.8] text-[#98a19a]">{text.footer.tagline}</p>
@@ -104,6 +105,14 @@ export function SiteFooter({ text, language, onSelectLanguage }) {
           </div>
 
           <div>
+            <h4 className={columnHeading}>{t("site.footer.col.legal")}</h4>
+            <ul className={columnList}>
+              <li><Link className={columnLink} to="/terms">{text.footer.terms}</Link></li>
+              <li><Link className={columnLink} to="/privacy">{text.footer.privacy}</Link></li>
+            </ul>
+          </div>
+
+          <div>
             <h4 className={columnHeading}>{text.footer.contact}</h4>
             <ul className={columnList}>
               {/* Contact details live on the Contact Us page, which shows only the
@@ -113,9 +122,10 @@ export function SiteFooter({ text, language, onSelectLanguage }) {
               {contact?.email && (
                 <ContactRow icon={Mail}><a className={`${columnLink} min-w-0 [overflow-wrap:anywhere]`} href={`mailto:${contact.email}`} dir="ltr">{contact.email}</a></ContactRow>
               )}
-              {contact?.phone && (
-                <ContactRow icon={Phone}><a className={columnLink} href={contact.phone_href} dir="ltr">{contact.phone}</a></ContactRow>
-              )}
+              {/* SUPPORT_PHONE from the server; the company line until it answers. */}
+              <ContactRow icon={Phone}>
+                <a className={columnLink} href={contact?.phone_href || phoneHref(SUPPORT_PHONE)} dir="ltr">{contact?.phone || SUPPORT_PHONE}</a>
+              </ContactRow>
               {contact?.hours && <ContactRow icon={Clock}><span>{contact.hours}</span></ContactRow>}
             </ul>
           </div>
@@ -129,8 +139,6 @@ export function SiteFooter({ text, language, onSelectLanguage }) {
           <span>© {new Date().getFullYear()} CREWNBUILD. {text.footer.rights}</span>
 
           <div className="flex gap-[22px] max-wide:flex-wrap max-wide:gap-x-5 max-wide:gap-y-3 max-wide:mt-[13px]">
-            <a className="transition-colors duration-200 hover:text-oc-amber" href="#privacy">{text.footer.privacy}</a>
-            <a className="transition-colors duration-200 hover:text-oc-amber" href="#terms">{text.footer.terms}</a>
             <a className="transition-colors duration-200 hover:text-oc-amber" href="#cookies">{text.footer.cookies}</a>
           </div>
 

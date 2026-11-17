@@ -21,7 +21,7 @@ from sqlalchemy import select, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.core.config import PROFESSIONAL_SCHEMA, Settings
+from app.core.config import DEFAULT_SUPPORT_PHONE, PROFESSIONAL_SCHEMA, Settings
 from app.core.local_time import local_today
 from app.integrations.email.email_sender import EmailSender
 from app.modules.accounts.account_deletion_service import support_mailbox
@@ -99,7 +99,7 @@ def dial_digits(value: str) -> str:
 
 def public_config(user: User | None, settings: Settings) -> dict[str, Any]:
     whatsapp = (settings.support_whatsapp or "").strip()
-    phone = (settings.support_phone or "").strip()
+    phone = (settings.support_phone or "").strip() or DEFAULT_SUPPORT_PHONE
     default_country = account_locality(user) if user else LOCALITY_INDIA
     if default_country not in PHONE_COUNTRIES:
         default_country = LOCALITY_INDIA

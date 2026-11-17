@@ -4,6 +4,8 @@ import { describe, expect, it } from 'vitest'
 import { storeRequesterSession, technicianSession } from '../../shared/api/apiClient.js'
 import { aRequesterSession, aSession, aTechnician, installFakeServer } from '../../test/fakeServer.js'
 import { location, renderApp, signedOut, technicianSignedIn } from '../../test/renderApp.jsx'
+import terms from '../../features/legal/content/terms.js'
+import privacy from '../../features/legal/content/privacy.js'
 
 const FIND = { timeout: 8000 }
 const INVALID_CREDENTIALS = 'Invalid email or password.'
@@ -148,9 +150,17 @@ describe('sign-in, registration and password reset', () => {
     const digits = await screen.findAllByRole('textbox')
     await user.click(digits[0])
     await user.paste('482913')
+    await user.click(screen.getByRole('checkbox', { name: /I agree to the Terms of Service and Privacy Policy/ }))
     await user.click(screen.getByRole('button', { name: /Verify email/ }))
     await waitFor(() => expect(location.current.pathname).toBe('/onboarding'))
-    expect(JSON.parse(server.calls('POST /auth/signup/verify-code')[0].data)).toEqual({ email: 'new.tech@example.in', phone: '9876500022', code: '482913' })
+    expect(JSON.parse(server.calls('POST /auth/signup/verify-code')[0].data)).toEqual({
+      email: 'new.tech@example.in',
+      phone: '9876500022',
+      code: '482913',
+      accept_terms: true,
+      terms_version: terms.version,
+      privacy_version: privacy.version,
+    })
     expect(technicianSession.currentCsrf()).toBe('csrf-onboarding')
   })
 

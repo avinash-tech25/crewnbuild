@@ -20,6 +20,7 @@ from app.auth.dependencies import (
 )
 from app.core.client_address import visitor_address
 from app.core.config import Settings
+from app.core.legal import LegalConsent, consent_from_query
 from app.core.security.access_tokens import (
     create_partner_handoff_token,
     csrf_token_for,
@@ -434,6 +435,19 @@ def create_partner_handoff(
 # ---- Google and Microsoft sign-in ----
 
 
+def oauth_sign_up_consent(
+    accept_terms: bool | None = Query(default=None),
+    terms_version: str | None = Query(default=None),
+    privacy_version: str | None = Query(default=None),
+) -> LegalConsent | None:
+    """Sign-up through a provider: the consent given on the sign-up page, sent on the
+    start link (accept_terms=true&terms_version=..&privacy_version=..). Absent for a
+    sign-in; a provider identity with no account is then refused at the callback."""
+    return consent_from_query(
+        {"accept_terms": accept_terms, "terms_version": terms_version, "privacy_version": privacy_version}
+    )
+
+
 def signed_in_user_id(request: Request, database: Session, settings: Settings) -> uuid.UUID | None:
     """The account already signed in in this browser, if any: only that account can have
     a provider connected to it."""
@@ -451,11 +465,12 @@ def signed_in_user_id(request: Request, database: Session, settings: Settings) -
 def start_google_oauth(
     request: Request,
     role: str = Query(default="OWNER"),
+    consent: LegalConsent | None = Depends(oauth_sign_up_consent),
     database: Session = Depends(get_db),
     settings: Settings = Depends(app_settings),
     service: OAuthSignInService = Depends(get_oauth_service),
 ) -> Response:
-    return service.start(GOOGLE, role, signed_in_user_id(request, database, settings))
+    return service.start(GOOGLE, role, signed_in_user_id(request, database, settings), consent)
 
 
 @router.get("/oauth/google/callback")
@@ -473,11 +488,12 @@ async def complete_google_oauth(
 def start_microsoft_oauth(
     request: Request,
     role: str = Query(default="OWNER"),
+    consent: LegalConsent | None = Depends(oauth_sign_up_consent),
     database: Session = Depends(get_db),
     settings: Settings = Depends(app_settings),
     service: OAuthSignInService = Depends(get_oauth_service),
 ) -> Response:
-    return service.start(MICROSOFT, role, signed_in_user_id(request, database, settings))
+    return service.start(MICROSOFT, role, signed_in_user_id(request, database, settings), consent)
 
 
 @router.get("/oauth/microsoft/callback")

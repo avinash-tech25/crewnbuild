@@ -71,6 +71,13 @@ def submit(client: TestClient, payload: dict[str, Any], headers: dict[str, str] 
     )
 
 
+def test_config_shows_the_company_support_line_unless_support_phone_overrides_it(make_client: ClientFactory) -> None:
+    contact = make_client(support_phone="").get("/api/v1/support/config").json()["contact"]
+    assert (contact["phone"], contact["phone_href"]) == ("+91 628 1921 628", "tel:+916281921628")
+    contact = make_client(support_phone="+91 40 5555 0000").get("/api/v1/support/config").json()["contact"]
+    assert (contact["phone"], contact["phone_href"]) == ("+91 40 5555 0000", "tel:+914055550000")
+
+
 def test_config_is_public_and_knows_a_signed_in_builder(client: TestClient, database: Session) -> None:
     config = client.get("/api/v1/support/config").json()
     assert config["tickets_available"] is True

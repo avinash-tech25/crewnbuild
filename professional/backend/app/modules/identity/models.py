@@ -111,6 +111,12 @@ class User(UuidPrimaryKeyMixin, TimestampMixin, SoftDeleteMixin, Base):
     country_code: Mapped[str | None] = mapped_column(String(60), default=DEFAULT_COUNTRY)
     rating: Mapped[float] = mapped_column(Float, nullable=False, default=0, server_default="0")
     profile_image_url: Mapped[str | None] = mapped_column(String(500))
+    # The Terms of Service and Privacy Policy versions accepted at sign-up, and when
+    # (the server's time; app/core/legal.py). NULL for accounts created before consent
+    # was recorded. Set only by sign-up, never by a profile update.
+    terms_version: Mapped[str | None] = mapped_column(String(20))
+    privacy_version: Mapped[str | None] = mapped_column(String(20))
+    terms_accepted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     owner_profile = relationship("OwnerProfile", back_populates="user", uselist=False, cascade="all, delete-orphan")
     contractor_profile = relationship(

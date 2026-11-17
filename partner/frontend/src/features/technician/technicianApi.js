@@ -37,7 +37,17 @@ const { endpoints } = technicianApi
 
 // ---- sign-up and sign-in ----
 export const sendSignupCode = (email) => runMutation(endpoints.techSignupSendCode, email)
-export const verifySignupCode = ({ email, phone, code }) => runMutation(endpoints.techSignupVerifyCode, { email, phone, code })
+// Creates the account, so it carries the technician's own acceptance of the Terms of Service and
+// Privacy Policy and the versions they were shown (features/legal/content).
+export const verifySignupCode = ({ email, phone, code, acceptTerms, termsVersion, privacyVersion }) =>
+  runMutation(endpoints.techSignupVerifyCode, {
+    email,
+    phone,
+    code,
+    accept_terms: acceptTerms === true,
+    terms_version: termsVersion,
+    privacy_version: privacyVersion,
+  })
 // Sign-in is email + password; the email code above is for registration only.
 export const loginWithPassword = ({ email, password }) => runMutation(endpoints.techLogin, { email, password })
 export const fetchCurrentTechnician = (options) => runQuery(endpoints.techMe, options)

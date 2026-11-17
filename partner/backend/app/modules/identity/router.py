@@ -84,7 +84,7 @@ def verify_signup_code(
     auth: AuthService = Depends(get_auth_service),
     sessions: SessionService = Depends(get_session_service),
 ) -> AuthResponse:
-    technician = auth.verify_signup(payload.email, payload.phone, payload.code)
+    technician = auth.verify_signup(payload.email, payload.phone, payload.code, payload)
     # A registration session: the onboarding steps only, never the dashboard.
     issued = sessions.start_technician(technician.id, SCOPE_ONBOARDING, client_info(request))
     return answer_with_session(response, settings, auth, technician, issued)

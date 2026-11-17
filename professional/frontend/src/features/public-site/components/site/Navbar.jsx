@@ -6,6 +6,7 @@ import LanguageSelector from '../../../../shared/ui/LanguageSelector.jsx'
 import { useLanguage } from '../../../../i18n/LanguageContext.jsx'
 import SessionNav from '../../../../shared/ui/SessionNav.jsx'
 import { useAccountLinks } from '../../../../shared/auth/sessionLinks.js'
+import { SUPPORT_PHONE, phoneHref } from '../../../../shared/constants/support.js'
 
 const GO_CLASS = 'inline-flex h-9 whitespace-nowrap items-center gap-2 rounded-full bg-brand-800 px-3.5 text-[13px] font-bold text-white shadow-orange transition hover:-translate-y-0.5 hover:bg-brand-700'
 
@@ -71,10 +72,10 @@ export default function Navbar() {
 
         <div className="hidden items-center gap-1.5 xl:flex">
           <a
-            href="tel:+914012345678"
+            href={phoneHref(SUPPORT_PHONE)}
             className="hidden whitespace-nowrap items-center gap-2 text-sm font-bold transition-colors text-slate-600 hover:text-brand-600 3xl:inline-flex"
           >
-            <Phone className="h-4 w-4" /> +91 40 1234 5678
+            <Phone className="h-4 w-4" /> {SUPPORT_PHONE}
           </a>
           <LanguageSelector compact variant="light" />
           {signedInUser ? (

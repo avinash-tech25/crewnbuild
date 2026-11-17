@@ -2,6 +2,7 @@ import uuid
 from pathlib import Path
 
 import pytest
+from helpers import CONSENT
 from legacy import JPEG_CAPTURE, bearer, handoff_token, new_password, refresh_technician, set_cookies, valid_aadhaar
 from sqlalchemy import text
 
@@ -31,7 +32,9 @@ def test_full_signup_with_password_then_logout_and_password_login(client, connec
     assert sent.status_code == 200
     code = mailbox.last_code(email)
     assert code not in sent.text  # the code is only in the email
-    verified = client.post("/auth/signup/verify-code", json={"email": email, "phone": "98765 43210", "code": code})
+    verified = client.post(
+        "/auth/signup/verify-code", json={"email": email, "phone": "98765 43210", "code": code, **CONSENT}
+    )
     assert verified.status_code == 200, verified.text
     auth = verified.json()
     headers = bearer(auth["access_token"])
@@ -201,7 +204,7 @@ def test_signup_accepts_any_ten_digit_mobile(client, mailbox, phone):
     email = f"mobile-{uuid.uuid4().hex[:8]}@example.com"
     assert send_signup(client, email).status_code == 200
     verified = client.post(
-        "/auth/signup/verify-code", json={"email": email, "phone": phone, "code": mailbox.last_code(email)}
+        "/auth/signup/verify-code", json={"email": email, "phone": phone, "code": mailbox.last_code(email), **CONSENT}
     )
     assert verified.status_code == 200, verified.text
     assert (verified.json()["user"]["phone"], verified.json()["user"]["onboarding"]["step"]) == (phone, "FACE")
@@ -212,11 +215,13 @@ def test_signup_rejects_mobile_that_is_not_exactly_ten_digits(client, mailbox, p
     email = f"mobile-{uuid.uuid4().hex[:8]}@example.com"
     assert send_signup(client, email).status_code == 200
     code = mailbox.last_code(email)
-    rejected = client.post("/auth/signup/verify-code", json={"email": email, "phone": phone, "code": code})
+    rejected = client.post("/auth/signup/verify-code", json={"email": email, "phone": phone, "code": code, **CONSENT})
     assert (rejected.status_code, rejected.json()["detail"]) == (422, "Enter a valid 10 digit mobile number.")
     # The number is checked before the email code, so the code is still usable.
     assert (
-        client.post("/auth/signup/verify-code", json={"email": email, "phone": "5544556677", "code": code}).status_code
+        client.post(
+            "/auth/signup/verify-code", json={"email": email, "phone": "5544556677", "code": code, **CONSENT}
+        ).status_code
         == 200
     )
 
@@ -232,11 +237,13 @@ def test_codes_are_single_use_expire_and_lock_after_attempts(client, connection,
     for _ in range(settings.otp_max_attempts):
         assert (
             client.post(
-                "/auth/signup/verify-code", json={"email": email, "phone": "9876543210", "code": wrong}
+                "/auth/signup/verify-code", json={"email": email, "phone": "9876543210", "code": wrong, **CONSENT}
             ).status_code
             == 400
         )
-    locked = client.post("/auth/signup/verify-code", json={"email": email, "phone": "9876543210", "code": code})
+    locked = client.post(
+        "/auth/signup/verify-code", json={"email": email, "phone": "9876543210", "code": code, **CONSENT}
+    )
     assert locked.status_code == 429
 
     other = f"otp-{uuid.uuid4().hex[:8]}@example.com"
@@ -247,7 +254,8 @@ def test_codes_are_single_use_expire_and_lock_after_attempts(client, connection,
     )
     assert (
         client.post(
-            "/auth/signup/verify-code", json={"email": other, "phone": "9876543210", "code": mailbox.last_code(other)}
+            "/auth/signup/verify-code",
+            json={"email": other, "phone": "9876543210", "code": mailbox.last_code(other), **CONSENT},
         ).status_code
         == 400
     )
@@ -255,11 +263,13 @@ def test_codes_are_single_use_expire_and_lock_after_attempts(client, connection,
     third = f"otp-{uuid.uuid4().hex[:8]}@example.com"
     send_signup(client, third)
     first_use = client.post(
-        "/auth/signup/verify-code", json={"email": third, "phone": "9876543210", "code": mailbox.last_code(third)}
+        "/auth/signup/verify-code",
+        json={"email": third, "phone": "9876543210", "code": mailbox.last_code(third), **CONSENT},
     )
     assert first_use.status_code == 200
     reuse = client.post(
-        "/auth/signup/verify-code", json={"email": third, "phone": "9876543210", "code": mailbox.last_code(third)}
+        "/auth/signup/verify-code",
+        json={"email": third, "phone": "9876543210", "code": mailbox.last_code(third), **CONSENT},
     )
     assert reuse.status_code == 400  # consumed
 
@@ -340,6 +350,7 @@ def test_registered_email_cannot_sign_up_again_but_onboarding_can_resume(client,
             "email": partial["user"]["email"],
             "phone": "9876543211",
             "code": mailbox.last_code(partial["user"]["email"]),
+            **CONSENT,
         },
     )
     assert resumed.status_code == 200

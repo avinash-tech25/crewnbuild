@@ -12,6 +12,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, EmailStr, field_validator
 
+from app.core.legal import LegalConsent
+
 # Kuwait was once a second market. A request naming it is refused, not treated as India.
 RETIRED_KUWAIT_VALUES = {"KUWAIT", "KU", "KW", "KWT", "KWD", "+965", "965"}
 INDIA_ONLY_DETAIL = "Crew&Build is available in India only."
@@ -67,7 +69,9 @@ class LoginRequest(BaseModel):
     password: str
 
 
-class SignupRequest(BaseModel):
+class SignupRequest(LegalConsent):
+    # accept_terms (must be true), terms_version and privacy_version come from
+    # LegalConsent. The acceptance time is set by the server; a client value is ignored.
     name: str
     # Optional only for the phone-first sign-up (a WhatsApp-verified number).
     email: EmailStr | None = None
@@ -135,6 +139,10 @@ class UserResponse(BaseModel):
     engineer_profile: dict[str, Any] | None = None
     # A builder's paid sign-up still to be paid ({plan_code, duration_code}), else null.
     subscription_checkout: dict[str, Any] | None = None
+    # What the account accepted at sign-up (read-only; NULL for older accounts).
+    terms_version: str | None = None
+    privacy_version: str | None = None
+    terms_accepted_at: datetime | None = None
 
 
 class AuthResponse(BaseModel):

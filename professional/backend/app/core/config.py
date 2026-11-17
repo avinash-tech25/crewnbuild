@@ -53,6 +53,11 @@ KNOWN_INSECURE_JWT_SECRETS = (
 )
 
 
+# The public support line shown on the site (footer, contact page) when SUPPORT_PHONE is not
+# configured; SUPPORT_PHONE overrides it.
+DEFAULT_SUPPORT_PHONE = "+91 628 1921 628"
+
+
 class InsecureConfigurationError(RuntimeError):
     """Raised at startup when a setting is unsafe. The message names the setting and
     the fix, never the value."""
@@ -231,6 +236,7 @@ class Settings(BaseSettings):
     contact_destination_email: str = ""
     contact_max_per_hour_per_ip: int = 5
     support_email: str = ""
+    # Empty or unset: the company's public support line (DEFAULT_SUPPORT_PHONE) is shown.
     support_phone: str = ""
     support_whatsapp: str = ""
     support_hours: str = ""

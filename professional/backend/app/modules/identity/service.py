@@ -120,6 +120,9 @@ def user_response(user: User, database: Session, include_created_at: bool = Fals
         "supplier_profile": None,
         "engineer_profile": None,
         "subscription_checkout": pending_checkout(user, database),
+        "terms_version": user.terms_version,
+        "privacy_version": user.privacy_version,
+        "terms_accepted_at": user.terms_accepted_at,
     }
     if include_created_at:
         payload["created_at"] = user.created_at.isoformat() if user.created_at else None
@@ -258,6 +261,10 @@ class AuthService:
             pincode=pincode,
             # Left at the default (India) when sign-up sends none, as before.
             country_code=residence_country or DEFAULT_COUNTRY,
+            # Checked against the current versions by SignupRequest; the time is ours.
+            terms_version=payload.terms_version,
+            privacy_version=payload.privacy_version,
+            terms_accepted_at=datetime.now(UTC),
         )
         try:
             self.database.add(user)

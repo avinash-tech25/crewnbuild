@@ -7,7 +7,10 @@ the old oauth_service.py with the same rules:
 * Callback: the returned state must equal the cookie's, is spent on first use, and the
   cookie is cleared. The code is exchanged with the PKCE verifier.
 * Account: found through the linked provider subject, never through a matching e-mail.
-  An unlinked identity may register a NEW account (verified e-mail required), or be
+  An unlinked identity may register a NEW account (verified e-mail required, and the
+  Terms of Service and Privacy Policy accepted on the sign-up page: the start link
+  carries the consent, which is kept in the signed state cookie and read back from
+  there, never from the callback), or be
   linked to an existing account only when that same account is already signed in in
   this browser and the verified e-mail is its own.
 * Session: the ordinary session, as HttpOnly cookies on the redirect back to the web
@@ -27,6 +30,7 @@ from sqlalchemy.orm import Session
 from starlette.responses import Response
 
 from app.core.config import Settings
+from app.core.legal import PRIVACY_VERSION, TERMS_VERSION, LegalConsent
 from app.core.security.access_tokens import decode_oauth_state, encode_oauth_state
 from app.core.security.password_hashing import hash_secret
 from app.core.security.session_cookies import clear_oauth_state_cookie, set_oauth_state_cookie, set_session_cookies
@@ -67,6 +71,9 @@ ACCOUNT_EXISTS_MESSAGE = (
     "An account with this email already exists. Sign in with your email and password; "
     "the provider can then be connected while you are signed in."
 )
+TERMS_NOT_ACCEPTED_MESSAGE = (
+    "Accept the Terms of Service and the Privacy Policy on the sign-up page, then continue with the provider."
+)
 
 # States already answered in this process: refuses even a replay carrying a copy of the
 # cookie (the cookie is cleared on the first answer and the provider's code is single-use).
@@ -98,9 +105,23 @@ def oauth_refusal_response(error: OAuthRefusedError, settings: Settings) -> JSON
     return response
 
 
-def create_oauth_user(database: Session, email: str, name: str, role: str) -> User:
-    """A new account for a verified provider e-mail nobody has registered. Staged; the
-    caller commits it together with its identity link."""
+def consent_from_state(transaction: dict[str, Any]) -> tuple[str, str] | None:
+    """The (terms, privacy) versions accepted before this sign-in started, if they are
+    still the current ones."""
+    terms, privacy = transaction.get("tos"), transaction.get("pp")
+    if terms == TERMS_VERSION and privacy == PRIVACY_VERSION:
+        return terms, privacy
+    return None
+
+
+def create_oauth_user(
+    database: Session, email: str, name: str, role: str, consent: tuple[str, str] | None = None
+) -> User:
+    """A new account for a verified provider e-mail nobody has registered, only with the
+    consent given on the sign-up page. Staged; the caller commits it together with its
+    identity link."""
+    if consent is None:
+        raise OAuthRefusedError(422, "TERMS_NOT_ACCEPTED", TERMS_NOT_ACCEPTED_MESSAGE)
     user = User(
         name=name or email.split("@")[0],
         email=email,
@@ -111,6 +132,9 @@ def create_oauth_user(database: Session, email: str, name: str, role: str) -> Us
         address="",
         pincode="",
         country_code=DEFAULT_COUNTRY,
+        terms_version=consent[0],
+        privacy_version=consent[1],
+        terms_accepted_at=datetime.now(UTC),
     )
     database.add(user)
     database.flush()
@@ -139,7 +163,12 @@ def create_oauth_user(database: Session, email: str, name: str, role: str) -> Us
 
 
 def resolve_oauth_account(
-    database: Session, provider: str, identity: ProviderIdentity, role: str, link_user_id: uuid.UUID | None
+    database: Session,
+    provider: str,
+    identity: ProviderIdentity,
+    role: str,
+    link_user_id: uuid.UUID | None,
+    consent: tuple[str, str] | None = None,
 ) -> User:
     users = UserRepository(database)
     now = datetime.now(UTC)
@@ -159,7 +188,7 @@ def resolve_oauth_account(
     email = identity.email.strip().lower()
     existing = users.get_by_email(email)
     if existing is None:
-        user = create_oauth_user(database, email=email, name=identity.name, role=role)
+        user = create_oauth_user(database, email=email, name=identity.name, role=role, consent=consent)
     elif link_user_id is not None and existing.id == link_user_id:
         if users.find_oauth_identity_for_user(provider, existing.id) is not None:
             raise OAuthRefusedError(
@@ -185,7 +214,9 @@ class OAuthSignInService:
         self.settings = settings
         self.sessions = sessions
 
-    def start(self, provider: str, role: str, link_user_id: uuid.UUID | None) -> RedirectResponse:
+    def start(
+        self, provider: str, role: str, link_user_id: uuid.UUID | None, consent: LegalConsent | None = None
+    ) -> RedirectResponse:
         client_id, _secret, redirect_uri = provider_settings(self.settings, provider)
         state = secrets.token_urlsafe(32)
         nonce = secrets.token_urlsafe(32)
@@ -201,6 +232,9 @@ class OAuthSignInService:
             "cv": verifier,
             "role": role_from_oauth_state(role),
             "lnk": str(link_user_id) if link_user_id else None,
+            # Sign-up only: the versions accepted on the sign-up page (already checked).
+            "tos": consent.terms_version if consent else None,
+            "pp": consent.privacy_version if consent else None,
         }
         set_oauth_state_cookie(
             response, self.settings, encode_oauth_state(self.settings, claims, OAUTH_STATE_SECONDS), OAUTH_STATE_SECONDS
@@ -228,7 +262,12 @@ class OAuthSignInService:
             identity = read_id_token(provider, tokens.get("id_token"), client_id, transaction["non"])
             link_user_id = uuid.UUID(transaction["lnk"]) if transaction.get("lnk") else None
             user = resolve_oauth_account(
-                self.database, provider, identity, role_from_oauth_state(transaction.get("role")), link_user_id
+                self.database,
+                provider,
+                identity,
+                role_from_oauth_state(transaction.get("role")),
+                link_user_id,
+                consent_from_state(transaction),
             )
             return self.redirect_with_session(user, client)
         except OAuthRefusedError as error:

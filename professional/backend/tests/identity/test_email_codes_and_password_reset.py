@@ -7,7 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.modules.identity.models import User, UserSession
-from identity.helpers import STRONG_PASSWORD, FakeEmailSender, create_user, service_overrides, sign_in
+from identity.helpers import CONSENT, STRONG_PASSWORD, FakeEmailSender, create_user, service_overrides, sign_in
 
 NEW_PASSWORD = "Another#Pass456"
 
@@ -45,6 +45,7 @@ def test_email_sign_up(mail_client: TestClient, mailbox: FakeEmailSender, databa
             "pincode": "560001",
             "plan_code": "professional",
             "duration_code": "monthly",
+            **CONSENT,
         },
     )
     assert signup.status_code == 200, signup.text
@@ -60,12 +61,13 @@ def test_email_sign_up(mail_client: TestClient, mailbox: FakeEmailSender, databa
 
 def test_sign_up_needs_a_verified_email_and_a_strong_password(mail_client: TestClient, database: Session) -> None:
     weak = mail_client.post(
-        "/api/v1/auth/signup", json={"name": "Neha", "email": "neha@example.in", "password": "short", "role": "OWNER"}
+        "/api/v1/auth/signup",
+        json={"name": "Neha", "email": "neha@example.in", "password": "short", "role": "OWNER", **CONSENT},
     )
     assert weak.status_code == 422
     unverified = mail_client.post(
         "/api/v1/auth/signup",
-        json={"name": "Neha", "email": "neha@example.in", "password": STRONG_PASSWORD, "role": "OWNER"},
+        json={"name": "Neha", "email": "neha@example.in", "password": STRONG_PASSWORD, "role": "OWNER", **CONSENT},
     )
     assert unverified.status_code == 422
     assert unverified.json() == {"detail": "Verify your email address before creating the account."}
@@ -74,12 +76,12 @@ def test_sign_up_needs_a_verified_email_and_a_strong_password(mail_client: TestC
 def test_sign_up_refuses_kuwait_and_unknown_roles(mail_client: TestClient, database: Session) -> None:
     kuwait = mail_client.post(
         "/api/v1/auth/signup",
-        json={"name": "N", "email": "n@example.in", "role": "OWNER", "country_of_residence": "Kuwait"},
+        json={"name": "N", "email": "n@example.in", "role": "OWNER", "country_of_residence": "Kuwait", **CONSENT},
     )
     assert kuwait.status_code == 422
     admin = mail_client.post(
         "/api/v1/auth/signup",
-        json={"name": "Neha", "email": "n@example.in", "password": STRONG_PASSWORD, "role": "MANAGER"},
+        json={"name": "Neha", "email": "n@example.in", "password": STRONG_PASSWORD, "role": "MANAGER", **CONSENT},
     )
     assert admin.status_code == 400
 
@@ -161,7 +163,7 @@ def test_profile_email_is_saved_verified(mail_client: TestClient, mailbox: FakeE
 def verified_signup(client: TestClient, mailbox: FakeEmailSender, email: str, **fields: object) -> "object":
     client.post("/api/v1/auth/email/send-code", json={"email": email})
     client.post("/api/v1/auth/email/verify-code", json={"email": email, "code": mailbox.last_code()})
-    body = {"name": "Farah", "email": email, "password": STRONG_PASSWORD, "role": "OWNER", **fields}
+    body = {"name": "Farah", "email": email, "password": STRONG_PASSWORD, "role": "OWNER", **CONSENT, **fields}
     return client.post("/api/v1/auth/signup", json=body)
 
 

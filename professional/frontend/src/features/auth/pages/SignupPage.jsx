@@ -40,6 +40,8 @@ import { clearPendingPlan, savePendingPlan } from '../../billing/subscription/pe
 import PlansSection from '../../billing/subscription/PlansSection.jsx'
 import { isFreeBuilderSignupLink, keepsRememberedPlan, offersSignupPlanStep, planFromSignupLink, signupPagePlan, signupPlanFields, signupRole, signupRoleFromLink } from '../../billing/subscription/signupPlanFlow.js'
 import { offerNameKey } from '../../billing/subscription/subscriptionOffers.js'
+import { LegalDialog } from '../../legal/components/LegalDialog.jsx'
+import { LEGAL_DOCUMENTS, legalAcceptanceFields } from '../../legal/legalDocuments.js'
 
 // The roles a visitor can register as. A /signup?role= link preselects one of them
 // (signupPlanFlow.signupRoleFromLink: the landing key or the role code).
@@ -89,6 +91,9 @@ export default function SignupPage() {
   const [phoneCountry, setPhoneCountry] = useState('India')
   const [phoneToken, setPhoneToken] = useState(null)
   const [acceptedTerms, setAcceptedTerms] = useState(false)
+  // 'terms' | 'privacy' while that document is open over the form (null: closed).
+  // Reading it accepts nothing; only the checkbox does.
+  const [openDocument, setOpenDocument] = useState(null)
   const [signupAlert, setSignupAlert] = useState('')
   // Get Started builder sign-up: Create Account first shows the builder plans, and
   // the account is created only once one is chosen, carrying a paid choice exactly
@@ -102,7 +107,7 @@ export default function SignupPage() {
 
   const phoneFirst = phoneConfig?.enabled === true
   const nameValid = name.trim().length >= 2
-  const phoneFirstReady = nameValid && Boolean(selectedApiRole) && Boolean(phoneToken) && acceptedTerms
+  const phoneFirstReady = nameValid && Boolean(selectedApiRole) && Boolean(phoneToken)
 
   const validateSignupForm = () => {
     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -163,6 +168,9 @@ export default function SignupPage() {
       // The paid plan chosen on the plans page: the account then pays for it at
       // checkout before the dashboard. The server ignores it for other roles.
       ...signupPlanFields(role, plan),
+      // The consent box was ticked (validateSignupForm): accept_terms and the
+      // versions of the Terms and Privacy Policy accepted.
+      ...legalAcceptanceFields(),
     }
     const details = phoneFirst
       // The verified number and its token, nothing else to identify the account:
@@ -265,15 +273,35 @@ export default function SignupPage() {
     </>
   )
 
+  // "I agree to the {terms} and {privacy}.": the two names open the documents over
+  // the form. They are buttons inside the checkbox's label, so a click on them is
+  // kept from ticking it.
+  const documentButton = (key, labelKey) => (
+    <button
+      key={key}
+      type="button"
+      onClick={(event) => { event.preventDefault(); event.stopPropagation(); setOpenDocument(key) }}
+      className="inline p-0 font-extrabold text-oc-green underline underline-offset-2 hover:text-oc-deep"
+    >
+      {t(labelKey)}
+    </button>
+  )
+  const consentText = t('signup.termsConsent').split(/(\{terms\}|\{privacy\})/).map((piece) => {
+    if (piece === '{terms}') return documentButton('terms', 'site.footer.link.terms')
+    if (piece === '{privacy}') return documentButton('privacy', 'site.footer.link.privacy')
+    return piece
+  })
+
   const termsField = (
     <label className="mt-1 flex items-start gap-2 text-[11px] font-semibold leading-[1.6] text-oc-muted">
       <input
         type="checkbox"
         checked={acceptedTerms}
+        aria-required="true"
         onChange={(event) => { setAcceptedTerms(event.target.checked); setSignupAlert('') }}
         className="mt-0.5 h-3.5 w-3.5 shrink-0 rounded border-oc-line accent-oc-green"
       />
-      <span>{t('signup.terms')}<RequiredMark /></span>
+      <span>{consentText}<RequiredMark /></span>
     </label>
   )
 
@@ -326,6 +354,7 @@ export default function SignupPage() {
   return (
     <>
     {planStep}
+    {openDocument && <LegalDialog doc={LEGAL_DOCUMENTS[openDocument]} onClose={() => setOpenDocument(null)} />}
     <div hidden={choosingPlan}>
     <AuthShell
       eyebrow={t('signup.eyebrow')}
@@ -406,7 +435,7 @@ export default function SignupPage() {
           {emailVerified && (
             <button
               type="submit"
-              disabled={status === 'loading' || !acceptedTerms}
+              disabled={status === 'loading'}
               className={submitClass}
             >
               {status === 'loading' ? t('signup.loading') : t('signup.submit')}

@@ -123,6 +123,13 @@ const base = {
   'signup.flow.sendFailed': 'We could not send the code. Try again.',
   'signup.flow.verifyFirst': 'Verify your email address to continue.',
   'signup.terms': 'I agree to the Terms of Service and Privacy Policy.',
+  // {terms} and {privacy} become buttons that open the documents (site.footer.link.terms / .privacy).
+  'signup.termsConsent': 'I agree to the {terms} and {privacy}.',
+  'legal.effectiveDate': 'Effective date',
+  'legal.version': 'Version',
+  'legal.lastUpdated': 'Last updated',
+  'legal.contents': 'Contents',
+  'legal.close': 'Close',
   'signup.loading': 'Creating account...',
   'signup.submit': 'Create account',
   'signup.joiningAs': 'Joining As',

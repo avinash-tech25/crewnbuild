@@ -7,7 +7,7 @@ from typing import Any
 import pytest
 from conftest import FRONTEND_ORIGIN, make_settings
 from fastapi.testclient import TestClient
-from helpers import finished_technician
+from helpers import CONSENT, finished_technician
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import get_email_sender
@@ -46,7 +46,7 @@ def test_the_preview_answers_this_machine_with_a_working_code(
     assert body["dev_otp"] not in caplog.text
     verified = client.post(
         "/api/v1/auth/signup/verify-code",
-        json={"email": "new.tech@example.in", "phone": "9876543210", "code": body["dev_otp"]},
+        json={"email": "new.tech@example.in", "phone": "9876543210", "code": body["dev_otp"], **CONSENT},
     )
     assert verified.status_code == 200, verified.text
 

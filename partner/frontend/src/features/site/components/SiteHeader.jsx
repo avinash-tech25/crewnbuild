@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useSelector } from 'react-redux'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { ArrowRight, Menu, X } from 'lucide-react'
 import Logo from '../../../shared/ui/Logo.jsx'
 import { PARTNER_SESSION } from '../../../shared/api/apiClient.js'
@@ -20,6 +20,8 @@ const NAV_LINKS = [
 
 export default function SiteHeader() {
   const [menuOpen, setMenuOpen] = useState(false)
+  // The section links point into the landing page; from another page (/terms) they go back to it.
+  const home = useLocation().pathname === '/' ? '' : '/'
   const [scrolled, setScrolled] = useState(false)
   // Only a session signed in with email + password; the dashboard route confirms it with the backend.
   const signedIn = useSelector((state) => state.auth.signedIn && state.auth.kind === PARTNER_SESSION)
@@ -41,7 +43,7 @@ export default function SiteHeader() {
         <Logo wordmark />
         <nav className="ml-6 hidden items-center gap-7 text-xs font-bold text-oc-muted md:flex">
           {NAV_LINKS.map((link) => (
-            <a key={link.href} href={link.href} className="transition hover:text-oc-deep">{link.label}</a>
+            <a key={link.href} href={`${home}${link.href}`} className="transition hover:text-oc-deep">{link.label}</a>
           ))}
         </nav>
         {/* The weather where the visitor is (or chooses); its detail opens in a popover. */}
@@ -70,7 +72,7 @@ export default function SiteHeader() {
         <div className={`border-t ${BAR_EDGE} ${BAR} md:hidden`}>
           <div className="container-x flex flex-col gap-1 py-3">
             {NAV_LINKS.map((link) => (
-              <a key={link.href} href={link.href} onClick={() => setMenuOpen(false)} className="rounded-lg px-2 py-2.5 text-sm font-bold text-oc-ink">
+              <a key={link.href} href={`${home}${link.href}`} onClick={() => setMenuOpen(false)} className="rounded-lg px-2 py-2.5 text-sm font-bold text-oc-ink">
                 {link.label}
               </a>
             ))}

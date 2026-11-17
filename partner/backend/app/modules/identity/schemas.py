@@ -4,12 +4,18 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from app.core.legal import LegalConsent
+
 
 class EmailCodeRequest(BaseModel):
     email: str = Field(max_length=255)
 
 
-class SignupVerifyRequest(BaseModel):
+class SignupVerifyRequest(LegalConsent):
+    """The registration step that creates the account: also carries accept_terms (must be
+    true), terms_version and privacy_version (LegalConsent). The acceptance time is set by
+    the server; a client value is ignored."""
+
     email: str = Field(max_length=255)
     phone: str = Field(max_length=30)
     code: str = Field(max_length=12)
@@ -61,6 +67,10 @@ class TechnicianResponse(BaseModel):
     profile_image_url: str | None = None
     created_at: str  # ISO 8601 with the local offset
     onboarding: OnboardingState
+    # What the account accepted at registration (read-only; NULL for older accounts).
+    terms_version: str | None = None
+    privacy_version: str | None = None
+    terms_accepted_at: str | None = None  # ISO 8601 with the local offset
 
 
 class CurrentTechnicianResponse(TechnicianResponse):

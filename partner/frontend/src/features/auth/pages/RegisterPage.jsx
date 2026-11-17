@@ -10,10 +10,15 @@ import { technicianTypeBySlug } from '../../../shared/constants/technicianTypes.
 import { logout, setSession } from '../../../shared/auth/authSlice.js'
 import { PARTNER_SESSION, apiErrorMessage } from '../../../shared/api/apiClient.js'
 import { sendSignupCode, verifySignupCode } from '../../technician/technicianApi.js'
+import LegalDialog from '../../legal/components/LegalDialog.jsx'
+import terms from '../../legal/content/terms.js'
+import privacy from '../../legal/content/privacy.js'
 
 // Contact number only (the code goes to email): exactly 10 digits, the same rule as the backend.
 const MOBILE_PATTERN = /^\d{10}$/
 const MOBILE_ERROR = 'Enter a valid 10 digit mobile number.'
+const CONSENT_ERROR = 'Please agree to the Terms of Service and Privacy Policy to create your account.'
+const LEGAL = { terms, privacy }
 
 /**
  * New Partner registration, steps 1-3: email -> mobile -> email code.
@@ -41,6 +46,10 @@ export default function RegisterPage() {
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState({ tone: 'info', text: '' })
   const [resendIn, setResendIn] = useState(0)
+  // Ticked only by the technician; reading the documents never ticks it.
+  const [accepted, setAccepted] = useState(false)
+  const [consentError, setConsentError] = useState('')
+  const [reading, setReading] = useState(null)
 
   // Signup-specific cleanup only: the stored technician session of an unfinished
   // registration. The account itself is untouched on the server; its owner can
@@ -86,10 +95,21 @@ export default function RegisterPage() {
 
   const verify = async (event) => {
     event.preventDefault()
+    if (!accepted) {
+      setConsentError(CONSENT_ERROR)
+      return
+    }
     setBusy(true)
     setMessage({ tone: 'info', text: '' })
     try {
-      const session = await verifySignupCode({ email: email.trim(), phone, code })
+      const session = await verifySignupCode({
+        email: email.trim(),
+        phone,
+        code,
+        acceptTerms: true,
+        termsVersion: terms.version,
+        privacyVersion: privacy.version,
+      })
       dispatch(setSession(session))
       navigate(typeSlug ? `/onboarding?type=${typeSlug}` : '/onboarding', { replace: true })
     } catch (error) {
@@ -162,6 +182,32 @@ export default function RegisterPage() {
             <Mail className="h-3.5 w-3.5" /> {email} <Smartphone className="ml-2 h-3.5 w-3.5" /> {phone}
           </div>
           <CodeInput value={code} onChange={setCode} disabled={busy} />
+          {/* Verifying the code creates the account, so the agreement is asked for here. */}
+          <div>
+            <label className="flex items-start gap-2 text-sm text-oc-ink">
+              <input
+                type="checkbox"
+                className="mt-0.5 h-4 w-4 accent-oc-green"
+                checked={accepted}
+                aria-required="true"
+                aria-invalid={consentError ? 'true' : undefined}
+                aria-describedby={consentError ? 'accept-terms-error' : undefined}
+                onChange={(event) => {
+                  setAccepted(event.target.checked)
+                  if (event.target.checked) setConsentError('')
+                }}
+              />
+              <span>
+                I agree to the{' '}
+                <button type="button" className="font-extrabold text-oc-green underline-offset-2 hover:underline"
+                  onClick={(event) => { event.preventDefault(); setReading('terms') }}>Terms of Service</button>
+                {' '}and{' '}
+                <button type="button" className="font-extrabold text-oc-green underline-offset-2 hover:underline"
+                  onClick={(event) => { event.preventDefault(); setReading('privacy') }}>Privacy Policy</button>
+              </span>
+            </label>
+            {consentError && <p id="accept-terms-error" role="alert" className="mt-1 text-sm font-bold text-red-700">{consentError}</p>}
+          </div>
           <button type="submit" className="btn-primary w-full py-3" disabled={busy || code.length !== 6}>
             {busy ? <Spinner className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />} Verify email
           </button>
@@ -175,6 +221,7 @@ export default function RegisterPage() {
           </div>
         </form>
       )}
+      {reading && <LegalDialog doc={LEGAL[reading]} onClose={() => setReading(null)} />}
     </AuthLayout>
   )
 }

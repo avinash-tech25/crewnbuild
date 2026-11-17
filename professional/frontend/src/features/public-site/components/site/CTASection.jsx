@@ -2,6 +2,7 @@ import { ArrowRight, PhoneCall } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { Container, Reveal } from './ui.jsx'
 import { useLanguage } from '../../../../i18n/LanguageContext.jsx'
+import { SUPPORT_PHONE, phoneHref } from '../../../../shared/constants/support.js'
 
 export default function CTASection() {
   const { t } = useLanguage()
@@ -35,10 +36,10 @@ export default function CTASection() {
                   <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                 </Link>
                 <a
-                  href="tel:+914012345678"
+                  href={phoneHref(SUPPORT_PHONE)}
                   className="inline-flex items-center justify-center gap-2 rounded-full border border-white/40 bg-white/10 px-8 py-4 text-[15px] font-bold text-white backdrop-blur transition hover:-translate-y-0.5 hover:bg-white/20"
                 >
-                  <PhoneCall className="h-4 w-4" /> +91 40 1234 5678
+                  <PhoneCall className="h-4 w-4" /> {SUPPORT_PHONE}
                 </a>
               </div>
             </div>

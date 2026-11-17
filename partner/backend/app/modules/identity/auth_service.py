@@ -14,6 +14,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.config import Settings
+from app.core.legal import LegalConsent
 from app.core.local_time import to_local_iso
 from app.core.security.password_hashing import (
     PASSWORD_MAX_BYTES,
@@ -159,6 +160,9 @@ def technician_response(technician: Technician, settings: Settings) -> Technicia
             can_receive_jobs=eligible,
             pending_requirements=reasons,
         ),
+        terms_version=technician.terms_version,
+        privacy_version=technician.privacy_version,
+        terms_accepted_at=to_local_iso(technician.terms_accepted_at, settings),
     )
 
 
@@ -186,7 +190,7 @@ class AuthService:
         self.database.commit()
         return CodeSentResponse(**result)
 
-    def verify_signup(self, raw_email: str, raw_phone: str, code: str) -> Technician:
+    def verify_signup(self, raw_email: str, raw_phone: str, code: str, consent: LegalConsent) -> Technician:
         email = clean_email(raw_email)
         phone = clean_phone(raw_phone)
         existing = self.technicians.get_by_email(email)
@@ -196,6 +200,11 @@ class AuthService:
         technician = existing or Technician(email=email, status=ACCOUNT_STATUS_ONBOARDING)
         technician.phone = phone
         technician.email_verified_at = naive_utc_now()
+        # Checked against the current versions by SignupVerifyRequest; the time is ours.
+        # A registration resumed later records the acceptance given this time.
+        technician.terms_version = consent.terms_version
+        technician.privacy_version = consent.privacy_version
+        technician.terms_accepted_at = naive_utc_now()
         if not existing:
             self.technicians.add(technician)
             self.database.flush()

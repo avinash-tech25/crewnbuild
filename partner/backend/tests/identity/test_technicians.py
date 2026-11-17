@@ -6,7 +6,7 @@ from typing import Any
 import pytest
 from conftest import ClientFactory
 from fastapi.testclient import TestClient
-from helpers import STRONG_PASSWORD, FakeEmail, browser_with, csrf, finished_technician, sign_in
+from helpers import CONSENT, STRONG_PASSWORD, FakeEmail, browser_with, csrf, finished_technician, sign_in
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -36,12 +36,12 @@ def test_sign_up_gives_a_registration_session_only(client: TestClient, mailbox: 
     assert mailbox.sent[-1][0] == "new.tech@example.in"
     wrong = client.post(
         "/api/v1/auth/signup/verify-code",
-        json={"email": "new.tech@example.in", "phone": "98765 00100", "code": "000000"},
+        json={"email": "new.tech@example.in", "phone": "98765 00100", "code": "000000", **CONSENT},
     )
     assert wrong.status_code == 400
     verified = client.post(
         "/api/v1/auth/signup/verify-code",
-        json={"email": "new.tech@example.in", "phone": "98765 00100", "code": mailbox.last_code()},
+        json={"email": "new.tech@example.in", "phone": "98765 00100", "code": mailbox.last_code(), **CONSENT},
     )
     assert verified.status_code == 200, verified.text
     body = verified.json()
@@ -61,7 +61,7 @@ def test_sign_up_gives_a_registration_session_only(client: TestClient, mailbox: 
     assert sign_in(client, "new.tech@example.in").status_code == 401
     again = client.post(
         "/api/v1/auth/signup/verify-code",
-        json={"email": "new.tech@example.in", "phone": "9876500100", "code": mailbox.last_code()},
+        json={"email": "new.tech@example.in", "phone": "9876500100", "code": mailbox.last_code(), **CONSENT},
     )
     assert again.status_code == 400
     # Once registered, the address is taken.

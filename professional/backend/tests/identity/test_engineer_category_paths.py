@@ -23,7 +23,15 @@ from app.modules.accounts.models import EngineerProfile
 from app.modules.accounts.partner_view import CREATE_VIEW_SQL, VIEW_NAME
 from app.modules.identity.models import ROLE_ENGINEER, User
 from app.modules.identity.policies import can_create_partner_handoff
-from identity.helpers import WHATSAPP_SETTINGS, FakeEmailSender, FakeWhatsApp, create_user, service_overrides, sign_in
+from identity.helpers import (
+    CONSENT,
+    WHATSAPP_SETTINGS,
+    FakeEmailSender,
+    FakeWhatsApp,
+    create_user,
+    service_overrides,
+    sign_in,
+)
 
 COMPLETE = "/api/v1/auth/complete-profile"
 MIGRATION = (
@@ -60,6 +68,7 @@ def test_email_sign_up_sets_the_category(
             "password": STRONG,
             "role": "ENGINEER",
             "specialization": specialization,
+            **CONSENT,
         },
     )
     assert signup.status_code == 200, signup.text
@@ -85,6 +94,7 @@ def test_whatsapp_sign_up_sets_the_category(
             "role": "ENGINEER",
             "specialization": specialization,
             "phone_verification_token": token,
+            **CONSENT,
         },
     )
     assert signup.status_code == 200, signup.text

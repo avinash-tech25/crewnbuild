@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 
 from app.integrations.whatsapp.dovesoft_client import SendOutcome
 from app.modules.identity.models import ROLE_GLOBAL_SUPER_ADMIN, OtpSendEvent, PhoneVerificationCode
-from identity.helpers import WHATSAPP_SETTINGS, FakeWhatsApp, create_user, service_overrides
+from identity.helpers import CONSENT, WHATSAPP_SETTINGS, FakeWhatsApp, create_user, service_overrides
 
 PHONE = "9876543210"
 
@@ -50,7 +50,7 @@ def test_phone_first_sign_up(phone_client: TestClient, whatsapp: FakeWhatsApp, d
 
     signup = phone_client.post(
         "/api/v1/auth/signup",
-        json={"name": "Meena", "phone": PHONE, "role": "OWNER", "phone_verification_token": token},
+        json={"name": "Meena", "phone": PHONE, "role": "OWNER", "phone_verification_token": token, **CONSENT},
     )
     assert signup.status_code == 200, signup.text
     user = signup.json()["user"]
@@ -60,7 +60,9 @@ def test_phone_first_sign_up(phone_client: TestClient, whatsapp: FakeWhatsApp, d
 
 
 def test_sign_up_without_the_whatsapp_check_is_refused(phone_client: TestClient, database: Session) -> None:
-    response = phone_client.post("/api/v1/auth/signup", json={"name": "Meena", "phone": PHONE, "role": "OWNER"})
+    response = phone_client.post(
+        "/api/v1/auth/signup", json={"name": "Meena", "phone": PHONE, "role": "OWNER", **CONSENT}
+    )
     assert response.status_code == 422
     assert response.json() == {"detail": "Verify your mobile number on WhatsApp before creating the account."}
 

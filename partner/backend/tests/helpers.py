@@ -16,12 +16,15 @@ from fastapi.testclient import TestClient
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
+from app.core.legal import PRIVACY_VERSION, TERMS_VERSION
 from app.core.security.password_hashing import hash_secret
 from app.database.types import naive_utc_now
 from app.modules.identity.models import ACCOUNT_STATUS_ACTIVE, Technician
 from app.modules.technicians.models import IdentityVerification, TechnicianProfile
 
 STRONG_PASSWORD = "Strong#Pass123"
+# What the registration step that creates the account now carries (app/core/legal.py).
+CONSENT: dict[str, Any] = {"accept_terms": True, "terms_version": TERMS_VERSION, "privacy_version": PRIVACY_VERSION}
 PROFESSIONAL_BACKEND = Path(__file__).resolve().parents[3] / "professional" / "backend"
 
 

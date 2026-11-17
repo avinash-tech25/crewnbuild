@@ -12,7 +12,7 @@ from alembic.migration import MigrationContext
 from alembic.operations import Operations
 from conftest import ClientFactory
 from fastapi.testclient import TestClient
-from identity.helpers import FakeEmailSender, create_user, service_overrides, sign_in
+from identity.helpers import CONSENT, FakeEmailSender, create_user, service_overrides, sign_in
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
@@ -68,7 +68,7 @@ def mail_client(make_client: ClientFactory) -> TestClient:
 )
 def test_sign_up_refuses_a_phone_number_as_a_name(mail_client: TestClient, body: dict, message: str) -> None:
     response = mail_client.post(
-        "/api/v1/auth/signup", json={"email": "new@example.in", "password": "Strong#Pass123", **body}
+        "/api/v1/auth/signup", json={"email": "new@example.in", "password": "Strong#Pass123", **CONSENT, **body}
     )
     assert (response.status_code, response.json()) == (422, {"detail": message})
 

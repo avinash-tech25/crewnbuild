@@ -12,7 +12,7 @@ from conftest import ClientFactory
 from cryptography.fernet import Fernet
 from fastapi import HTTPException
 from fastapi.testclient import TestClient
-from helpers import FakeEmail, add_requester, csrf, key_pair, sign_handoff
+from helpers import CONSENT, FakeEmail, add_requester, csrf, key_pair, sign_handoff
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -78,7 +78,8 @@ def client(make_client: ClientFactory, mailbox: FakeEmail, tmp_path: Path, keys:
 def register(client: TestClient, mailbox: FakeEmail, email: str = "new.tech@example.in") -> dict[str, str]:
     client.post("/api/v1/auth/signup/send-code", json={"email": email})
     verified = client.post(
-        "/api/v1/auth/signup/verify-code", json={"email": email, "phone": "9876500100", "code": mailbox.last_code()}
+        "/api/v1/auth/signup/verify-code",
+        json={"email": email, "phone": "9876500100", "code": mailbox.last_code(), **CONSENT},
     )
     assert verified.status_code == 200, verified.text
     return csrf(verified)

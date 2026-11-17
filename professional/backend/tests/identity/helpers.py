@@ -9,12 +9,15 @@ from typing import Any
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
+from app.core.legal import PRIVACY_VERSION, TERMS_VERSION
 from app.core.security.password_hashing import hash_secret
 from app.integrations.whatsapp.dovesoft_client import SendOutcome, SendResult
 from app.modules.accounts.models import AdminProfile, BuilderProfile, EngineerProfile, OwnerProfile
 from app.modules.identity.models import ROLE_BUILDER, ROLE_ENGINEER, ROLE_OWNER, User
 
 STRONG_PASSWORD = "Strong#Pass123"
+# What every sign-up now carries: the Terms of Service and Privacy Policy accepted.
+CONSENT: dict[str, Any] = {"accept_terms": True, "terms_version": TERMS_VERSION, "privacy_version": PRIVACY_VERSION}
 
 
 def create_user(

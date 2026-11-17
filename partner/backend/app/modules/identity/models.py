@@ -87,6 +87,12 @@ class Technician(UuidPrimaryKeyMixin, Base):
     division: Mapped[str | None] = mapped_column(String(120))
     district: Mapped[str | None] = mapped_column(String(120), index=True)
     state: Mapped[str | None] = mapped_column(String(120))
+    # The Terms of Service and Privacy Policy versions accepted at registration, and when
+    # (the server's time; app/core/legal.py). NULL for accounts registered before consent
+    # was recorded. Set only by registration, never by a profile update.
+    terms_version: Mapped[str | None] = mapped_column(String(20))
+    privacy_version: Mapped[str | None] = mapped_column(String(20))
+    terms_accepted_at: Mapped[datetime | None] = mapped_column(NaiveUtcTimestamp)
     created_at: Mapped[datetime] = created_at_column()
     updated_at: Mapped[datetime] = mapped_column(
         NaiveUtcTimestamp, nullable=False, default=naive_utc_now, onupdate=naive_utc_now, server_default=text("now()")
