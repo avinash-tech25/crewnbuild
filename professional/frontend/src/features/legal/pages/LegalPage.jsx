@@ -3,9 +3,9 @@
  *
  * The section shown is the one in the address (/terms#section-id; a short form such as
  * #cancellations reaches "cancellations-and-refunds"); without one, the first. Choosing a
- * section adds a history entry, so the browser's Back returns to the previous section and a
- * link to any section works. The page opens scrolled to the top. Open to everyone; a
- * signed-in visitor stays signed in.
+ * section replaces the address rather than adding a history entry, so a link to any section
+ * works and one Back always leaves the page. The page opens scrolled to the top. Open to
+ * everyone; a signed-in visitor stays signed in.
  */
 import { useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -33,8 +33,8 @@ function LegalPage({ doc }) {
   }, [doc.id])
 
   return (
-    <LegalShell title={title} back={{ label: t('legal.backToLegal'), to: '/legal' }}>
-      <LegalDocument doc={doc} activeId={section.id} onSelect={(id) => navigate({ hash: id })} />
+    <LegalShell title={title}>
+      <LegalDocument doc={doc} activeId={section.id} onSelect={(id) => navigate({ hash: id }, { replace: true })} />
     </LegalShell>
   )
 }

@@ -1,10 +1,14 @@
 /**
  * The frame every legal page shares (/legal, /terms, /privacy): the landing site's header
- * and footer around a dark green section with a back arrow, a centred title and one
+ * and footer around a dark green section with one "Back" button, a centred title and one
  * rounded card. Printing keeps only the title and the card's text, in black on white.
+ *
+ * Back returns to the page the visitor came from (the landing page's footer, sign-up, a
+ * dashboard), at the place they left it; the landing page when there is none on this site.
  */
-import { Link } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
+import { useLanguage as useAppLanguage } from '../../../i18n/LanguageContext.jsx'
+import { useBackNavigation } from '../../../shared/navigation/scrollMemory.js'
 import { SiteHeader } from '../../public-site/components/landing/SiteHeader.jsx'
 import { SiteFooter } from '../../public-site/components/landing/SiteFooter.jsx'
 import { useLanguage } from '../../public-site/components/landing/useLanguage.js'
@@ -13,9 +17,10 @@ const BACK =
   'inline-flex items-center gap-2 rounded-full px-1 py-1 text-[14px] font-bold text-white/85 transition hover:text-oc-amber ' +
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oc-amber'
 
-/** `back`: { label, to } for a link, or { label, onClick } for a button (history back). */
-export function LegalShell({ title, back, children }) {
+export function LegalShell({ title, children }) {
   const { language, setLanguage, text } = useLanguage()
+  const { t } = useAppLanguage()
+  const goBack = useBackNavigation()
   const arrow = <ArrowLeft className="h-5 w-5 rtl:rotate-180" aria-hidden="true" />
 
   return (
@@ -24,9 +29,7 @@ export function LegalShell({ title, back, children }) {
       <main className="px-4 pb-20 pt-[104px] text-white max-wide:pt-[92px] print:p-0 print:text-black">
         <div className="mx-auto max-w-[1080px]">
           <div className="print:hidden">
-            {back.to
-              ? <Link to={back.to} className={BACK}>{arrow}{back.label}</Link>
-              : <button type="button" onClick={back.onClick} className={BACK}>{arrow}{back.label}</button>}
+            <button type="button" onClick={goBack} className={BACK}>{arrow}{t('legal.back')}</button>
           </div>
           <h1 className="mt-4 text-center text-[clamp(1.9rem,1.4rem+2vw,2.9rem)] font-extrabold leading-tight tracking-[-.02em] text-white print:mt-0 print:text-start print:text-black">
             {title}

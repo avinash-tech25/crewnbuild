@@ -4,7 +4,7 @@ The Professional web app is translated into Arabic (`ar`), Hindi (`hi`), Kannada
 
 **How this list was made:** every key in `locales/en.js` that the old app's English text (`Kuwait-Version/Octabuild/frontend 7/frontend/src/i18n/translations.js`, the state R7 started from) did not have, checked against each language file. All other English keys are unchanged since the old app, and no language lost a translation it had there.
 
-**Status (17 Nov 2026):** 45 keys, missing in all six languages. 22 are the Legal hub (/legal), the Terms / Privacy Policy pages and the sign-up consent line (`features/legal`, `features/auth/pages/SignupPage.jsx`). Seventeen are from the request details change (a supplier or builder shown by who they are, `features/requests/counterparty.js` and `features/requests/components/PartyDetails.jsx`); one is the plans section's "Most popular" label; two are the My Suppliers project coverage labels; two are the public header's account menu; one is the Site Engineer's note when a project has no supplier to order from.
+**Status (17 Nov 2026):** 44 keys, missing in all six languages. 21 are the Legal hub (/legal), the Terms / Privacy Policy pages and the sign-up consent line (`features/legal`, `features/auth/pages/SignupPage.jsx`). Seventeen are from the request details change (a supplier or builder shown by who they are, `features/requests/counterparty.js` and `features/requests/components/PartyDetails.jsx`); one is the plans section's "Most popular" label; two are the My Suppliers project coverage labels; two are the public header's account menu; one is the Site Engineer's note when a project has no supplier to order from.
 
 | Key | English | Where it shows | Missing in |
 | --- | --- | --- | --- |
@@ -37,8 +37,7 @@ The Professional web app is translated into Arabic (`ar`), Hindi (`hi`), Kannada
 | `legal.sections` | Sections | /terms, /privacy and the sign-up document window: the section list (its label; the dropdown's label on small screens) | ar, hi, kn, ml, ta, te |
 | `legal.previous` | Previous | Same: button under a section, to the section before it | ar, hi, kn, ml, ta, te |
 | `legal.next` | Next | Same: button under a section, to the section after it | ar, hi, kn, ml, ta, te |
-| `legal.back` | Back | /legal: back arrow (to the previous page) | ar, hi, kn, ml, ta, te |
-| `legal.backToLegal` | Back to Legal | /terms and /privacy: back arrow to /legal | ar, hi, kn, ml, ta, te |
+| `legal.back` | Back | /legal, /terms, /privacy: back button (to the previous page, or the landing page) | ar, hi, kn, ml, ta, te |
 | `legal.hub.title` | Legal | Footer Legal column: link to /legal; the /legal browser tab title | ar, hi, kn, ml, ta, te |
 | `legal.hub.heading` | Terms & Conditions | /legal: page title | ar, hi, kn, ml, ta, te |
 | `legal.hub.intro` | Welcome to CREWNBUILD. Before you use our platform, please take a moment to review and agree to our legal policies. They explain the rules for using CREWNBUILD, how we handle your personal data, and how cancellations and refunds work. By using our website or services, you acknowledge your understanding and acceptance of these policies. | /legal: introduction | ar, hi, kn, ml, ta, te |

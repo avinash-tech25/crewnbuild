@@ -7,6 +7,7 @@ import FullPageLoader from '../../shared/ui/FullPageLoader.jsx'
 import RequireAccess from './guards/RequireAccess.jsx'
 import RouteErrorBoundary from './RouteErrorBoundary.jsx'
 import { PROTECTED_PATH_PREFIXES, routes } from './routes.jsx'
+import { useScrollMemory } from '../../shared/navigation/scrollMemory.js'
 
 /** The session's life in this tab (section 8.1). */
 export function useSessionLifecycle() {
@@ -44,6 +45,8 @@ export function useSessionLifecycle() {
 }
 
 export function AppRoutes() {
+  // Each page's scroll position, for the Back buttons that return to it (legal pages).
+  useScrollMemory()
   return (
     <Suspense fallback={<FullPageLoader />}>
       <Routes>

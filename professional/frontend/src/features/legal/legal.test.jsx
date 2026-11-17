@@ -56,7 +56,7 @@ describe.each([
     installFakeServer()
     const { store } = renderApp(path, { auth })
     expect(await screen.findByRole('heading', { level: 1, name: SHORT_TITLES[doc.id] }, SLOW)).toBeInTheDocument()
-    expect(scrollTo).toHaveBeenCalledWith(0, 0)
+    await waitFor(() => expect(scrollTo).toHaveBeenCalledWith(0, 0))
     // No brand line, effective date, version or contents block at the top.
     expect(screen.queryByText(/Effective date:|Version:|CREWNBUILD · crewnbuild\.com/)).not.toBeInTheDocument()
     expect(screen.queryByRole('navigation', { name: 'Contents' })).not.toBeInTheDocument()
@@ -72,7 +72,7 @@ describe.each([
     expect(store.getState().auth.user).toEqual(auth.user)
   })
 
-  it('a section in the list shows that section, puts it in the address, and Back returns', async () => {
+  it('a section in the list shows that section and puts it in the address, without a new history entry', async () => {
     const scrolled = recordScrolls()
     const user = userEvent.setup()
     installFakeServer()
@@ -91,10 +91,7 @@ describe.each([
     expect(shownHeading()).toHaveTextContent(label(doc.sections[5]))
     await user.click(screen.getByRole('button', { name: /Previous/ }))
     expect(shownHeading()).toHaveTextContent(label(target))
-
-    history.back()
-    await waitFor(() => expect(location.current.hash).toBe(`#${doc.sections[5].id}`))
-    expect(shownHeading()).toHaveTextContent(label(doc.sections[5]))
+    // (No history entry per switch: see "Back from a policy page" below.)
   })
 
   it('a link to a section opens on it; the last has no Next; the full text is there for print', async () => {
@@ -123,14 +120,78 @@ describe.each([
     expect(shownHeading()).toHaveTextContent(label(doc.sections[2]))
   })
 
-  it('the back arrow goes to /legal', async () => {
+  it('opened directly, the one Back button goes to the landing page; there is no "Back to Legal"', async () => {
     const user = userEvent.setup()
     installFakeServer()
     renderApp(path, { auth: signedOut })
-    await user.click(await screen.findByRole('link', { name: 'Back to Legal' }, SLOW))
-    // /legal's title is also "Terms & Conditions": wait for the hub's own content.
-    await waitFor(() => expect(location.current.pathname).toBe('/legal'))
-    expect(await screen.findByRole('link', { name: 'View Detailed Terms' }, SLOW)).toBeInTheDocument()
+    await screen.findByRole('heading', { level: 1, name: SHORT_TITLES[doc.id] }, SLOW)
+    expect(screen.getAllByRole('button', { name: 'Back' })).toHaveLength(1)
+    expect(screen.queryByText('Back to Legal')).not.toBeInTheDocument()
+    await user.click(within(sectionList()).getByRole('link', { name: label(doc.sections[3]) }))
+    await user.click(screen.getByRole('button', { name: 'Back' }))
+    await waitFor(() => expect(location.current.pathname).toBe('/'))
+  })
+})
+
+describe('Back from a policy page', () => {
+  const FOOTER_SCROLL = 2400
+
+  /** The landing page, scrolled down to its footer. */
+  async function landingAtFooter() {
+    renderApp('/', { auth: signedOut })
+    const footer = (await screen.findAllByRole('contentinfo', {}, SLOW)).at(-1)
+    Object.defineProperty(window, 'scrollY', { configurable: true, value: FOOTER_SCROLL })
+    window.dispatchEvent(new Event('scroll'))
+    return footer
+  }
+
+  afterEach(() => {
+    Object.defineProperty(window, 'scrollY', { configurable: true, value: 0 })
+  })
+
+  it('footer -> /privacy -> Back lands on the landing page at the same scroll position', async () => {
+    const user = userEvent.setup()
+    installFakeServer()
+    const footer = await landingAtFooter()
+    await user.click(within(footer).getByRole('link', { name: 'Privacy policy' }))
+    expect(await screen.findByRole('heading', { level: 1, name: 'Privacy Policy' }, SLOW)).toBeInTheDocument()
+    expect(location.current.pathname).toBe('/privacy')
+    // The policy page opened at the top.
+    Object.defineProperty(window, 'scrollY', { configurable: true, value: 0 })
+    const scrollTo = vi.spyOn(window, 'scrollTo')
+
+    await user.click(screen.getByRole('button', { name: 'Back' }))
+    await waitFor(() => expect(location.current.pathname).toBe('/'))
+    await waitFor(() => expect(scrollTo).toHaveBeenCalledWith(0, FOOTER_SCROLL), { timeout: 4000 })
+  })
+
+  it('footer -> /terms, several sections, then one Back leaves the page', async () => {
+    const user = userEvent.setup()
+    installFakeServer()
+    const footer = await landingAtFooter()
+    await user.click(within(footer).getByRole('link', { name: 'Terms of service' }))
+    await screen.findByRole('heading', { level: 1, name: 'Terms & Conditions' }, SLOW)
+    for (const index of [2, 6, 9]) {
+      await user.click(within(sectionList()).getByRole('link', { name: label(terms.sections[index]) }))
+    }
+    await user.click(screen.getByRole('button', { name: /Next/ }))
+    expect(location.current.hash).toBe(`#${terms.sections[10].id}`)
+
+    await user.click(screen.getByRole('button', { name: 'Back' }))
+    await waitFor(() => expect(location.current.pathname).toBe('/'))
+    expect(location.current.hash).toBe('')
+  })
+
+  it('the browser Back button also leaves a policy page in one step after section clicks', async () => {
+    const user = userEvent.setup()
+    installFakeServer()
+    const footer = await landingAtFooter()
+    await user.click(within(footer).getByRole('link', { name: 'Privacy policy' }))
+    await screen.findByRole('heading', { level: 1, name: 'Privacy Policy' }, SLOW)
+    await user.click(within(sectionList()).getByRole('link', { name: label(privacy.sections[3]) }))
+    await user.click(within(sectionList()).getByRole('link', { name: label(privacy.sections[7]) }))
+    history.back()
+    await waitFor(() => expect(location.current.pathname).toBe('/'))
   })
 })
 
@@ -150,7 +211,7 @@ describe('the Legal hub', () => {
     installFakeServer()
     renderApp('/legal', { auth: signedOut })
     expect(await screen.findByRole('heading', { level: 1, name: 'Terms & Conditions' }, SLOW)).toBeInTheDocument()
-    expect(scrollTo).toHaveBeenCalledWith(0, 0)
+    await waitFor(() => expect(scrollTo).toHaveBeenCalledWith(0, 0))
     expect(screen.getByRole('button', { name: 'Back' })).toBeInTheDocument()
     expect(screen.getByText(/^Welcome to CREWNBUILD\..*please take a moment to review and agree to our legal policies.*By using our website or services, you acknowledge your understanding and acceptance of these policies\.$/)).toBeInTheDocument()
     const cards = [

@@ -5,7 +5,7 @@
  * wording is only on /terms and /privacy.
  */
 import { useEffect } from 'react'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { Mail, Phone } from 'lucide-react'
 import { useLanguage } from '../../../i18n/LanguageContext.jsx'
 import { SUPPORT_PHONE, phoneHref } from '../../../shared/constants/support.js'
@@ -25,8 +25,6 @@ const LINK =
 
 export function LegalHubPage() {
   const { t } = useLanguage()
-  const navigate = useNavigate()
-  const { key } = useLocation()
 
   useEffect(() => {
     const previous = document.title
@@ -35,12 +33,8 @@ export function LegalHubPage() {
     return () => { document.title = previous }
   }, [t])
 
-  // Back to wherever the visitor came from; the home page when /legal was opened directly.
-  // (The router's first entry has the key 'default'.)
-  const goBack = () => (key !== 'default' ? navigate(-1) : navigate('/'))
-
   return (
-    <LegalShell title={t('legal.hub.heading')} back={{ label: t('legal.back'), onClick: goBack }}>
+    <LegalShell title={t('legal.hub.heading')}>
       <div className="mx-auto max-w-[75ch] text-[16px] leading-[1.7] text-white/90">
         <p>{t('legal.hub.intro')}</p>
 

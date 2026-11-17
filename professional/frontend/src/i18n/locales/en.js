@@ -131,7 +131,6 @@ const base = {
   'legal.previous': 'Previous',
   'legal.next': 'Next',
   'legal.back': 'Back',
-  'legal.backToLegal': 'Back to Legal',
   'legal.hub.title': 'Legal',
   'legal.hub.heading': 'Terms & Conditions',
   'legal.hub.intro': 'Welcome to CREWNBUILD. Before you use our platform, please take a moment to review and agree to our legal policies. They explain the rules for using CREWNBUILD, how we handle your personal data, and how cancellations and refunds work. By using our website or services, you acknowledge your understanding and acceptance of these policies.',
