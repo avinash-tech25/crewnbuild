@@ -1,100 +1,176 @@
 /**
- * One legal document (Terms, Privacy) as readable, printable text: the title, the
- * effective date / version / last updated line, a table of contents, then every
- * section under an <h2 id={section.id}> so /terms#section-id deep-links to it.
+ * A legal document (Terms, Privacy) read one section at a time: a list of the section
+ * headings on the left (a dropdown on small screens), the chosen section beside it with
+ * Previous / Next at its foot, and "Last updated" at the bottom. Used by /terms and
+ * /privacy and by the sign-up dialog; the caller owns which section is shown
+ * (`activeId`, `onSelect`), so the page can keep it in the address (#section-id).
  *
- * The text is shown exactly as generated from the Word files; a [bracketed placeholder],
- * if a future text has one, is marked so it is easy to spot.
+ * The wording is exactly the generated text. Printing shows the whole document, every
+ * section in order, from a print-only copy (hidden on screen and from assistive tech).
  *
- * A contents link scrolls to its section. On the page it also puts #section-id in the
- * address (without a new history entry); in a dialog (`inDialog`) the address is left
- * alone, so a sign-up form behind the window is not disturbed.
+ * Dark green surface, white text, amber accents; lines stay under ~75 characters with a
+ * 1.7 line height.
  */
+import { useEffect, useRef } from 'react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useLanguage } from '../../../i18n/LanguageContext.jsx'
 
-const PLACEHOLDER = /(\[[^\]]+\])/
+export const sectionLabel = (section) => (section.number ? `${section.number}. ${section.title}` : section.title)
 
-function Text({ value }) {
-  return String(value).split(PLACEHOLDER).map((piece, index) => (
-    index % 2 === 1
-      ? <mark key={index} className="rounded bg-amber-100 px-0.5 text-inherit print:bg-transparent">{piece}</mark>
-      : piece
-  ))
+/**
+ * The section a hash names: its id, or the first id starting with it, so a short link
+ * such as /terms#cancellations reaches "cancellations-and-refunds". Otherwise the first.
+ */
+export function sectionFor(doc, hash) {
+  const wanted = decodeURIComponent(String(hash || '').replace(/^#/, ''))
+  if (wanted) {
+    const found = doc.sections.find((section) => section.id === wanted)
+      || doc.sections.find((section) => section.id.startsWith(`${wanted}-`))
+    if (found) return found
+  }
+  return doc.sections[0]
 }
 
 function Parts({ parts }) {
   return parts.map((part, index) => (
     typeof part === 'string'
-      ? <Text key={index} value={part} />
-      : <strong key={index} className="font-bold text-slate-950 print:text-black"><Text value={part.b} /></strong>
+      ? part
+      : <strong key={index} className="font-bold text-white print:text-black">{part.b}</strong>
   ))
 }
 
-function List({ block }) {
-  const Tag = block.ordered ? 'ol' : 'ul'
-  return (
-    <Tag className={`mt-3 space-y-2 ps-6 ${block.ordered ? 'list-decimal' : 'list-disc'}`}>
-      {block.items.map((item, index) => (
-        <li key={index} className="break-inside-avoid"><Parts parts={item} /></li>
-      ))}
-    </Tag>
-  )
+function Blocks({ section }) {
+  return section.blocks.map((block, index) => {
+    if (block.type !== 'list') return <p key={index} className="mt-4"><Parts parts={block.parts} /></p>
+    const List = block.ordered ? 'ol' : 'ul'
+    return (
+      <List
+        key={index}
+        className={`mt-4 space-y-2 ps-6 marker:text-oc-amber print:marker:text-black ${block.ordered ? 'list-decimal' : 'list-disc'}`}
+      >
+        {block.items.map((item, itemIndex) => <li key={itemIndex} className="ps-1"><Parts parts={item} /></li>)}
+      </List>
+    )
+  })
 }
 
-const sectionLabel = (section) => (section.number ? `${section.number}. ${section.title}` : section.title)
+const BODY = 'max-w-[75ch] text-[16px] leading-[1.7] text-white/90 print:max-w-none print:text-[11pt] print:text-black'
+const STEP_BUTTON =
+  'group flex min-w-0 max-w-[48%] flex-col gap-0.5 rounded-xl border border-white/15 px-4 py-3 text-start transition ' +
+  'hover:border-oc-amber hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oc-amber'
 
-export function LegalDocument({ doc, inDialog = false }) {
+export function LegalDocument({ doc, activeId, onSelect, idPrefix = '' }) {
   const { t } = useLanguage()
-  const jumpTo = (event, id) => {
+  const index = Math.max(0, doc.sections.findIndex((section) => section.id === activeId))
+  const section = doc.sections[index]
+  const previous = doc.sections[index - 1]
+  const next = doc.sections[index + 1]
+  const content = useRef(null)
+  const heading = useRef(null)
+  const shown = useRef(section.id)
+
+  // A newly chosen section: bring its start into view and put keyboard focus on its
+  // heading, so the reader (and a screen reader) continues there. Not on first open.
+  useEffect(() => {
+    if (shown.current === section.id) return
+    shown.current = section.id
+    content.current?.scrollIntoView?.({ block: 'start' })
+    heading.current?.focus({ preventScroll: true })
+  }, [section.id])
+
+  const select = (event, id) => {
     event.preventDefault()
-    event.currentTarget.closest('[data-legal-document]')?.querySelector(`[id="${id}"]`)?.scrollIntoView?.({ block: 'start' })
-    if (!inDialog) window.history.replaceState(window.history.state, '', `#${id}`)
+    onSelect(id)
   }
+  const selectId = `${idPrefix}legal-section-select`
 
   return (
-    <article data-legal-document="" className="mx-auto max-w-[70ch] text-[15px] leading-[1.75] text-slate-800 print:max-w-none print:text-[11pt] print:text-black">
-      <header className="border-b border-slate-200 pb-5 print:border-black">
-        <h1 className="font-display text-[clamp(1.5rem,1.2rem+1.2vw,2.15rem)] font-extrabold leading-tight tracking-[-.02em] text-slate-950 print:text-black">
-          {doc.title}
-        </h1>
-        <p className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[13px] text-slate-600 print:text-black">
-          <span>{t('legal.effectiveDate')}: <Text value={doc.effectiveDate} /></span>
-          <span>{t('legal.version')}: {doc.version}</span>
-          <span>{t('legal.lastUpdated')}: <Text value={doc.lastUpdated} /></span>
-        </p>
-        <p className="mt-1 text-[13px] text-slate-600 print:text-black">
-          <Text value={doc.company} /> · {doc.site}
-        </p>
-      </header>
+    <div data-legal-document="" className="text-white print:text-black">
+      <div className="grid gap-6 md:grid-cols-[minmax(190px,240px)_minmax(0,1fr)] md:gap-10 print:!block">
+        <div className="md:hidden print:hidden">
+          <label htmlFor={selectId} className="text-[12px] font-extrabold uppercase tracking-[.14em] text-oc-amber">
+            {t('legal.sections')}
+          </label>
+          <select
+            id={selectId}
+            value={section.id}
+            onChange={(event) => onSelect(event.target.value)}
+            className="mt-2 w-full rounded-xl border border-white/25 bg-oc-deep px-3 py-2.5 text-[15px] text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-oc-amber"
+          >
+            {doc.sections.map((item) => <option key={item.id} value={item.id}>{sectionLabel(item)}</option>)}
+          </select>
+        </div>
 
-      <nav aria-label={t('legal.contents')} className="my-6 rounded-xl border border-slate-200 bg-slate-50 px-5 py-4 print:hidden">
-        <h2 className="text-[11px] font-extrabold uppercase tracking-wide text-slate-500">{t('legal.contents')}</h2>
-        <ol className="mt-2 grid gap-1 text-[14px] leading-snug">
-          {doc.sections.map((section) => (
-            <li key={section.id}>
-              <a href={`#${section.id}`} onClick={(event) => jumpTo(event, section.id)} className="text-oc-green hover:underline">
-                {sectionLabel(section)}
-              </a>
-            </li>
-          ))}
-        </ol>
-      </nav>
+        <nav aria-label={t('legal.sections')} className="hidden md:block print:hidden">
+          <ol className="sticky top-24 grid gap-0.5 border-s border-white/15 text-[14px] leading-snug">
+            {doc.sections.map((item) => {
+              const current = item.id === section.id
+              return (
+                <li key={item.id}>
+                  <a
+                    href={`#${item.id}`}
+                    aria-current={current ? 'true' : undefined}
+                    onClick={(event) => select(event, item.id)}
+                    className={`-ms-px block border-s-2 py-1.5 ps-4 pe-2 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oc-amber ${
+                      current
+                        ? 'border-oc-amber font-bold text-oc-amber'
+                        : 'border-transparent text-white/80 hover:border-white/40 hover:text-white'
+                    }`}
+                  >
+                    {sectionLabel(item)}
+                  </a>
+                </li>
+              )
+            })}
+          </ol>
+        </nav>
 
-      {doc.sections.map((section) => (
-        <section key={section.id} aria-labelledby={section.id} className="mt-8 first-of-type:mt-6">
-          <h2 id={section.id} className="scroll-mt-24 font-display text-[1.2rem] font-extrabold leading-snug text-slate-950 print:break-after-avoid print:text-black">
+        <section ref={content} aria-labelledby={`${idPrefix}${section.id}`} className="min-w-0 scroll-mt-28 print:hidden">
+          <h2
+            ref={heading}
+            id={`${idPrefix}${section.id}`}
+            tabIndex={-1}
+            className="font-display text-[1.35rem] font-extrabold leading-snug text-white focus:outline-none"
+          >
             {sectionLabel(section)}
           </h2>
-          {section.blocks.map((block, index) => (
-            block.type === 'list' ? (
-              <List key={index} block={block} />
-            ) : (
-              <p key={index} className="mt-3"><Parts parts={block.parts} /></p>
-            )
-          ))}
+          <div className={BODY}><Blocks section={section} /></div>
+
+          <div className="mt-10 flex justify-between gap-3 border-t border-white/15 pt-5">
+            {previous ? (
+              <button type="button" className={STEP_BUTTON} onClick={() => onSelect(previous.id)}>
+                <span className="inline-flex items-center gap-1 text-[13px] font-extrabold uppercase tracking-wide text-oc-amber">
+                  <ChevronLeft className="h-4 w-4 rtl:rotate-180" aria-hidden="true" /> {t('legal.previous')}
+                </span>
+                <span className="block max-w-full truncate text-[14px] text-white/85">{sectionLabel(previous)}</span>
+              </button>
+            ) : <span />}
+            {next && (
+              <button type="button" className={`${STEP_BUTTON} items-end text-end`} onClick={() => onSelect(next.id)}>
+                <span className="inline-flex items-center gap-1 text-[13px] font-extrabold uppercase tracking-wide text-oc-amber">
+                  {t('legal.next')} <ChevronRight className="h-4 w-4 rtl:rotate-180" aria-hidden="true" />
+                </span>
+                <span className="block max-w-full truncate text-[14px] text-white/85">{sectionLabel(next)}</span>
+              </button>
+            )}
+          </div>
         </section>
-      ))}
-    </article>
+
+        {/* Print: the whole document, in order. */}
+        <div aria-hidden="true" className="hidden print:block">
+          {doc.sections.map((item) => (
+            <div key={item.id} className="mt-6 first:mt-0">
+              <p className="font-display text-[13pt] font-extrabold print:break-after-avoid">{sectionLabel(item)}</p>
+              <div className={BODY}><Blocks section={item} /></div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <p className="mt-10 border-t border-white/15 pt-4 text-[13px] text-white/75 print:border-black print:text-black">
+        {t('legal.lastUpdated')}: {doc.lastUpdated}
+      </p>
+    </div>
   )
 }
 

@@ -1,54 +1,41 @@
 /**
- * The public Terms (/terms) and Privacy Policy (/privacy) pages: the landing site's
- * header and footer around the document, and a Back link to the Legal hub (/legal).
- * Open to everyone; a signed-in visitor stays signed in. The header, footer and Back
- * link are left out when printing.
+ * The public Terms (/terms) and Privacy Policy (/privacy) pages, one section at a time.
+ *
+ * The section shown is the one in the address (/terms#section-id; a short form such as
+ * #cancellations reaches "cancellations-and-refunds"); without one, the first. Choosing a
+ * section adds a history entry, so the browser's Back returns to the previous section and a
+ * link to any section works. The page opens scrolled to the top. Open to everyone; a
+ * signed-in visitor stays signed in.
  */
 import { useEffect } from 'react'
-import { Link, useLocation } from 'react-router-dom'
-import { ArrowLeft } from 'lucide-react'
-import { useLanguage as useAppLanguage } from '../../../i18n/LanguageContext.jsx'
-import { SiteHeader } from '../../public-site/components/landing/SiteHeader.jsx'
-import { SiteFooter } from '../../public-site/components/landing/SiteFooter.jsx'
-import { useLanguage } from '../../public-site/components/landing/useLanguage.js'
-import { LegalDocument } from '../components/LegalDocument.jsx'
-import { privacy, terms } from '../legalDocuments.js'
+import { useLocation, useNavigate } from 'react-router-dom'
+import { useLanguage } from '../../../i18n/LanguageContext.jsx'
+import { LegalDocument, sectionFor } from '../components/LegalDocument.jsx'
+import { LegalShell } from '../components/LegalShell.jsx'
+import { LEGAL_TITLE_KEYS, privacy, terms } from '../legalDocuments.js'
 
 function LegalPage({ doc }) {
-  const { language, setLanguage, text } = useLanguage()
-  const { t } = useAppLanguage()
+  const { t } = useLanguage()
   const { hash } = useLocation()
+  const navigate = useNavigate()
+  const title = t(LEGAL_TITLE_KEYS[doc.id])
+  const section = sectionFor(doc, hash)
 
   useEffect(() => {
     const previous = document.title
-    document.title = `${doc.title} | CREWNBUILD`
+    document.title = `${title} | CREWNBUILD`
     return () => { document.title = previous }
-  }, [doc.title])
+  }, [title])
 
-  // The page opens at the top (coming from a footer link at the bottom of another page
-  // included). Only a deep link (/terms#section-id) lands on its section instead.
+  // Always open at the top: the first section's start, not wherever the last page was.
   useEffect(() => {
-    const section = hash ? document.getElementById(decodeURIComponent(hash.slice(1))) : null
-    if (section) section.scrollIntoView?.({ block: 'start' })
-    else window.scrollTo(0, 0)
-    // A contents link scrolls by itself (it changes the address, not the router's location).
-  }, [doc.id, hash])
+    window.scrollTo(0, 0)
+  }, [doc.id])
 
   return (
-    <div className="min-h-screen overflow-x-clip bg-oc-paper font-display text-oc-ink print:bg-white print:text-black" id="top">
-      <div className="print:hidden"><SiteHeader text={text} brandHref="/" /></div>
-      <main className="px-4 pb-20 pt-[96px] max-wide:pt-[84px] print:p-0">
-        <div className="mx-auto mb-4 max-w-[860px] print:hidden">
-          <Link to="/legal" className="inline-flex items-center gap-1.5 text-sm font-bold text-oc-green hover:underline">
-            <ArrowLeft className="h-4 w-4 rtl:rotate-180" aria-hidden="true" /> {t('legal.back')}
-          </Link>
-        </div>
-        <div className="mx-auto max-w-[860px] rounded-2xl border border-oc-line bg-white px-5 py-8 shadow-sm sm:px-10 sm:py-10 print:max-w-none print:border-0 print:p-0 print:shadow-none">
-          <LegalDocument doc={doc} />
-        </div>
-      </main>
-      <div className="print:hidden"><SiteFooter text={text} language={language} onSelectLanguage={setLanguage} /></div>
-    </div>
+    <LegalShell title={title} back={{ label: t('legal.backToLegal'), to: '/legal' }}>
+      <LegalDocument doc={doc} activeId={section.id} onSelect={(id) => navigate({ hash: id })} />
+    </LegalShell>
   )
 }
 

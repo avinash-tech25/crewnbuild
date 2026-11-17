@@ -1,32 +1,32 @@
 /**
- * The public Legal hub (/legal): a welcome card, one card per policy (a short summary of
- * what it covers, its version and effective date, and a link to the full text), and a
- * Contact card. The landing site's header and footer around it, as on /terms and /privacy.
- * The summaries are ours, not the policies' wording; the policies themselves are only on
- * /terms and /privacy.
+ * The public Legal hub (/legal): one card with an introduction, a short summary of each
+ * policy with a link to it (Terms, Privacy, and the Cancellation & Refund Policy, which is
+ * section 10 of the Terms), and a Contact box. The summaries are ours; the policies'
+ * wording is only on /terms and /privacy.
  */
 import { useEffect } from 'react'
-import { Link } from 'react-router-dom'
-import { ArrowRight, FileText, Mail, Phone, ShieldCheck } from 'lucide-react'
-import { SiteHeader } from '../../public-site/components/landing/SiteHeader.jsx'
-import { SiteFooter } from '../../public-site/components/landing/SiteFooter.jsx'
-import { useLanguage } from '../../public-site/components/landing/useLanguage.js'
-import { useLanguage as useAppLanguage } from '../../../i18n/LanguageContext.jsx'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Mail, Phone } from 'lucide-react'
+import { useLanguage } from '../../../i18n/LanguageContext.jsx'
 import { SUPPORT_PHONE, phoneHref } from '../../../shared/constants/support.js'
-import { privacy, terms } from '../legalDocuments.js'
+import { LegalShell } from '../components/LegalShell.jsx'
 
 export const SUPPORT_EMAIL = 'support@crewnbuild.com'
 
 const POLICIES = [
-  { doc: terms, to: '/terms', icon: FileText, titleKey: 'legal.hub.termsTitle', summaryKey: 'legal.hub.termsSummary', linkKey: 'legal.hub.termsLink' },
-  { doc: privacy, to: '/privacy', icon: ShieldCheck, titleKey: 'legal.hub.privacyTitle', summaryKey: 'legal.hub.privacySummary', linkKey: 'legal.hub.privacyLink' },
+  { id: 'terms', to: '/terms', titleKey: 'legal.hub.termsTitle', summaryKey: 'legal.hub.termsSummary', linkKey: 'legal.hub.termsLink' },
+  { id: 'privacy', to: '/privacy', titleKey: 'legal.hub.privacyTitle', summaryKey: 'legal.hub.privacySummary', linkKey: 'legal.hub.privacyLink' },
+  { id: 'refunds', to: '/terms#cancellations', titleKey: 'legal.hub.refundTitle', summaryKey: 'legal.hub.refundSummary', linkKey: 'legal.hub.refundLink' },
 ]
 
-const card = 'rounded-2xl border border-oc-line bg-white p-6 shadow-sm sm:p-8'
+const LINK =
+  'mt-3 inline-block font-bold text-oc-amber underline decoration-2 underline-offset-4 transition hover:text-white ' +
+  'focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oc-amber'
 
 export function LegalHubPage() {
-  const { language, setLanguage, text } = useLanguage()
-  const { t } = useAppLanguage()
+  const { t } = useLanguage()
+  const navigate = useNavigate()
+  const { key } = useLocation()
 
   useEffect(() => {
     const previous = document.title
@@ -35,61 +35,39 @@ export function LegalHubPage() {
     return () => { document.title = previous }
   }, [t])
 
+  // Back to wherever the visitor came from; the home page when /legal was opened directly.
+  // (The router's first entry has the key 'default'.)
+  const goBack = () => (key !== 'default' ? navigate(-1) : navigate('/'))
+
   return (
-    <div className="min-h-screen overflow-x-clip bg-oc-paper font-display text-oc-ink">
-      <SiteHeader text={text} brandHref="/" />
-      <main className="px-4 pb-20 pt-[96px] max-wide:pt-[84px]">
-        <div className="mx-auto grid max-w-[860px] gap-5">
-          <h1 className="text-[clamp(1.9rem,1.5rem+1.6vw,2.6rem)] font-extrabold leading-tight tracking-[-.02em] text-oc-deep">
-            {t('legal.hub.title')}
-          </h1>
+    <LegalShell title={t('legal.hub.heading')} back={{ label: t('legal.back'), onClick: goBack }}>
+      <div className="mx-auto max-w-[75ch] text-[16px] leading-[1.7] text-white/90">
+        <p>{t('legal.hub.intro')}</p>
 
-          <section aria-label={t('legal.hub.welcome')} className={`${card} border-s-4 border-s-oc-amber`}>
-            <p className="text-lg font-extrabold text-oc-deep">{t('legal.hub.welcome')}</p>
-            <p className="mt-2 text-[15px] leading-relaxed text-oc-muted">{t('legal.hub.intro')}</p>
+        {POLICIES.map(({ id, to, titleKey, summaryKey, linkKey }) => (
+          <section key={id} aria-labelledby={`legal-hub-${id}`} className="mt-8 border-t border-white/15 pt-7">
+            <h2 id={`legal-hub-${id}`} className="text-[1.3rem] font-extrabold text-white">{t(titleKey)}</h2>
+            <p className="mt-2">{t(summaryKey)}</p>
+            <Link to={to} className={LINK}>{t(linkKey)}</Link>
           </section>
+        ))}
 
-          {POLICIES.map(({ doc, to, icon: Icon, titleKey, summaryKey, linkKey }) => (
-            <section key={doc.id} aria-labelledby={`legal-hub-${doc.id}`} className={card}>
-              <div className="flex items-start gap-4">
-                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-oc-mint text-oc-green" aria-hidden="true">
-                  <Icon className="h-5 w-5" />
-                </span>
-                <div className="min-w-0">
-                  <h2 id={`legal-hub-${doc.id}`} className="text-xl font-extrabold text-oc-deep">{t(titleKey)}</h2>
-                  <p className="mt-1 text-[13px] text-oc-muted">
-                    {t('legal.version')}: {doc.version} · {t('legal.effectiveDate')}: {doc.effectiveDate}
-                  </p>
-                  <p className="mt-3 text-[15px] leading-relaxed text-oc-ink/85">{t(summaryKey)}</p>
-                  <Link
-                    to={to}
-                    className="mt-5 inline-flex items-center gap-2 rounded-full bg-oc-green px-5 py-2.5 text-sm font-bold text-white transition hover:bg-oc-deep focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oc-amber focus-visible:ring-offset-2"
-                  >
-                    {t(linkKey)} <ArrowRight className="h-4 w-4 rtl:rotate-180" aria-hidden="true" />
-                  </Link>
-                </div>
-              </div>
-            </section>
-          ))}
-
-          <section aria-labelledby="legal-hub-contact" className="rounded-2xl bg-oc-deep p-6 text-white sm:p-8">
-            <h2 id="legal-hub-contact" className="text-xl font-extrabold">{t('legal.hub.contactTitle')}</h2>
-            <p className="mt-2 text-[15px] text-white/75">{t('legal.hub.contactText')}</p>
-            <ul className="mt-4 grid gap-3 text-[15px] font-semibold sm:grid-cols-2">
-              <li className="flex items-center gap-2.5">
-                <Mail className="h-4 w-4 shrink-0 text-oc-amber" aria-hidden="true" />
-                <a href={`mailto:${SUPPORT_EMAIL}`} className="hover:text-oc-amber hover:underline" dir="ltr">{SUPPORT_EMAIL}</a>
-              </li>
-              <li className="flex items-center gap-2.5">
-                <Phone className="h-4 w-4 shrink-0 text-oc-amber" aria-hidden="true" />
-                <a href={phoneHref(SUPPORT_PHONE)} className="hover:text-oc-amber hover:underline" dir="ltr">{SUPPORT_PHONE}</a>
-              </li>
-            </ul>
-          </section>
-        </div>
-      </main>
-      <SiteFooter text={text} language={language} onSelectLanguage={setLanguage} />
-    </div>
+        <section aria-labelledby="legal-hub-contact" className="mt-9 rounded-2xl border border-oc-amber/60 bg-oc-amber/10 p-5 sm:p-6">
+          <h2 id="legal-hub-contact" className="text-[1.2rem] font-extrabold text-oc-amber">{t('legal.hub.contactTitle')}</h2>
+          <p className="mt-1">{t('legal.hub.contactText')}</p>
+          <ul className="mt-3 grid gap-2 font-semibold sm:grid-cols-2">
+            <li className="flex items-center gap-2.5">
+              <Mail className="h-4 w-4 shrink-0 text-oc-amber" aria-hidden="true" />
+              <a href={`mailto:${SUPPORT_EMAIL}`} className="text-white underline-offset-4 hover:text-oc-amber hover:underline" dir="ltr">{SUPPORT_EMAIL}</a>
+            </li>
+            <li className="flex items-center gap-2.5">
+              <Phone className="h-4 w-4 shrink-0 text-oc-amber" aria-hidden="true" />
+              <a href={phoneHref(SUPPORT_PHONE)} className="text-white underline-offset-4 hover:text-oc-amber hover:underline" dir="ltr">{SUPPORT_PHONE}</a>
+            </li>
+          </ul>
+        </section>
+      </div>
+    </LegalShell>
   )
 }
 

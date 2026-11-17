@@ -2,7 +2,8 @@ import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import { anAccount, installFakeServer } from '../../test/fakeServer.js'
-import { location, renderApp, signedInAs, signedOut } from '../../test/renderApp.jsx'
+import { history, location, renderApp, signedInAs, signedOut } from '../../test/renderApp.jsx'
+import { sectionLabel as label } from './components/LegalDocument.jsx'
 import { privacy, terms } from './legalDocuments.js'
 
 const SLOW = { timeout: 15000 }
@@ -11,19 +12,36 @@ const SLOW = { timeout: 15000 }
 beforeAll(() => {
   window.HTMLMediaElement.prototype.play = () => Promise.resolve()
 })
-const OWNER = anAccount({ role: 'OWNER' })
-const label = (section) => (section.number ? `${section.number}. ${section.title}` : section.title)
 
 // jsdom has no scrollIntoView: record which element was asked to scroll into view.
 function recordScrolls() {
   const scrolled = []
-  Element.prototype.scrollIntoView = function record() { scrolled.push(this.id) }
+  Element.prototype.scrollIntoView = function record() { scrolled.push(this) }
   return scrolled
 }
 
 afterEach(() => {
   vi.restoreAllMocks()
   delete Element.prototype.scrollIntoView
+})
+
+const OWNER = anAccount({ role: 'OWNER' })
+const SHORT_TITLES = { terms: 'Terms & Conditions', privacy: 'Privacy Policy' }
+
+/** The section view: the one section shown (its h2), and the section list beside it. */
+const shownHeading = (scope = document.body) => within(scope).getByRole('heading', { level: 2 })
+const sectionList = (scope = document.body) => within(scope).getByRole('navigation', { name: 'Sections' })
+const current = (scope) => within(sectionList(scope)).getAllByRole('link').filter((link) => link.getAttribute('aria-current') === 'true')
+
+describe('the documents are the Word files, word for word', () => {
+  it.each([
+    [terms, 'CREWNBUILD Terms and Conditions (Terms of Use)'],
+    [privacy, 'CREWNBUILD Privacy Policy'],
+  ])('%#: title, effective date and version as printed', (doc, title) => {
+    expect(doc.title).toBe(title)
+    expect([doc.effectiveDate, doc.version, doc.lastUpdated]).toEqual(['17 November 2026', '1.0', '17 November 2026'])
+    expect(JSON.stringify(doc)).not.toMatch(/gharbanao|\[[A-Z][^\]]*\]/i)
+  })
 })
 
 describe.each([
@@ -33,55 +51,172 @@ describe.each([
   it.each([
     ['signed out', signedOut],
     ['signed in', signedInAs(OWNER)],
-  ])('shows the whole document %s, and keeps the session', async (_name, auth) => {
+  ])('opens %s at the top on the first section: short title, section list, last updated at the bottom', async (_name, auth) => {
+    const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => {})
     installFakeServer()
     const { store } = renderApp(path, { auth })
-    expect(await screen.findByRole('heading', { level: 1, name: doc.title }, SLOW)).toBeInTheDocument()
-    expect(screen.getByText(`Version: ${doc.version}`)).toBeInTheDocument()
-    expect(screen.getByText(/^Effective date:/)).toHaveTextContent(`Effective date: ${doc.effectiveDate}`)
-    expect(screen.getByText(/^Last updated:/)).toBeInTheDocument()
-    const contents = screen.getByRole('navigation', { name: 'Contents' })
-    for (const section of doc.sections) {
-      expect(within(contents).getByRole('link', { name: label(section) })).toHaveAttribute('href', `#${section.id}`)
-      expect(screen.getByRole('heading', { level: 2, name: label(section) })).toHaveAttribute('id', section.id)
-    }
-    expect(document.title).toContain(doc.title)
-    expect(location.current.pathname).toBe(path)
+    expect(await screen.findByRole('heading', { level: 1, name: SHORT_TITLES[doc.id] }, SLOW)).toBeInTheDocument()
+    expect(scrollTo).toHaveBeenCalledWith(0, 0)
+    // No brand line, effective date, version or contents block at the top.
+    expect(screen.queryByText(/Effective date:|Version:|CREWNBUILD · crewnbuild\.com/)).not.toBeInTheDocument()
+    expect(screen.queryByRole('navigation', { name: 'Contents' })).not.toBeInTheDocument()
+    // Every heading is in the list; only the first section is shown.
+    const links = within(sectionList()).getAllByRole('link')
+    expect(links.map((link) => link.textContent)).toEqual(doc.sections.map(label))
+    expect(links.map((link) => link.getAttribute('href'))).toEqual(doc.sections.map((section) => `#${section.id}`))
+    expect(shownHeading()).toHaveTextContent(label(doc.sections[0]))
+    expect(current().map((link) => link.textContent)).toEqual([label(doc.sections[0])])
+    expect(screen.getByText(`Last updated: ${doc.lastUpdated}`)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Previous/ })).not.toBeInTheDocument()
+    expect(document.title).toContain(SHORT_TITLES[doc.id])
     expect(store.getState().auth.user).toEqual(auth.user)
+  })
+
+  it('a section in the list shows that section, puts it in the address, and Back returns', async () => {
+    const scrolled = recordScrolls()
+    const user = userEvent.setup()
+    installFakeServer()
+    renderApp(path, { auth: signedOut })
+    await screen.findByRole('heading', { level: 1, name: SHORT_TITLES[doc.id] }, SLOW)
+    const target = doc.sections[4]
+    await user.click(within(sectionList()).getByRole('link', { name: label(target) }))
+    expect(location.current.hash).toBe(`#${target.id}`)
+    expect(shownHeading()).toHaveTextContent(label(target))
+    expect(shownHeading()).toHaveFocus()
+    expect(scrolled.at(-1).getAttribute('aria-labelledby')).toBe(target.id)
+    expect(current().map((link) => link.textContent)).toEqual([label(target)])
+
+    await user.click(screen.getByRole('button', { name: /Next/ }))
+    expect(location.current.hash).toBe(`#${doc.sections[5].id}`)
+    expect(shownHeading()).toHaveTextContent(label(doc.sections[5]))
+    await user.click(screen.getByRole('button', { name: /Previous/ }))
+    expect(shownHeading()).toHaveTextContent(label(target))
+
+    history.back()
+    await waitFor(() => expect(location.current.hash).toBe(`#${doc.sections[5].id}`))
+    expect(shownHeading()).toHaveTextContent(label(doc.sections[5]))
+  })
+
+  it('a link to a section opens on it; the last has no Next; the full text is there for print', async () => {
+    installFakeServer()
+    const last = doc.sections.at(-1)
+    renderApp(`${path}#${last.id}`, { auth: signedOut })
+    await screen.findByRole('heading', { level: 1, name: SHORT_TITLES[doc.id] }, SLOW)
+    expect(shownHeading()).toHaveTextContent(label(last))
+    expect(screen.queryByRole('button', { name: /Next/ })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Previous/ })).toHaveTextContent(label(doc.sections.at(-2)))
+    // Print: every section, in order, in a copy hidden from the screen and from assistive tech.
+    const print = document.querySelector('[data-legal-document] [aria-hidden="true"].hidden')
+    expect(print).toHaveClass('print:block')
+    expect([...print.children].map((part) => part.firstChild.textContent)).toEqual(doc.sections.map(label))
+  })
+
+  it('on a small screen the sections are a dropdown that does the same', async () => {
+    const user = userEvent.setup()
+    installFakeServer()
+    renderApp(path, { auth: signedOut })
+    await screen.findByRole('heading', { level: 1, name: SHORT_TITLES[doc.id] }, SLOW)
+    const dropdown = screen.getByRole('combobox', { name: 'Sections' })
+    expect(dropdown).toHaveValue(doc.sections[0].id)
+    await user.selectOptions(dropdown, doc.sections[2].id)
+    expect(location.current.hash).toBe(`#${doc.sections[2].id}`)
+    expect(shownHeading()).toHaveTextContent(label(doc.sections[2]))
+  })
+
+  it('the back arrow goes to /legal', async () => {
+    const user = userEvent.setup()
+    installFakeServer()
+    renderApp(path, { auth: signedOut })
+    await user.click(await screen.findByRole('link', { name: 'Back to Legal' }, SLOW))
+    // /legal's title is also "Terms & Conditions": wait for the hub's own content.
+    await waitFor(() => expect(location.current.pathname).toBe('/legal'))
+    expect(await screen.findByRole('link', { name: 'View Detailed Terms' }, SLOW)).toBeInTheDocument()
+  })
+})
+
+it('a numbered list in the Word file is a numbered list on the page', async () => {
+  const section = terms.sections.find((candidate) => candidate.blocks.some((block) => block.ordered))
+  installFakeServer()
+  renderApp(`/terms#${section.id}`, { auth: signedOut })
+  const heading = await screen.findByRole('heading', { level: 2, name: label(section) }, SLOW)
+  const list = heading.closest('section').querySelector('ol')
+  expect(list).toHaveClass('list-decimal')
+  expect(list.children).toHaveLength(section.blocks.find((block) => block.ordered).items.length)
+})
+
+describe('the Legal hub', () => {
+  it('/legal: back arrow, title, one card: intro, three policies with their links, and the contact box', async () => {
+    const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => {})
+    installFakeServer()
+    renderApp('/legal', { auth: signedOut })
+    expect(await screen.findByRole('heading', { level: 1, name: 'Terms & Conditions' }, SLOW)).toBeInTheDocument()
+    expect(scrollTo).toHaveBeenCalledWith(0, 0)
+    expect(screen.getByRole('button', { name: 'Back' })).toBeInTheDocument()
+    expect(screen.getByText(/^Welcome to CREWNBUILD\..*please take a moment to review and agree to our legal policies.*By using our website or services, you acknowledge your understanding and acceptance of these policies\.$/)).toBeInTheDocument()
+    const cards = [
+      ['Terms & Conditions', 'View Detailed Terms', '/terms'],
+      ['Privacy Policy', 'View Privacy Policy', '/privacy'],
+      ['Cancellation & Refund Policy', 'View Cancellation Policy', '/terms#cancellations'],
+    ]
+    for (const [title, link, href] of cards) {
+      const card = screen.getByRole('region', { name: title })
+      expect(within(card).getByRole('link', { name: link })).toHaveAttribute('href', href)
+      expect(within(card).getByRole('link', { name: link })).toHaveClass('underline')
+    }
+    const contact = screen.getByRole('region', { name: 'Contact' })
+    expect(within(contact).getByRole('link', { name: 'support@crewnbuild.com' })).toHaveAttribute('href', 'mailto:support@crewnbuild.com')
+    expect(within(contact).getByRole('link', { name: '+91 628 1921 628' })).toHaveAttribute('href', 'tel:+916281921628')
+  })
+
+  it('View Cancellation Policy opens section 10 of the Terms', async () => {
+    const user = userEvent.setup()
+    installFakeServer()
+    renderApp('/legal', { auth: signedOut })
+    await user.click(await screen.findByRole('link', { name: 'View Cancellation Policy' }, SLOW))
+    expect(await screen.findByRole('heading', { level: 2, name: '10. Cancellations and Refunds' }, SLOW)).toBeInTheDocument()
+    expect(location.current.pathname).toBe('/terms')
+  })
+
+  it('the back arrow returns to the page the visitor came from', async () => {
+    const user = userEvent.setup()
+    installFakeServer()
+    renderApp('/privacy', { auth: signedOut })
+    const footer = (await screen.findAllByRole('contentinfo', {}, SLOW)).at(-1)
+    await user.click(within(footer).getByRole('link', { name: 'Legal' }))
+    await user.click(await screen.findByRole('button', { name: 'Back' }, SLOW))
+    await waitFor(() => expect(location.current.pathname).toBe('/privacy'))
   })
 })
 
 describe('footer links', () => {
-  it('the landing footer leads to the Terms and the Privacy Policy', async () => {
+  it('the landing footer Legal column leads to /legal, /terms and /privacy', async () => {
     const user = userEvent.setup()
     installFakeServer()
-    renderApp('/terms', { auth: signedOut })
+    renderApp('/legal', { auth: signedOut })
     const footer = (await screen.findAllByRole('contentinfo', {}, SLOW)).at(-1)
-    await user.click(within(footer).getByRole('link', { name: 'Privacy policy' }))
-    expect(await screen.findByRole('heading', { level: 1, name: privacy.title }, SLOW)).toBeInTheDocument()
+    const column = within(footer).getAllByRole('heading', { name: 'Legal' })[0].parentElement
+    expect(within(column).getAllByRole('link').map((link) => link.getAttribute('href'))).toEqual(['/legal', '/terms', '/privacy'])
+    await user.click(within(column).getByRole('link', { name: 'Privacy policy' }))
+    expect(await screen.findByRole('heading', { level: 1, name: 'Privacy Policy' }, SLOW)).toBeInTheDocument()
     expect(location.current.pathname).toBe('/privacy')
-    await user.click(within(screen.getAllByRole('contentinfo').at(-1)).getByRole('link', { name: 'Terms of service' }))
-    expect(await screen.findByRole('heading', { level: 1, name: terms.title }, SLOW)).toBeInTheDocument()
-    expect(location.current.pathname).toBe('/terms')
   })
 
-  it('the other public footer points at both pages', async () => {
+  it('the other public footer points at the hub and both pages', async () => {
     installFakeServer()
     renderApp('/about', { auth: signedOut })
     expect(await screen.findByRole('link', { name: 'Terms of Service' }, SLOW)).toHaveAttribute('href', '/terms')
     expect(screen.getByRole('link', { name: 'Privacy Policy' })).toHaveAttribute('href', '/privacy')
+    expect(screen.getAllByRole('link', { name: 'Legal' }).map((link) => link.getAttribute('href'))).toContain('/legal')
     expect(screen.getAllByRole('link', { name: /\+91 628 1921 628/ })[0]).toHaveAttribute('href', 'tel:+916281921628')
   })
 
-  it('the landing footer has a Legal column and the support phone as a call link', async () => {
+  it('the landing footer shows the support phone as a call link under Get in touch', async () => {
     installFakeServer()
     renderApp('/terms', { auth: signedOut })
     const footer = (await screen.findAllByRole('contentinfo', {}, SLOW)).at(-1)
-    const legal = within(footer).getByRole('heading', { name: 'Legal' }).parentElement
-    expect(within(legal).getByRole('link', { name: 'Terms of service' })).toHaveAttribute('href', '/terms')
-    expect(within(legal).getByRole('link', { name: 'Privacy policy' })).toHaveAttribute('href', '/privacy')
+    const touch = within(footer).getByRole('heading', { name: 'Get in touch' }).parentElement
     // GET /support/config is not answered here: the company line still shows.
-    expect(within(footer).getByRole('link', { name: '+91 628 1921 628' })).toHaveAttribute('href', 'tel:+916281921628')
+    expect(within(touch).getByRole('link', { name: '+91 628 1921 628' })).toHaveAttribute('href', 'tel:+916281921628')
   })
 
   it('the landing footer shows the SUPPORT_PHONE the server sends', async () => {
@@ -124,17 +259,21 @@ describe.each([
     const checkbox = screen.getByRole('checkbox', { name: /I agree to the Terms of Service and Privacy Policy/ })
     const opener = screen.getByRole('button', { name })
     await user.click(opener)
-    const dialog = await screen.findByRole('dialog', { name: doc.title })
+    const dialog = await screen.findByRole('dialog', { name: SHORT_TITLES[doc.id] })
     expect(dialog).toHaveAttribute('aria-modal', 'true')
     expect(dialog.contains(document.activeElement)).toBe(true)
-    expect(within(dialog).getByRole('heading', { level: 2, name: label(doc.sections[1]) })).toBeInTheDocument()
-    expect(within(dialog).getByText(`Version: ${doc.version}`)).toBeInTheDocument()
-    // It starts at the top, and its contents links scroll inside it without leaving the form.
+    // The same section view, starting at the first section, at the top.
     expect(screen.getByTestId('legal-dialog-body').scrollTop).toBe(0)
+    expect(shownHeading(dialog)).toHaveTextContent(label(doc.sections[0]))
+    expect(within(dialog).getByText(`Last updated: ${doc.lastUpdated}`)).toBeInTheDocument()
+    // Choosing a section changes the window only: the address and the form stay.
     const scrolled = recordScrolls()
     const last = doc.sections.at(-1)
-    await user.click(within(within(dialog).getByRole('navigation', { name: 'Contents' })).getByRole('link', { name: label(last) }))
-    expect(scrolled).toEqual([last.id])
+    await user.click(within(sectionList(dialog)).getByRole('link', { name: label(last) }))
+    expect(shownHeading(dialog)).toHaveTextContent(label(last))
+    expect(scrolled.at(-1).getAttribute('aria-labelledby')).toBe(`dialog-${last.id}`)
+    await user.click(within(dialog).getByRole('button', { name: /Previous/ }))
+    expect(shownHeading(dialog)).toHaveTextContent(label(doc.sections.at(-2)))
     expect(location.current.hash).toBe('')
     expect(location.current.pathname).toBe('/signup')
     expect(checkbox).not.toBeChecked()
@@ -189,7 +328,7 @@ describe('sign-up consent: the password form', () => {
     await screen.findByText('Email verified')
 
     await user.click(screen.getByRole('button', { name: 'Privacy Policy' }))
-    await screen.findByRole('dialog', { name: privacy.title })
+    await screen.findByRole('dialog', { name: 'Privacy Policy' })
     await user.click(screen.getByTestId('legal-dialog-backdrop'))
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
     expect(screen.getByPlaceholderText('you@example.com')).toHaveValue('asha@example.in')
@@ -209,88 +348,5 @@ describe('sign-up consent: the password form', () => {
       terms_version: terms.version,
       privacy_version: privacy.version,
     })
-  })
-})
-
-
-
-describe('the documents are the Word files, word for word', () => {
-  it.each([
-    [terms, 'CREWNBUILD Terms and Conditions (Terms of Use)'],
-    [privacy, 'CREWNBUILD Privacy Policy'],
-  ])('%#: title, effective date and version as printed', (doc, title) => {
-    expect(doc.title).toBe(title)
-    expect([doc.effectiveDate, doc.version, doc.lastUpdated]).toEqual(['17 November 2026', '1.0', '17 November 2026'])
-    expect(JSON.stringify(doc)).not.toMatch(/gharbanao|\[[A-Z][^\]]*\]/i)
-  })
-
-  it('a numbered list in the Word file is a numbered list on the page', async () => {
-    installFakeServer()
-    renderApp('/terms', { auth: signedOut })
-    const section = terms.sections.find((candidate) => candidate.blocks.some((block) => block.ordered))
-    const heading = await screen.findByRole('heading', { level: 2, name: label(section) }, SLOW)
-    const list = heading.closest('section').querySelector('ol')
-    expect(list).toHaveClass('list-decimal')
-    expect(list.children).toHaveLength(section.blocks.find((block) => block.ordered).items.length)
-  })
-})
-
-describe('the Legal hub', () => {
-  it('/legal: title, welcome, one card per policy with its link, and the contact card', async () => {
-    const user = userEvent.setup()
-    installFakeServer()
-    renderApp('/legal', { auth: signedOut })
-    expect(await screen.findByRole('heading', { level: 1, name: 'Legal' }, SLOW)).toBeInTheDocument()
-    expect(screen.getByText('Welcome to CREWNBUILD')).toBeInTheDocument()
-    expect(screen.getByText(/please review our legal policies/)).toBeInTheDocument()
-    const termsCard = screen.getByRole('region', { name: 'Terms and Conditions' })
-    expect(within(termsCard).getByText(`Version: ${terms.version} · Effective date: ${terms.effectiveDate}`)).toBeInTheDocument()
-    expect(within(termsCard).getByRole('link', { name: 'View Terms and Conditions' })).toHaveAttribute('href', '/terms')
-    const privacyCard = screen.getByRole('region', { name: 'Privacy Policy' })
-    expect(within(privacyCard).getByRole('link', { name: 'View Privacy Policy' })).toHaveAttribute('href', '/privacy')
-    const contact = screen.getByRole('region', { name: 'Contact' })
-    expect(within(contact).getByRole('link', { name: 'support@crewnbuild.com' })).toHaveAttribute('href', 'mailto:support@crewnbuild.com')
-    expect(within(contact).getByRole('link', { name: '+91 628 1921 628' })).toHaveAttribute('href', 'tel:+916281921628')
-
-    await user.click(within(privacyCard).getByRole('link', { name: 'View Privacy Policy' }))
-    expect(await screen.findByRole('heading', { level: 1, name: privacy.title }, SLOW)).toBeInTheDocument()
-    expect(location.current.pathname).toBe('/privacy')
-  })
-
-  it('the footer Legal column leads to /legal, /terms and /privacy', async () => {
-    installFakeServer()
-    renderApp('/legal', { auth: signedOut })
-    const footer = (await screen.findAllByRole('contentinfo', {}, SLOW)).at(-1)
-    const column = within(footer).getAllByRole('heading', { name: 'Legal' })[0].parentElement
-    expect(within(column).getAllByRole('link').map((link) => link.getAttribute('href'))).toEqual(['/legal', '/terms', '/privacy'])
-  })
-})
-
-describe('/terms and /privacy', () => {
-  it.each([
-    ['/terms', terms],
-    ['/privacy', privacy],
-  ])('%s opens at the top and has a Back link to /legal', async (path, doc) => {
-    const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => {})
-    const user = userEvent.setup()
-    installFakeServer()
-    renderApp(path, { auth: signedOut })
-    await screen.findByRole('heading', { level: 1, name: doc.title }, SLOW)
-    expect(scrollTo).toHaveBeenCalledWith(0, 0)
-    await user.click(screen.getByRole('link', { name: 'Back to Legal' }))
-    expect(await screen.findByRole('heading', { level: 1, name: 'Legal' }, SLOW)).toBeInTheDocument()
-    expect(location.current.pathname).toBe('/legal')
-  })
-
-  it('a contents link jumps to its section', async () => {
-    const scrolled = recordScrolls()
-    const user = userEvent.setup()
-    installFakeServer()
-    renderApp('/privacy', { auth: signedOut })
-    await screen.findByRole('heading', { level: 1, name: privacy.title }, SLOW)
-    const target = privacy.sections[5]
-    await user.click(within(screen.getByRole('navigation', { name: 'Contents' })).getByRole('link', { name: label(target) }))
-    expect(scrolled).toEqual([target.id])
-    expect(window.location.hash).toBe(`#${target.id}`)
   })
 })

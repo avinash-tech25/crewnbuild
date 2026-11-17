@@ -12,6 +12,9 @@ export { terms, privacy }
 
 export const LEGAL_DOCUMENTS = { terms, privacy }
 
+/** The short title each document is shown under (page heading, dialog title). */
+export const LEGAL_TITLE_KEYS = { terms: 'legal.hub.termsTitle', privacy: 'legal.hub.privacyTitle' }
+
 /** Sent with a sign-up, and only once the consent box has been ticked. */
 export function legalAcceptanceFields() {
   return { accept_terms: true, terms_version: terms.version, privacy_version: privacy.version }
