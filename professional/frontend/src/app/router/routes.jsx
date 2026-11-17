@@ -22,6 +22,7 @@ const TestimonialsPage = page(() => import('../../features/public-site/pages/Tes
 const ContactPage = page(() => import('../../features/public-site/pages/ContactPage.jsx'))
 const TermsPage = page(() => import('../../features/legal/pages/LegalPage.jsx').then((module) => ({ default: module.TermsPage })))
 const PrivacyPage = page(() => import('../../features/legal/pages/LegalPage.jsx').then((module) => ({ default: module.PrivacyPage })))
+const LegalHubPage = page(() => import('../../features/legal/pages/LegalHubPage.jsx'))
 const ComingSoonPage = page(() => import('../../features/public-site/pages/ComingSoonPage.jsx'))
 const NotFoundPage = page(() => import('../../features/public-site/pages/NotFoundPage.jsx'))
 const CalculatorHubPage = page(() => import('../../features/estimate/pages/CalculatorHubPage.jsx'))
@@ -73,6 +74,7 @@ export const routes = [
   { path: '/contact', Component: ContactPage, access: 'public' },
   { path: '/contact-us', Component: ContactUsPage, access: 'public' },
   // Terms of Service and Privacy Policy: open to everyone, signed in or not.
+  { path: '/legal', Component: LegalHubPage, access: 'public' },
   { path: '/terms', Component: TermsPage, access: 'public' },
   { path: '/privacy', Component: PrivacyPage, access: 'public' },
   // My Support Tickets asks for sign-in itself, so a visitor from an acknowledgement e-mail is not bounced.

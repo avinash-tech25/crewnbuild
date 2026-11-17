@@ -107,6 +107,7 @@ export function SiteFooter({ text, language, onSelectLanguage }) {
           <div>
             <h4 className={columnHeading}>{t("site.footer.col.legal")}</h4>
             <ul className={columnList}>
+              <li><Link className={columnLink} to="/legal">{t("legal.hub.title")}</Link></li>
               <li><Link className={columnLink} to="/terms">{text.footer.terms}</Link></li>
               <li><Link className={columnLink} to="/privacy">{text.footer.privacy}</Link></li>
             </ul>

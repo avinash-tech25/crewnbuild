@@ -4,7 +4,7 @@ The Professional web app is translated into Arabic (`ar`), Hindi (`hi`), Kannada
 
 **How this list was made:** every key in `locales/en.js` that the old app's English text (`Kuwait-Version/Octabuild/frontend 7/frontend/src/i18n/translations.js`, the state R7 started from) did not have, checked against each language file. All other English keys are unchanged since the old app, and no language lost a translation it had there.
 
-**Status (17 Nov 2026):** 29 keys, missing in all six languages. Six are the Terms / Privacy Policy pages and the sign-up consent line (`features/legal`, `features/auth/pages/SignupPage.jsx`). Seventeen are from the request details change (a supplier or builder shown by who they are, `features/requests/counterparty.js` and `features/requests/components/PartyDetails.jsx`); one is the plans section's "Most popular" label; two are the My Suppliers project coverage labels; two are the public header's account menu; one is the Site Engineer's note when a project has no supplier to order from.
+**Status (17 Nov 2026):** 41 keys, missing in all six languages. Eighteen are the Legal hub (/legal), the Terms / Privacy Policy pages and the sign-up consent line (`features/legal`, `features/auth/pages/SignupPage.jsx`). Seventeen are from the request details change (a supplier or builder shown by who they are, `features/requests/counterparty.js` and `features/requests/components/PartyDetails.jsx`); one is the plans section's "Most popular" label; two are the My Suppliers project coverage labels; two are the public header's account menu; one is the Site Engineer's note when a project has no supplier to order from.
 
 | Key | English | Where it shows | Missing in |
 | --- | --- | --- | --- |
@@ -37,6 +37,18 @@ The Professional web app is translated into Arabic (`ar`), Hindi (`hi`), Kannada
 | `legal.lastUpdated` | Last updated | Same line | ar, hi, kn, ml, ta, te |
 | `legal.contents` | Contents | Table of contents heading | ar, hi, kn, ml, ta, te |
 | `legal.close` | Close | Sign-up document window: the × button's spoken name | ar, hi, kn, ml, ta, te |
+| `legal.back` | Back to Legal | /terms and /privacy: link above the document, back to /legal | ar, hi, kn, ml, ta, te |
+| `legal.hub.title` | Legal | /legal: page title; footer Legal column: link to /legal | ar, hi, kn, ml, ta, te |
+| `legal.hub.welcome` | Welcome to CREWNBUILD | /legal: intro card heading | ar, hi, kn, ml, ta, te |
+| `legal.hub.intro` | Before you use our platform, please review our legal policies. They explain the rules for using CREWNBUILD and how we collect, use and protect your personal data. | /legal: intro card text | ar, hi, kn, ml, ta, te |
+| `legal.hub.termsTitle` | Terms and Conditions | /legal: Terms card heading | ar, hi, kn, ml, ta, te |
+| `legal.hub.termsSummary` | The rules for using CREWNBUILD: your account, what Homeowners, Contractors, Service Professionals and Suppliers agree to, fees and refunds, and how disputes are handled. | /legal: Terms card summary | ar, hi, kn, ml, ta, te |
+| `legal.hub.termsLink` | View Terms and Conditions | /legal: Terms card link | ar, hi, kn, ml, ta, te |
+| `legal.hub.privacyTitle` | Privacy Policy | /legal: Privacy card heading | ar, hi, kn, ml, ta, te |
+| `legal.hub.privacySummary` | What personal data we collect, why we use it, who we share it with, how long we keep it, and your rights over it. | /legal: Privacy card summary | ar, hi, kn, ml, ta, te |
+| `legal.hub.privacyLink` | View Privacy Policy | /legal: Privacy card link | ar, hi, kn, ml, ta, te |
+| `legal.hub.contactTitle` | Contact | /legal: contact card heading | ar, hi, kn, ml, ta, te |
+| `legal.hub.contactText` | Questions about these policies? Write to us or call. | /legal: contact card text | ar, hi, kn, ml, ta, te |
 
 **Not covered by this list:**
 

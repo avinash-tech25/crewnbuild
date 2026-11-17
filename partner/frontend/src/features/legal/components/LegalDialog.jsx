@@ -12,6 +12,7 @@ const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), selec
 export default function LegalDialog({ doc, onClose }) {
   const panel = useRef(null)
   const closeButton = useRef(null)
+  const body = useRef(null)
   const close = useRef(onClose)
   useEffect(() => {
     close.current = onClose
@@ -22,7 +23,9 @@ export default function LegalDialog({ doc, onClose }) {
     const opener = document.activeElement
     const overflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
-    closeButton.current?.focus()
+    // Always from the top, whichever document and however far the last one was read.
+    if (body.current) body.current.scrollTop = 0
+    closeButton.current?.focus({ preventScroll: true })
     const onKey = (event) => {
       if (event.key === 'Escape') {
         event.stopPropagation()
@@ -79,7 +82,7 @@ export default function LegalDialog({ doc, onClose }) {
             <X className="h-5 w-5" />
           </button>
         </div>
-        <div className="flex-1 overflow-y-auto px-5 py-6 sm:px-10">
+        <div ref={body} data-testid="legal-dialog-body" className="flex-1 overflow-y-auto px-5 py-6 sm:px-10">
           <LegalDocument doc={doc} idPrefix="dialog-" headingId={titleId} />
         </div>
       </div>

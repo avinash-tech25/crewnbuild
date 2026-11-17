@@ -3,11 +3,12 @@
  * effective date / version / last updated line, a table of contents, then every
  * section under an <h2 id={section.id}> so /terms#section-id deep-links to it.
  *
- * The text is shown exactly as generated. [Bracketed placeholders] still waiting for
- * legal review are kept as they are, only marked so they are easy to spot.
+ * The text is shown exactly as generated from the Word files; a [bracketed placeholder],
+ * if a future text has one, is marked so it is easy to spot.
  *
- * `inDialog`: the contents list scrolls inside the window instead of changing the
- * page's address, so a sign-up form behind the window is not disturbed.
+ * A contents link scrolls to its section. On the page it also puts #section-id in the
+ * address (without a new history entry); in a dialog (`inDialog`) the address is left
+ * alone, so a sign-up form behind the window is not disturbed.
  */
 import { useLanguage } from '../../../i18n/LanguageContext.jsx'
 
@@ -29,14 +30,25 @@ function Parts({ parts }) {
   ))
 }
 
+function List({ block }) {
+  const Tag = block.ordered ? 'ol' : 'ul'
+  return (
+    <Tag className={`mt-3 space-y-2 ps-6 ${block.ordered ? 'list-decimal' : 'list-disc'}`}>
+      {block.items.map((item, index) => (
+        <li key={index} className="break-inside-avoid"><Parts parts={item} /></li>
+      ))}
+    </Tag>
+  )
+}
+
 const sectionLabel = (section) => (section.number ? `${section.number}. ${section.title}` : section.title)
 
 export function LegalDocument({ doc, inDialog = false }) {
   const { t } = useLanguage()
   const jumpTo = (event, id) => {
-    if (!inDialog) return
     event.preventDefault()
     event.currentTarget.closest('[data-legal-document]')?.querySelector(`[id="${id}"]`)?.scrollIntoView?.({ block: 'start' })
+    if (!inDialog) window.history.replaceState(window.history.state, '', `#${id}`)
   }
 
   return (
@@ -75,11 +87,7 @@ export function LegalDocument({ doc, inDialog = false }) {
           </h2>
           {section.blocks.map((block, index) => (
             block.type === 'list' ? (
-              <ul key={index} className="mt-3 list-disc space-y-2 ps-6">
-                {block.items.map((item, itemIndex) => (
-                  <li key={itemIndex} className="break-inside-avoid"><Parts parts={item} /></li>
-                ))}
-              </ul>
+              <List key={index} block={block} />
             ) : (
               <p key={index} className="mt-3"><Parts parts={block.parts} /></p>
             )

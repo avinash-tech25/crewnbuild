@@ -24,10 +24,12 @@ function Parts({ parts }) {
 
 function Block({ block }) {
   if (block.type === 'list') {
+    // A "1." list in the Word file stays numbered; bullets stay bullets.
+    const List = block.ordered ? 'ol' : 'ul'
     return (
-      <ul className="my-3 list-disc space-y-1.5 pl-6">
+      <List className={`my-3 space-y-1.5 pl-6 ${block.ordered ? 'list-decimal' : 'list-disc'}`}>
         {block.items.map((item, index) => <li key={index}><Parts parts={item} /></li>)}
-      </ul>
+      </List>
     )
   }
   return <p className="my-3"><Parts parts={block.parts} /></p>
@@ -38,9 +40,18 @@ export const sectionHeading = (section) => (section.number ? `${section.number}.
 /**
  * The full document: title, meta line, table of contents and every section. `idPrefix` keeps
  * anchor ids unique when the same document is shown inside a dialog on another page.
+ *
+ * A contents link scrolls to its section. On the page it also puts #section-id in the address
+ * (no new history entry); inside a dialog (`idPrefix` set) the address is left alone, so the
+ * form behind it is not disturbed.
  */
 export default function LegalDocument({ doc, idPrefix = '', headingId }) {
   const anchor = (id) => `${idPrefix}${id}`
+  const jumpTo = (event, id) => {
+    event.preventDefault()
+    window.document.getElementById(id)?.scrollIntoView?.({ block: 'start' })
+    if (!idPrefix) window.history.replaceState(window.history.state, '', `#${id}`)
+  }
   return (
     <article className="text-[15px] leading-relaxed text-oc-ink/90 print:text-[11pt] print:text-black">
       <h1 id={headingId} className="text-2xl font-extrabold text-oc-deep sm:text-3xl print:text-black">{doc.title}</h1>
@@ -56,7 +67,7 @@ export default function LegalDocument({ doc, idPrefix = '', headingId }) {
         <ol className="mt-2 grid gap-1 text-sm sm:grid-cols-2">
           {doc.sections.map((section) => (
             <li key={section.id}>
-              <a href={`#${anchor(section.id)}`} className="text-oc-green hover:underline print:text-black print:no-underline">{sectionHeading(section)}</a>
+              <a href={`#${anchor(section.id)}`} onClick={(event) => jumpTo(event, anchor(section.id))} className="text-oc-green hover:underline print:text-black print:no-underline">{sectionHeading(section)}</a>
             </li>
           ))}
         </ol>

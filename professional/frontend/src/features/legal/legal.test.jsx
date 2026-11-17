@@ -1,6 +1,6 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { beforeAll, describe, expect, it } from 'vitest'
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import { anAccount, installFakeServer } from '../../test/fakeServer.js'
 import { location, renderApp, signedInAs, signedOut } from '../../test/renderApp.jsx'
 import { privacy, terms } from './legalDocuments.js'
@@ -13,6 +13,18 @@ beforeAll(() => {
 })
 const OWNER = anAccount({ role: 'OWNER' })
 const label = (section) => (section.number ? `${section.number}. ${section.title}` : section.title)
+
+// jsdom has no scrollIntoView: record which element was asked to scroll into view.
+function recordScrolls() {
+  const scrolled = []
+  Element.prototype.scrollIntoView = function record() { scrolled.push(this.id) }
+  return scrolled
+}
+
+afterEach(() => {
+  vi.restoreAllMocks()
+  delete Element.prototype.scrollIntoView
+})
 
 describe.each([
   ['/terms', terms],
@@ -117,6 +129,13 @@ describe.each([
     expect(dialog.contains(document.activeElement)).toBe(true)
     expect(within(dialog).getByRole('heading', { level: 2, name: label(doc.sections[1]) })).toBeInTheDocument()
     expect(within(dialog).getByText(`Version: ${doc.version}`)).toBeInTheDocument()
+    // It starts at the top, and its contents links scroll inside it without leaving the form.
+    expect(screen.getByTestId('legal-dialog-body').scrollTop).toBe(0)
+    const scrolled = recordScrolls()
+    const last = doc.sections.at(-1)
+    await user.click(within(within(dialog).getByRole('navigation', { name: 'Contents' })).getByRole('link', { name: label(last) }))
+    expect(scrolled).toEqual([last.id])
+    expect(location.current.hash).toBe('')
     expect(location.current.pathname).toBe('/signup')
     expect(checkbox).not.toBeChecked()
 
@@ -190,5 +209,88 @@ describe('sign-up consent: the password form', () => {
       terms_version: terms.version,
       privacy_version: privacy.version,
     })
+  })
+})
+
+
+
+describe('the documents are the Word files, word for word', () => {
+  it.each([
+    [terms, 'CREWNBUILD Terms and Conditions (Terms of Use)'],
+    [privacy, 'CREWNBUILD Privacy Policy'],
+  ])('%#: title, effective date and version as printed', (doc, title) => {
+    expect(doc.title).toBe(title)
+    expect([doc.effectiveDate, doc.version, doc.lastUpdated]).toEqual(['17 November 2026', '1.0', '17 November 2026'])
+    expect(JSON.stringify(doc)).not.toMatch(/gharbanao|\[[A-Z][^\]]*\]/i)
+  })
+
+  it('a numbered list in the Word file is a numbered list on the page', async () => {
+    installFakeServer()
+    renderApp('/terms', { auth: signedOut })
+    const section = terms.sections.find((candidate) => candidate.blocks.some((block) => block.ordered))
+    const heading = await screen.findByRole('heading', { level: 2, name: label(section) }, SLOW)
+    const list = heading.closest('section').querySelector('ol')
+    expect(list).toHaveClass('list-decimal')
+    expect(list.children).toHaveLength(section.blocks.find((block) => block.ordered).items.length)
+  })
+})
+
+describe('the Legal hub', () => {
+  it('/legal: title, welcome, one card per policy with its link, and the contact card', async () => {
+    const user = userEvent.setup()
+    installFakeServer()
+    renderApp('/legal', { auth: signedOut })
+    expect(await screen.findByRole('heading', { level: 1, name: 'Legal' }, SLOW)).toBeInTheDocument()
+    expect(screen.getByText('Welcome to CREWNBUILD')).toBeInTheDocument()
+    expect(screen.getByText(/please review our legal policies/)).toBeInTheDocument()
+    const termsCard = screen.getByRole('region', { name: 'Terms and Conditions' })
+    expect(within(termsCard).getByText(`Version: ${terms.version} · Effective date: ${terms.effectiveDate}`)).toBeInTheDocument()
+    expect(within(termsCard).getByRole('link', { name: 'View Terms and Conditions' })).toHaveAttribute('href', '/terms')
+    const privacyCard = screen.getByRole('region', { name: 'Privacy Policy' })
+    expect(within(privacyCard).getByRole('link', { name: 'View Privacy Policy' })).toHaveAttribute('href', '/privacy')
+    const contact = screen.getByRole('region', { name: 'Contact' })
+    expect(within(contact).getByRole('link', { name: 'support@crewnbuild.com' })).toHaveAttribute('href', 'mailto:support@crewnbuild.com')
+    expect(within(contact).getByRole('link', { name: '+91 628 1921 628' })).toHaveAttribute('href', 'tel:+916281921628')
+
+    await user.click(within(privacyCard).getByRole('link', { name: 'View Privacy Policy' }))
+    expect(await screen.findByRole('heading', { level: 1, name: privacy.title }, SLOW)).toBeInTheDocument()
+    expect(location.current.pathname).toBe('/privacy')
+  })
+
+  it('the footer Legal column leads to /legal, /terms and /privacy', async () => {
+    installFakeServer()
+    renderApp('/legal', { auth: signedOut })
+    const footer = (await screen.findAllByRole('contentinfo', {}, SLOW)).at(-1)
+    const column = within(footer).getAllByRole('heading', { name: 'Legal' })[0].parentElement
+    expect(within(column).getAllByRole('link').map((link) => link.getAttribute('href'))).toEqual(['/legal', '/terms', '/privacy'])
+  })
+})
+
+describe('/terms and /privacy', () => {
+  it.each([
+    ['/terms', terms],
+    ['/privacy', privacy],
+  ])('%s opens at the top and has a Back link to /legal', async (path, doc) => {
+    const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => {})
+    const user = userEvent.setup()
+    installFakeServer()
+    renderApp(path, { auth: signedOut })
+    await screen.findByRole('heading', { level: 1, name: doc.title }, SLOW)
+    expect(scrollTo).toHaveBeenCalledWith(0, 0)
+    await user.click(screen.getByRole('link', { name: 'Back to Legal' }))
+    expect(await screen.findByRole('heading', { level: 1, name: 'Legal' }, SLOW)).toBeInTheDocument()
+    expect(location.current.pathname).toBe('/legal')
+  })
+
+  it('a contents link jumps to its section', async () => {
+    const scrolled = recordScrolls()
+    const user = userEvent.setup()
+    installFakeServer()
+    renderApp('/privacy', { auth: signedOut })
+    await screen.findByRole('heading', { level: 1, name: privacy.title }, SLOW)
+    const target = privacy.sections[5]
+    await user.click(within(screen.getByRole('navigation', { name: 'Contents' })).getByRole('link', { name: label(target) }))
+    expect(scrolled).toEqual([target.id])
+    expect(window.location.hash).toBe(`#${target.id}`)
   })
 })

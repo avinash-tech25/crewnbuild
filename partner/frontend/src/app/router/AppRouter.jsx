@@ -20,6 +20,7 @@ import { fetchCurrentTechnician } from '../../features/technician/technicianApi.
  */
 const LandingPage = lazy(() => import('../../features/site/pages/LandingPage.jsx'))
 const LegalPage = lazy(() => import('../../features/legal/pages/LegalPage.jsx'))
+const LegalHubPage = lazy(() => import('../../features/legal/pages/LegalHubPage.jsx'))
 const NotFoundPage = lazy(() => import('../../features/site/pages/NotFoundPage.jsx'))
 const LoginPage = lazy(() => import('../../features/auth/pages/LoginPage.jsx'))
 const ForgotPasswordPage = lazy(() => import('../../features/auth/pages/ForgotPasswordPage.jsx'))
@@ -127,6 +128,7 @@ export function AppRoutes() {
       <Routes>
         <Route path="/" element={<LandingPage />} />
         {/* Public reading: no session needed, and none is touched (not guest-only). */}
+        <Route path="/legal" element={<LegalHubPage />} />
         <Route path="/terms" element={<LegalPage document="terms" />} />
         <Route path="/privacy" element={<LegalPage document="privacy" />} />
         <Route path="/login" element={<GuestOnly><LoginPage /></GuestOnly>} />

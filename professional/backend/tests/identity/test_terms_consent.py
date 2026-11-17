@@ -1,7 +1,9 @@
 """Sign-up records the Terms of Service and Privacy Policy accepted (app/core/legal.py):
 refused with 422 without them or with an old version; stored with the server's time."""
 
+import re
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -162,3 +164,11 @@ def test_existing_accounts_keep_nulls_and_a_profile_update_cannot_set_them(
     assert saved.json()["terms_accepted_at"] is None
     database.refresh(user)
     assert (user.terms_version, user.privacy_version, user.terms_accepted_at) == (None, None, None)
+
+
+def test_the_accepted_versions_are_the_versions_printed_on_the_published_texts() -> None:
+    # The frontend's generated texts (from docs/legal/*.docx) carry the version the page shows.
+    content = Path(__file__).resolve().parents[3] / "frontend/src/features/legal/content"
+    for name, version in (("terms.js", TERMS_VERSION), ("privacy.js", PRIVACY_VERSION)):
+        printed = re.search(r'"version": "([^"]+)"', (content / name).read_text(encoding="utf-8"))
+        assert printed is not None and printed.group(1) == version, name

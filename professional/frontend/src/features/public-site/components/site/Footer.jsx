@@ -37,6 +37,7 @@ const COLUMNS = [
   {
     titleKey: 'site.footer.col.legal',
     links: [
+      { labelKey: 'legal.hub.title', to: '/legal' },
       { labelKey: 'site.footer.link.terms', to: '/terms' },
       { labelKey: 'site.footer.link.privacy', to: '/privacy' },
       { labelKey: 'site.footer.link.rera', to: '/' },
