@@ -46,7 +46,7 @@ def test_staging_is_an_accepted_environment() -> None:
 
 @pytest.mark.parametrize(
     "flag",
-    ["razorpay_allow_mock", "whatsapp_dev_otp_preview", "test_otp_login_enabled", "dev_account_recovery_enabled"],
+    ["whatsapp_dev_otp_preview", "test_otp_login_enabled", "dev_account_recovery_enabled"],
 )
 def test_production_refuses_every_development_flag(flag: str) -> None:
     with pytest.raises(InsecureConfigurationError, match=flag.upper()):
@@ -98,16 +98,16 @@ def test_database_url_must_use_psycopg_3() -> None:
 
 
 def test_production_refuses_a_placeholder_optional_secret() -> None:
-    with pytest.raises(InsecureConfigurationError, match="RAZORPAY_KEY_SECRET"):
-        check_settings(production_settings(razorpay_key_secret="change-me"))
+    with pytest.raises(InsecureConfigurationError, match="GOOGLE_CLIENT_SECRET"):
+        check_settings(production_settings(google_client_secret="change-me"))
 
 
 def test_placeholder_optional_secret_counts_as_unset_outside_production() -> None:
     configured = check_settings(
-        production_settings(environment="development", razorpay_key_id="change-me", razorpay_key_secret="change-me")
+        production_settings(environment="development", google_client_id="change-me", google_client_secret="change-me")
     )
-    assert configured.razorpay_key_id == ""
-    assert configured.razorpay_key_secret.get_secret_value() == ""
+    assert configured.google_client_id == ""
+    assert configured.google_client_secret.get_secret_value() == ""
 
 
 def test_secrets_never_appear_in_repr() -> None:
@@ -122,7 +122,7 @@ def test_secrets_never_appear_in_repr() -> None:
 @pytest.mark.parametrize(
     ("field", "value"),
     [
-        ("razorpay_key_secret", "change-me-razorpay-secret"),
+        ("openai_api_key", "change-me-openai-key"),
         ("smtp_user", "change-me"),
         ("support_email", "change-me@example.in"),
         ("google_client_id", "change-me.apps.googleusercontent.com"),
@@ -151,7 +151,6 @@ def test_production_refuses_a_placeholder_database_password() -> None:
     [
         ({"debug": True}, "DEBUG"),
         ({"auth_cookie_secure": False}, "AUTH_COOKIE_SECURE"),
-        ({"razorpay_allow_mock": True}, "RAZORPAY_ALLOW_MOCK"),
         ({"test_otp_login_enabled": True}, "TEST_OTP_LOGIN_ENABLED"),
     ],
 )

@@ -16,7 +16,6 @@ from app.auth.dependencies import enforce_route_access
 from app.modules.accounts.router import router as accounts_router
 from app.modules.admin.router import router as admin_router
 from app.modules.admin.router import staff_router as admin_staff_router
-from app.modules.billing.booking_payments_router import router as booking_payments_router
 from app.modules.billing.router import router as billing_router
 from app.modules.catalog.router import admin_router as admin_catalog_router
 from app.modules.catalog.router import router as catalog_router
@@ -28,6 +27,7 @@ from app.modules.equipment_supply.router import router as equipment_supply_route
 from app.modules.files.router import router as files_router
 from app.modules.identity.router import router as identity_router
 from app.modules.labour_supply.router import router as labour_supply_router
+from app.modules.marketplace.purchase_router import router as purchase_router
 from app.modules.marketplace.router import router as marketplace_router
 from app.modules.messaging.router import router as messaging_router
 from app.modules.messaging.router import websocket_router as messaging_websocket_router
@@ -68,6 +68,7 @@ MODULE_ROUTERS: list[APIRouter] = [
     # Discovery, a supplier's listings, purchase orders, the cart and the shop (old
     # marketplace, supplier_product, material_request and shop routes, in that order).
     marketplace_router,
+    purchase_router,
     # Property listings and enquiries (old property_routes, after the shop routes).
     property_router,
     # The old order put the file routes after property and estimates.
@@ -83,13 +84,11 @@ MODULE_ROUTERS: list[APIRouter] = [
     # Estimates, ads and translation; then Vastu.
     content_router,
     vastu_router,
-    # Book Technician booking payments, then labour supply, as the old app registered them.
-    booking_payments_router,
     labour_supply_router,
     equipment_supply_router,
     # Every /weather path is new, so it shadows nothing registered above.
     weather_router,
-    # Builder plans, coupons, the premium tools and their admin screens: last, as before.
+    # The builder's portfolio, CSV exports and cost adjustments.
     billing_router,
 ]
 

@@ -5,7 +5,6 @@ import PincodeAreaHint from '../../../shared/ui/PincodeAreaHint.jsx'
 import ProfileImageHint from '../../../shared/ui/ProfileImageHint.jsx'
 import { PROFILE_IMAGE_ACCEPT } from '../../../shared/utils/profileImageRules.js'
 import CountryOfResidenceField from './CountryField.jsx'
-import UpgradePrompt from '../../billing/subscription/UpgradePrompt.jsx'
 import { RequiredMark, requiredProfileFields } from '../../accounts/components/ProfileCompletionMeter.jsx'
 import { imageUrl } from '../../../shared/api/apiClient.js'
 import { businessTypeOptions, contractorDocumentTypes, contractorEquipmentOptions, contractorServiceNotes, contractorServiceOptions } from '../profileConstants.js'
@@ -68,9 +67,8 @@ export function ContractorProfileSteps({ form, contractorStep, contractorSteps, 
     uploadMessage, setUploadMessage, selectedServices, setSelectedServices, toggleListValue,
     selectedEquipment, setSelectedEquipment, serviceLocationInputs, addContractorServiceLocation,
     removeContractorServiceLocation, contractorLocationDraft, setContractorLocationDraft,
-    pincodeLocations = false, locationLookupBusy = false, serviceLocationUsage = null, serviceLocationCap = 3,
+    pincodeLocations = false, locationLookupBusy = false,
     locationBranches = [], addServiceLocationBranch,
-    locationPlan = 'FREE', builderSubscriptionStatus = null,
     galleryImagePreviews, galleryImageUrls, removeGalleryImage, documentUploads, documentUploadStatus,
     savedProfileState = 'ready', missingContractorFields = [], contractorStepSequence = [1, 2, 3, 4],
     selectedPincodeBranch = null, selectPincodeBranch, pincodeLocationKept = false,
@@ -363,13 +361,10 @@ export function ContractorProfileSteps({ form, contractorStep, contractorSteps, 
           <div className="mt-4 border-t border-slate-100 pt-4">
             <div className="flex flex-wrap items-center gap-2">
               <h3 className="text-sm font-extrabold text-slate-950">{t('ps.con.serviceLocations')}{req('service_locations')}</h3>
-              {/* India: the plan's limit once the server has reported it (never a
-                  guessed 3, so Plus and Premium read unlimited); elsewhere the existing 1-3. */}
-              {(serviceLocationUsage || !pincodeLocations) && (
+              {/* India: no limit; elsewhere the existing 1-3. */}
+              {!pincodeLocations && (
                 <span className="rounded-full border border-brand-200 bg-brand-50 px-2.5 py-0.5 text-[10px] font-extrabold text-brand-700">
-                  {!serviceLocationUsage ? t('ps.minMax3Caps')
-                    : serviceLocationUsage.limit === null ? t('subscription.usage.locationsUnlimited', { used: serviceLocationUsage.used })
-                      : t('subscription.usage.locations', { used: serviceLocationUsage.used, limit: serviceLocationUsage.limit, remaining: serviceLocationUsage.remaining })}
+                  {t('ps.minMax3Caps')}
                 </span>
               )}
             </div>
@@ -399,11 +394,6 @@ export function ContractorProfileSteps({ form, contractorStep, contractorSteps, 
               ) : null)}
             </div>
             <FieldError field="service_locations" />
-            {serviceLocationUsage?.atLimit && (
-              <div className="mt-3">
-                <UpgradePrompt kind="locations" planCode={locationPlan} limit={serviceLocationCap} status={builderSubscriptionStatus} compact />
-              </div>
-            )}
           </div>
         </section>
       )}

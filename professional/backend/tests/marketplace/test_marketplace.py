@@ -32,7 +32,7 @@ from app.modules.catalog.models import (
     CatalogSubcategory,
     CatalogUnit,
 )
-from app.modules.identity.models import ROLE_SUPPLIER
+from app.modules.identity.models import ROLE_ENGINEER, ROLE_SUPPLIER
 from app.modules.marketplace import account_links, order_service, site_links
 from app.modules.marketplace import router as marketplace_router
 from app.modules.marketplace.models import PurchaseOrder, SupplierProduct
@@ -52,7 +52,12 @@ def client(make_client: ClientFactory, monkeypatch: pytest.MonkeyPatch) -> TestC
     monkeypatch.setattr(daily_window, "local_workflow_now", lambda: THURSDAY_MORNING)
     monkeypatch.setattr(site_service, "local_workflow_now", lambda: THURSDAY_MORNING)
     monkeypatch.setattr(order_service, "naive_utc_now", lambda: FULFILLED_AT)
-    return build(make_client, FakeEmailSender(), FakeStorage(), aws_site_images_bucket_in="site-images")
+    return build(
+        make_client,
+        FakeEmailSender(),
+        FakeStorage(),
+        aws_site_images_bucket_in="site-images",
+    )
 
 
 @pytest.fixture
@@ -447,12 +452,12 @@ ASK_YOUR_BUILDER = "Ask your builder to assign a supplier to this project."
 NOT_ASSIGNED = "Only an actively assigned Site Engineer can order for this project."
 
 
-def notices_for(database: Session, user_id: Any) -> list[Notification]:
+def notices_for(database: Session, user_id: Any, category: str = "MATERIAL") -> list[Notification]:
     database.expire_all()
     """The account's material (order) notifications."""
     return list(
         database.scalars(
-            select(Notification).where(Notification.user_id == user_id, Notification.category == "MATERIAL")
+            select(Notification).where(Notification.user_id == user_id, Notification.category == category)
         ).all()
     )
 
@@ -483,39 +488,50 @@ def test_an_assigned_site_engineer_orders_from_an_assigned_supplier(
 
     added = site.engineer.post("/cart/items", json={**line, "product_id": listing_id, "quantity": 2})
     assert added.status_code == 200, added.text
-    checkout = site.engineer.post(
-        "/cart/checkout", json={"project_id": site.project_id, "supplier_id": str(seller.user.id)}
-    )
-    assert checkout.status_code == 200, checkout.text
-    code, ordered = checkout.json()["request_code"], checkout.json()["items"][0]
-    assert (ordered["status"], ordered["engineer_role"], ordered["buyer_role_label"]) == (
-        "PENDING",
-        "ENGINEER",
-        "Site Engineer",
-    )
-    assert "buyer_is_store_manager" not in ordered
-
-    # The supplier is told as for any buyer; the builder for information only.
-    (to_supplier,) = notices_for(database, seller.user.id)
-    assert to_supplier.title == f"New purchase request from {site.engineer.user.name} (Site Engineer)"
-    assert to_supplier.category == "MATERIAL"
+    request = {
+        "project_id": site.project_id,
+        "supplier_id": str(seller.user.id),
+        "request_key": str(uuid.uuid4()),
+    }
+    response = site.engineer.post("/cart/checkout", json=request)
+    assert response.status_code == 200, response.text
+    placed = response.json()
+    assert placed["cart"]["item_count"] == 0
+    retry = site.engineer.post("/cart/checkout", json=request)
+    assert retry.json()["id"] == placed["id"]
+    # The builder hears about it (information only); nobody pays anything.
     (to_builder,) = notices_for(database, site.builder.user.id)
     assert to_builder.title == f"{site.engineer.user.name} (Site Engineer) ordered materials"
-    assert to_builder.category == "MATERIAL" and "no approval is needed" in to_builder.body
-    assert [n.title for n in notices_for(database, site.engineer.user.id)] == ["Purchase request sent to Rao Stores"]
-    assert notices_for(database, site.owner.user.id) == []
+    assert "no approval is needed" in to_builder.body
 
-    # The supplier accepts and fulfils; no payment step, no approval step.
-    listed = seller.get("/supplier/material-requests").json()
-    assert listed[0]["buyer_role_label"] == "Site Engineer"
-    accepted = seller.post(f"/supplier/purchase-requests/{code}/respond", json={"action": "ACCEPT"})
-    assert [row["status"] for row in accepted.json()] == ["ACCEPTED"], accepted.text
-    fulfilled = seller.post(f"/supplier/material-requests/{ordered['id']}/respond", json={"action": "FULFILL"})
+    (order,) = site.engineer.get("/marketplace/orders").json()
+    assert order["id"] == placed["id"]
+    assert order["estimated_amount"] == 720
+    assert site.engineer.get("/marketplace/store").json() == []
+    (line,) = seller.get("/supplier/material-requests").json()
+    decision = f"/supplier/purchase-requests/{placed['request_code']}/respond"
+    assert rival.post(decision, json={"action": "ACCEPT"}).status_code == 404
+    assert seller.post(decision, json={"action": "ACCEPT"}).status_code == 200
+    assert len(site.engineer.get("/marketplace/store").json()) == 1
+
+    line_id = line["id"]
+    receipt = f"/marketplace/orders/{placed['id']}/items/{line_id}/receive"
+    stranger = engineer(client, database, "stranger.engineer@example.in", "9876500110")
+    assert stranger.get("/marketplace/orders").json() == []
+    assert stranger.get("/marketplace/store").json() == []
+    assert stranger.post(receipt).status_code == 404
+    assert site.engineer.post(receipt).status_code == 409
+    fulfilled = seller.post(f"/supplier/material-requests/{line_id}/respond", json={"action": "FULFILL"})
     assert fulfilled.json()["status"] == "FULFILLED", fulfilled.text
+    received = site.engineer.post(receipt)
+    assert received.status_code == 200, received.text
+    assert received.json()["status"] == "COMPLETED"
+    assert received.json()["items"][0]["received_at"]
+    assert site.engineer.post(receipt).json() == received.json()
     database.expire_all()
     stock = database.scalars(select(CostMaterialInventory)).one()
     assert (str(stock.project_id), stock.current_stock, str(stock.product_id)) == (site.project_id, 2, listing_id)
-    assert site.engineer.get("/material-requests/mine").json()[0]["status"] == "FULFILLED"
+    assert len(site.engineer.get("/marketplace/store").json()) == 1
 
 
 def test_an_unassigned_engineer_cannot_order_or_shop_for_the_project(
@@ -546,10 +562,18 @@ def test_an_unassigned_engineer_cannot_order_or_shop_for_the_project(
     database.commit()
     refused = site.engineer.patch(f"/cart/items/{item_id}", json={"quantity": 2})
     assert (refused.status_code, detail(refused)) == (403, ASK_YOUR_BUILDER)
+    # Refused for who they are, before the body's request key is even looked at.
     checkout = site.engineer.post(
         "/cart/checkout", json={"project_id": site.project_id, "supplier_id": str(seller.user.id)}
     )
     assert (checkout.status_code, detail(checkout)) == (403, NOT_ASSIGNED)
+    keyed = {"project_id": site.project_id, "supplier_id": str(seller.user.id), "request_key": str(uuid.uuid4())}
+    refused = stranger.post("/cart/checkout", json=keyed)
+    assert (refused.status_code, detail(refused)) == (403, NOT_ASSIGNED)
+    unkeyed = {"project_id": site.project_id, "supplier_id": str(seller.user.id)}
+    assert stranger.post("/cart/checkout", json=unkeyed).status_code == 403
+    assert seller.post("/cart/checkout", json=keyed).status_code == 403  # a supplier does not buy
+    assert site.builder.post("/cart/checkout", json=keyed).status_code == 403
 
 
 def test_a_self_construction_engineer_buys_from_the_owners_accepted_suppliers(
@@ -574,8 +598,11 @@ def test_a_self_construction_engineer_buys_from_the_owners_accepted_suppliers(
 
     line = {"project_id": project_id, "product_id": listing_id, "quantity": 3}
     assert site_engineer.post("/cart/items", json=line).status_code == 200
-    checkout = site_engineer.post("/cart/checkout", json={"project_id": project_id, "supplier_id": str(seller.user.id)})
-    assert checkout.status_code == 200, checkout.text
+    request = {"project_id": project_id, "supplier_id": str(seller.user.id), "request_key": str(uuid.uuid4())}
+    placed = site_engineer.post("/cart/checkout", json=request)
+    assert placed.status_code == 200, placed.text
+    (order,) = site_engineer.get("/marketplace/orders").json()
+    assert order["id"] == placed.json()["id"]
     (to_owner,) = notices_for(database, house_owner.user.id)
     assert to_owner.title == f"{site_engineer.user.name} (Site Engineer) ordered materials"
 
@@ -583,3 +610,41 @@ def test_a_self_construction_engineer_buys_from_the_owners_accepted_suppliers(
     owner_shop = house_owner.get("/shop/products").json()
     assert [item["id"] for item in owner_shop["products"]] == [listing_id]
     assert set(owner_shop) == {"products", "categories", "restricted"}
+
+
+def test_a_purchase_request_is_only_its_engineers(
+    client: TestClient, database: Session, catalog: Catalog, site: Site
+) -> None:
+    seller = supplier(client, database)
+    listing_id = list_product(seller, catalog).json()["id"]
+    accept_between(database, site.builder, seller, "CONTRACTOR_TO_SUPPLIER", None)
+    assign_supplier(site, seller)
+    line = {"project_id": site.project_id, "product_id": listing_id, "quantity": 1}
+    assert site.engineer.post("/cart/items", json=line).status_code == 200
+    request = {"project_id": site.project_id, "supplier_id": str(seller.user.id), "request_key": str(uuid.uuid4())}
+    placed = site.engineer.post("/cart/checkout", json=request).json()
+    path = f"/marketplace/orders/{placed['id']}"
+    (item,) = seller.get("/supplier/material-requests").json()
+    receipt = f"{path}/items/{item['id']}/receive"
+
+    other = engineer(client, database, "other.engineer@example.in", "9876500019")
+    specialist = person(
+        client, database, "structural@example.in", "9876500018", ROLE_ENGINEER, specialization="Structural Engineer"
+    )
+    for actor in (site.owner, site.builder, seller, specialist):
+        assert actor.get("/marketplace/store").status_code == 403
+        assert actor.get(path).status_code == 403
+        assert actor.post(receipt).status_code == 403
+    assert client.get("/api/v1/marketplace/orders").status_code == 401
+    assert client.get(f"/api/v1{path}").status_code == 401
+    assert other.get(path).status_code == 404
+    assert other.post(receipt).status_code == 404
+    assert other.get("/marketplace/orders").json() == []
+    assert other.get("/marketplace/store").json() == []
+    # Only the supplier answers it, and only its own supplier.
+    respond = f"/supplier/purchase-requests/{placed['request_code']}/respond"
+    assert site.engineer.post(respond, json={"action": "ACCEPT"}).status_code == 403
+    rival = supplier(client, database, "rival@example.in", "9876500005")
+    assert rival.post(respond, json={"action": "ACCEPT"}).status_code == 404
+    assert seller.post(respond, json={"action": "ACCEPT"}).status_code == 200
+    assert site.engineer.get(path).json()["items"][0]["status"] == "ACCEPTED"

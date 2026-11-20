@@ -9,7 +9,7 @@ export { scoped, setViewingCountry } from '../../shared/api/adminScope.js'
  * every one; the console only hides what the administrator may not use.
  *
  * Sensitive answers (verification documents, deleted accounts, user and project detail,
- * support tickets, payment history) are fetched when their screen or row is opened and
+ * support tickets) are fetched when their screen or row is opened and
  * are not kept: `keepUnusedDataFor: 0` drops them from memory as soon as nothing reads
  * them, and nothing here is ever written to browser storage.
  */
@@ -53,12 +53,6 @@ export const adminApi = baseApi.injectEndpoints({
     sendAnnouncement: build.mutation({ query: (announcement) => send('POST', '/admin/notifications', announcement) }),
     deletedAccounts: build.query({ query: (params) => ({ url: '/admin/deleted-accounts', params }), ...SENSITIVE }),
     deletedAccount: build.query({ query: (id) => ({ url: `/admin/deleted-accounts/${id}` }), ...SENSITIVE }),
-    coupons: build.query({ query: (params) => ({ url: '/admin/coupons', params }) }),
-    createCoupon: build.mutation({ query: (coupon) => send('POST', '/admin/coupons', coupon) }),
-    updateCoupon: build.mutation({ query: ({ couponId, changes }) => send('PATCH', `/admin/coupons/${couponId}`, changes) }),
-    setCouponActive: build.mutation({ query: ({ couponId, active }) => send('POST', `/admin/coupons/${couponId}/status`, { active }) }),
-    subscriptionPayments: build.query({ query: (params) => ({ url: '/admin/subscription-payments', params }), ...SENSITIVE }),
-    subscriptionPaymentsSummary: build.query({ query: (params) => ({ url: '/admin/subscription-payments/summary', params }), ...SENSITIVE }),
   }),
 })
 
@@ -112,13 +106,3 @@ export const sendAnnouncement = (announcement) => runMutation(endpoints.sendAnno
 // administrator's own country; `search` matches name, mobile, email or reference.
 export const fetchDeletedAccounts = (search = '') => runQuery(endpoints.deletedAccounts, search ? { q: search } : {})
 export const fetchDeletedAccount = (id) => runQuery(endpoints.deletedAccount, id)
-
-// Builder subscription coupons.
-export const fetchCoupons = () => runQuery(endpoints.coupons, scoped())
-export const createCoupon = (coupon) => runMutation(endpoints.createCoupon, coupon)
-export const updateCoupon = (couponId, changes) => runMutation(endpoints.updateCoupon, { couponId, changes })
-export const setCouponActive = (couponId, active) => runMutation(endpoints.setCouponActive, { couponId, active })
-
-// Builder subscription payment history and collections.
-export const fetchSubscriptionPayments = (query) => runQuery(endpoints.subscriptionPayments, scoped(query))
-export const fetchSubscriptionPaymentsSummary = (query) => runQuery(endpoints.subscriptionPaymentsSummary, scoped(query))

@@ -96,6 +96,7 @@ class CartItemUpdate(BaseModel):
 class CartCheckout(BaseModel):
     project_id: uuid.UUID
     supplier_id: uuid.UUID
+    request_key: uuid.UUID | None = None
 
 
 class SupplierBulkPricingUpdate(BaseModel):

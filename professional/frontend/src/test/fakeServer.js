@@ -56,6 +56,5 @@ export const anAccount = (overrides = {}) => ({
   rating: 0,
   profile_complete: true,
   engineer_profile: null,
-  subscription_checkout: null,
   ...overrides,
 })

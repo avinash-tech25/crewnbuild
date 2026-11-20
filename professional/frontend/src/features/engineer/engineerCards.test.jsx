@@ -155,7 +155,7 @@ describe('Site Engineer card lists', () => {
     expect(within(items[1]).getByRole('button', { name: /Request Purchase/i })).toBeInTheDocument()
   })
 
-  it('Cart: the Material cart shows one card per supplier, each with its own lines and order button', async () => {
+  it('Cart shows supplier estimates and a Place Request action for each supplier', async () => {
     const cartLine = (n, supplierId) => ({
       id: id(700 + n), product_id: id(710 + n), supplier_id: supplierId, name: `Cement ${n}`, brand: 'UltraTech', unit: 'bag', price: 420, quantity: 2, line_total: 840, available_quantity: 40, image_url: null,
     })
@@ -172,10 +172,12 @@ describe('Site Engineer card lists', () => {
         total: 1680,
       } },
     })
-    expect(await screen.findByText('Lakshmi Traders', {}, FIND)).toBeInTheDocument()
-    expect(screen.getByText('Sri Steel Traders')).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: 'Lakshmi Traders' }, FIND)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Sri Steel Traders' })).toBeInTheDocument()
     expect(screen.getByText('Cement 1')).toBeInTheDocument()
     expect(screen.getByText('Cement 2')).toBeInTheDocument()
-    expect(screen.getAllByRole('button', { name: /Send Buy Request/ })).toHaveLength(2)
+    const summary = screen.getByRole('complementary')
+    expect(screen.getAllByRole('button', { name: 'Place Request' })).toHaveLength(2)
+    expect(within(summary).getByText('Estimated Amount')).toBeInTheDocument()
   })
 })

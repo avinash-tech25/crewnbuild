@@ -90,7 +90,7 @@ def test_a_non_india_account_keeps_its_country_and_rules(client: TestClient, dat
     assert database.get(User, user.id).country_code == "UAE"  # type: ignore[union-attr]
 
 
-def test_builder_location_cap_and_portfolio_photos(client: TestClient, database: Session) -> None:
+def test_builder_service_locations_and_portfolio_photos(client: TestClient, database: Session) -> None:
     builder, headers = signed_in(client, database, role=ROLE_BUILDER)
     stranger = create_user(database, email="stranger@example.in", phone="9876500009")
     own_photo, foreign_photo = add_file(database, builder), add_file(database, stranger)
@@ -102,22 +102,20 @@ def test_builder_location_cap_and_portfolio_photos(client: TestClient, database:
         "about": "We build homes.",
         "services_offered": "Construction",
     }
-    too_many = client.patch(
-        COMPLETE, json={**fields, "service_locations": "Bengaluru - 560001, Mysuru - 570001"}, headers=headers
-    )
-    assert too_many.status_code == 422
-    assert too_many.json()["detail"]["code"] == "LOCATION_LIMIT_REACHED"
-    assert too_many.json()["detail"]["limit"] == 1
-
+    # No plan caps any more: any number of service locations is saved.
     portfolio = [{"title": "Villa", "images": [own_photo, foreign_photo, "https://elsewhere.example/x.png"]}]
+    two_places = "Bengaluru - 560001, Mysuru - 570001"
     saved = client.patch(
         COMPLETE,
-        json={**fields, "service_locations": "Bengaluru - 560001", "completed_project_details": json.dumps(portfolio)},
+        json={**fields, "service_locations": two_places, "completed_project_details": json.dumps(portfolio)},
         headers=headers,
     )
     assert saved.status_code == 200, saved.text
     stored = database.scalars(select(BuilderProfile).where(BuilderProfile.user_id == builder.id)).one()
     database.refresh(stored)
+    assert stored.service_locations == two_places
+    # Only the builder's own uploaded photo is kept: another user's file and an outside
+    # address are dropped.
     assert json.loads(stored.completed_project_details or "[]")[0]["images"] == [own_photo]
     assert stored.completed_projects == 1
 

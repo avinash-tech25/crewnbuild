@@ -48,8 +48,6 @@ from fastapi import HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 from app.database.session import SessionLocal
-from app.modules.billing import entitlements
-from app.modules.billing import plans as catalogue
 from app.modules.cctv.models import SESSION_OPEN_STATUSES, CctvPlaybackSession
 from app.modules.cctv.repository import CctvRepository
 from app.modules.cctv.runtime import settings
@@ -62,16 +60,6 @@ from app.modules.cctv.schemas import (
 from app.modules.cctv.services import access, audit, cctv_error, devices, media_gateway, network_policy, not_found
 from app.modules.cctv.services import credentials as credential_service
 from app.modules.identity.models import User
-
-# HD (the MAIN stream) is a Premium feature for builders in India; owners,
-# engineers and builders elsewhere keep both qualities (entitlements.builder_feature_allowed).
-PLAN_UPGRADE_REQUIRED = entitlements.PLAN_UPGRADE_REQUIRED
-HD_UPGRADE_MESSAGE = "HD viewing is included in Premium. Your plan includes SD."
-
-
-def hd_allowed(database: Session, user: User) -> bool:
-    return entitlements.builder_feature_allowed(database, user, catalogue.HD_VIDEO)
-
 
 logger = logging.getLogger(__name__)
 
@@ -230,10 +218,6 @@ def create_session(
             "GATEWAY_NOT_CONFIGURED",
         )
     variant = payload.stream_variant or channel.preferred_stream
-    if variant == "MAIN" and not hd_allowed(database, user):
-        if payload.stream_variant == "MAIN":
-            raise refuse(status.HTTP_403_FORBIDDEN, PLAN_UPGRADE_REQUIRED, HD_UPGRADE_MESSAGE, "HD_NOT_IN_PLAN")
-        variant = "SUB"  # the channel's HD default -> SD for this builder
     stream_path = channel.main_stream_path if variant == "MAIN" else channel.sub_stream_path
     if not stream_path:
         raise refuse(
@@ -447,8 +431,6 @@ def create_recorded_session(
         )
 
     variant = payload.stream_variant or "MAIN"
-    if variant == "MAIN" and not hd_allowed(database, user):
-        variant = "SUB"  # recordings replay in SD without HD in the plan
     start_local, end_local = recordings._validate_window(payload.start, payload.end)
     scale = None if payload.speed == "1" else payload.speed
 
@@ -751,19 +733,6 @@ def renew_session(database: Session, user: User, session_id: uuid.UUID, request:
             CODE_DEVICE_NOT_ONLINE,
             "This camera device is not online.",
         )
-    # HD is re-checked too, so a builder whose Premium lapses mid-view loses the
-    # open HD view at its next renewal, not only the next new one.
-    if variant == "MAIN" and not hd_allowed(database, user):
-        raise close_and_deny(
-            "REVOKED",
-            "ACCESS_REVOKED",
-            audit.ACTION_PLAYBACK_REVOKED,
-            "HD_NOT_IN_PLAN",
-            status.HTTP_403_FORBIDDEN,
-            PLAN_UPGRADE_REQUIRED,
-            HD_UPGRADE_MESSAGE,
-        )
-
     now = utc_now()
     ttl = session_ttl_seconds()
     # Renewal slides the expiry to now + lifetime; it never accumulates beyond that.

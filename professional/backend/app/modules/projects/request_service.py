@@ -15,7 +15,7 @@ from sqlalchemy import and_, or_
 from app.core.display_names import public_name
 from app.core.local_time import local_iso
 from app.database.types import naive_utc_now
-from app.modules.billing import lead_locations
+from app.modules.accounts import lead_locations
 from app.modules.identity.models import ROLE_BUILDER, ROLE_ENGINEER, ROLE_OWNER, ROLE_SUPPLIER, User
 from app.modules.messaging.service import create_conversation_for_users, create_conversation_message
 from app.modules.projects.access import (
@@ -86,7 +86,6 @@ def dumps_with_ids(value: dict[str, Any]) -> str:
 
 
 OWNER_BUILDER_REQUEST_LOCK_NAMESPACE = 2802
-BUILDER_LEAD_LIMIT_LOCK_NAMESPACE = 2803
 
 
 def ensure_request_pending(request: ProjectRequest) -> None:
@@ -233,7 +232,6 @@ class ProjectRequestService:
                     raise HTTPException(status_code=400, detail="Project pincode does not match your profile")
             elif receiver.pincode not in builder_pincodes:
                 raise HTTPException(status_code=400, detail="House owner pincode does not match your builder profile")
-            lead_pincode = project.pincode if project else receiver.pincode
 
         elif payload.request_type == "OWNER_TO_SUPPLIER":
             ensure_role(user, "OWNER")
@@ -372,12 +370,6 @@ class ProjectRequestService:
             )
             if pending_exists:
                 raise HTTPException(status_code=409, detail="Request already pending")
-
-        if payload.request_type == "CONTRACTOR_TO_OWNER":
-            # At most the plan's open leads per location. Serialised per builder so
-            # two sends at the same moment cannot both take the last slot.
-            self.repository.lock_owner_builder_pair(BUILDER_LEAD_LIMIT_LOCK_NAMESPACE, str(user.id))
-            lead_locations.require_lead_slot(self.database, user, lead_pincode)
 
         request = ProjectRequest(
             sender_id=user.id,

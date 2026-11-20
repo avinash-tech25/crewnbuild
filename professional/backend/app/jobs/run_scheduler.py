@@ -4,7 +4,6 @@
 
 Runs, in one active copy across every server (app/jobs/scheduler.py):
 
-    subscription_renewal_sweep  every SUBSCRIPTION_SWEEP_INTERVAL_MINUTES (60)
     weather_alert_monitor       every WEATHER_SEVERE_CHECK_INTERVAL_MINUTES or the monitoring
                                 interval, whichever is shorter (off with
                                 WEATHER_MONITORING_ENABLED=false)
@@ -19,7 +18,7 @@ import signal
 from app.core.config import get_settings
 from app.core.logging import configure_logging
 from app.database.session import SessionLocal, engine
-from app.jobs import subscription_renewal_sweep, weather_alert_monitor
+from app.jobs import weather_alert_monitor
 from app.jobs.scheduler import Job, Scheduler
 from app.modules.rate_limits.service import purge_expired
 from app.modules.weather.weather_settings import get_weather_settings
@@ -34,7 +33,6 @@ def purge_rate_limits() -> int:
 
 
 def build_jobs() -> list[Job]:
-    settings = get_settings()
     weather = get_weather_settings()
     weather_minutes = (
         min(weather.weather_monitoring_interval_minutes, weather.weather_severe_check_interval_minutes)
@@ -42,11 +40,6 @@ def build_jobs() -> list[Job]:
         else 0
     )
     return [
-        Job(
-            "subscription_renewal_sweep",
-            settings.subscription_sweep_interval_minutes * 60,
-            subscription_renewal_sweep.run,
-        ),
         Job("weather_alert_monitor", weather_minutes * 60, weather_alert_monitor.run),
         Job("rate_limit_purge", 3600, purge_rate_limits),
     ]

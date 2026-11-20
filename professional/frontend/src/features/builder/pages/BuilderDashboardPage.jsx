@@ -2,16 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence } from 'framer-motion'
 import { useDispatch, useSelector } from 'react-redux'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { CreditCard, LifeBuoy, Settings, UserRound } from 'lucide-react'
-import { leadLocationChoices, limitRefusal } from '../../billing/subscription/planLimits.js'
-import FreeAccessBanner from '../../billing/subscription/FreeAccessBanner.jsx'
-import ExpiryWarningModal from '../../billing/subscription/ExpiryWarningModal.jsx'
-import BuilderSubscriptionPanel from '../../billing/subscription/BuilderSubscriptionPanel.jsx'
+import { LifeBuoy, Settings, UserRound } from 'lucide-react'
 import BuilderPortfolioSection from '../../billing/subscription/BuilderPortfolioSection.jsx'
-import PremiumBadge from '../../billing/subscription/PremiumBadge.jsx'
-import PlanSummaryCard from '../../billing/subscription/PlanSummaryCard.jsx'
-import useBuilderSubscription from '../../billing/subscription/useBuilderSubscription.js'
-import { readPendingPlan } from '../../billing/subscription/pendingPlan.js'
 import ProductCatalogPage from '../../shop/components/ProductCatalogPage.jsx'
 import { ContractorTopSection } from '../components/BuilderTopSection.jsx'
 import LocationLeadsPrompt, { LocationLeadsButton, useLocationLeadsPrompt } from '../../../shared/ui/LocationLeadsPrompt.jsx'
@@ -39,7 +31,6 @@ const NAV_PATHS = {
   requests: '/contractor',
   projects: '/contractor/projects',
   portfolio: '/contractor/portfolio',
-  subscription: '/contractor/subscription',
   requestsBoard: '/contractor/requests',
   engineers: '/contractor/my-site-engineers',
   findClients: '/contractor/find-clients',
@@ -185,9 +176,6 @@ export default function ContractorDashboard() {
   const navigate = useNavigate()
   const location = useLocation()
   const { requireCompleteProfile } = useProfileGate()
-  // The builder's plan as the server reports it: drives the badge and the Plan &
-  // billing page. Access to paid features is always decided by the backend.
-  const subscription = useBuilderSubscription()
   // The open section is derived from the address rather than held beside it, so
   // there is only one answer to what is on screen. Every existing
   // setActiveId(...) call site keeps its meaning; it now records the move in
@@ -196,12 +184,6 @@ export default function ContractorDashboard() {
   const setActiveId = useCallback((sectionId) => {
     navigate(NAV_PATHS[sectionId] || NAV_PATHS.requests)
   }, [navigate])
-  // A plan chosen on the landing page before signing up / in: open Plan & billing
-  // once, where it is offered for payment. It is never applied on its own.
-  useEffect(() => {
-    if (readPendingPlan() && activeId !== 'subscription') setActiveId('subscription')
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
   // Buy & Sell opens on SELL for a Builder; the tab is in the address (?tab=buy).
   const [buySellTab, setBuySellTab] = useUrlState('tab', 'sell', BUY_SELL_TABS)
   const [searchQuery, setSearchQuery] = useState('')
@@ -499,8 +481,7 @@ export default function ContractorDashboard() {
   }, [])
   useEffect(() => {
     if (selectedProject?.id) {
-      // A builder without a plan or free month is refused the calendar (403); the
-      // section shows the upgrade prompt instead of an unhandled error.
+      // A failed load leaves the calendar empty rather than an unhandled error.
       fetchProjectTimelineEntries(selectedProject.id).then(setTimelineEntries).catch(() => setTimelineEntries([]))
     } else {
       setTimelineEntries([])
@@ -620,12 +601,10 @@ export default function ContractorDashboard() {
       setSentRequestKeys((currentKeys) => ({ ...currentKeys, [requestKey]: true }))
       refreshContractorData()
       // The open leads per location changed (Find Clients shows them).
-      if (requestType === 'CONTRACTOR_TO_OWNER') subscription.refresh()
       return true
     } catch (error) {
       const detail = requestErrorText(error, t('dash.err.sendRequest'))
       setRequestMessage(detail)
-      if (requestType === 'CONTRACTOR_TO_OWNER' && limitRefusal(error)) subscription.refresh()
       if (detail === 'Request already sent') {
         setSentRequestKeys((currentKeys) => ({ ...currentKeys, [requestKey]: true }))
         refreshContractorData()
@@ -1015,16 +994,11 @@ export default function ContractorDashboard() {
   // Profile Settings, Dark Mode, Help & Feedback and Logout.
   const contractorUserMenu = [
     { id: 'profileSettings', label: t('ui.profileSettings'), icon: Settings },
-    { id: 'subscription', label: t('subscription.panel.menu'), icon: CreditCard },
     { id: 'helpFeedback', label: t('ui.helpFeedback'), icon: LifeBuoy },
   ]
   const handleUserMenuSelect = (menuId) => {
     if (menuId === 'profileSettings') {
       setActiveId('settings')
-      window.scrollTo({ top: 0, behavior: 'auto' })
-    }
-    if (menuId === 'subscription') {
-      setActiveId('subscription')
       window.scrollTo({ top: 0, behavior: 'auto' })
     }
     if (menuId === 'helpFeedback') setShowHelp(true)
@@ -1226,7 +1200,6 @@ export default function ContractorDashboard() {
         currentPincode={user?.pincode || ''}
         onDismiss={locationPrompt.dismissPrompt}
         onSaved={saveLeadLocation}
-        pincodeChoices={leadLocationChoices(subscription.status)}
       />
       <DashboardShell
         plainBackground
@@ -1260,15 +1233,9 @@ export default function ContractorDashboard() {
         onMessagesClick={(tab) => selectDashboardSection(tab)}
         unreadMessageCount={unreadMessageCount}
         defaultTab="requests"
-        headerActions={<PremiumBadge status={subscription.status} onClick={() => selectDashboardSection('subscription')} />}
       >
-        {activeId !== 'subscription' && <FreeAccessBanner status={subscription.status} onViewPlans={() => selectDashboardSection('subscription')} />}
-        {activeId !== 'subscription' && <ExpiryWarningModal status={subscription.status} userId={user?.id} onViewPlans={() => selectDashboardSection('subscription')} />}
-        {activeId === 'subscription' && <BuilderSubscriptionPanel subscription={subscription} />}
         {activeId === 'portfolio' && (
           <BuilderPortfolioSection
-            subscription={subscription}
-            onViewPlans={() => selectDashboardSection('subscription')}
             onOpenProjects={() => selectDashboardSection('projects')}
           />
         )}
@@ -1286,7 +1253,6 @@ export default function ContractorDashboard() {
               onCompanyLogoUpload={(file) => uploadContractorCompanyLogo(file).catch((error) => setProfileImageMessage(profileErrorMessage(error, t('dash.err.logoUploadFailed'))))}
               onNavigate={selectDashboardSection}
               onBack={() => setActiveId('requests')}
-              subscriptionStatus={subscription.status}
             />
             <PhoneChangeSection />
             <EmailVerificationSection />
@@ -1302,7 +1268,6 @@ export default function ContractorDashboard() {
               hasNewNearbyClients={hasNewNearbyClients}
               onNavigate={selectDashboardSection}
             />
-            <PlanSummaryCard subscription={subscription} onNavigate={selectDashboardSection} />
             <ContractorAnalyticsSection projectList={projectList} requestList={requestList} onNavigate={selectDashboardSection} />
           </>
         )}
@@ -1403,7 +1368,6 @@ export default function ContractorDashboard() {
             onSelectClient={setSelectedClientProfile}
             // Which pincode these leads are for, and the way to change it:
             // in the section's tab row, on the right.
-            subscriptionStatus={subscription.status}
             locationAction={locationPrompt.eligible ? (
               <LocationLeadsButton pincode={user?.pincode} onClick={locationPrompt.openPrompt} />
             ) : null}

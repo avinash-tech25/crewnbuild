@@ -20,6 +20,7 @@ from app.modules.messaging.models import Notification
 # The module code the dashboards' badge maps read, per category.
 NOTIFICATION_CATEGORY_MODULES = {
     "MATERIAL": "request",
+    "PURCHASE_ORDER": "request",
     "LABOR": "request",
     "EQUIPMENT": "request",
     "NEGOTIATION": "request",

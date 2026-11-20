@@ -1,15 +1,14 @@
-"""The paid builder features: portfolio, CSV exports and audited cost adjustments.
+"""The builder's portfolio, CSV exports and audited cost adjustments (open to every
+builder; they no longer need a plan).
 
-Every entry point runs the existing checks first -- role BUILDER and, for a
-project, ensure_contractor_project_access (the awarded builder only) -- and the
-plan check (entitlements.require_feature) after them. A plan never opens a
-project the builder could not already open.
+Every entry point checks role BUILDER and, for a project,
+ensure_contractor_project_access (the awarded builder only).
 
 Cost adjustments never write the engineer's daily_site_records row. They are
 separate rows (daily_record_adjustments) holding the original figure, the
 builder's figure, the reason, who and when; the existing cost summary and its
 calculations are unchanged and keep showing the engineer's figures. Adjusted
-totals appear only in these paid views, side by side with the originals.
+totals appear only in these views, side by side with the originals.
 """
 
 import csv
@@ -24,8 +23,6 @@ from sqlalchemy.orm import Session
 
 from app.core.local_time import local_iso
 from app.database.types import naive_utc_now
-from app.modules.billing import entitlements
-from app.modules.billing import plans as catalogue
 from app.modules.billing.models import ADJUSTABLE_FIELDS
 from app.modules.identity.models import ROLE_BUILDER, ROLE_ENGINEER, User
 from app.modules.projects.access import engineer_has_project_access, ensure_contractor_project_access
@@ -33,6 +30,13 @@ from app.modules.projects.award_service import get_awarded_contract
 from app.modules.projects.daily_window import daily_record_is_open
 from app.modules.projects.models import Project, ProjectImage
 from app.modules.site_operations.models import DailyCostRegister, DailyRecordAdjustment
+
+BUILDER_ONLY = "BUILDER_ONLY"
+
+
+def require_builder(user: User) -> None:
+    if (user.role or "").upper() != ROLE_BUILDER:
+        raise HTTPException(status_code=403, detail={"code": BUILDER_ONLY, "message": "Available to builders only."})
 
 
 def money(value: Any) -> float:
@@ -225,10 +229,8 @@ class PremiumService:
         return rows
 
     def portfolio(self, user: User) -> dict:
-        entitlements.require_builder(user)
-        state = entitlements.require_feature(self.database, user, catalogue.PORTFOLIO_DASHBOARD)
+        require_builder(user)
         rows = self._project_rows(self._builder_projects(user))
-        advanced = catalogue.ADVANCED_COST_SUMMARY in state.features
         summary = {
             "project_count": len(rows),
             "active_projects": sum(1 for row in rows if (row["status"] or "").lower() == "active"),
@@ -238,26 +240,20 @@ class PremiumService:
             "recorded_days": sum(row["recorded_days"] for row in rows),
             "photo_count": sum(row["photo_count"] for row in rows),
         }
-        if advanced:
-            summary["original_totals"] = {
-                field: sum(row["original_totals"][field] for row in rows) for field in ADJUSTABLE_FIELDS
-            }
-            summary["adjusted_totals"] = {
-                field: sum(row["adjusted_totals"][field] for row in rows) for field in ADJUSTABLE_FIELDS
-            }
-            summary["contract_or_budget"] = sum(row["contract_or_budget"] for row in rows)
-        else:
-            for row in rows:  # Professional: the per-project overview only
-                row.pop("original_totals", None)
-                row.pop("adjusted_totals", None)
-        return {"plan_code": state.plan_code, "advanced": advanced, "summary": summary, "projects": rows}
+        summary["original_totals"] = {
+            field: sum(row["original_totals"][field] for row in rows) for field in ADJUSTABLE_FIELDS
+        }
+        summary["adjusted_totals"] = {
+            field: sum(row["adjusted_totals"][field] for row in rows) for field in ADJUSTABLE_FIELDS
+        }
+        summary["contract_or_budget"] = sum(row["contract_or_budget"] for row in rows)
+        return {"advanced": True, "summary": summary, "projects": rows}
 
     # ----------------------------------------------------------- exports
 
     def project_summary_csv(self, user: User, project_id: uuid.UUID) -> tuple[str, str]:
-        entitlements.require_builder(user)
+        require_builder(user)
         project = ensure_contractor_project_access(self.database, project_id, user)
-        entitlements.require_feature(self.database, user, catalogue.PROJECT_SUMMARY_EXPORT)
         registers = (
             self.database.query(DailyCostRegister)
             .filter(DailyCostRegister.project_id == project.id)
@@ -316,8 +312,7 @@ class PremiumService:
         return filename, csv_text(header, rows)
 
     def portfolio_csv(self, user: User) -> tuple[str, str]:
-        entitlements.require_builder(user)
-        entitlements.require_feature(self.database, user, catalogue.CONSOLIDATED_EXPORT)
+        require_builder(user)
         rows = self._project_rows(self._builder_projects(user))
         header = [
             "Project ID",
@@ -401,10 +396,9 @@ class PremiumService:
     def create_adjustment(
         self, user: User, register_id: uuid.UUID, field_name: str, adjusted_value, reason: str
     ) -> dict:
-        entitlements.require_builder(user)
+        require_builder(user)
         register = self._register(register_id)
         ensure_contractor_project_access(self.database, register.project_id, user)
-        entitlements.require_feature(self.database, user, catalogue.BILL_ADJUSTMENTS)
         if not register_is_locked(register):
             raise HTTPException(
                 status_code=409,

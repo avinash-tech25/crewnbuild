@@ -18,8 +18,10 @@ from sqlalchemy.orm import Session
 
 from app.core.local_time import local_iso, local_workflow_now
 from app.database.types import naive_utc_now
-from app.modules.identity.models import ROLE_ENGINEER, ROLE_OWNER, ROLE_SUPPLIER, User
+from app.modules.identity.models import ROLE_ENGINEER, ROLE_OWNER, ROLE_SITE_ENGINEER, ROLE_SUPPLIER, User
+from app.modules.identity.policies import session_role
 from app.modules.marketplace.cart import ensure_buyer, ensure_buyer_project_access, ensure_supplier_approved
+from app.modules.marketplace.listing_service import ensure_material_supplier
 from app.modules.marketplace.listings import supplier_product_stock_state, tiers_for, unit_price_for
 from app.modules.marketplace.models import (
     STATUS_ACCEPTED,
@@ -92,6 +94,7 @@ def order_line_fields(row: PurchaseOrderItem) -> dict[str, Any]:
         "status": row.status,
         "created_at": local_iso(row.created_at),
         "fulfilled_at": local_iso(row.fulfilled_at),
+        "received_at": local_iso(row.received_at),
     }
 
 
@@ -258,12 +261,12 @@ class MaterialRequestService:
         self, request_id: uuid.UUID, payload: MaterialRequestDecision, user: User
     ) -> dict[str, Any]:
         ensure_role(user, "SUPPLIER")
+        action = payload.action.strip().upper()
         row = self.lock_supplier_request(request_id, user.id)
         if not row:
             raise HTTPException(status_code=404, detail="Material request not found")
         if row.status not in {STATUS_PENDING, STATUS_ACCEPTED}:
             raise HTTPException(status_code=409, detail="This request was already processed")
-        action = payload.action.strip().upper()
         if action in {"ACCEPT", "FULFILL"}:
             require_complete_profile(user)
         if action == "ACCEPT":
@@ -434,7 +437,9 @@ class MaterialRequestService:
 
     # ---- the buyer ----
 
-    def create_material_request(self, payload: MaterialRequestCreate, user: User) -> dict[str, Any]:
+    def create_material_request(
+        self, payload: MaterialRequestCreate, user: User, *, request_key: uuid.UUID | None = None
+    ) -> dict[str, Any]:
         # A House Owner for their own project; a Site Engineer for a project they are
         # actively assigned to, from a supplier allowed on it (cart.py).
         project = ensure_buyer_project_access(self.database, payload.project_id, user)
@@ -445,8 +450,16 @@ class MaterialRequestService:
         if not supplier or not payload.items:
             raise HTTPException(status_code=400, detail="Select a supplier and at least one material")
         ensure_supplier_approved(self.database, user, supplier.id, project.id)
+        if session_role(user) == ROLE_SITE_ENGINEER and request_key is None:
+            raise HTTPException(status_code=403, detail="Place Site Engineer requests from the cart.")
+        if request_key is not None:
+            if not supplier.is_active:
+                raise HTTPException(status_code=404, detail="Supplier unavailable.")
+            ensure_material_supplier(supplier)
         code = uuid4().hex
-        order = PurchaseOrder(order_number=code, project_id=project.id, buyer_id=user.id, supplier_id=supplier.id)
+        order = PurchaseOrder(
+            order_number=code, project_id=project.id, buyer_id=user.id, supplier_id=supplier.id, request_key=request_key
+        )
         self.database.add(order)
         rows: list[PurchaseOrderItem] = []
         for requested in payload.items:
@@ -520,5 +533,12 @@ class MaterialRequestService:
                     f"{summary} · Total Rs {total:g}. For your information; no approval is needed.",
                     category="MATERIAL",
                 )
-        self.database.commit()
-        return {"request_code": code, "items": [material_request_payload(self.database, row) for row in rows]}
+        if request_key is None:
+            self.database.commit()
+        else:
+            self.database.flush()
+        return {
+            "id": order.id,
+            "request_code": code,
+            "items": [material_request_payload(self.database, row) for row in rows],
+        }

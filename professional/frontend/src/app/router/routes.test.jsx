@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { anAccount, installFakeServer } from '../../test/fakeServer.js'
 import { location, renderApp, signedInAs, signedOut } from '../../test/renderApp.jsx'
 import { routes } from './routes.jsx'
+import { builderDashboardServer } from '../../features/builder/builderTestData.js'
 
 // Every top-level address of the old app (its AppRouter), which must all still answer.
 const OLD_ROUTES = [
@@ -10,7 +11,7 @@ const OLD_ROUTES = [
   '/contact-us/tickets', '/contact-us/tickets/:reference', '/delete-account', '/owner/profile/delete', '/estimate',
   '/login', '/signup', '/forgot-password', '/account-recovery', '/invite/:code', '/oauth/callback',
   '/supplier-category', '/engineer-category', '/pincode', '/complete-profile', '/owner/*', '/contractors/:contractorId',
-  '/subscription-checkout', '/contractor/*', '/supplier/*', '/engineer/live-camera', '/engineer/*', '/store-manager/*',
+  '/contractor/*', '/supplier/*', '/engineer/live-camera', '/engineer/*', '/store-manager/*',
   '/weather', '/admin/*', '/coming-soon', '/404', '*',
 ]
 
@@ -44,15 +45,26 @@ describe('RequireAccess', () => {
     expect(location.current.pathname).toBe('/owner')
   })
 
-  it('sends a builder whose paid sign-up is unpaid to the checkout first', async () => {
-    installFakeServer({ 'GET /subscriptions/plans': { data: { plans: [] } } })
-    const unpaid = { ...BUILDER, subscription_checkout: { plan_code: 'PROFESSIONAL', duration_code: 'MONTHLY' } }
-    renderApp('/contractor', { auth: signedInAs(unpaid) })
-    await waitFor(() => expect(location.current.pathname).toBe('/subscription-checkout'))
+  it('opens a builder straight into the dashboard, with no checkout step', async () => {
+    installFakeServer(builderDashboardServer())
+    renderApp('/contractor', { auth: signedInAs(BUILDER) })
+    expect(await screen.findByText(/Welcome/, {}, { timeout: 15000 })).toBeInTheDocument()
+    expect(location.current.pathname).toBe('/contractor')
+  })
+
+  it('sends another role away from the builder dashboard to its own home', async () => {
+    installFakeServer({})
+    renderApp('/contractor', { auth: signedInAs(OWNER) })
+    await waitFor(() => expect(location.current.pathname).toBe('/owner'))
+  })
+
+  it('answers the former checkout address with the not-found page', async () => {
+    renderApp('/subscription-checkout', { auth: signedInAs(BUILDER) })
+    expect((await screen.findAllByText('Error 404')).length).toBeGreaterThan(0)
   })
 
   it.each([OWNER, BUILDER, SUPPLIER, SITE_ENGINEER, ADMIN])('opens weather for every signed-in role (%#)', async (account) => {
-    installFakeServer({ 'GET /weather/projects': { status: 503, data: {} }, 'GET /subscriptions/me': { data: {} } })
+    installFakeServer({ 'GET /weather/projects': { status: 503, data: {} } })
     renderApp('/weather', { auth: signedInAs(account) })
     expect(await screen.findByText('Site Weather', {}, { timeout: 15000 })).toBeInTheDocument()
     expect(location.current.pathname).toBe('/weather')

@@ -1,13 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import {
-  Bell, Briefcase, Building2, CalendarDays, Camera, LayoutGrid, LifeBuoy, MessageSquare, PackageSearch, Settings, ShoppingCart, Truck, Users, Wrench,
+  Bell, Briefcase, Building2, CalendarDays, Camera, LayoutGrid, LifeBuoy, MessageSquare, PackageSearch, Settings, ShoppingBag, ShoppingCart, Store, Truck, Users, Wrench,
 } from 'lucide-react'
 import { CART_GATED_ACTIONS, pendingActionIs, useProfileGate, useResumeGatedAction } from '../../../shared/hooks/useProfileGate.js'
 import useUrlState, { useUrlParams } from '../../../shared/hooks/useUrlState.js'
 import NotFoundPanel from '../../../shared/dashboard/NotFoundPanel.jsx'
 import { canBookPartner, openPartnerBooking } from '../../partner-booking/partnerBooking.js'
+import { accessRole } from '../../../shared/auth/roles.js'
+import { EngineerPurchaseOrders, EngineerStore } from '../../shop/components/MarketplacePurchaseViews.jsx'
 import DashboardShell from '../../../shared/dashboard/DashboardShell.jsx'
 
 /**
@@ -33,6 +35,8 @@ const NAV_PATHS = {
   projects: '/engineer/my-projects',
   suppliers: '/engineer/my-supplies',
   findOpportunities: '/engineer/find-opportunities',
+  store: '/engineer/store',
+  orders: '/engineer/orders',
   calendar: '/engineer/calendar',
   dailyLogs: '/engineer/daily-logs',
   messages: '/engineer/messages',
@@ -138,6 +142,7 @@ function saveAppliedOpportunity(projectId) {
 
 export default function EngineerDashboard() {
   const { user } = useSelector((state) => state.auth)
+  const hasSupplierOrders = accessRole(user) === 'SITE_ENGINEER'
   const { t, td, setCountry } = useLanguage()
   const dispatch = useDispatch()
   // The Suppliers hub's tab is the address's (/engineer/my-supplies?tab=orders): a clicked
@@ -491,6 +496,10 @@ export default function EngineerDashboard() {
     // too - otherwise an incoming builder request would arrive with no signal.
     // New: the requests and team invitations not yet opened, counted by id.
     { id: 'findOpportunities', label: t('ui.findOpportunities'), icon: Briefcase, bareIcon: true, badge: requestInbox.unreadCount || undefined },
+    ...(hasSupplierOrders ? [
+      { id: 'store', label: t('shop.purchase.store'), icon: Store, bareIcon: true },
+      { id: 'orders', label: t('shop.orders'), icon: ShoppingBag, bareIcon: true },
+    ] : []),
   ]
 
   useEffect(() => {
@@ -631,6 +640,16 @@ export default function EngineerDashboard() {
     respondToBuilderRequest: ({ relationshipId, action }) => respondToBuilderRequest(relationshipId, action),
     respondToProjectRequest: ({ requestId, accept }) => respondToProjectRequest(requestId, accept),
   })
+
+  if (!hasSupplierOrders && (activeId === 'store' || activeId === 'orders')) {
+    return <Navigate to="/engineer" replace />
+  }
+  if (hasSupplierOrders && activeId === 'suppliers' && supplierTab === 'orders') {
+    const search = new URLSearchParams(location.search)
+    search.delete('tab')
+    search.set('history', 'legacy')
+    return <Navigate to={{ pathname: NAV_PATHS.orders, search: search.toString() }} replace />
+  }
 
   return (
     <div className="min-h-screen text-slate-950">
@@ -900,8 +919,11 @@ export default function EngineerDashboard() {
 
 
         {activeId === 'suppliers' && (
-          <EngineerSupplierHub projects={projectList} activeTab={supplierTab} onTabChange={setSupplierTab} />
+          <EngineerSupplierHub projects={projectList} activeTab={supplierTab} onTabChange={setSupplierTab} hasSupplierOrders={hasSupplierOrders} />
         )}
+
+        {hasSupplierOrders && activeId === 'store' && <EngineerStore />}
+        {hasSupplierOrders && activeId === 'orders' && <EngineerPurchaseOrders />}
 
         {activeId === 'notifications' && (
           <EngineerNotificationsSection notifications={notifications} onMarkAllRead={markAllNotificationsRead} />

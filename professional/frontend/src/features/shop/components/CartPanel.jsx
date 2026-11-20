@@ -6,7 +6,7 @@
  * at a time. The project the materials are for is chosen here, because that is
  * what the supplier is told to deliver against.
  */
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { CheckCircle2, ShoppingCart, Store, Trash2 } from 'lucide-react'
 import { SmartImage } from '../../../shared/ui/ui.jsx'
@@ -80,6 +80,8 @@ export default function CartPanel({ projectId = null, buyLabel = null, buyAll = 
   const { t, td } = useLanguage()
   const { requireCompleteProfile } = useProfileGate()
   const dispatch = useDispatch()
+  const requestLock = useRef(false)
+  const requestKeys = useRef(new Map())
   const cart = useSelector(selectCart)
   const [sentCode, setSentCode] = useState('')
   // Per-supplier outcome of the last Buy: [{ supplier, ok, detail }].
@@ -102,10 +104,20 @@ export default function CartPanel({ projectId = null, buyLabel = null, buyAll = 
   // The project (and supplier) go with the gated action: the cart itself is
   // kept on the server, so after Complete Profile the same Buy simply resumes.
   const submitGroup = async (supplierId, targetProjectId = projectId) => {
-    if (!targetProjectId) return
+    if (!targetProjectId || requestLock.current) return
     if (requireCompleteProfile(CART_GATED_ACTIONS[0], { projectId: targetProjectId, supplierId })) return
     const group = cart.suppliers.find((row) => row.supplier_id === supplierId)
-    const result = await dispatch(sendBuyRequest({ projectId: targetProjectId, supplierId }))
+    const scope = JSON.stringify([targetProjectId, supplierId, group?.items.map(({ id, quantity }) => [id, quantity])])
+    if (engineerLayout && !requestKeys.current.has(scope)) requestKeys.current.set(scope, crypto.randomUUID())
+    requestLock.current = true
+    let result
+    try {
+      result = await dispatch(sendBuyRequest({
+        projectId: targetProjectId, supplierId, requestKey: engineerLayout ? requestKeys.current.get(scope) : undefined,
+      }))
+    } finally {
+      requestLock.current = false
+    }
     const ok = result.meta.requestStatus === 'fulfilled'
     if (ok) setSentCode(result.payload?.request_code || '')
     if (buyAll) setOutcomes([{ supplier: td(group?.store_name || group?.supplier_name || ''), ok, detail: ok ? String(result.payload?.request_code || '').slice(0, 8).toUpperCase() : result.payload }])
@@ -177,7 +189,11 @@ export default function CartPanel({ projectId = null, buyLabel = null, buyAll = 
         busy={busy}
         projectId={projectId}
         totalQuantity={totalQuantity}
-        messages={(outcomeList || errorNote) ? <div className="space-y-2">{outcomeList}{errorNote}</div> : null}
+        messages={(outcomeList || errorNote) ? (
+          <div className="space-y-2">
+            {outcomeList}{errorNote}
+          </div>
+        ) : null}
         onChangeQuantity={changeQuantity}
         onRemove={(item) => dispatch(removeProductFromCart({ itemId: item.id }))}
         onClearCart={() => dispatch(emptyCart(projectId))}

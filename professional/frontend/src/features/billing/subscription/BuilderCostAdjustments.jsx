@@ -1,12 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { ClipboardEdit } from 'lucide-react'
 import { useLanguage } from '../../../i18n/LanguageContext.jsx'
 import { activeLocale } from '../../../shared/utils/formatters.js'
-import { fetchCostAdjustments, saveCostAdjustment } from '../subscriptionApi.js'
-import LockedFeature from './LockedFeature.jsx'
-import useBuilderSubscription from './useBuilderSubscription.js'
-import { formatPlanDate, hasFeature, lockedReason, subscriptionErrorMessage } from './subscriptionFormat.js'
+import { fetchCostAdjustments, formatReportDate, reportErrorMessage, saveCostAdjustment } from '../builderReportsApi.js'
 
 const FIELDS = [
   ['labour_cost', 'se.labourCost'],
@@ -17,15 +13,12 @@ const FIELDS = [
 
 // The builder's audited corrections for one closed daily record. The engineer's
 // figures are shown as recorded and never change; a correction is a separate row
-// with its reason, and the server enforces plan, ownership and the closed-day rule.
+// with its reason, and the server enforces ownership and the closed-day rule.
 export default function BuilderCostAdjustments({ registerId, money }) {
   const { t } = useLanguage()
-  const navigate = useNavigate()
-  const { status } = useBuilderSubscription()
   const [record, setRecord] = useState(null)
   const [form, setForm] = useState({ fieldName: 'labour_cost', adjustedValue: '', reason: '' })
   const [message, setMessage] = useState(null)
-  const [locked, setLocked] = useState(null)
   const [busy, setBusy] = useState(false)
 
   const load = useCallback(async () => {
@@ -35,8 +28,6 @@ export default function BuilderCostAdjustments({ registerId, money }) {
   useEffect(() => { load() }, [load])
 
   if (!registerId || !record) return null
-  const entitled = hasFeature(status, 'bill_adjustments')
-  const viewPlans = () => navigate('/contractor/subscription')
 
   const submit = async (event) => {
     event.preventDefault()
@@ -47,9 +38,7 @@ export default function BuilderCostAdjustments({ registerId, money }) {
       setForm((current) => ({ ...current, adjustedValue: '', reason: '' }))
       setMessage({ tone: 'success', text: t('subscription.adjust.saved') })
     } catch (error) {
-      const reason = lockedReason(error)
-      if (reason) setLocked(reason)
-      else setMessage({ tone: 'error', text: subscriptionErrorMessage(error, t('subscription.panel.failed')) })
+      setMessage({ tone: 'error', text: reportErrorMessage(error, t('award.error')) })
     } finally {
       setBusy(false)
     }
@@ -78,8 +67,7 @@ export default function BuilderCostAdjustments({ registerId, money }) {
         </div>
 
         {!record.locked && <p className="rounded-lg bg-slate-50 px-3 py-2 text-xs font-bold text-slate-600">{t('subscription.adjust.openDay')}</p>}
-        {record.locked && (locked || !entitled) && <LockedFeature compact reason={locked || { kind: status?.status === 'EXPIRED' ? 'expired' : 'required', requiredPlan: 'PROFESSIONAL' }} onViewPlans={viewPlans} />}
-        {record.locked && entitled && !locked && (
+        {record.locked && (
           <form onSubmit={submit} className="grid gap-2 sm:grid-cols-2">
             <label className="grid gap-1 text-xs font-bold text-slate-600">
               <span>{t('subscription.adjust.field')}</span>
@@ -112,7 +100,7 @@ export default function BuilderCostAdjustments({ registerId, money }) {
                 <li key={row.id} className="rounded-lg border border-slate-100 px-3 py-2 text-xs">
                   <p className="font-bold text-slate-900">{t(FIELDS.find(([field]) => field === row.field_name)?.[1] || 'se.otherExpenses')}: {money(row.original_value)} → {money(row.adjusted_value)}</p>
                   <p className="text-slate-600">{row.reason}</p>
-                  <p className="text-[11px] text-slate-400">{t('subscription.adjust.by', { name: row.builder_name, date: formatPlanDate(`${row.created_at}Z`, activeLocale()) })}</p>
+                  <p className="text-[11px] text-slate-400">{t('subscription.adjust.by', { name: row.builder_name, date: formatReportDate(`${row.created_at}Z`, activeLocale()) })}</p>
                 </li>
               ))}
             </ul>

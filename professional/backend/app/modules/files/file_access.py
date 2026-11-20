@@ -17,7 +17,7 @@ from app.modules.admin.admin_identity import account_locality, active_admin_iden
 from app.modules.equipment_supply.links import is_equipment_listing_image
 from app.modules.files.file_ownership import file_ids_in
 from app.modules.files.models import File
-from app.modules.identity.models import ROLE_BUILDER, ROLE_ENGINEER, ROLE_SUPPLIER, User
+from app.modules.identity.models import ROLE_BUILDER, ROLE_SUPPLIER, User
 from app.modules.marketplace.account_links import is_supplier_listing_image
 from app.modules.messaging.links import is_attachment_sent_to
 from app.modules.projects import file_links
@@ -53,8 +53,6 @@ def can_view_account_documents(database: Session, viewer: User, account: User) -
 
 
 def file_view_allowed(database: Session, user: User, stored: File) -> bool:
-    if user.role == ROLE_ENGINEER and file_links.engineer_site_photo_paused(database, user, stored.id):
-        return False
     if user.id == stored.owner_user_id:
         return True
     module = file_module(stored)

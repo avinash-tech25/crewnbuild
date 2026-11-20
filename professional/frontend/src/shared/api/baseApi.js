@@ -31,6 +31,6 @@ export async function clientBaseQuery({ url, method = 'GET', data, params, heade
 export const baseApi = createApi({
   reducerPath: 'api',
   baseQuery: clientBaseQuery,
-  tagTypes: ['Session', 'SupportTicket', 'Subscription'],
+  tagTypes: ['Session', 'SupportTicket'],
   endpoints: () => ({}),
 })

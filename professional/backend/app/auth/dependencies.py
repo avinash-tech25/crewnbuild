@@ -24,7 +24,6 @@ from app.core.security.access_tokens import read_access_claims, token_digest
 from app.core.security.csrf_protection import CSRF_FAILED, CSRF_HEADER, SAFE_METHODS
 from app.core.security.session_cookies import API_PREFIX, access_token_from
 from app.database.session import get_db
-from app.modules.billing.signup_checkout import enforce as enforce_signup_checkout
 from app.modules.identity.models import User, UserSession
 from app.modules.identity.policies import SUSPENDED_MESSAGE, session_role
 from app.modules.identity.repository import SessionRepository
@@ -112,7 +111,6 @@ def enforce_route_access(
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=message)
     principal = authenticate_request(request, database, settings)
     request.state.principal = principal
-    enforce_signup_checkout(database, principal.user, request.url.path.removeprefix(API_PREFIX))
 
 
 def current_principal(

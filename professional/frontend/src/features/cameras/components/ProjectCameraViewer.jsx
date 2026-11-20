@@ -32,11 +32,6 @@ import LiveCameraPlayer, { QualitySelector, StatusPill, statusPillLabelKey } fro
 import RecordedCameraPlayer from './RecordedCameraPlayer.jsx'
 import { searchRecordings } from '../camerasApi.js'
 import { useLanguage } from '../../../i18n/LanguageContext.jsx'
-import { useSelector } from 'react-redux'
-import useBuilderSubscription from '../../billing/subscription/useBuilderSubscription.js'
-import UpgradePrompt from '../../billing/subscription/UpgradePrompt.jsx'
-import { hasFeature } from '../../billing/subscription/subscriptionFormat.js'
-import { promptPlan } from '../../billing/subscription/planLimits.js'
 
 const inputClass = 'h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold outline-none focus:border-brand-500'
 const cardClass = 'rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_14px_40px_-30px_rgba(15,23,42,0.35)]'
@@ -130,17 +125,7 @@ export default function ProjectCameraViewer({
   const activeCamera = cameras.find(({ channel }) => channel.id === activeChannelId) || null
   const recCamera = cameras.find(({ channel }) => channel.id === recCameraId) || null
 
-  // HD is Premium for builders in India (the server refuses the MAIN stream
-  // otherwise); owners, engineers and builders elsewhere keep both. Until the
-  // builder's plan is known it is treated as SD.
-  const isBuilder = useSelector((state) => state.auth.user?.role) === 'BUILDER'
-  const { status: builderStatus } = useBuilderSubscription({ enabled: isBuilder })
-  const hdLocked = isBuilder && builderStatus?.region_supported !== false && !hasFeature(builderStatus, 'hd_video')
-  const [hdPrompt, setHdPrompt] = useState(false)
-  const qualityOf = (channel) => {
-    const variant = qualityByChannel[channel.id] || preferredVariant(channel)
-    return hdLocked && variant === 'MAIN' && channel.has_sub_stream ? 'SUB' : variant
-  }
+  const qualityOf = (channel) => qualityByChannel[channel.id] || preferredVariant(channel)
   const chooseQuality = (channelId, variant) => {
     setQualityByChannel((current) => (current[channelId] === variant ? current : { ...current, [channelId]: variant }))
   }
@@ -234,14 +219,7 @@ export default function ProjectCameraViewer({
           onStateChange={setActiveState}
           onStreamVariantChange={(variant) => chooseQuality(activeCamera.channel.id, variant)}
           onClose={() => setActiveChannelId(null)}
-          hdLocked={hdLocked}
-          onHdLocked={() => setHdPrompt(true)}
         />
-      )}
-      {hdLocked && hdPrompt && (
-        <div className="mt-3">
-          <UpgradePrompt kind="hd" planCode={promptPlan(builderStatus)} status={builderStatus} compact />
-        </div>
       )}
 
       {mode === 'recorded' && (
@@ -419,7 +397,7 @@ export default function ProjectCameraViewer({
                     <p className="mt-3 truncate px-1 text-sm font-extrabold text-oc-ink">{td(channel.name)}</p>
                     <p className="mt-0.5 truncate px-1 text-xs font-medium text-slate-500">{cameraSubtitle(channel)}</p>
                     <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-slate-100 px-1 pt-3">
-                      <QualitySelector channel={channel} value={qualityOf(channel)} onChange={(variant) => chooseQuality(channel.id, variant)} hdLocked={hdLocked} onHdLocked={() => setHdPrompt(true)} />
+                      <QualitySelector channel={channel} value={qualityOf(channel)} onChange={(variant) => chooseQuality(channel.id, variant)} />
                       <span aria-hidden="true" className="h-6 w-px bg-slate-200" />
                       <StatusPill state={pillState} />
                       <button
@@ -455,7 +433,7 @@ export default function ProjectCameraViewer({
                       <p className="truncate text-sm font-extrabold text-slate-950">{td(channel.name)}</p>
                       <p className="truncate text-xs font-semibold text-slate-500">{cameraSubtitle(channel)}</p>
                     </div>
-                    <QualitySelector channel={channel} value={qualityOf(channel)} onChange={(variant) => chooseQuality(channel.id, variant)} hdLocked={hdLocked} onHdLocked={() => setHdPrompt(true)} />
+                    <QualitySelector channel={channel} value={qualityOf(channel)} onChange={(variant) => chooseQuality(channel.id, variant)} />
                     <StatusPill state={pillState} />
                     <button
                       type="button"

@@ -17,7 +17,7 @@ const GROUPS = {
   overview: ['Dashboard'],
   people: ['Users', 'Administrators', 'Verification', 'Account Deletion'],
   activity: ['Projects', 'Leads', 'Reports', 'Support Tickets'],
-  marketplace: ['Master Catalog', 'Adverts', 'Coupons', 'Subscription Payments'],
+  marketplace: ['Master Catalog', 'Adverts'],
   system: ['Audit Log', 'Mobile number'],
 }
 
@@ -45,11 +45,11 @@ describe('admin sidebar: groups', () => {
   })
 
   it('hides the sections a manager may not open, and a group left with none', async () => {
-    openConsole('/admin', anIdentity('manager', ['users.view', 'coupons.view']))
+    openConsole('/admin', anIdentity('manager', ['users.view', 'catalog.view']))
     await screen.findByText('Nothing needs your attention', {}, FIND)
     expect(itemsOf('overview')).toEqual(['Dashboard'])
     expect(itemsOf('people')).toEqual(['Users'])
-    expect(itemsOf('marketplace')).toEqual(['Coupons'])
+    expect(itemsOf('marketplace')).toEqual(['Master Catalog'])
     expect(itemsOf('system')).toEqual(['Mobile number'])
     // Nothing in Activity is open to this manager, so the group is not drawn.
     expect(screen.queryByTestId('admin-nav-group-activity')).not.toBeInTheDocument()
@@ -61,13 +61,18 @@ describe('admin sidebar: groups', () => {
 
 describe('admin sidebar: state', () => {
   it('marks the open section, and names it in the title and breadcrumb', async () => {
-    openConsole('/admin/coupons', anIdentity('global'), { 'GET /admin/coupons': { data: { coupons: [] } } })
-    const coupons = await (await loadedSidebar()).findByRole('button', { name: 'Coupons' }, FIND)
-    expect(coupons).toHaveAttribute('aria-current', 'page')
+    openConsole('/admin/catalog', anIdentity('global'), {
+      'GET /admin/catalog/categories': { data: [] },
+      'GET /admin/catalog/brands': { data: [] },
+      'GET /admin/catalog/units': { data: [] },
+      'GET /admin/catalog/products': { data: [] },
+    })
+    const catalog = await (await loadedSidebar()).findByRole('button', { name: 'Master Catalog' }, FIND)
+    expect(catalog).toHaveAttribute('aria-current', 'page')
     expect(sidebar().getByRole('button', { name: 'Dashboard' })).not.toHaveAttribute('aria-current')
-    expect(screen.getByRole('heading', { level: 1, name: 'Coupons' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 1, name: 'Master Catalog' })).toBeInTheDocument()
     const crumbs = within(screen.getByRole('navigation', { name: 'Breadcrumb' })).getAllByRole('listitem').map((item) => item.textContent)
-    expect(crumbs).toEqual(['Admin', 'Marketplace', 'Coupons'])
+    expect(crumbs).toEqual(['Admin', 'Marketplace', 'Master Catalog'])
   })
 
   it('shows the waiting counts from the dashboard queues beside their sections', async () => {

@@ -705,10 +705,12 @@ export default function SupplierDashboard() {
         )}
         {sectionAllowed && (<>
         {activeId === 'orders' && (
-          <SupplierMaterialRequests
-            searchQuery={searchQuery}
-            onInventoryChanged={() => fetchSupplierProducts().then(setProductList)}
-          />
+          <div className="space-y-4">
+            <SupplierMaterialRequests
+              searchQuery={searchQuery}
+              onInventoryChanged={() => fetchSupplierProducts().then(setProductList)}
+            />
+          </div>
         )}
 
         {activeId === 'requests' && isLaborSupplier && (

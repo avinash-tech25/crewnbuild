@@ -93,9 +93,9 @@ describe('where Dashboard leads, per role', () => {
     expect(accountLinks(account)).toEqual({ home, dashboard: home, profile })
   })
 
-  it('an unfinished step comes first: PIN code, then builder checkout', () => {
+  it('an unfinished step comes first: PIN code', () => {
     expect(accountLinks(anAccount({ role: 'OWNER', pincode: '' })).home).toBe('/pincode')
-    expect(accountLinks(anAccount({ role: 'BUILDER', subscription_checkout: { plan_code: 'PRO' } })).home).toBe('/subscription-checkout')
+    expect(accountLinks(anAccount({ role: 'BUILDER', pincode: '' })).home).toBe('/pincode')
   })
 
   it('a signed-out visitor has no account links', () => {

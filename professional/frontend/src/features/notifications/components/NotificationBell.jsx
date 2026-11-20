@@ -6,7 +6,6 @@ import { fetchNotifications, markNotificationRead, markNotificationsRead } from 
 import { playGatedNotificationSound, unlockNotificationAudio } from '../../../shared/utils/notificationSounds.js'
 import { useLanguage } from '../../../i18n/LanguageContext.jsx'
 import { formatDateTime } from '../../../shared/utils/formatters.js'
-import { PLAN_BILLING_PATH, isPlanExpiryNotice } from '../../billing/subscription/expiryNotice.js'
 
 // Display names for the module codes the API infers for each notification.
 // The code itself is still what routing below compares against.
@@ -27,6 +26,7 @@ const MODULE_KEYS = {
 // its module label above.
 const CATEGORY_KEYS = {
   MATERIAL: 'ui.shared.categoryMaterial',
+  PURCHASE_ORDER: 'ui.shared.categoryMaterial',
   LABOR: 'ui.shared.categoryLabor',
   EQUIPMENT: 'ui.shared.categoryEquipment',
   ENGINEER: 'ui.shared.categoryEngineer',
@@ -169,6 +169,11 @@ export default function NotificationBell({ onOpen = null }) {
   const openCategorizedNotification = (notification) => {
     const category = notification.category
     const go = (path) => { setIsOpen(false); navigate(path) }
+    if (category === 'PURCHASE_ORDER') {
+      if (user?.role === 'ENGINEER' || user?.role === 'SITE_ENGINEER') go('/engineer/orders')
+      else if (user?.role === 'SUPPLIER') go('/supplier/orders')
+      return
+    }
     if (user?.role === 'ENGINEER') {
       // An assignment can be of any supplier type, so it opens the type choice.
       const hubTab = { MATERIAL: 'orders', LABOR: 'labor', EQUIPMENT: 'equipment', ASSIGNMENT: 'home' }[category]
@@ -191,11 +196,6 @@ export default function NotificationBell({ onOpen = null }) {
       return
     }
     if (user?.role === 'BUILDER') {
-      // The plan-expiry reminder opens Plan & Billing; other ACCOUNT notices keep Profile Settings.
-      if (isPlanExpiryNotice(notification)) {
-        go(PLAN_BILLING_PATH)
-        return
-      }
       if (category === 'NEGOTIATION' || category === 'SUPPLIER') {
         // The Requests page opens the request this notification names.
         remember('crewnbuild_open_request_hint', `${notification.title || ''} ${notification.body || ''}`)

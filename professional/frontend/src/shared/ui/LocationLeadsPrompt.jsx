@@ -5,7 +5,6 @@ import { INDIA_PINCODE_LENGTH, usePincodeAreaLookup } from '../hooks/usePincodeA
 import { updateUserLocation } from '../../features/onboarding/locationApi.js'
 import { useLanguage } from '../../i18n/LanguageContext.jsx'
 import { needsLocationPincode } from '../auth/accountPaths.js'
-import { limitRefusal } from '../../features/billing/subscription/planLimits.js'
 
 // Every marketplace role (House Owner, Builder, Supplier, Engineer) sets its
 // pincode here: leads, nearby builders, suppliers and engineers are all matched
@@ -71,11 +70,9 @@ export function LocationLeadsButton({ pincode, onClick }) {
  * Validates the six digits, lists every post office branch under the pincode
  * with its city, district and state, and saves the chosen one. `onSaved`
  * receives the updated account; the dashboard then loads its leads through its
- * existing lead request. `pincodeChoices`: a Free/Pro builder's own lead
- * locations, offered to switch between (the server refuses a pincode that would
- * be a location beyond the plan's).
+ * existing lead request.
  */
-export default function LocationLeadsPrompt({ open, currentPincode = '', onDismiss, onSaved, pincodeChoices = [] }) {
+export default function LocationLeadsPrompt({ open, currentPincode = '', onDismiss, onSaved }) {
   const { t, td, translateMessage } = useLanguage()
   const [pincode, setPincode] = useState(currentPincode || '')
   const [selectedBranch, setSelectedBranch] = useState(null)
@@ -116,14 +113,10 @@ export default function LocationLeadsPrompt({ open, currentPincode = '', onDismi
       await onSaved(updatedUser)
     } catch (error) {
       const detail = error.response?.data?.detail
-      // A pincode beyond the plan's locations: the existing location-limit message.
-      const refusal = limitRefusal(error)
       // `translateMessage` covers the handful of server messages that have a
       // key; `td` catches the rest, which would otherwise be shown as the
       // English the backend wrote them in.
-      setSaveError(refusal?.kind === 'locations'
-        ? t(`subscription.limit.reached.locations.${refusal.planCode}`, { limit: refusal.limit })
-        : typeof detail === 'string' ? td(translateMessage(detail)) : t('location.prompt.saveFailed'))
+      setSaveError(typeof detail === 'string' ? td(translateMessage(detail)) : t('location.prompt.saveFailed'))
     } finally {
       setSaving(false)
     }
@@ -132,7 +125,7 @@ export default function LocationLeadsPrompt({ open, currentPincode = '', onDismi
   return (
     <div className="fixed inset-0 z-[140] grid place-items-center overflow-y-auto bg-slate-900/50 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="location-leads-title">
       <form onSubmit={saveLocation} className="relative w-full max-w-xl rounded-2xl border border-oc-line bg-white p-5 shadow-2xl">
-        {/* No onDismiss: the step is required (a paid builder sign-up pays only after it). */}
+        {/* No onDismiss: the step is required. */}
         {onDismiss && (
           <button
             type="button"
@@ -166,21 +159,6 @@ export default function LocationLeadsPrompt({ open, currentPincode = '', onDismi
             />
           </span>
         </label>
-        {pincodeChoices.length > 0 && (
-          <div className="mt-2 flex flex-wrap gap-2">
-            {pincodeChoices.map((choice) => (
-              <button
-                key={choice}
-                type="button"
-                onClick={() => setPincode(choice)}
-                aria-pressed={pincode === choice}
-                className={`inline-flex h-8 items-center gap-1.5 rounded-lg border px-3 text-xs font-extrabold shadow-sm transition ${pincode === choice ? 'border-oc-green bg-oc-mint text-oc-deep' : 'border-oc-line bg-white text-oc-deep hover:bg-oc-mint'}`}
-              >
-                <MapPin className="h-3.5 w-3.5 text-oc-green" />{choice}
-              </button>
-            ))}
-          </div>
-        )}
         <PincodeAreaHint lookupState={lookupState} selectedBranch={selectedBranch} onSelectBranch={(branch) => { setSelectedBranch(branch); setSaveError('') }} />
 
         {saveError && <p role="alert" className="mt-2 text-[11px] font-bold text-warm">{saveError}</p>}

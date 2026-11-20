@@ -7,8 +7,7 @@
  * chosen — shown on its own page instead of over a dashboard.
  *
  * Saving stores users.pincode / users.location (PATCH /auth/location) and opens
- * the dashboard -- or, for a paid builder sign-up, the plan checkout, which has no
- * "Later": the server refuses to take payment before the PIN code is verified. "Later" opens the dashboard too (the same prompt asks again in
+ * the dashboard. "Later" opens the dashboard too (the same prompt asks again in
  * a later session), so an India Post outage can never lock a new account out. Complete
  * Profile is not asked for here: it opens when an action first needs it.
  */
@@ -16,7 +15,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import { Navigate, useNavigate } from 'react-router-dom'
 import LocationLeadsPrompt, { DISMISSED_KEY } from '../../../shared/ui/LocationLeadsPrompt.jsx'
 import { setAuthenticatedUser } from '../../../shared/auth/authSlice.js'
-import { dashboardPath, needsLocationPincode, postAuthPath, subscriptionCheckoutPending } from '../../../shared/auth/accountPaths.js'
+import { dashboardPath, needsLocationPincode, postAuthPath } from '../../../shared/auth/accountPaths.js'
 
 export default function PincodeSetupPage() {
   const { user } = useSelector((state) => state.auth)
@@ -35,8 +34,7 @@ export default function PincodeSetupPage() {
 
   // "Later" here means the same as "Later" on the dashboard prompt: not again
   // this browser session. Straight to the dashboard: postAuthPath would answer
-  // this page again, since the account still has no pincode. A paid builder
-  // sign-up has no "Later", so this never skips the checkout.
+  // this page again, since the account still has no pincode.
   const later = () => {
     try {
       window.sessionStorage.setItem(`${DISMISSED_KEY}:${user.id}`, '1')
@@ -48,7 +46,7 @@ export default function PincodeSetupPage() {
 
   return (
     <main className="min-h-screen bg-oc-sunken">
-      <LocationLeadsPrompt open currentPincode="" onDismiss={subscriptionCheckoutPending(user) ? undefined : later} onSaved={saved} />
+      <LocationLeadsPrompt open currentPincode="" onDismiss={later} onSaved={saved} />
     </main>
   )
 }

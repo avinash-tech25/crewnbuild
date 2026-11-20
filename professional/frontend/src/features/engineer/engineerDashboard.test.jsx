@@ -1,6 +1,6 @@
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { anAccount, installFakeServer } from '../../test/fakeServer.js'
 import { location, renderApp, signedInAs, signedOut } from '../../test/renderApp.jsx'
 import {
@@ -22,9 +22,11 @@ vi.mock('hls.js', () => {
   return { default: { isSupported: () => false } }
 })
 
+afterEach(() => vi.unstubAllGlobals())
+
 const FIND = { timeout: 15000 }
 const ENGINEER_SECTIONS = ['/engineer', '/engineer/my-projects', '/engineer/my-supplies', '/engineer/find-opportunities',
-  '/engineer/calendar', '/engineer/daily-logs', '/engineer/messages', '/engineer/notifications', '/engineer/profile', '/engineer/live-camera']
+  '/engineer/store', '/engineer/orders', '/engineer/calendar', '/engineer/daily-logs', '/engineer/messages', '/engineer/notifications', '/engineer/profile', '/engineer/live-camera']
 // The removed Store Manager dashboard and the Site Engineer's Store Requests page.
 const OLD_STORE_ADDRESSES = ['/store-manager', '/store-manager/requests', '/store-manager/buy', '/engineer/store-requests']
 
@@ -46,6 +48,8 @@ describe('access', () => {
     ['a Site Engineer', SITE_ENGINEER, '/store-manager/requests', '/engineer'],
     ['a Site Engineer', SITE_ENGINEER, '/store-manager', '/engineer'],
     ['a Structural Engineer', STRUCTURAL_ENGINEER, '/store-manager/buy', '/engineer'],
+    ['a Structural Engineer', STRUCTURAL_ENGINEER, '/engineer/store', '/engineer'],
+    ['a Structural Engineer', STRUCTURAL_ENGINEER, '/engineer/orders', '/engineer'],
     ['a House Owner', anAccount({ role: 'OWNER' }), '/engineer', '/owner'],
     ['a Builder', anAccount({ role: 'BUILDER' }), '/store-manager', '/contractor'],
     ['a Supplier', anAccount({ role: 'SUPPLIER' }), '/engineer/live-camera', '/supplier'],
@@ -67,12 +71,18 @@ describe('Site Engineer dashboard', () => {
     open('/engineer', SITE_ENGINEER, engineerDashboardServer())
     expect(await screen.findByText('Welcome, Meena Iyer', {}, FIND)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /Book Technician/ })).toBeInTheDocument()
+    const nav = screen.getAllByRole('navigation').find((item) => within(item).queryByRole('button', { name: 'Find Opportunities' }))
+    expect(within(nav).getAllByRole('button').map((item) => item.textContent.trim())).toEqual([
+      'Dashboard', 'My Projects', 'Suppliers', 'Find Opportunities', 'Store', 'Orders',
+    ])
   })
 
   it('hides Book Technician from other engineer categories, as the server refuses them the hand-off', async () => {
     open('/engineer', STRUCTURAL_ENGINEER, engineerDashboardServer())
     expect(await screen.findByText('Welcome, Kiran Das', {}, FIND)).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /Book Technician/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Store' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Orders' })).not.toBeInTheDocument()
   })
 
   it('lists the projects the engineer is assigned to', async () => {
@@ -163,6 +173,15 @@ describe('Site Engineer orders material from the project suppliers', () => {
     total: items.length ? 72 : 0,
   })
 
+  const purchase = {
+    id: '0190a8b2-4c1e-7aa0-9f00-0000000000f8', order_number: '6190a8b24c1e7aa09f000000000000f8',
+    supplier_name: 'Lakshmi Traders', engineer_name: 'Meena Iyer', project_name: 'Lake View Villa',
+    estimated_amount: 72, status: 'PENDING',
+    items: [{ product_id: product.id, name: product.name, quantity: 1, unit: 'rod', price: 72, line_total: 72, status: 'PENDING', line_id: line.id }],
+    created_at: '2026-11-18T09:00:00+05:30',
+  }
+  const purchasePath = '/marketplace/orders/' + purchase.id
+
   // Two assigned projects; the cart is the server's, answered for whichever project is asked.
   function openShop(path, routes = {}) {
     let cartItems = []
@@ -175,7 +194,12 @@ describe('Site Engineer orders material from the project suppliers', () => {
       'GET /shop/products': { data: { products: [product], categories: ['Steel'], restricted: true } },
       'GET /cart': () => ({ data: aCart(cartItems) }),
       'POST /cart/items': () => { cartItems = [line]; return { data: aCart(cartItems) } },
-      'POST /cart/checkout': () => { cartItems = []; return { data: { request_code: '0190a8b2-ord1', cart: aCart([]) } } },
+      'POST /cart/checkout': () => {
+        cartItems = []
+        return { data: { id: purchase.id, request_code: purchase.order_number, cart: aCart(cartItems) } }
+      },
+      ['GET ' + purchasePath]: { data: purchase },
+      'GET /marketplace/orders': { data: [purchase] },
       ...routes,
     }))
   }
@@ -188,21 +212,18 @@ describe('Site Engineer orders material from the project suppliers', () => {
     await user.click(await screen.findByRole('button', { name: 'Add to Cart' }, FIND))
   }
 
-  it('picks a project, adds a product to its cart and places the order with the supplier', async () => {
+  it('places a request for a project product without opening checkout', async () => {
     const user = userEvent.setup()
     const { server } = openShop('/engineer/my-supplies?tab=catalog')
     await addToCartFrom(user, 'Lake View Villa')
     await waitFor(() => expect(server.calls('POST /cart/items')).toHaveLength(1))
-    // The catalogue lists only what the chosen project's suppliers sell.
-    expect(server.calls('GET /shop/products').some((call) => call.params?.project_id === OTHER_PROJECT_ID)).toBe(true)
-    expect(JSON.parse(server.calls('POST /cart/items')[0].data)).toEqual({ project_id: OTHER_PROJECT_ID, product_id: product.id, quantity: 1 })
-
     await user.click(screen.getByRole('button', { name: /^Cart/, pressed: false }))
-    await user.click((await screen.findAllByRole('button', { name: /Send Buy Request/ }, FIND))[0])
+    await user.click(await screen.findByRole('button', { name: 'Place Request' }, FIND))
     await waitFor(() => expect(server.calls('POST /cart/checkout')).toHaveLength(1))
-    expect(JSON.parse(server.calls('POST /cart/checkout')[0].data)).toEqual({ project_id: OTHER_PROJECT_ID, supplier_id: SUPPLIER_ID })
-    // No payment step: the order goes straight to the supplier.
-    expect(server.requests.some((request) => request.path.includes('razorpay') || request.path.includes('/purchases/'))).toBe(false)
+    const request = JSON.parse(server.calls('POST /cart/checkout')[0].data)
+    expect(request).toMatchObject({ project_id: OTHER_PROJECT_ID, supplier_id: SUPPLIER_ID })
+    expect(request.request_key).toMatch(/^[0-9a-f-]{36}$/)
+    expect(server.calls('POST /marketplace/checkout')).toHaveLength(0)
   })
 
   it('says to ask the builder when the project has no supplier assigned', async () => {
@@ -236,9 +257,30 @@ describe('Site Engineer orders material from the project suppliers', () => {
       'GET /cart': { data: aCart([line]) },
       'POST /cart/checkout': { status: 403, data: { detail: 'Ask your builder to assign a supplier to this project.' } },
     })
-    await user.click((await screen.findAllByRole('button', { name: /Send Buy Request/ }, FIND))[0])
-    await waitFor(() => expect(server.calls('POST /cart/checkout')).toHaveLength(1))
+    await user.click(await screen.findByRole('button', { name: 'Place Request' }, FIND))
     expect(await screen.findByText('Ask your builder to assign a supplier to this project.', {}, FIND)).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Place Request' }))
+    const [first, retry] = server.calls('POST /cart/checkout')
+    expect(JSON.parse(retry.data).request_key).toBe(JSON.parse(first.data).request_key)
+  })
+
+  it('opens an accepted purchase from Store', async () => {
+    const user = userEvent.setup()
+    openShop('/engineer/store', { 'GET /marketplace/store': { data: [{ ...purchase, status: 'ACCEPTED' }] } })
+    const result = await screen.findByRole('heading', { name: product.name }, FIND)
+    const search = screen.getByRole('searchbox', { name: 'Search purchased products' })
+    await user.type(search, 'missing')
+    expect(result).not.toBeInTheDocument()
+    await user.clear(search)
+    await user.click(screen.getByRole('link', { name: 'Order details' }))
+    expect(await screen.findByText(/Estimated Amount/, {}, FIND)).toBeInTheDocument()
+    expect(location.current.pathname).toBe('/engineer/orders')
+  })
+
+  it('moves direct nested order links to the top-level legacy history view', async () => {
+    openShop('/engineer/my-supplies?tab=orders')
+    await waitFor(() => expect(location.current.pathname).toBe('/engineer/orders'))
+    expect(location.current.search).toBe('?history=legacy')
   })
 })
 

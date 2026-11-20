@@ -1,6 +1,6 @@
 import { forwardRef, useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 import { CalendarDays, Camera, ChevronDown, ChevronLeft, ChevronRight, CirclePlay, DoorOpen, FileText, Film, History as HistoryIcon, Image as ImageIcon, Loader2, Lock, Plus, RefreshCw, RotateCcw, Save, Search, X } from 'lucide-react'
 import { deleteProjectPhoto, fetchProjectPhotos, fetchProjectTimelineEntries, saveDailyWorkflow } from '../../projects/projectsApi.js'
 import { completionPercent, completionText, scheduleText } from '../../../shared/utils/projectProgress.js'
@@ -13,8 +13,6 @@ import BudgetInWords from '../../../shared/ui/BudgetInWords.jsx'
 import { activeLocale, formatDate } from '../../../shared/utils/formatters.js'
 import { optionLabel } from '../../../i18n/optionKeys.js'
 import BuilderCostAdjustments from '../../billing/subscription/BuilderCostAdjustments.jsx'
-import LockedFeature from '../../billing/subscription/LockedFeature.jsx'
-import { builderAccessPaused, lockedReason } from '../../billing/subscription/subscriptionFormat.js'
 import { fetchLaborDailyRecords, fetchProjectLaborRequests } from '../../labour/labourApi.js'
 import { fetchEquipmentUsage, fetchProjectEquipmentRequests } from '../../equipment/equipmentApi.js'
 import { agreedPurchases, canRecordOnDate, dailyCostSummary, hasResourceOnDate, labourRequestsForDate, recordForDate, rentalChargeForDate, rentalsForDate } from '../siteResources.js'
@@ -280,8 +278,6 @@ export default function SiteEngineerDashboard({ projectList = [], viewMode = 'ca
   // values under the new date.
   const [loadedKey, setLoadedKey] = useState('')
   const [photoViewerIndex, setPhotoViewerIndex] = useState(null)
-  const [locked, setLocked] = useState(null)
-  const navigate = useNavigate()
   const [usageSearch, setUsageSearch] = useState('')
   const [usedOnly, setUsedOnly] = useState(false)
   // The optional BOQ block starts open when the loaded day has BOQ values, and
@@ -325,7 +321,6 @@ export default function SiteEngineerDashboard({ projectList = [], viewMode = 'ca
     const key = `${projectId}|${workDate}`
     setLoading(true)
     setLoadError('')
-    setLocked(null)
     try {
       if (photoOnly) {
         const photoRecords = await fetchProjectPhotos(projectId)
@@ -361,11 +356,7 @@ export default function SiteEngineerDashboard({ projectList = [], viewMode = 'ca
       return true
     } catch (error) {
       if (seq !== requestSeq.current) return false
-      // A builder whose plan has lapsed sees the locked notice; a paused owner view says so.
-      const reason = user?.role === 'BUILDER' ? lockedReason(error) : null
-      if (reason) setLocked(reason)
-      else if (builderAccessPaused(error)) setLoadError(t('subscription.ownerPaused'))
-      else setLoadError(apiErrorMessage(error, t('se.errLoad')))
+      setLoadError(apiErrorMessage(error, t('se.errLoad')))
       return false
     } finally {
       if (seq === requestSeq.current) setLoading(false)
@@ -753,10 +744,9 @@ export default function SiteEngineerDashboard({ projectList = [], viewMode = 'ca
         <button type="button" onClick={reload} disabled={!projectId || loading} aria-label={t('se.form.reload')} title={t('se.form.reload')} className="grid h-10 w-10 place-items-center rounded-lg border"><RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} /></button>
       </div>
     )}
-    {locked && <LockedFeature reason={locked} onViewPlans={() => navigate('/contractor/subscription')} />}
     {!workDate && <Notice notice={notice} />}
     {loadError && !workDate && <Notice notice={{ text: loadError, tone: 'error' }}><button type="button" onClick={refresh} className="rounded-lg border border-rose-300 bg-white px-3 py-1 text-xs font-extrabold">{t('se.form.retry')}</button></Notice>}
-    {projectId && !locked && <div ref={workspaceRef} className={workspace ? 'se-day-workspace grid gap-4 lg:grid-cols-[216px_minmax(0,1fr)] lg:items-start lg:gap-3' : 'space-y-4'}>
+    {projectId && <div ref={workspaceRef} className={workspace ? 'se-day-workspace grid gap-4 lg:grid-cols-[216px_minmax(0,1fr)] lg:items-start lg:gap-3' : 'space-y-4'}>
       {!historyOnly && <div ref={calendarStickRef} className={workspace ? 'se-day-calendar lg:sticky lg:top-[72px] lg:z-10' : ''} style={workspace && calendarTop !== null ? { top: calendarTop } : undefined}><section className={`rounded-3xl border border-slate-200 bg-white ${workspace ? 'p-3 lg:rounded-2xl lg:p-2' : 'p-4'} shadow-sm`} aria-label={t('se.siteCalendar')}>
         <div className={`flex flex-wrap items-center justify-between gap-2 ${workspace ? 'mb-2 lg:mb-1 lg:gap-x-1 lg:gap-y-0.5' : 'mb-3'}`}>
           <h2 className={`flex items-center gap-2 font-extrabold text-slate-900 ${workspace ? 'text-sm lg:!text-xs' : 'text-base sm:text-lg'}`}><CalendarDays className={`h-4 w-4 text-[#03572E] sm:h-5 sm:w-5 ${workspace ? 'lg:hidden' : ''}`} />{`${t(`se.month.${month.getMonth()}`)} ${month.getFullYear()}`}</h2>

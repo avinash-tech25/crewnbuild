@@ -26,8 +26,6 @@ import FieldError from '../../../shared/ui/FieldError.jsx'
 import PincodeAreaHint from '../../../shared/ui/PincodeAreaHint.jsx'
 import { usePincodeAreaLookup } from '../../../shared/hooks/usePincodeAreaLookup.js'
 import { lookupPincodeArea } from '../../onboarding/locationApi.js'
-import UpgradePrompt from '../../billing/subscription/UpgradePrompt.jsx'
-import { locationUsage, promptPlan } from '../../billing/subscription/planLimits.js'
 import { branchLocationEntry, pincodeLocationEntry } from '../../billing/subscription/locationEntries.js'
 import { lookupBranchList } from '../../../shared/utils/pincodeBranches.js'
 import { INVALID_FIELD_CLASS, profileErrorMessage, useProfileFormErrors } from '../../../shared/hooks/useProfileFormErrors.js'
@@ -182,7 +180,6 @@ export default function ContractorProfileSettings({
   onCompanyLogoUpload,
   onBack,
   uploadMessage = '',
-  subscriptionStatus = null,
 }) {
   // The signed-in account. `user` above is the dashboard's display shell, which
   // carries no country, and the pincode lookup needs the real one.
@@ -265,17 +262,16 @@ export default function ContractorProfileSettings({
   const pincodeLookupState = usePincodeAreaLookup(editing ? form.pincode : '', applyResolvedArea, account?.country_of_residence)
 
   // India builders add a service location by its pincode (leads are matched on
-  // it), within the plan's location limit; the server checks the limit again.
+  // it).
   const pincodeLocations = String(account?.country_of_residence || 'India').trim().toLowerCase() === 'india'
   const [locationPincode, setLocationPincode] = useState('')
   const [locationBusy, setLocationBusy] = useState(false)
   const editedLocations = splitEditableList(editing ? form.service_locations : profileListString(profile?.service_locations))
-  const serviceLocationUsage = pincodeLocations ? locationUsage(subscriptionStatus, editedLocations.length) : null
   // The post offices the typed pincode resolved to; the builder picks one to add.
   const [locationBranches, setLocationBranches] = useState([])
   const addLocationByPincode = async () => {
     const pincode = locationPincode.replace(/\s/g, '')
-    if (!pincode || serviceLocationUsage?.atLimit) return
+    if (!pincode) return
     setLocationBusy(true)
     let branches
     try { branches = lookupBranchList(await lookupPincodeArea(pincode)) } catch { branches = [] }
@@ -284,7 +280,6 @@ export default function ContractorProfileSettings({
     if (!branches.length) showNotice('error', t('subscription.location.pincodeNotFound'))
   }
   const addLocationBranch = (branch) => {
-    if (serviceLocationUsage?.atLimit) return
     const entry = branchLocationEntry(branch)
     if (!entry) { showNotice('error', t('subscription.location.pincodeNotFound')); return }
     if (!editedLocations.includes(entry)) updateField('service_locations', [...editedLocations, entry].join(', '))
@@ -664,9 +659,9 @@ export default function ContractorProfileSettings({
               <div className="mt-2 flex gap-2">
                 <input value={locationPincode} onChange={(event) => { setLocationPincode(event.target.value); setLocationBranches([]) }} inputMode="numeric" maxLength={6}
                   onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); addLocationByPincode() } }}
-                  placeholder={t('subscription.location.pincodePlaceholder')} disabled={Boolean(serviceLocationUsage?.atLimit)}
+                  placeholder={t('subscription.location.pincodePlaceholder')}
                   className="h-10 min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold outline-none focus:border-emerald-500 disabled:bg-slate-100" />
-                <button type="button" onClick={addLocationByPincode} disabled={locationBusy || Boolean(serviceLocationUsage?.atLimit)}
+                <button type="button" onClick={addLocationByPincode} disabled={locationBusy}
                   className="inline-flex h-10 shrink-0 items-center rounded-lg bg-slate-900 px-4 text-sm font-bold text-white hover:bg-slate-800 disabled:opacity-50">
                   {t('subscription.location.add')}
                 </button>
@@ -680,17 +675,6 @@ export default function ContractorProfileSettings({
               />
             )}
           </FormRow>
-          {serviceLocationUsage && (
-            <div className="grid gap-2 px-1 pb-2">
-              <p className="text-xs font-bold text-slate-600">
-                {serviceLocationUsage.limit === null ? t('subscription.usage.locationsUnlimited', { used: serviceLocationUsage.used })
-                  : t('subscription.usage.locations', { used: serviceLocationUsage.used, limit: serviceLocationUsage.limit, remaining: serviceLocationUsage.remaining })}
-              </p>
-              {serviceLocationUsage.atLimit && (
-                <UpgradePrompt kind="locations" planCode={promptPlan(subscriptionStatus)} limit={serviceLocationUsage.limit} status={subscriptionStatus} compact />
-              )}
-            </div>
-          )}
           <FormRow
             label={t('ps.con.equipmentOwned')}
             required={requiredFields.has('equipment_owned')}

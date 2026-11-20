@@ -29,7 +29,6 @@ from app.core.config import Settings
 from app.core.middleware import is_allowed_origin
 from app.core.security.access_tokens import read_access_claims
 from app.core.security.session_cookies import access_token_from
-from app.modules.billing.signup_checkout import pending_checkout
 from app.modules.identity.models import User
 from app.modules.identity.repository import SessionRepository
 from app.modules.identity.session_service import SessionService
@@ -124,8 +123,6 @@ def websocket_user(connection: HTTPConnection, database: Session) -> User | None
         user, _session = authenticate_access_token(access_token_from(connection, settings), database, settings)
     except HTTPException:
         return None
-    if pending_checkout(user, database) is not None:
-        return None  # a paid sign-up not paid yet: no live channels
     return user
 
 

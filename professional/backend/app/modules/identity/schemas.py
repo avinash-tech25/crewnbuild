@@ -137,8 +137,6 @@ class UserResponse(BaseModel):
     contractor_profile: dict[str, Any] | None = None
     supplier_profile: dict[str, Any] | None = None
     engineer_profile: dict[str, Any] | None = None
-    # A builder's paid sign-up still to be paid ({plan_code, duration_code}), else null.
-    subscription_checkout: dict[str, Any] | None = None
     # What the account accepted at sign-up (read-only; NULL for older accounts).
     terms_version: str | None = None
     privacy_version: str | None = None

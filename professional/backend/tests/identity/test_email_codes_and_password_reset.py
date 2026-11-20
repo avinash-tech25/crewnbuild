@@ -53,7 +53,7 @@ def test_email_sign_up(mail_client: TestClient, mailbox: FakeEmailSender, databa
     assert body["role"] == "BUILDER"  # CONTRACTOR is accepted and stored as BUILDER
     assert body["email_verified"] is True
     assert body["contractor_profile"] == {"company_name": "Neha"}
-    assert body["subscription_checkout"] == {"plan_code": "PROFESSIONAL", "duration_code": "MONTHLY"}
+    assert "subscription_checkout" not in body  # no paid sign-up any more
     assert mailbox.sent[-1]["subject"] == "Welcome to CREWNBUILD"
     stored = database.scalars(select(User)).one()
     assert stored.password_hash.startswith("$argon2id$")

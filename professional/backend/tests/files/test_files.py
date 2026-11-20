@@ -240,14 +240,14 @@ def test_account_deletion_releases_personal_files(
     assert storage.objects == {}
 
 
-def test_a_builder_with_an_unpaid_plan_may_open_files_but_not_upload(
-    files_client: TestClient, database: Session
-) -> None:
+def test_a_leftover_sign_up_plan_choice_never_blocks_files(files_client: TestClient, database: Session) -> None:
     builder = create_user(database, role=ROLE_BUILDER)
     csrf = sign_in(files_client)
-    address = upload(files_client, csrf).json()["url"]
     profile = database.scalars(select(BuilderProfile).where(BuilderProfile.user_id == builder.id)).one()
     profile.signup_plan_code, profile.signup_duration_code = "BUSINESS", "ANNUAL"
     database.commit()
-    assert files_client.get(f"/api/v1{address}").status_code == 200
-    assert upload(files_client, csrf).status_code == 403
+    uploaded = upload(files_client, csrf)
+    assert uploaded.status_code == 200, uploaded.text
+    assert files_client.get(f"/api/v1{uploaded.json()['url']}").status_code == 200
+    # The upload still needs the session's CSRF token.
+    assert upload(files_client, "not-the-token").status_code == 403

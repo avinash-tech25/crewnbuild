@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from '@testing-library/react'
+import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { anAccount, installFakeServer } from '../../test/fakeServer.js'
@@ -20,13 +20,11 @@ const GATED = [
   ['ads', 'ads.view', 'GET /admin/ads'],
   ['audit', 'audit.view', 'GET /admin/audit'],
   ['catalog', 'catalog.view', 'GET /admin/catalog/categories'],
-  ['coupons', 'coupons.view', 'GET /admin/coupons'],
-  ['subscription-payments', 'subscriptions.view', 'GET /admin/subscription-payments'],
   ['account-deletion', 'deletions.view', 'GET /admin/deleted-accounts'],
   ['support', 'support.view', 'GET /admin/support/tickets'],
 ]
 const SIDEBAR = { users: 'Users', projects: 'Projects', leads: 'Leads', verification: 'Verification', reports: 'Reports', ads: 'Adverts',
-  admins: 'Administrators', audit: 'Audit Log', catalog: 'Master Catalog', coupons: 'Coupons', 'subscription-payments': 'Subscription Payments',
+  admins: 'Administrators', audit: 'Audit Log', catalog: 'Master Catalog',
   'account-deletion': 'Account Deletion', support: 'Support Tickets' }
 
 function openConsole(path, identity, routes = {}) {
@@ -161,7 +159,7 @@ describe('admin console: verification and reports', () => {
   })
 })
 
-describe('admin console: announcements, adverts, catalog and coupons', () => {
+describe('admin console: announcements, adverts and catalog', () => {
   it('offers announcements only with users.suspend (as the server requires)', async () => {
     openConsole('/admin/notifications', manager('users.view'), { 'GET /admin/notifications': { data: { notifications: [], total: 0, unread: 0, audiences: [] } } })
     await waitFor(() => expect(screen.queryByText('No access')).not.toBeInTheDocument(), FIND)
@@ -220,26 +218,6 @@ describe('admin console: announcements, adverts, catalog and coupons', () => {
     expect(screen.getByRole('tab', { name: /^Categories/ })).toBeInTheDocument()
   })
 
-  it('creates a coupon with coupons.manage, and offers nothing to change without it', async () => {
-    const user = userEvent.setup()
-    const { server } = openConsole('/admin/coupons', manager('coupons.view', 'coupons.manage'), {
-      'GET /admin/coupons': { data: { coupons: [] } },
-      'POST /admin/coupons': { data: { id: '0190a8b2-4c1e-7aa0-9f00-0000000000c0', code: 'WELCOME10' } },
-    })
-    await user.click(await screen.findByRole('button', { name: /New coupon/ }, FIND))
-    const form = screen.getByText('New coupon', { selector: 'p' }).closest('form') || document.body
-    const code = within(form).getAllByRole('textbox')[0]
-    await user.type(code, 'WELCOME10')
-    expect(code).toHaveValue('WELCOME10')
-    expect(server.calls('POST /admin/coupons')).toHaveLength(0)
-  })
-
-  it('offers no coupon changes with coupons.view only', async () => {
-    openConsole('/admin/coupons', manager('coupons.view'), { 'GET /admin/coupons': { data: { coupons: [] } } })
-    await waitFor(() => expect(screen.queryByText('No access')).not.toBeInTheDocument(), FIND)
-    await new Promise((resolve) => setTimeout(resolve, 300))
-    expect(screen.queryByRole('button', { name: /New coupon/ })).not.toBeInTheDocument()
-  })
 })
 
 describe('admin console: sensitive records', () => {
@@ -255,32 +233,6 @@ describe('admin console: sensitive records', () => {
     await user.click(await screen.findByRole('button', { name: /View details/ }, FIND))
     await waitFor(() => expect(server.calls(`GET /admin/deleted-accounts/${id}`)).toHaveLength(1))
     expect(JSON.stringify({ ...localStorage, ...sessionStorage })).not.toContain('kiran')
-  })
-
-  it('loads payment history only on its screen and keeps none in browser storage', async () => {
-    const { server } = openConsole('/admin/subscription-payments', manager('subscriptions.view'), {
-      'GET /admin/subscription-payments': {
-        data: {
-          payments: [{
-            id: '0190a8b2-4c1e-7aa0-9f00-0000000000b9', builder: { id: USER_ID, name: 'Ravi Builders', email: 'ravi@example.in', country: 'IN' }, payment_country: 'IN',
-            plan_code: 'PROFESSIONAL', duration_code: 'MONTHLY', currency: 'INR', original_amount_minor: 99900, discount_minor: 0, amount_minor: 99900, coupon_code: null,
-            coupon_status: null, status: 'PAID', gateway_mode: 'test', created_at: '2026-11-02T10:00:00+05:30', paid_at: '2026-11-02T10:01:00+05:30',
-            razorpay_order_id: 'order_TEST1', razorpay_payment_id: 'pay_TEST1', failure_code: null, failure_description: null, refunded: false,
-            refund_amount_minor: null, refunded_at: null, period: null,
-          }],
-          total: 1, limit: 25, offset: 0, scope: 'IN',
-        },
-      },
-      'GET /admin/subscription-payments/summary': {
-        data: {
-          scope: 'IN', currency: 'INR', period: { year: 2026, month: null }, mock_payment_count: 0, active_subscription_count: 1, timezone: 'Asia/Kolkata',
-          totals: { payment_count: 1, successful_count: 1, failed_count: 0, pending_count: 0, refunded_count: 0, disputed_count: 0, gross_minor: 99900, refunds_minor: 0, net_minor: 99900 },
-          monthly: { year: 2026, months: Array.from({ length: 12 }, (_, index) => ({ month: index + 1, payment_count: 0, successful_count: 0, gross_minor: 0, refunds_minor: 0, net_minor: 0 })) },
-        },
-      },
-    })
-    await waitFor(() => expect(server.calls('GET /admin/subscription-payments').length).toBeGreaterThan(0), FIND)
-    expect(JSON.stringify({ ...localStorage, ...sessionStorage })).not.toContain('Ravi')
   })
 
   it('opens a support ticket only when chosen, and offers a reply only with support.manage', async () => {

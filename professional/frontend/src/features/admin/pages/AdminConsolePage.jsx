@@ -24,8 +24,6 @@ import {
   Flag,
   Megaphone,
   Library,
-  TicketPercent,
-  Receipt,
   ScrollText,
   Search,
   ShieldCheck,
@@ -48,8 +46,6 @@ import { AuditPage } from '../components/AuditSection.jsx'
 import { AccountDeletionPage } from '../components/AccountDeletionSection.jsx'
 import { SupportTicketsAdminPage } from '../components/SupportTicketsSection.jsx'
 import { CatalogPage } from '../components/CatalogSection.jsx'
-import { CouponsPage } from '../components/CouponsSection.jsx'
-import { SubscriptionPaymentsPage } from '../components/SubscriptionPaymentsSection.jsx'
 import { NotificationsPage } from '../components/NotificationsSection.jsx'
 import { PAGE_SIZE, Pagination } from '../components/AdminPagination.jsx'
 import { ProjectDetailDrawer } from '../components/ProjectDetail.jsx'
@@ -110,8 +106,6 @@ const SECTIONS = [
   { id: 'support', label: 'Support Tickets', icon: LifeBuoy, group: 'activity', permission: SECTION_PERMISSIONS['support'] },
   { id: 'catalog', label: 'Master Catalog', icon: Library, group: 'marketplace', permission: SECTION_PERMISSIONS['catalog'] },
   { id: 'ads', label: 'Adverts', icon: Megaphone, group: 'marketplace', permission: SECTION_PERMISSIONS['ads'] },
-  { id: 'coupons', label: 'Coupons', icon: TicketPercent, group: 'marketplace', permission: SECTION_PERMISSIONS['coupons'] },
-  { id: 'subscription-payments', label: 'Subscription Payments', icon: Receipt, group: 'marketplace', permission: SECTION_PERMISSIONS['subscription-payments'] },
   { id: 'audit', label: 'Audit Log', icon: ScrollText, group: 'system', permission: SECTION_PERMISSIONS['audit'] },
   // Every administrator's own WhatsApp sign-in number (also in the account menu).
   { id: 'mobile', label: 'Mobile number', icon: Smartphone, group: 'system', permission: SECTION_PERMISSIONS['mobile'] },
@@ -1191,8 +1185,6 @@ function AdminConsole({ identity, error, onIdentityChanged }) {
           <Route path="ads" element={<AdsPage identity={identity} Panel={Panel} />} />
           <Route path="audit" element={<AuditPage Panel={Panel} useAsync={useAsync} />} />
           <Route path="catalog" element={<CatalogPage key={country} Panel={Panel} canManage={can(identity, 'catalog.manage')} />} />
-          <Route path="coupons" element={<CouponsPage identity={identity} Panel={Panel} useAsync={useAsync} />} />
-          <Route path="subscription-payments" element={<SubscriptionPaymentsPage Panel={Panel} useAsync={useAsync} />} />
           <Route path="account-deletion" element={<AccountDeletionPage Panel={Panel} useAsync={useAsync} />} />
           <Route path="support" element={<SupportTicketsAdminPage identity={identity} Panel={Panel} useAsync={useAsync} />} />
           <Route path="support/:ticketId" element={<SupportTicketsAdminPage identity={identity} Panel={Panel} useAsync={useAsync} />} />

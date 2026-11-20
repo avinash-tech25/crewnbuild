@@ -14,7 +14,6 @@ import { hasRating, ratingLabel } from '../../../shared/utils/ratingLabel.js'
 import { sendConversationMessage, startConversation } from '../../messaging/messagesApi.js'
 import { useLanguage } from '../../../i18n/LanguageContext.jsx'
 import { DETAIL_DIALOG_SIZE } from '../../../shared/ui/DetailDialog.jsx'
-import { BuilderTierBadge } from '../../billing/subscription/TierBadge.jsx'
 import {
   optionLabel,
   BUSINESS_TYPE_KEYS,
@@ -485,8 +484,6 @@ export default function ContractorProfileDetails({ variant = 'page', contractorI
               <SmartImage src={imageUrl(profile.company_logo_url)} alt="" className="h-6 w-6 shrink-0 rounded-md object-cover ring-1 ring-brand-100" />
             )}
             <h1 className="truncate font-display text-base font-extrabold text-graphite">{td(profile.company_name)}</h1>
-            {/* PRO / PREMIUM: only while the builder's paid plan is in force (server). */}
-            <BuilderTierBadge builderId={profile.user_id || contractorId} />
             {profile.is_verified === true ? (
               <span data-testid="verified-partner-badge" className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-brand-50 px-2 py-0.5 text-[10px] font-bold text-brand-700">
                 <BadgeCheck className="h-3 w-3" /> {t('dash.common.verified')}

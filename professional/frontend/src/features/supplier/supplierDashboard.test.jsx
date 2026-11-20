@@ -119,7 +119,9 @@ describe('Supplier dashboard: own listings', () => {
 
 describe('Supplier dashboard: orders, clients and requests', () => {
   it("shows a Site Engineer's order with its cost", async () => {
-    openSupplier('/supplier/orders', MATERIAL, { 'GET /supplier/material-requests': { data: [anOrderLine()] } })
+    openSupplier('/supplier/orders', MATERIAL, {
+      'GET /supplier/material-requests': { data: [anOrderLine()] },
+    })
     expect(await screen.findByText('Meena Iyer', {}, FIND)).toBeInTheDocument()
     expect(screen.getByText('Pending')).toBeInTheDocument()
     expect(screen.getByText(/8,400/)).toBeInTheDocument()

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { ArrowRight, BrickWall, Check, CheckCircle2, HardHat, Home, IndianRupee, MapPin, Send, Tractor, Truck, X } from 'lucide-react'
+import { ArrowRight, BrickWall, Check, CheckCircle2, HardHat, Home, IndianRupee, Send, Tractor, Truck, X } from 'lucide-react'
 import { EmptyState } from '../../../shared/dashboard/RoleDashboardUi.jsx'
 import { avatarFromPath } from '../../../shared/ui/avatars.js'
 import { CardAvatar, CardChip, CardGrid, CardStatus, ListCard, cardButtonClass } from '../../../shared/ui/ListCard.jsx'
@@ -11,8 +11,6 @@ import { ClientProfilePanel, SupplierProfilePanel } from './BuilderProfilePanels
 import { useLanguage } from '../../../i18n/LanguageContext.jsx'
 import { formatNumber } from '../../../shared/utils/formatters.js'
 import { optionLabel, SUPPLIER_CATEGORY_KEYS, SUPPLIER_TYPE_KEYS } from '../../../i18n/optionKeys.js'
-import UpgradePrompt from '../../billing/subscription/UpgradePrompt.jsx'
-import { leadUsage, limitUsage } from '../../billing/subscription/planLimits.js'
 
 export function ContractorFindClientsSection({
   clientRequestState,
@@ -30,14 +28,8 @@ export function ContractorFindClientsSection({
   onSelectClient,
   // The "Leads for <pincode> · Change" button, shown at the right end of the tabs.
   locationAction = null,
-  // The server's subscription status: its `usage` (India builders) gives the open
-  // leads per location; a location at its limit takes no new request (the server
-  // refuses it too).
-  subscriptionStatus = null,
 }) {
   const { t } = useLanguage()
-  const usage = limitUsage(subscriptionStatus)
-  const leadRows = (usage?.leads || []).map((row) => leadUsage(subscriptionStatus, row.pincode)).filter(Boolean)
   // A supplier who has accepted belongs in My Suppliers, so the list below
   // leaves them out. The tab counts that same list rather than the raw leads;
   // counting the raw list is what made "Supplier Requests (3)" render a single
@@ -72,22 +64,6 @@ export function ContractorFindClientsSection({
           </div>
         )}
 
-        {activeFindClientTab === 'houseowners' && leadRows.length > 0 && (
-          <div className="mb-2.5 grid gap-2">
-            <div className="flex flex-wrap gap-2">
-              {leadRows.map((row) => (
-                <span key={row.pincode} className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-bold ${row.atLimit ? 'border-amber-300 bg-amber-50 text-amber-900' : 'border-slate-200 bg-slate-50 text-slate-700'}`}>
-                  <MapPin className="h-3.5 w-3.5" aria-hidden="true" />
-                  {row.limit ? t('subscription.usage.leads', { pincode: row.pincode, used: row.used, limit: row.limit, remaining: row.remaining }) : row.pincode}
-                </span>
-              ))}
-            </div>
-            {leadRows.filter((row) => row.atLimit).map((row) => (
-              <UpgradePrompt key={row.pincode} kind="leads" limit={row.limit} pincode={row.pincode} status={subscriptionStatus} compact />
-            ))}
-          </div>
-        )}
-
         {activeFindClientTab === 'houseowners' && (
           <HomeownerLeadList
             clientList={openOwnerClientList}
@@ -98,7 +74,6 @@ export function ContractorFindClientsSection({
             onRejectRequest={onRejectRequest}
             onSelectClient={onSelectClient}
             onSendRequest={(project) => onSendRequest(project, 'CONTRACTOR_TO_OWNER')}
-            subscriptionStatus={subscriptionStatus}
           />
         )}
 
@@ -116,7 +91,7 @@ export function ContractorFindClientsSection({
   )
 }
 
-function HomeownerLeadList({ clientList, clientRequestState, findClientRequest, sendingReceiverId, onAcceptRequest, onRejectRequest, onSelectClient, onSendRequest, subscriptionStatus = null }) {
+function HomeownerLeadList({ clientList, clientRequestState, findClientRequest, sendingReceiverId, onAcceptRequest, onRejectRequest, onSelectClient, onSendRequest }) {
   const { t, td } = useLanguage()
   const [quotingClientId, setQuotingClientId] = useState(null)
   const [quotationAmount, setQuotationAmount] = useState('')
@@ -208,8 +183,7 @@ function HomeownerLeadList({ clientList, clientRequestState, findClientRequest, 
               ) : (
                 <button
                   type="button"
-                  // A location at its open-lead limit takes no new request (the server refuses it too).
-                  disabled={sendingReceiverId === project.owner_id || requestSent || Boolean(leadUsage(subscriptionStatus, project.pincode)?.atLimit)}
+                  disabled={sendingReceiverId === project.owner_id || requestSent}
                   onClick={() => onSendRequest(project)}
                   className={cardButtonClass('primary')}
                 >

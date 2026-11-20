@@ -12,9 +12,6 @@ import {
   anOwnerLead,
   anOwnerRequest,
   builderDashboardServer,
-  freePlan,
-  planRequired,
-  professionalPlan,
 } from './builderTestData.js'
 
 const FIND = { timeout: 15000 }
@@ -46,22 +43,15 @@ describe('Builder dashboard: access', () => {
     renderApp('/contractor/requests', { auth: signedInAs(anAccount({ role, ...extra })) })
     await waitFor(() => expect(location.current.pathname).toBe(home))
   })
-
-  it('sends a builder whose paid sign-up is unpaid to the checkout first', async () => {
-    installFakeServer({ 'GET /subscriptions/plans': { data: { plans: [] } } })
-    renderApp('/contractor/projects', { auth: signedInAs({ ...BUILDER, subscription_checkout: { plan_code: 'PROFESSIONAL', duration_code: 'MONTHLY' } }) })
-    await waitFor(() => expect(location.current.pathname).toBe('/subscription-checkout'))
-  })
 })
 
 describe('Builder dashboard: home', () => {
-  it('greets the builder, shows the figures and reads the plan from the server', async () => {
-    const { server } = openBuilder('/contractor')
+  it('greets the builder and shows the figures', async () => {
+    openBuilder('/contractor')
     // Inside waitFor: the home re-renders as each of its calls answers.
     await waitFor(() => {
       expect(screen.getByText('Welcome, Ravi Builders')).toBeInTheDocument()
       expect(screen.getByText('Total Projects')).toBeInTheDocument()
-      expect(server.calls('GET /subscriptions/me').length).toBeGreaterThan(0)
     }, FIND)
   })
 })
@@ -115,42 +105,20 @@ describe('Builder dashboard: find clients', () => {
   })
 })
 
-describe('Builder dashboard: plan-gated features', () => {
-  it('shows the portfolio as a locked Premium feature on the Free plan', async () => {
-    openBuilder('/contractor/portfolio', { 'GET /builder/portfolio': planRequired('portfolio_dashboard') })
-    // The section re-renders when the dashboard's second load lands; check the settled view.
-    await waitFor(() => {
-      expect(screen.getByText('Premium feature')).toBeInTheDocument()
-      expect(screen.getByRole('button', { name: 'View plans' })).toBeInTheDocument()
-    }, FIND)
-    expect(screen.queryByRole('button', { name: /Download the CSV report/ })).not.toBeInTheDocument()
-  })
-
-  it('opens the portfolio and its project CSV on the Professional plan', async () => {
+describe('Builder dashboard: portfolio', () => {
+  it('opens the portfolio and its project CSV', async () => {
     const user = userEvent.setup()
     const createObjectURL = URL.createObjectURL
     URL.createObjectURL = () => 'blob:summary'
     const { server } = openBuilder('/contractor/portfolio', {
-      'GET /subscriptions/me': { data: professionalPlan() },
       'GET /builder/portfolio': { data: aPortfolio() },
       [`GET /projects/${PROJECT_ID}/summary.csv`]: { data: new Blob(['date,cost\n']) },
     })
     await user.click(await screen.findByRole('button', { name: 'Download the CSV report for Rao Family Home' }, FIND))
-    expect(screen.queryByText('Premium feature')).not.toBeInTheDocument()
     await waitFor(() => expect(server.calls(`GET /projects/${PROJECT_ID}/summary.csv`)).toHaveLength(1))
     URL.createObjectURL = createObjectURL
   })
 
-  it('shows the plan in force: Free, or Professional with its end date', async () => {
-    openBuilder('/contractor/subscription')
-    expect(await screen.findByText('Free plan', {}, FIND)).toBeInTheDocument()
-  })
-
-  it('shows an active Professional plan and when it ends', async () => {
-    openBuilder('/contractor/subscription', { 'GET /subscriptions/me': { data: professionalPlan() } })
-    expect(await screen.findByText('Valid until 1 Dec 2026', {}, FIND)).toBeInTheDocument()
-    expect(screen.getAllByText('PRO').length).toBeGreaterThan(0)
-  })
 })
 
 describe('Builder dashboard: team, projects and profile', () => {
@@ -187,7 +155,7 @@ describe('Builder profile page (/contractors/:contractorId)', () => {
   const profile = { id: BUILDER.id, name: 'Ravi Builders', role: 'BUILDER', company_name: 'Ravi Constructions', projects: [], reviews: [], rating: 4.5 }
 
   it.each(['OWNER', 'SUPPLIER'])("opens a builder's public profile for a %s", async (role) => {
-    const server = installFakeServer({ [`GET /contractors/${BUILDER.id}/profile`]: { data: profile }, 'GET /subscriptions/badges': { data: { badges: {} } } })
+    const server = installFakeServer({ [`GET /contractors/${BUILDER.id}/profile`]: { data: profile } })
     renderApp(`/contractors/${BUILDER.id}`, { auth: signedInAs(anAccount({ role })) })
     expect((await screen.findAllByText('Ravi Builders', {}, FIND)).length).toBeGreaterThan(0)
     expect(server.calls(`GET /contractors/${BUILDER.id}/profile`).length).toBeGreaterThan(0)
@@ -239,18 +207,8 @@ describe('Builder dashboard: Product Catalog (as the old app)', () => {
   })
 })
 
-describe('Builder dashboard: the PRO badge (as the old app)', () => {
-  it('shows no badge during the free first month, only the days left of it', async () => {
-    const trial = freePlan({ status: 'TRIAL', free_access_until: new Date(Date.now() + 20 * 86400000).toISOString(), features: professionalPlan().features })
-    openBuilder('/contractor', { 'GET /subscriptions/me': { data: trial } })
-    expect(await screen.findByText('Welcome, Ravi Builders', {}, FIND)).toBeInTheDocument()
-    expect(await screen.findByText(/Free access: \d+ day\(s\) left/, {}, FIND)).toBeInTheDocument()
-    expect(screen.queryByText('PRO')).not.toBeInTheDocument()
-  })
-
-  it('shows PRO once a paid Professional plan is in force', async () => {
-    openBuilder('/contractor', { 'GET /subscriptions/me': { data: professionalPlan() } })
-    expect(await screen.findByText('Welcome, Ravi Builders', {}, FIND)).toBeInTheDocument()
-    expect(await screen.findAllByText('PRO', {}, FIND)).not.toHaveLength(0)
-  })
+it('opens the dashboard from the former subscription address', async () => {
+  openBuilder('/contractor/subscription')
+  expect(await screen.findByText('Welcome, Ravi Builders', {}, FIND)).toBeInTheDocument()
+  expect(screen.queryByText('Plan & billing')).not.toBeInTheDocument()
 })

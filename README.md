@@ -86,6 +86,17 @@ The commands are for Windows PowerShell, from the repository root. On macOS or L
 
    After a pull that adds a migration, run `python scripts\migrate.py` again. For example, Professional revision 0006 (16 Nov 2026) removes the Store Manager role: it drops the seven store tables and their data, and leaves Site Engineer as the only engineer category.
 
+   Professional revision `0009` adds purchase request keys and goods receipt timestamps. Apply it before starting the updated Professional API. The normal migration runner also handles dependencies on Partner's schema.
+
+   Financial cutover is a separate deployment. Before retiring the remaining reconciliation endpoints, jobs, or tables, reconcile historical records against every originating Razorpay account, confirm the approved retention location, and verify a restricted archive by restoring it on an isolated instance. Record the final cutoff, archive digests and restored row counts. Report unresolved payments, refunds and settlements for disposition before any drop. Preserve operational purchase orders and items, bookings, and `site_payments`. A downgrade of `0009` is guarded once request keys or receipt timestamps exist.
+
+   The retirement revision will follow `0009` once that review is complete. Check foreign keys against the target schema, then use explicit Alembic operations without `CASCADE`:
+
+   - Drop `subscription_coupon_redemptions` and `builder_subscriptions` before `subscription_payments` and `subscription_coupons`. Drop `subscription_plan_prices` and `payment_webhook_events`. Remove `ck_builder_profiles__signup_plan`, then `signup_plan_code` and `signup_duration_code`.
+   - Drop `purchase_payment_attempts` before `purchase_payments`. Drop `purchase_gateway_events`. Preserve the IDs and relationships of submitted purchase orders and their items.
+   - Drop `booking_payment_receipts`, `booking_payment_transactions`, and `booking_payment_orders` in that order. The final drop removes the payment-side foreign key to Partner bookings.
+   - Remove the corresponding payment-only models, jobs, endpoints and gateway settings in the same cutover. A schema downgrade alone cannot restore archived data.
+
    `python scripts\migrate.py --down` removes everything again
 , in reverse order. Running `alembic upgrade head` in `professional\backend` alone stops at revision 0002 with a message to migrate Partner first, and applies nothing; Partner on its own refuses to start before Professional (MG-01).
 

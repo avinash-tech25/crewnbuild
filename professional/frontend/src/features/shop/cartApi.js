@@ -24,4 +24,4 @@ export const addCartItem = (projectId, productId, quantity) =>
 export const updateCartItem = (itemId, quantity) => runMutation(endpoints.updateItem, { itemId, quantity })
 export const removeCartItem = (itemId) => runMutation(endpoints.removeItem, itemId)
 export const clearCart = (projectId) => runMutation(endpoints.clearCart, projectId)
-export const checkoutCart = (projectId, supplierId) => runMutation(endpoints.checkout, { project_id: projectId, supplier_id: supplierId })
+export const checkoutCart = (projectId, supplierId, requestKey) => runMutation(endpoints.checkout, { project_id: projectId, supplier_id: supplierId, request_key: requestKey })

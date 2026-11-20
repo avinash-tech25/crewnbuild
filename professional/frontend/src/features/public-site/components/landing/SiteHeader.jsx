@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { ArrowRight, BadgeCheck, Crown, Globe, Handshake, LayoutGrid, Menu, Phone, Users, Workflow, X } from "lucide-react";
+import { ArrowRight, BadgeCheck, Globe, Handshake, LayoutGrid, Menu, Phone, Users, Workflow, X } from "lucide-react";
 import { Brand, smallButtonClass } from "./shared.jsx";
 import SessionNav from "../../../../shared/ui/SessionNav.jsx";
 import { useAccountLinks } from "../../../../shared/auth/sessionLinks.js";
@@ -241,16 +241,6 @@ export function SiteHeader({ text, brandHref = "#top" }) {
           <a className={linkClass} href={sectionHref("how")} onClick={() => setMenuOpen(false)}><Workflow {...navIconProps} />{text.nav.how}</a>
           {!menuMode && <NavRule className={navLinkRuleClass} />}
           <a className={linkClass} href={sectionHref("world")} onClick={() => setMenuOpen(false)}><LayoutGrid {...navIconProps} />{text.nav.world}</a>
-          {!menuMode && <NavRule className={navLinkRuleClass} />}
-          {/* View Plans: the builder plans section further down this page. */}
-          <a
-            className="inline-flex items-center justify-center gap-1.5 rounded-full bg-emerald-600 px-3.5 py-1.5 text-white transition-colors duration-200 hover:bg-emerald-700 max-wide:my-[10px] max-wide:py-[10px] max-wide:text-xs"
-            // The section lives on the home page; elsewhere (calculators, contact) go there.
-            href={brandHref === "#top" ? "#plans" : "/#plans"}
-            onClick={() => setMenuOpen(false)}
-          >
-            <Crown {...navIconProps} /> {text.nav.plans}
-          </a>
           {!menuMode && <NavRule className={navLinkRuleClass} />}
           <a
             className={`${linkClass} ${menuMode ? "border-b-0" : ""} ${onContactPage ? `text-oc-deep ${menuMode ? "" : "relative after:absolute after:inset-x-0 after:-bottom-[7px] after:h-[3px] after:rounded-full after:bg-oc-amber"}` : ""}`}

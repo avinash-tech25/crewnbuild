@@ -66,7 +66,6 @@ export const ownerDashboardServer = (overrides = {}) => ({
   'GET /notifications': { data: [] },
   'GET /ads': { data: [] },
   'GET /shop/products': { data: [] },
-  'GET /payments/technician-bookings': { data: [] },
   'GET /owners/projects': { data: [] },
   'GET /messages/conversations': { data: [] },
   'GET /cart': { data: { groups: [], item_count: 0 } },

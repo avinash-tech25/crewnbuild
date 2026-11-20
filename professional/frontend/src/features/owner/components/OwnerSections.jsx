@@ -26,7 +26,6 @@ import { OWNER_REQUEST_TYPES, findClientRequest as findBuilderRequest } from '..
 import ProfileImageHint from '../../../shared/ui/ProfileImageHint.jsx'
 import { PROFILE_IMAGE_ACCEPT } from '../../../shared/utils/profileImageRules.js'
 import { ratingLabel } from '../../../shared/utils/ratingLabel.js'
-import { BuilderTierBadge } from '../../billing/subscription/TierBadge.jsx'
 import { counterpartyRole, partyHeading, supplierCategoryLabel } from '../../requests/counterparty.js'
 import PartyDetails from '../../requests/components/PartyDetails.jsx'
 
@@ -680,7 +679,7 @@ export function OwnerContractorsSection({ requestMessage, contractorList, sendin
                       <button type="button" onClick={() => onViewProfile(contractor)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
                         <EntityAvatar user={contractor} role="BUILDER" alt={builderName} />
                         <span className="min-w-0">
-                          <span className="flex min-w-0 items-center gap-1.5"><span className="truncate font-bold text-oc-ink hover:underline">{builderName}</span><BuilderTierBadge builderId={contractor.user_id} /></span>
+                          <span className="flex min-w-0 items-center gap-1.5"><span className="truncate font-bold text-oc-ink hover:underline">{builderName}</span></span>
                           {companyName && <span className="block truncate text-xs uppercase text-oc-faint">{companyName}</span>}
                         </span>
                       </button>
@@ -788,7 +787,6 @@ export function OwnerContractorsSection({ requestMessage, contractorList, sendin
                 chips={[
                   newlyJoined && <CardChip key="new" tone="green" icon={Sparkles}>{t('dash.owner.contractors.newlyJoined')}</CardChip>,
                   contractor.is_verified === true && <CardChip key="verified" tone="blue" icon={BadgeCheck}>{t('dash.common.verified')}</CardChip>,
-                  <BuilderTierBadge key="tier" builderId={contractor.user_id} />,
                   ...serviceChips(contractor.services_offered),
                 ]}
                 secondary={(

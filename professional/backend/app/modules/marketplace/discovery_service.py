@@ -17,6 +17,7 @@ from sqlalchemy import desc, func, or_, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.local_time import local_iso
+from app.modules.accounts import lead_locations
 from app.modules.accounts.models import BuilderProfile, EngineerProfile, OwnerProfile, SupplierProfile
 from app.modules.accounts.profile_completion import profile_complete
 from app.modules.accounts.profile_lists import read_completed_project_details, split_profile_list
@@ -27,7 +28,6 @@ from app.modules.accounts.profile_payloads import (
     supplier_profile_payload,
 )
 from app.modules.admin.scope import refuse_kuwait
-from app.modules.billing import lead_locations
 from app.modules.catalog.models import CatalogProduct, CatalogSubcategory
 from app.modules.files.file_access import admin_may_view_account_documents, can_view_account_documents
 from app.modules.identity.models import ROLE_BUILDER, ROLE_ENGINEER, ROLE_OWNER, ROLE_SUPPLIER, User

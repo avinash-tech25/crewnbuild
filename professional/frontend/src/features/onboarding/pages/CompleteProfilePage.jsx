@@ -24,8 +24,6 @@ import { useLanguage } from '../../../i18n/LanguageContext.jsx'
 import { floorCountFor } from '../../../shared/utils/floorOptions.js'
 import { DOCUMENT_TYPE_KEYS, optionLabel } from '../../../i18n/optionKeys.js'
 import { lookupPincodeArea } from '../locationApi.js'
-import useBuilderSubscription from '../../billing/subscription/useBuilderSubscription.js'
-import { locationUsage, maxLocationsMessage, promptPlan, serviceLocationCap as locationCapFor } from '../../billing/subscription/planLimits.js'
 import { branchLocationEntry } from '../../billing/subscription/locationEntries.js'
 
 // The account's role code as the role name the rest of the app shows.
@@ -133,9 +131,7 @@ export default function CompleteProfilePage() {
   const contractorSubmitIntentRef = useRef(false)
   const isContractorRole = user?.role === 'BUILDER'
   // India builders add each service location by its pincode (leads are matched on
-  // it), within their plan's location limit (the server's `usage`; null =
-  // unlimited). Elsewhere the existing free-text, up-to-3 list is unchanged.
-  const builderSubscription = useBuilderSubscription({ enabled: isContractorRole })
+  // it), with no limit. Elsewhere the existing free-text, up-to-3 list is unchanged.
   const pincodeLocations = isContractorRole && String(profileCountry).trim().toLowerCase() === 'india'
   const [locationLookupBusy, setLocationLookupBusy] = useState(false)
   const isSupplierRole = user?.role === 'SUPPLIER'
@@ -446,9 +442,8 @@ export default function CompleteProfilePage() {
   }
 
   const savedLocationCount = serviceLocationInputs.filter((location) => location.trim()).length
-  const serviceLocationUsage = pincodeLocations ? locationUsage(builderSubscription.status, savedLocationCount) : null
-  // The cap the add button keeps to (planLimits.serviceLocationCap).
-  const serviceLocationCap = locationCapFor(serviceLocationUsage, pincodeLocations)
+  // India builders may add any number of locations; elsewhere the existing 3.
+  const serviceLocationCap = pincodeLocations ? null : 3
   // The post offices the typed pincode resolved to (India builders), one of which
   // the builder picks to add.
   const [locationBranches, setLocationBranches] = useState([])
@@ -458,9 +453,8 @@ export default function CompleteProfilePage() {
   }
   const serviceLocationsFull = () => {
     if (serviceLocationCap === null || savedLocationCount < serviceLocationCap) return false
-    // The plan's own cap (1 on Free, 3 on Pro; Plus and Premium never reach here).
-    const message = maxLocationsMessage(serviceLocationCap)
-    setValidationErrors((currentErrors) => ({ ...currentErrors, service_locations: t(message.key, message.values) }))
+    // Keep the existing location limit for the free-text field.
+    setValidationErrors((currentErrors) => ({ ...currentErrors, service_locations: t('cp.msg.maxLocations') }))
     return true
   }
 
@@ -796,8 +790,7 @@ export default function CompleteProfilePage() {
     addContractorServiceLocation, removeContractorServiceLocation,
     contractorLocationDraft, setContractorLocationDraft: updateContractorLocationDraft,
     locationBranches, addServiceLocationBranch,
-    pincodeLocations, locationLookupBusy, serviceLocationUsage, serviceLocationCap,
-    locationPlan: promptPlan(builderSubscription.status), builderSubscriptionStatus: builderSubscription.status,
+    pincodeLocations, locationLookupBusy,
     galleryImagePreviews, galleryImageUrls, removeGalleryImage, documentUploads, documentUploadStatus,
     selectedSupplierCategories, setSelectedSupplierCategories, savedSupplierCategory, clearValidationError,
     savedProfileState, missingContractorFields, contractorStepSequence,

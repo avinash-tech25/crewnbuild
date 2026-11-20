@@ -248,7 +248,7 @@ export function DashboardTopbar({ searchValue, onSearchChange, searchPlaceholder
         {/* Shrinkable so that, when the bar is crowded (tablets, long names, the
             Site Engineer's Live Camera button), the account name truncates
             instead of the group running off the right edge of the screen. */}
-        <div className="ml-auto flex min-w-0 items-center gap-2.5 sm:gap-3">
+        <div className="ml-auto flex min-w-0 items-center gap-2.5 max-sm:flex-wrap max-sm:justify-end max-sm:gap-1.5 sm:gap-3">
           {/* Optional control placed just left of the language selector (the
               Site Engineer's Live Camera button). Absent on every other console. */}
           {beforeLanguage}

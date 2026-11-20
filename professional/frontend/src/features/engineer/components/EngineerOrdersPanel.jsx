@@ -1,5 +1,5 @@
 /**
- * The Site Engineer's Orders screen (Suppliers > Orders).
+ * Earlier material requests. Site Engineers reach these from their top-level Orders page.
  *
  * Same data and behaviour as the shared OrdersPanel -- the same
  * /material-requests/mine feed, grouped by request code into one order per

@@ -58,6 +58,6 @@ def test_no_lock_is_left_behind() -> None:
 
 def test_the_professional_jobs() -> None:
     jobs = {job.name: job.interval_seconds for job in run_scheduler.build_jobs()}
-    assert jobs["subscription_renewal_sweep"] == 60 * 60
+    # No payment jobs: subscriptions and marketplace payments were removed.
+    assert set(jobs) == {"weather_alert_monitor", "rate_limit_purge"}
     assert jobs["rate_limit_purge"] == 3600
-    assert "weather_alert_monitor" in jobs

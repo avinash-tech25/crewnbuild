@@ -23,7 +23,6 @@ import { PlatformSection } from '../components/landing/PlatformSection.jsx'
 import { WorldSection } from '../components/landing/WorldSection.jsx'
 import { SiteFooter } from '../components/landing/SiteFooter.jsx'
 import AdSlot from '../../../shared/ui/AdSlot.jsx'
-import PlansSection from '../../billing/subscription/PlansSection.jsx'
 
 const HERO_ROTATION_MS = 5200
 
@@ -80,8 +79,6 @@ export default function Home() {
         <RolesSection text={text} isArabic={isArabic} activeIndex={activeRole} onSelect={setActiveRole} />
         <HowItWorksSection text={text} isArabic={isArabic} />
         <PlatformSection text={text} isArabic={isArabic} />
-        {/* Builder plans (#plans), linked from the header's View Plans. */}
-        <PlansSection />
         <WorldSection text={text} isArabic={isArabic} />
         {/* Renders nothing at all when no advert is running here. */}
         <AdSlot placement="home" position="footer" className="mx-auto w-full max-w-5xl px-4 pb-10" />

@@ -26,6 +26,5 @@ def published_products_by_supplier(
 
 
 def delete_project_orders(database: Session, project_id: uuid.UUID) -> None:
-    """The project's purchase orders and their lines go with a deleted project, as the
-    old purge removed them."""
+    """Delete the project's purchase requests with it."""
     database.execute(delete(PurchaseOrder).where(PurchaseOrder.project_id == project_id))

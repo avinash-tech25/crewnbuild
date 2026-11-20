@@ -30,9 +30,11 @@ describe('Site Engineer tabs in the address', () => {
     expect(location.current.search).toBe('?tab=contractors')
   })
 
-  it('opens the Suppliers hub on Orders from ?tab=orders (where a notification links)', async () => {
-    openEngineer('/engineer/my-supplies?tab=orders')
-    expect(await screen.findByRole('button', { name: /^Orders/, pressed: true }, FIND)).toBeInTheDocument()
+  it('opens top-level Orders from an older Suppliers link', async () => {
+    openEngineer('/engineer/my-supplies?tab=orders', { 'GET /marketplace/orders': { data: [] } })
+    expect(await screen.findByRole('heading', { level: 2, name: 'Orders' }, FIND)).toBeInTheDocument()
+    expect(location.current.pathname).toBe('/engineer/orders')
+    expect(new URLSearchParams(location.current.search).get('tab')).toBeNull()
   })
 })
 
@@ -124,12 +126,16 @@ describe('Suppliers hub tabs keep their own list choice', () => {
     await waitFor(() => expect(location.current.search).toBe('?tab=equipment'))
   })
 
-  it("drops Orders' ?list= when another Material tab opens", async () => {
+  it("keeps an older order filter on redirect and clears it when returning to Suppliers", async () => {
     const user = userEvent.setup()
-    openEngineer('/engineer/my-supplies?tab=orders&list=previous')
-    await screen.findByRole('button', { name: /^Orders/, pressed: true }, FIND)
-    await user.click(screen.getByRole('button', { name: /^Suppliers/, pressed: false }))
-    await waitFor(() => expect(location.current.search).toBe('?tab=suppliers'))
+    openEngineer('/engineer/my-supplies?tab=orders&list=previous', { 'GET /marketplace/orders': { data: [] } })
+    await screen.findByRole('heading', { level: 2, name: 'Orders' }, FIND)
+    expect(location.current.pathname).toBe('/engineer/orders')
+    expect(new URLSearchParams(location.current.search).get('list')).toBe('previous')
+    await user.click(screen.getByRole('button', { name: 'Suppliers' }))
+    expect(await screen.findByRole('button', { name: /Material Suppliers/ }, FIND)).toBeInTheDocument()
+    expect(location.current.pathname).toBe('/engineer/my-supplies')
+    expect(location.current.search).toBe('')
   })
 })
 

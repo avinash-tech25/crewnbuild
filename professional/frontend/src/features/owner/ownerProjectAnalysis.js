@@ -38,12 +38,6 @@ export function analysisFigures(dashboard) {
   }
 }
 
-// Subscription refusals the API sends as {detail: {code, message}}: the builder's
-// own plan, or (for the owner) the project's builder's plan.
-const SUBSCRIPTION_CODES = new Set([
-  'SUBSCRIPTION_REQUIRED', 'SUBSCRIPTION_EXPIRED', 'PLAN_UPGRADE_REQUIRED', 'FREE_ACCESS_EXPIRED', 'BUILDER_SUBSCRIPTION_EXPIRED',
-])
-
 /**
  * Why the analysis did not load, keeping the backend's own words. `kind` picks
  * the message key (owner.analysis.err.<kind>); `message` is the server's detail,
@@ -57,8 +51,7 @@ export function analysisError(error) {
   const code = detail && typeof detail === 'object' ? detail.code || null : null
   const message = typeof detail === 'string' ? detail : (detail && typeof detail === 'object' ? detail.message || '' : '')
   let kind = 'unknown'
-  if (code && SUBSCRIPTION_CODES.has(code)) kind = 'subscription'
-  else if (status === 401) kind = 'session'
+  if (status === 401) kind = 'session'
   else if (status === 403) kind = 'forbidden'
   else if (status === 404) kind = 'notFound'
   else if (status >= 500) kind = 'server'

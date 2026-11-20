@@ -243,21 +243,6 @@ class Settings(BaseSettings):
     support_response_time: str = ""
     support_max_tickets_per_hour: int = 5
 
-    # ---- Razorpay (was PaymentGatewaySettings) ----
-    razorpay_mode: str = "test"
-    razorpay_key_id: str = ""
-    razorpay_key_secret: SecretStr = Field(default=SecretStr(""), repr=False)
-    razorpay_webhook_secret: SecretStr = Field(default=SecretStr(""), repr=False)
-    razorpay_api_base_url: str = "https://api.razorpay.com/v1"
-    razorpay_timeout_seconds: float = 10.0
-    # Local simulated checkout while no keys exist; production refuses to start with it.
-    razorpay_allow_mock: bool = False
-
-    # ---- Builder subscriptions (was SubscriptionSettings) ----
-    subscription_grace_days: int = Field(default=0, ge=0, le=60)
-    subscription_reminder_days: int = Field(default=3, ge=0, le=60)
-    subscription_sweep_interval_minutes: int = Field(default=60, ge=0, le=1440)
-
     # ---- Weather (was WeatherSettings) ----
     weather_api_provider: str = "open-meteo"
     weather_api_key: SecretStr = Field(default=SecretStr(""), repr=False)
@@ -336,8 +321,6 @@ OPTIONAL_SECRET_FIELDS = (
     "camera_credentials_key",
     "cctv_media_gateway_api_secret",
     "openai_api_key",
-    "razorpay_key_secret",
-    "razorpay_webhook_secret",
     "weather_api_key",
 )
 # Public identifiers that come in a pair with a secret above; a placeholder is treated
@@ -346,7 +329,6 @@ OPTIONAL_PLACEHOLDER_FIELDS = (
     "google_client_id",
     "microsoft_client_id",
     "aws_access_key_id",
-    "razorpay_key_id",
     "global_admin_phone",
 )
 
@@ -428,8 +410,6 @@ def validate_development_flags(configured: Settings) -> None:
         raise InsecureConfigurationError(
             "TEST_OTP_LOGIN_ENABLED=true is only allowed with ENVIRONMENT=development, test or staging."
         )
-    if configured.razorpay_allow_mock and configured.is_production():
-        raise InsecureConfigurationError("RAZORPAY_ALLOW_MOCK=true is not allowed with ENVIRONMENT=production.")
 
 
 def validate_test_otp_codes(configured: Settings) -> None:

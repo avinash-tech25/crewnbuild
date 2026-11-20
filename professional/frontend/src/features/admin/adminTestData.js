@@ -4,7 +4,7 @@ import { anAccount } from '../../test/fakeServer.js'
 export const ALL_PERMISSIONS = [
   'users.view', 'users.suspend', 'projects.view', 'verification.view', 'verification.decide', 'reports.view',
   'reports.resolve', 'audit.view', 'ads.view', 'ads.manage', 'admins.manage', 'catalog.view', 'catalog.manage',
-  'coupons.view', 'coupons.manage', 'subscriptions.view', 'deletions.view', 'deletions.manage', 'support.view', 'support.manage',
+  'deletions.view', 'deletions.manage', 'support.view', 'support.manage',
 ]
 
 const ROLE_OF = { global: 'GLOBAL_SUPER_ADMIN', location: 'LOCATION_SUPER_ADMIN', manager: 'MANAGER' }

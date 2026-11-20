@@ -9,7 +9,7 @@ from fastapi import FastAPI
 
 from app.api.v1.router import api_router
 from app.core.config import Settings, get_settings
-from app.core.errors import register_error_handlers
+from app.core.errors import handle_unexpected_error, register_error_handlers
 from app.core.logging import configure_logging
 from app.core.middleware import add_middleware
 from app.core.security.csrf_protection import CsrfProtectionMiddleware
@@ -37,7 +37,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     # Added first, so it runs inside CORS and the request ID (add_middleware): a CSRF
     # refusal still carries both.
     app.add_middleware(CsrfProtectionMiddleware, settings=settings)
-    add_middleware(app, settings)
+    add_middleware(app, settings, handle_unexpected_error)
     register_error_handlers(app)
     app.include_router(api_router, prefix=API_PREFIX)
 

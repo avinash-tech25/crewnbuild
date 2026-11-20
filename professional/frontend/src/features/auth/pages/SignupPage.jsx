@@ -36,15 +36,12 @@ import { usePhoneConfig } from '../../../shared/hooks/usePhoneConfig.js'
 import { isValidPhoneForCountry, postSignupPath } from '../../../shared/auth/accountPaths.js'
 import { signupWithProfile } from '../../../shared/auth/authSlice.js'
 import { useLanguage } from '../../../i18n/LanguageContext.jsx'
-import { clearPendingPlan, savePendingPlan } from '../../billing/subscription/pendingPlan.js'
-import PlansSection from '../../billing/subscription/PlansSection.jsx'
-import { isFreeBuilderSignupLink, keepsRememberedPlan, offersSignupPlanStep, planFromSignupLink, signupPagePlan, signupPlanFields, signupRole, signupRoleFromLink } from '../../billing/subscription/signupPlanFlow.js'
-import { offerNameKey } from '../../billing/subscription/subscriptionOffers.js'
+import { signupRoleFromLink } from '../signupRole.js'
 import { LegalDialog } from '../../legal/components/LegalDialog.jsx'
 import { LEGAL_DOCUMENTS, legalAcceptanceFields } from '../../legal/legalDocuments.js'
 
 // The roles a visitor can register as. A /signup?role= link preselects one of them
-// (signupPlanFlow.signupRoleFromLink: the landing key or the role code).
+// (signupRole.signupRoleFromLink: the landing key or the role code).
 const SIGNUP_ROLES = [
   { apiRole: 'OWNER', labelKey: 'role.owner', image: '/landing/roles/home.png' },
   { apiRole: 'BUILDER', labelKey: 'role.contractor', image: '/landing/roles/builder.png' },
@@ -56,29 +53,9 @@ export default function SignupPage() {
   const { t, translateMessage } = useLanguage()
   const [searchParams] = useSearchParams()
   const inviteCode = (searchParams.get('invite') || '').trim().toUpperCase()
-  // A paid builder plan named by the link (?plan=&billing=, from a landing plan
-  // card). Such a sign-up is a builder sign-up: the role is fixed to Builder, so the
-  // plan can never be dropped by picking another role. Other links choose freely.
-  const [linkPlan] = useState(() => planFromSignupLink(searchParams.get('plan'), searchParams.get('billing')))
-  // The Free Builder card (?plan=FREE): a builder sign-up as well, with the role
-  // fixed to Builder for this flow, but no plan to pay for. A plain /signup, with or
-  // without ?role=, keeps the role selector free.
-  const [freeBuilderFlow] = useState(() => isFreeBuilderSignupLink(searchParams.get('plan')))
-  const roleLocked = Boolean(linkPlan) || freeBuilderFlow
   const linkRole = signupRoleFromLink(searchParams.get('role'))
-  const [selectedApiRole, setSelectedApiRole] = useState(() => signupRole(linkRole, linkPlan, freeBuilderFlow))
-  // The link's role is applied again whenever it changes while this page stays
-  // mounted (a client-side move to another /signup?role= link, such as the footer
-  // builder link or the invite redirect), so a stale earlier choice never wins. A
-  // role picked by hand is kept until the link itself names another.
-  useEffect(() => { setSelectedApiRole(signupRole(linkRole, linkPlan, freeBuilderFlow)) }, [linkRole, linkPlan, freeBuilderFlow])
-  // A builder plan chosen on the landing page (?plan=&billing=). Only remembered:
-  // the account is created exactly as before, and the builder's Plan & billing page
-  // offers the plan for payment afterwards. Nothing is charged or activated here.
-  const [pendingPlan] = useState(() => {
-    savePendingPlan(searchParams.get('plan'), searchParams.get('billing'))
-    return signupPagePlan(linkPlan)
-  })
+  const [selectedApiRole, setSelectedApiRole] = useState(linkRole)
+  useEffect(() => { setSelectedApiRole(linkRole) }, [linkRole])
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -95,10 +72,6 @@ export default function SignupPage() {
   // Reading it accepts nothing; only the checkbox does.
   const [openDocument, setOpenDocument] = useState(null)
   const [signupAlert, setSignupAlert] = useState('')
-  // Get Started builder sign-up: Create Account first shows the builder plans, and
-  // the account is created only once one is chosen, carrying a paid choice exactly
-  // as a landing plan card's link does (server-recorded, paid at checkout).
-  const [choosingPlan, setChoosingPlan] = useState(false)
   // One account per click: set before the request leaves, cleared only if it fails.
   const submitting = useRef(false)
   const dispatch = useDispatch()
@@ -135,24 +108,16 @@ export default function SignupPage() {
       setSignupAlert(validationMessage)
       return
     }
-    if (offersSignupPlanStep(phoneFirst, selectedApiRole, roleLocked)) {
-      setSignupAlert('')
-      setChoosingPlan(true)
-      return
-    }
-    createAccount(null)
+    createAccount()
   }
 
-  // chosenPlan: the paid plan picked on the Get Started plan step, else null (a
-  // Free Builder choice, or any sign-up without that step).
-  const createAccount = async (chosenPlan) => {
+  const createAccount = async () => {
     if (submitting.current || status === 'loading') return
 
     // Address and pincode (and a phone left blank here) are collected on the
     // Complete Profile screen, which is reached later — only when an action
     // actually needs them — rather than immediately after signing up.
-    const role = signupRole(selectedApiRole, linkPlan, freeBuilderFlow)
-    const plan = pendingPlan || chosenPlan
+    const role = selectedApiRole
     const roleDefaults = {
       role,
       building_type: 'RESIDENTIAL',
@@ -165,9 +130,6 @@ export default function SignupPage() {
       experience_years: 0,
       store_name: name.trim(),
       categories: '',
-      // The paid plan chosen on the plans page: the account then pays for it at
-      // checkout before the dashboard. The server ignores it for other roles.
-      ...signupPlanFields(role, plan),
       // The consent box was ticked (validateSignupForm): accept_terms and the
       // versions of the Terms and Privacy Policy accepted.
       ...legalAcceptanceFields(),
@@ -190,15 +152,9 @@ export default function SignupPage() {
     const result = await dispatch(signupWithProfile(details))
     if (!result.payload?.user) {
       submitting.current = false
-      // Back to the form, where the reason (e.g. the number is already registered)
-      // can be acted on.
-      setChoosingPlan(false)
       setSignupAlert(translateMessage(result.payload || errorMessage) || t('validation.signupFailed'))
       return
     }
-    // Builder plans are for builders, and only for a paid sign-up: another role, or
-    // a free builder sign-up, does not carry an earlier choice on.
-    if (!keepsRememberedPlan(role, plan)) clearPendingPlan()
     if (role === 'ENGINEER' && inviteCode) {
       try {
         window.localStorage.setItem('crewnbuild_pending_invite', inviteCode)
@@ -219,15 +175,6 @@ export default function SignupPage() {
     return text.includes('already registered') || text.includes('already in use')
   }) || signupAlert === t('error.emailRegistered')
 
-  const planNote = pendingPlan && selectedApiRole === 'BUILDER' && (
-    <p role="note" className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-[11px] font-bold text-emerald-900">
-      {t('subscription.signup.selected', {
-        plan: t(offerNameKey(pendingPlan.planCode, pendingPlan.durationCode)),
-        duration: t(`subscription.duration.${pendingPlan.durationCode}`),
-      })}
-    </p>
-  )
-
   const nameField = (
     <AuthField
       label={t('signup.fullName')}
@@ -246,21 +193,10 @@ export default function SignupPage() {
       <AuthRolePicker
         label={phoneFirst ? t('signup.joiningAs') : t('signup.joinAs')}
         value={selectedApiRole}
-        onChange={(value) => { if (roleLocked) return; setSelectedApiRole(value); setSignupAlert('') }}
+        onChange={(value) => { setSelectedApiRole(value); setSignupAlert('') }}
         options={SIGNUP_ROLES.map((role) => ({ key: role.apiRole, title: t(role.labelKey), image: role.image }))}
-        locked={roleLocked}
         required
       />
-      {roleLocked && (
-        // A full page load, so the sign-up starts again without the plan link.
-        <p className="-mt-1 text-[11px] font-semibold text-oc-muted">
-          {t('subscription.signup.roleLocked')}{' '}
-          <a href="/signup" onClick={clearPendingPlan} className="font-extrabold text-oc-green hover:underline">
-            {t('subscription.signup.withoutPlan')}
-          </a>
-        </p>
-      )}
-
       {inviteCode && selectedApiRole === 'ENGINEER' && (
         <div className="flex items-center justify-between gap-3 rounded-xl border border-ocbrand-100 bg-ocbrand-50 px-4 py-2.5">
           <div>
@@ -318,44 +254,10 @@ export default function SignupPage() {
 
   const submitClass = `${buttonClass} mt-1 w-full disabled:opacity-45 disabled:hover:translate-y-0 disabled:hover:bg-oc-green`
 
-  // The form stays mounted (only hidden) behind the plan step, so Back returns to
-  // it exactly as left, the WhatsApp check still shown as verified.
-  let planStep = null
-  if (choosingPlan) {
-    // The landing page's own plans section; a paid choice is remembered like a
-    // landing card's (the dashboard's Plan & billing offers it) and is recorded by
-    // the server at sign-up, to be paid at checkout after the pincode step.
-    const choosePaid = (planCode, durationCode) => {
-      savePendingPlan(planCode, durationCode)
-      createAccount(planFromSignupLink(planCode, durationCode))
-    }
-    planStep = (
-      <main className="min-h-svh bg-oc-paper text-oc-ink">
-        <div className="mx-auto max-w-6xl px-4 pt-6">
-          <button
-            type="button"
-            disabled={status === 'loading'}
-            onClick={() => setChoosingPlan(false)}
-            className="text-xs font-extrabold text-oc-green hover:underline disabled:opacity-45"
-          >
-            {t('signup.flow.back')}
-          </button>
-          {status === 'loading' && (
-            <p role="status" className="mt-3 flex items-center gap-2 text-xs font-bold text-oc-muted">
-              <Loader2 size={14} className="animate-spin" />{t('signup.loading')}
-            </p>
-          )}
-        </div>
-        <PlansSection onChoose={choosePaid} onChooseFree={() => createAccount(null)} busy={status === 'loading'} />
-      </main>
-    )
-  }
-
   return (
     <>
-    {planStep}
     {openDocument && <LegalDialog doc={LEGAL_DOCUMENTS[openDocument]} onClose={() => setOpenDocument(null)} />}
-    <div hidden={choosingPlan}>
+    <div>
     <AuthShell
       eyebrow={t('signup.eyebrow')}
       headline={t('signup.start')}
@@ -368,7 +270,6 @@ export default function SignupPage() {
       ) : phoneFirst ? (
         // Phone-first: one column, in this order, nothing hidden behind steps.
         <form className="mt-4 flex flex-col gap-[11px]" onSubmit={submitSignup} noValidate>
-          {planNote}
           {nameField}
           {roleFields}
           <PhoneVerification
@@ -393,7 +294,6 @@ export default function SignupPage() {
            picker now sits below name and e-mail, and the picker carries its own
            label, so the line was both wrong and spending height the form needs. */
         <form className="mt-4 flex flex-col gap-[9px]" onSubmit={submitSignup}>
-          {planNote}
           {nameField}
 
           <AuthField

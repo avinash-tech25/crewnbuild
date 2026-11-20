@@ -53,9 +53,9 @@ export const emptyCart = cartThunk('emptyCart', (projectId) => clearCart(project
 
 export const sendBuyRequest = createAsyncThunk(
   'cart/sendBuyRequest',
-  async ({ projectId, supplierId }, { rejectWithValue }) => {
+  async ({ projectId, supplierId, requestKey }, { rejectWithValue }) => {
     try {
-      return await checkoutCart(projectId, supplierId)
+      return await checkoutCart(projectId, supplierId, requestKey)
     } catch (error) {
       return rejectWithValue(apiErrorMessage(error, 'Unable to send the buy request.'))
     }

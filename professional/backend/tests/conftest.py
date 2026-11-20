@@ -42,7 +42,6 @@ os.environ["ENVIRONMENT"] = "test"
 os.environ["DATABASE_URL"] = TEST_DATABASE_URL
 os.environ["JWT_SECRET_KEY"] = JWT_SECRET
 os.environ["TEST_OTP_LOGIN_ENABLED"] = "false"
-os.environ["RAZORPAY_ALLOW_MOCK"] = "false"
 
 # From here on no Settings object reads backend/.env.
 from app.core.config import Settings, check_settings, get_settings  # noqa: E402
@@ -80,13 +79,31 @@ def database_tables() -> Iterator[None]:
     with engine.connect() as connection:
         if connection.execute(text("SELECT current_database()")).scalar() != TEST_DATABASE_NAME:
             raise RuntimeError(f"Tests run only against {TEST_DATABASE_NAME}.")
-    Base.metadata.drop_all(engine)
+    drop_professional_tables(engine)
     Base.metadata.create_all(engine)
     stamp_head(engine, PROFESSIONAL_SCHEMA)
     yield
     unstamp(engine, PROFESSIONAL_SCHEMA)
-    Base.metadata.drop_all(engine)
+    drop_professional_tables(engine)
     engine.dispose()
+
+
+def drop_professional_tables(engine: Any) -> None:
+    """Drop every table of schema `professional` in crewnbuild_test, with CASCADE.
+
+    A Partner test run that was cut short can leave partner tables there, and
+    partner.bookings references professional.users across the schemas: a plain
+    drop_all then fails ("cannot drop table professional.users"). CASCADE removes such
+    dependent objects in other schemas (that foreign key, a view) and nothing else; the
+    partner tables themselves stay. Test-only: setup and teardown of crewnbuild_test.
+    """
+    tables = [table for table in Base.metadata.sorted_tables if table.schema == PROFESSIONAL_SCHEMA]
+    if not tables:
+        return
+    with engine.begin() as connection:
+        if connection.execute(text("SELECT current_database()")).scalar() != TEST_DATABASE_NAME:
+            raise RuntimeError(f"Tests run only against {TEST_DATABASE_NAME}.")
+        connection.execute(text(f"DROP TABLE IF EXISTS {', '.join(qualified(table) for table in tables)} CASCADE"))
 
 
 @pytest.fixture

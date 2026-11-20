@@ -1,26 +1,6 @@
 /**
- * The Site Engineer's supplier area.
- *
- * Opens on a choice of supplier type -- Material, Labor or Equipment -- and
- * each type then shows only its own screens:
- *
- *   Material   Suppliers (all the Builder accepted), Product Catalog, Cart and
- *              Orders, as tabs
- *   Labor      the Labor panel
- *   Equipment  the Equipment panel
- *
- * The open screen is still the single `activeTab` the dashboard holds, so
- * every existing hand-off (a notification naming 'orders', the Cart's View
- * Supplier naming 'suppliers', the cart resume naming 'cart') lands on the
- * same screen it always did. The landing is the extra value 'home'. The Product
- * Catalog still lists only suppliers the Builder explicitly assigned to this engineer.
- *
- * A Site Engineer orders material straight from the suppliers of the chosen
- * project, as a House Owner does: the Product Catalog lists only what that
- * project's suppliers sell (GET /shop/products?project_id=), the Cart is the
- * shared cart for that project, and its order goes to the supplier with no
- * approval step. When the Builder has assigned no supplier to the project the
- * Catalog says so; a refused add or order shows the server's own reason.
+ * The engineer supplier area keeps discovery, the catalog, and the project cart together.
+ * Site Engineer payment history is linked from the main dashboard navigation.
  */
 import { useCallback, useEffect, useState } from 'react'
 import { useSelector } from 'react-redux'
@@ -68,7 +48,7 @@ const SUPPLIER_TYPES = [
   { id: 'equipment', tab: 'equipment', icon: Construction, labelKey: 'dash.engineer.suppliers.type.equipment', subKey: 'dash.engineer.suppliers.type.equipmentSub', tone: 'bg-sky-50 text-sky-700 ring-sky-100' },
 ]
 
-export default function EngineerSupplierHub({ projects = [], activeTab = 'home', onTabChange }) {
+export default function EngineerSupplierHub({ projects = [], activeTab = 'home', onTabChange, hasSupplierOrders = false }) {
   const { t } = useLanguage()
   // `undefined` means the engineer has not picked a project yet, which is not
   // the same as picking the blank option (null). Until they pick, the active
@@ -181,7 +161,7 @@ export default function EngineerSupplierHub({ projects = [], activeTab = 'home',
     { id: 'suppliers', label: t('ui.suppliers'), icon: PackageSearch },
     { id: 'catalog', label: t('ui.productCatalog'), icon: Boxes },
     { id: 'cart', label: t('shop.cart'), icon: ShoppingCart, badge: cartCount },
-    { id: 'orders', label: t('shop.orders'), icon: ShoppingBag },
+    ...(!hasSupplierOrders ? [{ id: 'orders', label: t('shop.orders'), icon: ShoppingBag }] : []),
   ]
   // Why the chosen project has nothing to order, in place of the Catalog.
   const catalogNotice = shopReply?.needs_project ? t('dash.engineer.suppliers.selectProject')
@@ -190,10 +170,8 @@ export default function EngineerSupplierHub({ projects = [], activeTab = 'home',
   return (
     <div>
       {typeHeader}
-      {/* Scrolls sideways rather than wrapping, so the row stays one line on a phone.
-          Square at the bottom: it sits flush on the tab's first card below. */}
       <div className="flex flex-col gap-1.5 border border-slate-200 border-b-slate-100 bg-white p-1.5 sm:flex-row sm:items-center">
-      <div className="flex min-w-0 gap-1.5 overflow-x-auto">
+      <div className="flex min-w-0 flex-wrap gap-1.5">
         {tabs.map((tab) => {
           const active = activeTab === tab.id
           return (
@@ -202,7 +180,7 @@ export default function EngineerSupplierHub({ projects = [], activeTab = 'home',
               type="button"
               onClick={() => onTabChange(tab.id)}
               aria-pressed={active}
-              className={`inline-flex h-10 shrink-0 items-center gap-2 rounded-xl px-4 text-xs font-extrabold transition ${
+              className={`inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl px-2 text-xs sm:gap-2 sm:px-4 font-extrabold transition ${
                 active ? 'bg-brand-700 text-white shadow-sm' : 'text-graphite/55 hover:bg-slate-50 hover:text-graphite'
               }`}
             >
@@ -219,7 +197,7 @@ export default function EngineerSupplierHub({ projects = [], activeTab = 'home',
           )
         })}
       </div>
-        {/* The project the cart, the catalogue and the orders are for. */}
+        {/* The project used by the catalog and cart. */}
         {projects.length > 1 && (
           <label className="block w-full sm:w-64 sm:shrink-0">
             <span className="sr-only">{t('labor.project')}</span>
@@ -290,7 +268,7 @@ export default function EngineerSupplierHub({ projects = [], activeTab = 'home',
             onViewSupplier={(supplierId) => { setSupplierToOpen(supplierId); onTabChange('suppliers') }}
           />
         )}
-        {activeTab === 'orders' && (
+        {!hasSupplierOrders && activeTab === 'orders' && (
           <EngineerOrdersPanel projectId={effectiveProjectId} />
         )}
       </div>

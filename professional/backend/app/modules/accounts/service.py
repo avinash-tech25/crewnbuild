@@ -38,7 +38,6 @@ from app.modules.accounts.schemas import (
     SupplierCategoryUpdate,
 )
 from app.modules.admin.audit_log import record_admin_action
-from app.modules.billing import lead_locations
 from app.modules.files.file_ownership import file_ids_in, own_file_ids, own_file_url, release_unreferenced_files
 from app.modules.identity.models import (
     ADMIN_ROLES,
@@ -184,11 +183,6 @@ class AccountService:
             (payload.store_logo_url, "Business logo"),
         ):
             own_file_url(self.database, user, value, field=field)
-        if user.role == ROLE_BUILDER and payload.service_locations:
-            saved = user.contractor_profile.service_locations if user.contractor_profile else None
-            lead_locations.require_location_count(self.database, user, payload.service_locations, saved)
-        if user.role == ROLE_BUILDER:
-            lead_locations.require_account_pincode(self.database, user, payload.pincode, payload.service_locations)
 
         country = effective_country(payload.country_of_residence, user.country_code)
         canonical_phone = normalize_phone(payload.phone or "", PHONE_MAX_DIGITS)
@@ -437,7 +431,6 @@ class AccountService:
         if (user.country_code or DEFAULT_COUNTRY).strip().upper() != "INDIA":
             raise HTTPException(status_code=400, detail="Pincode lookup is available for accounts in India.")
         pincode = clean_india_pincode(payload.pincode)
-        lead_locations.require_account_pincode(self.database, user, pincode)
         branches = await fetch_india_pincode_branches(pincode)
         wanted = (payload.branch_name or "").strip().casefold()
         branch = next((item for item in branches if item["name"].casefold() == wanted), None)

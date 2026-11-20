@@ -43,7 +43,6 @@ export function needsLocationPincode(user) {
 export function postAuthPath(user) {
   if (ADMIN_ROLES.includes(user?.role)) return '/admin'
   if (needsLocationPincode(user)) return '/pincode'
-  if (subscriptionCheckoutPending(user)) return SUBSCRIPTION_CHECKOUT_PATH
   return dashboardPath(user)
 }
 
@@ -66,8 +65,7 @@ export function engineerCategoryMissing(user) {
 
 /**
  * Where to go after signing in from a protected page (RequireAccess sent the visitor to
- * /login with that page as returnTo): back there, unless a step comes first (pincode,
- * checkout), which postAuthPath decides as before.
+ * /login with that page as returnTo): back there, unless location setup comes first.
  */
 export function afterSignInPath(user, returnTo) {
   const next = postAuthPath(user)
@@ -79,16 +77,6 @@ export function afterSignInPath(user, returnTo) {
 export function postSignupPath(user) {
   if (supplierCategoryMissing(user)) return SUPPLIER_CATEGORY_PATH
   return engineerCategoryMissing(user) ? ENGINEER_CATEGORY_PATH : postAuthPath(user)
-}
-
-// A builder who signed up for Professional Pro or Premium pays before the
-// dashboard: Sign up -> verify e-mail -> PIN code -> checkout -> dashboard. The
-// server reports it (user.subscription_checkout) and refuses every other route
-// until a verified payment, whatever this page shows.
-export const SUBSCRIPTION_CHECKOUT_PATH = '/subscription-checkout'
-
-export function subscriptionCheckoutPending(user) {
-  return user?.role === 'BUILDER' && Boolean(user?.subscription_checkout?.plan_code)
 }
 
 export function readPendingEstimate() {

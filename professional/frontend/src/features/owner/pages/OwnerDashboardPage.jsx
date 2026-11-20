@@ -37,7 +37,6 @@ import { useLanguage } from '../../../i18n/LanguageContext.jsx'
 import { floorCountFor } from '../../../shared/utils/floorOptions.js'
 import { OwnerProfileSection, OwnerMessagesSection, OwnerProjectsSection } from '../components/OwnerSections.jsx'
 import OwnerOverviewSection from '../components/OwnerOverviewSection.jsx'
-import TechnicianPaymentsSection from '../../billing/components/TechnicianPaymentsSection.jsx'
 import OwnerProjectWorkspace, { DEFAULT_PROJECT_VIEW, PROJECT_SECTION_DASHBOARD, PROJECT_VIEW_BY_SLUG, PROJECT_VIEW_SLUGS, projectSectionIds, projectSectionLabel } from '../components/OwnerProjectWorkspace.jsx'
 import useUrlState from '../../../shared/hooks/useUrlState.js'
 import NotFoundPanel from '../../../shared/dashboard/NotFoundPanel.jsx'
@@ -1181,9 +1180,6 @@ export default function HomeownerDashboard() {
             decisionMessage={requestDecisionMessage}
           />
         )}
-        {/* Completed technician bookings and their Razorpay TEST payment. */}
-        {ownerRoute.page === NAV_DASHBOARD && <TechnicianPaymentsSection />}
-
         {ownerRoute.page === NAV_PROJECTS && (
           <div className="space-y-4">
             {/* The "Projects" heading that sat here is gone: the navigation

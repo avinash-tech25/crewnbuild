@@ -11,7 +11,6 @@ import { isPartyRequest, memberSinceLabel, partyDetailRows, partyLocation } from
 import { constructionTypeLabel } from '../../../shared/utils/roleLabels.js'
 import { useLanguage } from '../../../i18n/LanguageContext.jsx'
 import { SERVICE_OPTION_KEYS, optionLabel } from '../../../i18n/optionKeys.js'
-import { BuilderTierBadge } from '../../billing/subscription/TierBadge.jsx'
 import { DataTable, tdClass, thClass } from '../../../shared/ui/DataTable.jsx'
 
 // The bucket the dashboard groups products with no category of their own into.
@@ -400,7 +399,6 @@ export function SupplierFindClientsSection({ clientList, requestList = [], reque
           ),
           !isOwner && <CardChip key="experience" icon={Clock}>{`${client.experience_years || 0} ${t('dash.supplier.yrs')}`}</CardChip>,
           !isOwner && <CardChip key="projects" icon={Briefcase}>{`${client.completed_projects || 0} ${t('dash.supplier.projects')}`}</CardChip>,
-          !isOwner && <BuilderTierBadge key="tier" builderId={client.user_id} />,
         ]}
         secondary={(
           <button type="button" onClick={() => onViewProfile(client)} className={cardButtonClass('secondary')}>

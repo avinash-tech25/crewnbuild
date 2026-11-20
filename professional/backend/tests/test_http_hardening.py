@@ -60,6 +60,9 @@ def test_cors_allows_only_the_frontend_and_the_headers_it_uses(make_client: Clie
     assert allowed.status_code == 200
     assert allowed.headers["access-control-allow-origin"] == FRONTEND_ORIGIN
     assert allowed.headers["access-control-allow-credentials"] == "true"
+    signed_out = client.get("/api/v1/auth/session", headers={"Origin": FRONTEND_ORIGIN})
+    assert signed_out.status_code == 401
+    assert signed_out.headers["access-control-allow-origin"] == FRONTEND_ORIGIN
     other = client.options(LOGIN, headers={"Origin": "https://evil.example", "Access-Control-Request-Method": "POST"})
     assert "access-control-allow-origin" not in other.headers
     bearer = client.options(
@@ -106,6 +109,10 @@ def test_an_unexpected_error_answers_without_internals(database: Session) -> Non
     def boom() -> None:
         raise RuntimeError("database password is hunter2")
 
-    answer = TestClient(app, raise_server_exceptions=False).get("/api/v1/boom")
+    origin = "http://localhost:5173"
+    answer = TestClient(app, raise_server_exceptions=False).get("/api/v1/boom", headers={"Origin": origin})
     assert answer.status_code == 500
+    assert answer.headers["access-control-allow-origin"] == origin
+    assert answer.headers["access-control-allow-credentials"] == "true"
+    assert answer.headers["x-request-id"] == answer.json()["error"]["request_id"]
     assert "hunter2" not in answer.text and "Traceback" not in answer.text and "RuntimeError" not in answer.text

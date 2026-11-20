@@ -32,8 +32,21 @@ lines go with their order (CASCADE); a cart line goes with its buyer or project
 import uuid
 from datetime import datetime
 from decimal import Decimal
+from typing import Any
 
-from sqlalchemy import Boolean, CheckConstraint, ForeignKey, Index, Numeric, String, Text, UniqueConstraint, text
+from sqlalchemy import (
+    JSON,
+    BigInteger,
+    Boolean,
+    CheckConstraint,
+    ForeignKey,
+    Index,
+    Numeric,
+    String,
+    Text,
+    UniqueConstraint,
+    text,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database.base import Base, UuidPrimaryKeyMixin
@@ -205,13 +218,13 @@ class PurchaseOrder(UuidPrimaryKeyMixin, Base):
     __tablename__ = "purchase_orders"
     __table_args__ = (
         UniqueConstraint("order_number"),
+        UniqueConstraint("buyer_user_id", "request_key"),
         CheckConstraint(_in("status", ORDER_STATUSES), name="status"),
     )
 
+    request_key: Mapped[uuid.UUID | None] = mapped_column()
     order_number: Mapped[str] = mapped_column(String(40), nullable=False)
-    project_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("projects.id", ondelete="RESTRICT"), nullable=False, index=True
-    )
+    project_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("projects.id", ondelete="RESTRICT"), index=True)
     buyer_id: Mapped[uuid.UUID] = mapped_column(
         "buyer_user_id", ForeignKey("users.id", ondelete="RESTRICT"), nullable=False, index=True
     )
@@ -259,8 +272,9 @@ class PurchaseOrderItem(UuidPrimaryKeyMixin, Base):
     status: Mapped[str] = mapped_column(String(20), nullable=False, default=STATUS_PENDING, index=True)
     created_at: Mapped[datetime] = created_at_column()
     fulfilled_at: Mapped[datetime | None] = mapped_column(NaiveUtcTimestamp)
+    received_at: Mapped[datetime | None] = mapped_column(NaiveUtcTimestamp)
 
-    order = relationship("PurchaseOrder", back_populates="items", lazy="joined")
+    order: Mapped[PurchaseOrder] = relationship("PurchaseOrder", back_populates="items", lazy="joined")
 
     # The old line columns, read from the order.
     @property
@@ -268,7 +282,7 @@ class PurchaseOrderItem(UuidPrimaryKeyMixin, Base):
         return self.order.order_number
 
     @property
-    def project_id(self) -> uuid.UUID:
+    def project_id(self) -> uuid.UUID | None:
         return self.order.project_id
 
     @property
@@ -283,3 +297,70 @@ class PurchaseOrderItem(UuidPrimaryKeyMixin, Base):
 
 # The old name of an order line.
 SupplierMaterialRequest = PurchaseOrderItem
+
+
+class PurchasePayment(Base):
+    """Financial state for a payment-backed purchase. Legacy orders have no row here."""
+
+    __tablename__ = "purchase_payments"
+    __table_args__ = (
+        CheckConstraint("amount_paise > 0 AND currency = 'INR'", name="amount"),
+        CheckConstraint(_in("payment_status", ("PENDING", "FAILED", "SUCCESSFUL")), name="payment_status"),
+        CheckConstraint(
+            _in("supplier_status", ("NOT_SUBMITTED", "AWAITING_SUPPLIER_ACCEPTANCE", "ACCEPTED", "REJECTED")),
+            name="supplier_status",
+        ),
+        CheckConstraint(_in("refund_status", ("NOT_REQUIRED", "PENDING", "COMPLETED", "FAILED")), name="refund_status"),
+        CheckConstraint(
+            "(payment_status = 'SUCCESSFUL') = (paid_at IS NOT NULL AND gateway_payment_id IS NOT NULL)",
+            name="capture_reference",
+        ),
+        CheckConstraint("supplier_status = 'NOT_SUBMITTED' OR payment_status = 'SUCCESSFUL'", name="verified_decision"),
+        CheckConstraint("supplier_status <> 'REJECTED' OR refund_status <> 'NOT_REQUIRED'", name="refund_required"),
+        Index("ix_purchase_payments__reconcile", "checked_at", "payment_status", "refund_status"),
+    )
+
+    order_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("purchase_orders.id", ondelete="RESTRICT"), primary_key=True)
+    checkout_key: Mapped[uuid.UUID] = mapped_column(unique=True)
+    project_snapshot_id: Mapped[uuid.UUID]
+    snapshot: Mapped[dict[str, Any]] = mapped_column(JSON)
+    amount_paise: Mapped[int] = mapped_column(BigInteger)
+    currency: Mapped[str] = mapped_column(String(3), default="INR")
+    gateway_create_started_at: Mapped[datetime | None] = mapped_column(NaiveUtcTimestamp)
+    gateway_order_id: Mapped[str | None] = mapped_column(String(80), unique=True)
+    gateway_payment_id: Mapped[str | None] = mapped_column(String(80), unique=True)
+    gateway_refund_id: Mapped[str | None] = mapped_column(String(80), unique=True)
+    payment_status: Mapped[str] = mapped_column(String(16), default="PENDING")
+    supplier_status: Mapped[str] = mapped_column(String(32), default="NOT_SUBMITTED")
+    refund_status: Mapped[str] = mapped_column(String(16), default="NOT_REQUIRED")
+    paid_at: Mapped[datetime | None] = mapped_column(NaiveUtcTimestamp)
+    submitted_at: Mapped[datetime | None] = mapped_column(NaiveUtcTimestamp)
+    decision_at: Mapped[datetime | None] = mapped_column(NaiveUtcTimestamp)
+    refunded_at: Mapped[datetime | None] = mapped_column(NaiveUtcTimestamp)
+    checked_at: Mapped[datetime | None] = mapped_column(NaiveUtcTimestamp)
+    rejection_reason: Mapped[str | None] = mapped_column(String(500))
+    order: Mapped[PurchaseOrder] = relationship()
+
+
+class PurchaseGatewayEvent(Base):
+    """Deduplicated signed events. Raw gateway payloads are never stored."""
+
+    __tablename__ = "purchase_gateway_events"
+
+    event_key: Mapped[str] = mapped_column(String(64), primary_key=True)
+    received_at: Mapped[datetime] = mapped_column(
+        NaiveUtcTimestamp, nullable=False, default=naive_utc_now, server_default=text("now()")
+    )
+
+
+class PurchasePaymentAttempt(Base):
+    """A provider-confirmed attempt within a Razorpay order."""
+
+    __tablename__ = "purchase_payment_attempts"
+
+    gateway_payment_id: Mapped[str] = mapped_column(String(80), primary_key=True)
+    order_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("purchase_payments.order_id", ondelete="RESTRICT"), index=True
+    )
+    status: Mapped[str] = mapped_column(String(16))
+    updated_at: Mapped[datetime] = updated_at_column()

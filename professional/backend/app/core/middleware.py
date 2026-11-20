@@ -6,11 +6,13 @@ limits app/core/http_hardening.py; rate limits app/modules/rate_limits.
 
 import re
 import uuid
+from collections.abc import Awaitable, Callable
 from contextvars import ContextVar
 
 import structlog
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.errors import ServerErrorMiddleware
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from app.core.config import Settings
@@ -108,11 +110,16 @@ CORS_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
 CORS_HEADERS = ["Accept", "Accept-Language", "Content-Type", "X-CSRF-Token", "X-Request-ID"]
 
 
-def add_middleware(app: FastAPI, settings: Settings) -> None:
+def add_middleware(
+    app: FastAPI, settings: Settings, handle_unexpected_error: Callable[[Request, Exception], Awaitable[Response]]
+) -> None:
     """Order matters: the last one added is the outermost. Security headers are outermost,
     so every answer carries them; CORS is next, so its headers are on every answer,
     refusals included; the request ID and the body-size limit sit inside it."""
     app.add_middleware(BodySizeLimitMiddleware, settings=settings)
+    # FastAPI's implicit server-error middleware sits outside CORS. Generate the
+    # sanitized response here so it also receives CORS and request ID headers.
+    app.add_middleware(ServerErrorMiddleware, handler=handle_unexpected_error)
     app.add_middleware(RequestIdMiddleware)
     cors_options: dict[str, object] = {
         "allow_origins": allowed_origins(settings),

@@ -34,7 +34,6 @@ from app.core.security.password_hashing import (
 from app.integrations.email.email_sender import EmailSender
 from app.modules.accounts.models import BuilderProfile, EngineerProfile, OwnerProfile, SupplierProfile
 from app.modules.accounts.profile_completion import profile_complete, profile_completion
-from app.modules.billing.signup_checkout import pending_checkout, remember_signup_plan
 from app.modules.identity.email_verification_service import EmailVerificationService
 from app.modules.identity.models import (
     ADMIN_ROLES,
@@ -119,7 +118,6 @@ def user_response(user: User, database: Session, include_created_at: bool = Fals
         "contractor_profile": None,
         "supplier_profile": None,
         "engineer_profile": None,
-        "subscription_checkout": pending_checkout(user, database),
         "terms_version": user.terms_version,
         "privacy_version": user.privacy_version,
         "terms_accepted_at": user.terms_accepted_at,
@@ -304,7 +302,6 @@ class AuthService:
                 license_number=payload.license_number,
                 experience_years=payload.experience_years or 0,
             )
-            remember_signup_plan(builder, payload.plan_code, payload.duration_code)
             self.database.add(builder)
         elif user.role == ROLE_SUPPLIER:
             self.database.add(

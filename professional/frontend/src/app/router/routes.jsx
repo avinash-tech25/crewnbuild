@@ -1,7 +1,7 @@
 import { lazy } from 'react'
 import { Navigate } from 'react-router-dom'
 import { ADMIN_ROLES, SIGNED_IN_ROLES } from '../../shared/auth/roles.js'
-import { ENGINEER_CATEGORY_PATH, SUBSCRIPTION_CHECKOUT_PATH, SUPPLIER_CATEGORY_PATH } from '../../shared/auth/accountPaths.js'
+import { ENGINEER_CATEGORY_PATH, SUPPLIER_CATEGORY_PATH } from '../../shared/auth/accountPaths.js'
 
 /**
  * The one route table (technical-architecture.md 8.2). Every address of the old app is
@@ -39,7 +39,6 @@ const SupplierCategoryPage = page(() => import('../../features/onboarding/pages/
 const EngineerCategoryPage = page(() => import('../../features/onboarding/pages/EngineerCategoryPage.jsx'))
 const PincodeSetupPage = page(() => import('../../features/onboarding/pages/PincodeSetupPage.jsx'))
 const CompleteProfilePage = page(() => import('../../features/onboarding/pages/CompleteProfilePage.jsx'))
-const SubscriptionCheckoutPage = page(() => import('../../features/billing/pages/SubscriptionCheckoutPage.jsx'))
 const OwnerDashboardPage = page(() => import('../../features/owner/pages/OwnerDashboardPage.jsx'))
 const WeatherPage = page(() => import('../../features/weather/pages/WeatherPage.jsx'))
 const BuilderDashboardPage = page(() => import('../../features/builder/pages/BuilderDashboardPage.jsx'))
@@ -98,14 +97,15 @@ export const routes = [
   { path: ENGINEER_CATEGORY_PATH, Component: EngineerCategoryPage, access: { roles: ENGINEERS } },
   { path: '/pincode', Component: PincodeSetupPage, access: { roles: MARKETPLACE } },
   { path: '/complete-profile', Component: CompleteProfilePage, access: { roles: MARKETPLACE } },
-  { path: SUBSCRIPTION_CHECKOUT_PATH, Component: SubscriptionCheckoutPage, access: { roles: ['BUILDER'] } },
   // ---- dashboards: placeholders until their part ----
   { path: '/owner/*', Component: OwnerDashboardPage, access: { roles: ['OWNER'] } },
-  { path: '/weather', Component: WeatherPage, access: { roles: EVERY_SIGNED_IN, checkout: true } },
-  { path: '/contractor/*', Component: BuilderDashboardPage, access: { roles: ['BUILDER'], checkout: true } },
-  { path: '/contractors/:contractorId', Component: BuilderProfilePage, access: { roles: ['OWNER', 'BUILDER', 'SUPPLIER'], checkout: true } },
+  { path: '/weather', Component: WeatherPage, access: { roles: EVERY_SIGNED_IN } },
+  { path: '/contractor/*', Component: BuilderDashboardPage, access: { roles: ['BUILDER'] } },
+  { path: '/contractors/:contractorId', Component: BuilderProfilePage, access: { roles: ['OWNER', 'BUILDER', 'SUPPLIER'] } },
   { path: '/engineer/live-camera', Component: EngineerLiveCameraPage, access: { roles: ENGINEER_DASHBOARD } },
   { path: '/engineer/store-requests', Component: ToEngineerDashboard, access: { roles: ENGINEER_DASHBOARD } },
+  { path: '/engineer/store', Component: EngineerDashboardPage, access: { roles: ['SITE_ENGINEER'] } },
+  { path: '/engineer/orders', Component: EngineerDashboardPage, access: { roles: ['SITE_ENGINEER'] } },
   { path: '/engineer/*', Component: EngineerDashboardPage, access: { roles: ENGINEER_DASHBOARD } },
   { path: '/store-manager/*', Component: ToEngineerDashboard, access: { roles: ENGINEER_DASHBOARD } },
   { path: '/supplier/*', Component: SupplierDashboardPage, access: { roles: ['SUPPLIER'] } },
@@ -128,6 +128,5 @@ export const PROTECTED_PATH_PREFIXES = [
   '/pincode',
   SUPPLIER_CATEGORY_PATH,
   ENGINEER_CATEGORY_PATH,
-  SUBSCRIPTION_CHECKOUT_PATH,
   '/weather',
 ]

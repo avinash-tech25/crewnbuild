@@ -10,16 +10,18 @@ from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from app.modules.accounts.models import SupplierProfile
-from app.modules.identity.models import ROLE_ENGINEER, User
+from app.modules.identity.models import ROLE_ENGINEER, ROLE_SITE_ENGINEER, User
+from app.modules.identity.policies import session_role
 from app.modules.marketplace.cart import (
     CartService,
     approved_supplier_ids_for,
     cart_payload,
     ensure_buyer,
     ensure_buyer_project_access,
+    ensure_supplier_approved,
 )
 from app.modules.marketplace.listings import catalog_listings, supplier_product_payload, supplier_product_stock_state
-from app.modules.marketplace.models import SupplierProduct
+from app.modules.marketplace.models import CartItem, PurchaseOrder, SupplierProduct
 from app.modules.marketplace.order_service import MaterialRequestService
 from app.modules.marketplace.schemas import (
     CartCheckout,
@@ -29,6 +31,7 @@ from app.modules.marketplace.schemas import (
     MaterialRequestItemCreate,
 )
 from app.modules.projects.access import require_complete_profile
+from app.modules.rate_limits.service import hit
 
 
 class ShopService:
@@ -61,9 +64,40 @@ class ShopService:
     def checkout_cart(self, payload: CartCheckout, user: User) -> dict[str, Any]:
         ensure_buyer(user)
         require_complete_profile(user)
-        lines = [
-            item for item in self.cart.items_for(user, payload.project_id) if item.supplier_id == payload.supplier_id
-        ]
+        # Who may order, for which project and from which supplier, is settled before
+        # anything in the body is validated: another user, a Site Engineer not (or no
+        # longer) assigned to the project, or a supplier not allowed on it gets 403.
+        project = ensure_buyer_project_access(self.database, payload.project_id, user)
+        ensure_supplier_approved(self.database, user, payload.supplier_id, project.id)
+        engineer = session_role(user) == ROLE_SITE_ENGINEER
+        request_key = payload.request_key if engineer else None
+        if engineer and request_key is None:
+            raise HTTPException(422, "A request key is required.")
+        if request_key is not None:
+            if not hit(self.database, "marketplace-checkout", str(user.id), 30, 60):
+                raise HTTPException(429, "Too many purchase requests. Try again shortly.")
+            self.database.execute(select(User.id).where(User.id == user.id).with_for_update())
+            existing = self.database.scalar(
+                select(PurchaseOrder).where(PurchaseOrder.buyer_id == user.id, PurchaseOrder.request_key == request_key)
+            )
+            if existing is not None:
+                if existing.project_id != payload.project_id or existing.supplier_id != payload.supplier_id:
+                    raise HTTPException(409, "This request key was used for another supplier or project.")
+                return {
+                    "id": existing.id,
+                    "request_code": existing.order_number,
+                    "cart": cart_payload(self.database, self.cart.items_for(user, payload.project_id)),
+                }
+        statement = (
+            select(CartItem)
+            .where(
+                CartItem.user_id == user.id,
+                CartItem.project_id == payload.project_id,
+                CartItem.supplier_id == payload.supplier_id,
+            )
+            .order_by(CartItem.created_at, CartItem.id)
+        )
+        lines = self.database.scalars(statement.with_for_update() if engineer else statement).all()
         if not lines:
             raise HTTPException(status_code=400, detail="There is nothing from that supplier in your cart.")
         request = MaterialRequestService(self.database).create_material_request(
@@ -73,6 +107,7 @@ class ShopService:
                 items=[MaterialRequestItemCreate(product_id=line.product_id, quantity=line.quantity) for line in lines],
             ),
             user,
+            request_key=request_key,
         )
         for line in lines:
             self.database.delete(line)

@@ -9,7 +9,12 @@ from typing import Any
 from sqlalchemy import desc, select
 from sqlalchemy.orm import Session
 
-from app.modules.marketplace.models import STATUS_FULFILLED, PurchaseOrder, PurchaseOrderItem, SupplierProduct
+from app.modules.marketplace.models import (
+    STATUS_FULFILLED,
+    PurchaseOrder,
+    PurchaseOrderItem,
+    SupplierProduct,
+)
 
 
 def supplier_listings(database: Session, product_ids: list[Any]) -> list[SupplierProduct]:
@@ -51,14 +56,17 @@ OPEN_LINE_STATUSES = ("PENDING", "ACCEPTED")
 
 def open_order_project_ids(database: Session, supplier_id: uuid.UUID) -> set[uuid.UUID]:
     """Projects this supplier has open order lines for (its delivery destinations)."""
-    return set(
-        database.scalars(
-            select(PurchaseOrder.project_id)
-            .join(PurchaseOrderItem, PurchaseOrderItem.purchase_order_id == PurchaseOrder.id)
-            .where(PurchaseOrder.supplier_id == supplier_id, PurchaseOrderItem.status.in_(OPEN_LINE_STATUSES))
-            .distinct()
+    projects = database.scalars(
+        select(PurchaseOrder.project_id)
+        .join(PurchaseOrderItem, PurchaseOrderItem.purchase_order_id == PurchaseOrder.id)
+        .where(
+            PurchaseOrder.supplier_id == supplier_id,
+            PurchaseOrder.project_id.is_not(None),
+            PurchaseOrderItem.status.in_(OPEN_LINE_STATUSES),
         )
+        .distinct()
     )
+    return {project for project in projects if project is not None}
 
 
 def open_order_supplier_ids(database: Session, project_id: uuid.UUID) -> set[uuid.UUID]:
@@ -67,7 +75,10 @@ def open_order_supplier_ids(database: Session, project_id: uuid.UUID) -> set[uui
         database.scalars(
             select(PurchaseOrder.supplier_id)
             .join(PurchaseOrderItem, PurchaseOrderItem.purchase_order_id == PurchaseOrder.id)
-            .where(PurchaseOrder.project_id == project_id, PurchaseOrderItem.status.in_(OPEN_LINE_STATUSES))
+            .where(
+                PurchaseOrder.project_id == project_id,
+                PurchaseOrderItem.status.in_(OPEN_LINE_STATUSES),
+            )
             .distinct()
         )
     )

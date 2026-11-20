@@ -42,7 +42,6 @@ import { INVALID_FIELD_CLASS, useProfileFormErrors } from '../../../shared/hooks
 import ProfileImageHint from '../../../shared/ui/ProfileImageHint.jsx'
 import { PROFILE_IMAGE_ACCEPT } from '../../../shared/utils/profileImageRules.js'
 import { ratingLabel } from '../../../shared/utils/ratingLabel.js'
-import { BuilderTierBadge } from '../../billing/subscription/TierBadge.jsx'
 
 // `t` stays an accepted argument so the existing call sites are unchanged, but
 // it no longer decides whether the label is translated: half the call sites pass
@@ -367,7 +366,7 @@ export function EngineerContractorsSection({ contractors, teamStatusByContractor
                   />
                 }
                 label={name}
-                title={<span className="inline-flex max-w-full items-center gap-1.5"><span className="truncate" title={name}>{name}</span><BuilderTierBadge builderId={contractor.user_id} /></span>}
+                title={<span className="inline-flex max-w-full items-center gap-1.5"><span className="truncate" title={name}>{name}</span></span>}
                 subtitle={`${contractor.completed_projects || 0} ${t('dash.supplier.projects')}`}
                 rows={[
                   { key: 'pincode', label: t('dash.common.pincode'), value: contractor.pincode || '—' },

@@ -126,9 +126,7 @@ const QUALITY_OPTIONS = [
   { variant: 'SUB', labelKey: 'dash.engineer.liveCamera.qualitySd', hintKey: 'dash.engineer.liveCamera.qualitySdHint', configured: (channel) => Boolean(channel.has_sub_stream) },
 ]
 
-// `hdLocked`: a builder whose plan has SD only (HD is Premium; the server refuses
-// the MAIN stream too). HD then opens the plan prompt (`onHdLocked`) instead.
-export function QualitySelector({ channel, value, onChange, hdLocked = false, onHdLocked = null }) {
+export function QualitySelector({ channel, value, onChange }) {
   const { t } = useLanguage()
   return (
     <div
@@ -139,20 +137,18 @@ export function QualitySelector({ channel, value, onChange, hdLocked = false, on
       {QUALITY_OPTIONS.map((option) => {
         const configured = option.configured(channel)
         const selected = value === option.variant
-        const locked = hdLocked && option.variant === 'MAIN'
         return (
           <button
             key={option.variant}
             type="button"
             aria-pressed={selected}
-            disabled={!configured || (locked && !onHdLocked)}
-            title={locked ? t('subscription.limit.reached.hd') : t(configured ? option.hintKey : 'dash.engineer.liveCamera.qualityNotConfigured')}
+            disabled={!configured}
+            title={t(configured ? option.hintKey : 'dash.engineer.liveCamera.qualityNotConfigured')}
             onClick={() => {
-              if (locked) { onHdLocked?.(); return }
               if (!selected) onChange(option.variant)
             }}
             className={`h-7 min-w-9 rounded-md px-2 text-[11px] font-extrabold tracking-wide transition disabled:cursor-not-allowed disabled:opacity-40 ${
-              selected ? 'bg-brand-600 text-white shadow-sm' : locked ? 'text-slate-400 line-through decoration-slate-300 hover:bg-white' : 'text-slate-600 hover:bg-white hover:text-slate-900'
+              selected ? 'bg-brand-600 text-white shadow-sm' : 'text-slate-600 hover:bg-white hover:text-slate-900'
             }`}
           >
             {t(option.labelKey)}
@@ -163,7 +159,7 @@ export function QualitySelector({ channel, value, onChange, hdLocked = false, on
   )
 }
 
-export default function LiveCameraPlayer({ channel, streamVariant, title, subtitle, onStateChange, onStreamVariantChange, onClose, hdLocked = false, onHdLocked = null }) {
+export default function LiveCameraPlayer({ channel, streamVariant, title, subtitle, onStateChange, onStreamVariantChange, onClose }) {
   const { t, td } = useLanguage()
   const containerRef = useRef(null)
   const videoRef = useRef(null)
@@ -434,7 +430,7 @@ export default function LiveCameraPlayer({ channel, streamVariant, title, subtit
           {subtitle && <p className="truncate text-xs font-semibold text-slate-500">{td(subtitle)}</p>}
         </div>
         {onStreamVariantChange && (
-          <QualitySelector channel={channel} value={streamVariant} onChange={onStreamVariantChange} hdLocked={hdLocked} onHdLocked={onHdLocked} />
+          <QualitySelector channel={channel} value={streamVariant} onChange={onStreamVariantChange} />
         )}
         <StatusPill state={pillState} />
         <button

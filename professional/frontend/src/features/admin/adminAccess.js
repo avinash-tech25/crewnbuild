@@ -18,8 +18,6 @@ export const SECTION_PERMISSIONS = {
   ads: 'ads.view',
   audit: 'audit.view',
   catalog: 'catalog.view',
-  coupons: 'coupons.view',
-  'subscription-payments': 'subscriptions.view',
   'account-deletion': 'deletions.view',
   support: 'support.view',
   mobile: null,

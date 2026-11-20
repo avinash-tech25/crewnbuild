@@ -74,4 +74,3 @@ async def handle_validation_error(request: Request, error: Exception) -> JSONRes
 def register_error_handlers(app: FastAPI) -> None:
     app.add_exception_handler(RequestValidationError, handle_validation_error)
     app.add_exception_handler(ApiError, handle_api_error)
-    app.add_exception_handler(Exception, handle_unexpected_error)

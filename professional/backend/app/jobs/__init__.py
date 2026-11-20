@@ -1,1 +1,1 @@
-"""Scheduled jobs: subscription renewal sweep, weather alert monitor, scheduler entry point."""
+"""Scheduled jobs: weather alert monitor, rate-limit purge, scheduler entry point."""

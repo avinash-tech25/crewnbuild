@@ -71,7 +71,7 @@ def test_require_roles_and_permission() -> None:
         assert client.get("/handoff").status_code == expected
 
 
-def test_a_builder_with_an_unpaid_plan_may_only_use_onboarding_routes(
+def test_a_builder_with_a_leftover_plan_choice_is_not_held_at_checkout(
     make_client: ClientFactory, database: Session
 ) -> None:
     from cryptography.hazmat.primitives import serialization
@@ -89,12 +89,14 @@ def test_a_builder_with_an_unpaid_plan_may_only_use_onboarding_routes(
 
     client = make_client(partner_handoff_private_key=pem)
     response = client.post("/api/v1/auth/login", json={"email": "asha@example.in", "password": "Strong#Pass123"})
-    assert response.json()["user"]["subscription_checkout"] == {"plan_code": "BUSINESS", "duration_code": "ANNUAL"}
-    csrf = response.json()["csrf_token"]
+    assert "subscription_checkout" not in response.json()["user"]
     assert client.get("/api/v1/auth/session").status_code == 200
-    refused = client.post("/api/v1/auth/partner-handoff", headers={"X-CSRF-Token": csrf})
+    assert client.get("/api/v1/project-requests/incoming").status_code == 200
+    # The hand-off to Book Technician still needs the CSRF token, and is still not a builder's.
+    assert client.post("/api/v1/auth/partner-handoff").status_code == 403
+    refused = client.post("/api/v1/auth/partner-handoff", headers={"X-CSRF-Token": response.json()["csrf_token"]})
     assert refused.status_code == 403
-    assert refused.json()["detail"]["code"] == "SUBSCRIPTION_CHECKOUT_REQUIRED"
+    assert refused.json()["detail"] != "SUBSCRIPTION_CHECKOUT_REQUIRED"
 
 
 def test_session_list_is_off_by_default(client: TestClient, database: Session) -> None:
