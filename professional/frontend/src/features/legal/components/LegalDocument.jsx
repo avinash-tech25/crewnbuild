@@ -39,22 +39,57 @@ function Parts({ parts }) {
   ))
 }
 
+// A numbered clause ("10.1 How to ask. …"): its number is set in a column of its own, so
+// the clause's wrapped lines line up with its first word, not under the number.
+const CLAUSE = /^(\d+\.\d+)\s+/
+
+function splitClause(parts) {
+  const [first, ...rest] = parts
+  const text = typeof first === 'string' ? first : first?.b
+  const match = typeof text === 'string' ? text.match(CLAUSE) : null
+  if (!match) return null
+  const remainder = text.slice(match[0].length)
+  const head = remainder ? [typeof first === 'string' ? remainder : { b: remainder }] : []
+  return { number: match[1], parts: [...head, ...rest] }
+}
+
+// Justified, with hyphenation for even spacing (the text is English: lang="en").
+// hyphenate-limit-chars lets shorter words break too ("erro-neous"), so few lines are left
+// with wide gaps between their words.
+const JUSTIFIED = 'text-justify hyphens-auto [hyphenate-limit-chars:6_3_2] [text-wrap:pretty]'
+
 function Blocks({ section }) {
   return section.blocks.map((block, index) => {
-    if (block.type !== 'list') return <p key={index} className="mt-4"><Parts parts={block.parts} /></p>
+    if (block.type !== 'list') {
+      const clause = splitClause(block.parts)
+      if (!clause) return <p key={index} className={`mt-4 ${JUSTIFIED}`}><Parts parts={block.parts} /></p>
+      return (
+        <p key={index} className="mt-4 grid grid-cols-[3.25rem_minmax(0,1fr)] items-baseline">
+          <span className="font-bold tabular-nums text-oc-amber print:text-black">{clause.number}</span>
+          <span className={JUSTIFIED}><Parts parts={clause.parts} /></span>
+        </p>
+      )
+    }
     const List = block.ordered ? 'ol' : 'ul'
     return (
       <List
         key={index}
-        className={`mt-4 space-y-2 ps-6 marker:text-oc-amber print:marker:text-black ${block.ordered ? 'list-decimal' : 'list-disc'}`}
+        className={`mt-3 space-y-2 ps-[3.25rem] marker:text-oc-amber print:marker:text-black ${
+          block.ordered ? 'list-decimal marker:font-bold' : 'list-disc'
+        }`}
       >
-        {block.items.map((item, itemIndex) => <li key={itemIndex} className="ps-1"><Parts parts={item} /></li>)}
+        {block.items.map((item, itemIndex) => (
+          <li key={itemIndex} className={`ps-2 ${JUSTIFIED}`}><Parts parts={item} /></li>
+        ))}
       </List>
     )
   })
 }
 
-const BODY = 'max-w-[75ch] text-[16px] leading-[1.7] text-white/90 print:max-w-none print:text-[11pt] print:text-black'
+// The site's body font (Inter), at a comfortable reading size and line height.
+const BODY =
+  'max-w-[75ch] font-sans text-[16px] leading-[1.75] text-white/90 ' +
+  'print:max-w-none print:text-[11pt] print:leading-[1.6] print:text-black'
 const STEP_BUTTON =
   'group flex min-w-0 max-w-[48%] flex-col gap-0.5 rounded-xl border border-white/15 px-4 py-3 text-start transition ' +
   'hover:border-oc-amber hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oc-amber'
@@ -130,11 +165,11 @@ export function LegalDocument({ doc, activeId, onSelect, idPrefix = '' }) {
             ref={heading}
             id={`${idPrefix}${section.id}`}
             tabIndex={-1}
-            className="font-display text-[1.35rem] font-extrabold leading-snug text-white focus:outline-none"
+            className="max-w-[75ch] font-display text-[1.375rem] font-extrabold leading-snug text-white focus:outline-none"
           >
             {sectionLabel(section)}
           </h2>
-          <div className={BODY}><Blocks section={section} /></div>
+          <div className={BODY} lang="en"><Blocks section={section} /></div>
 
           <div className="mt-10 flex justify-between gap-3 border-t border-white/15 pt-5">
             {previous ? (
@@ -160,8 +195,8 @@ export function LegalDocument({ doc, activeId, onSelect, idPrefix = '' }) {
         <div aria-hidden="true" className="hidden print:block">
           {doc.sections.map((item) => (
             <div key={item.id} className="mt-6 first:mt-0">
-              <p className="font-display text-[13pt] font-extrabold print:break-after-avoid">{sectionLabel(item)}</p>
-              <div className={BODY}><Blocks section={item} /></div>
+              <p className="font-display text-[14pt] font-extrabold leading-snug print:break-after-avoid">{sectionLabel(item)}</p>
+              <div className={BODY} lang="en"><Blocks section={item} /></div>
             </div>
           ))}
         </div>

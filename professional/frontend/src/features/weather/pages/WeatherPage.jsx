@@ -16,6 +16,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useSelector } from 'react-redux'
+import { useUrlParams } from '../../../shared/hooks/useUrlState.js'
+import { isUuid } from '../../../shared/hooks/useUrlDialog.js'
 import {
   ArrowLeft, Check, Cloud, CloudDrizzle, CloudFog, CloudLightning, CloudRain, CloudRainWind, CloudSnow, CloudSun,
   Droplets, Eye, Gauge, Haze, History, Info, MapPin, Moon, RefreshCw, Search, ShieldAlert, Sun, Sunrise, Sunset,
@@ -428,15 +430,43 @@ function DailyForecast({ days, extended }) {
 // ----------------------------------------------------------------- history
 
 const EMPTY_FILTERS = { project_id: '', alert_type: '', severity: '', status: '', acknowledged: '', date_from: '', date_to: '' }
+// Each history filter's word in the address, and what it may hold: a project id (or the
+// personal site), fixed codes, a date. Anything else reads as no filter.
+const DATE = /^\d{4}-\d{2}-\d{2}$/
+const HISTORY_PARAMS = {
+  project_id: ['hProject', (value) => value === MY_SITE || isUuid(value)],
+  alert_type: ['hType', (value) => /^[A-Za-z0-9_-]{1,64}$/.test(value)],
+  severity: ['hSeverity', (value) => SEVERITY_ORDER.includes(value)],
+  status: ['hStatus', (value) => ['ACTIVE', 'RESOLVED', 'EXPIRED'].includes(value)],
+  acknowledged: ['hAck', (value) => value === 'true' || value === 'false'],
+  date_from: ['hFrom', (value) => DATE.test(value)],
+  date_to: ['hTo', (value) => DATE.test(value)],
+}
+const HISTORY_PAGE = 'hPage'
 
 function AlertHistory({ projects, alertTypes, reloadKey }) {
   const text = useWeatherText()
   const { td } = useLanguage()
-  const [filters, setFilters] = useState(EMPTY_FILTERS)
-  const [page, setPage] = useState(1)
+  // The filters and the page are the address's (replaced on each change, never a history
+  // entry each), so a refresh or a link shows the same history.
+  const [urlParams, patchUrl] = useUrlParams()
+  const filterKey = Object.values(HISTORY_PARAMS).map(([name]) => urlParams.get(name) || '').join('|')
+  const filters = useMemo(() => Object.fromEntries(Object.entries(HISTORY_PARAMS).map(([key, [name, valid]]) => {
+    const value = urlParams.get(name) || ''
+    return [key, value && valid(value) ? value : EMPTY_FILTERS[key]]
+  })), [filterKey]) // eslint-disable-line react-hooks/exhaustive-deps
+  const page = Math.max(1, Number.parseInt(urlParams.get(HISTORY_PAGE), 10) || 1)
+  const setPage = (next) => {
+    const value = typeof next === 'function' ? next(page) : next
+    patchUrl({ [HISTORY_PAGE]: value > 1 ? value : null }, { replace: true })
+  }
+  const setFilters = (next) => patchUrl({
+    ...Object.fromEntries(Object.entries(HISTORY_PARAMS).map(([key, [name]]) => [name, next[key] || null])),
+    [HISTORY_PAGE]: null,
+  }, { replace: true })
   const [data, setData] = useState({ alerts: [], total: 0, page_size: 25 })
   const [state, setState] = useState('loading')
-  const update = (key) => (event) => { setFilters((value) => ({ ...value, [key]: event.target.value })); setPage(1) }
+  const update = (key) => (event) => setFilters({ ...filters, [key]: event.target.value })
 
   useEffect(() => {
     let cancelled = false
@@ -478,7 +508,7 @@ function AlertHistory({ projects, alertTypes, reloadKey }) {
           <input type="date" className={inputClass} value={filters.date_to} onChange={update('date_to')} /></label>
       </div>
       <div className="mt-2 flex justify-end">
-        <button type="button" onClick={() => { setFilters(EMPTY_FILTERS); setPage(1) }} className={secondaryButton}>{text('weather.clearFilters')}</button>
+        <button type="button" onClick={() => setFilters(EMPTY_FILTERS)} className={secondaryButton}>{text('weather.clearFilters')}</button>
       </div>
       {state === 'error' && <p role="alert" className="mt-3 text-xs font-bold text-red-700">{text('weather.loadFailed')}</p>}
       {state !== 'error' && (data.alerts?.length ? (
@@ -585,7 +615,13 @@ export default function WeatherPage() {
     if (String(value) === String(projectId)) return
     setProjectId(value)
     setWeather({ current: null, hourly: null, daily: null, alerts: null })
-    setSearchParams(value ? { project: value } : {}, { replace: true })
+    // Only the site's word changes; the history filters beside it stay.
+    setSearchParams((current) => {
+      const updated = new URLSearchParams(current)
+      if (value) updated.set('project', value)
+      else updated.delete('project')
+      return updated
+    }, { replace: true })
   }
 
   const refresh = () => { setReloadKey((value) => value + 1); loadProjects() }
@@ -601,7 +637,7 @@ export default function WeatherPage() {
 
   return (
     <div className="min-h-screen bg-slate-100 px-4 py-6 sm:px-6">
-      <div className="mx-auto max-w-6xl space-y-4">
+      <div className="mx-auto max-w-page space-y-4">
         <section className="relative overflow-hidden rounded-2xl bg-[linear-gradient(135deg,#0b5233,#083e2b)] shadow-[0_18px_50px_-38px_rgba(2,6,23,0.9)]">
           <div className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-sky-300/10 blur-3xl" aria-hidden="true" />
           <div className="relative flex flex-wrap items-center gap-4 px-4 py-4 sm:px-6 sm:py-5">

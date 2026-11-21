@@ -1,5 +1,5 @@
 import { useCallback } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import useSearchParamsLatest from './useSearchParamsLatest.js'
 
 /**
  * A tab, filter or list choice kept in the address's query string instead of in memory,
@@ -22,7 +22,7 @@ import { useSearchParams } from 'react-router-dom'
  * it resets: `patch({ tab: 'previous', status: null })`. An empty value removes the word.
  */
 export function useUrlParams() {
-  const [params, setParams] = useSearchParams()
+  const [params, setParams] = useSearchParamsLatest()
   const patch = useCallback((changes, { replace = false } = {}) => {
     setParams((current) => {
       const updated = new URLSearchParams(current)
@@ -37,7 +37,7 @@ export function useUrlParams() {
 }
 
 export default function useUrlState(name, fallback, allowed = null) {
-  const [params, setParams] = useSearchParams()
+  const [params, setParams] = useSearchParamsLatest()
   const raw = params.get(name)
   const value = raw !== null && (!allowed || allowed.includes(raw)) ? raw : fallback
 

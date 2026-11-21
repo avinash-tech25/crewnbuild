@@ -29,6 +29,8 @@ import { useLanguage } from '../../../i18n/LanguageContext.jsx'
 import { useProfileGate, useResumeGatedAction } from '../../../shared/hooks/useProfileGate.js'
 import { ENGINEER_CATEGORY_LABEL_KEYS } from '../../onboarding/profileConstants.js'
 import { useLiveRefresh } from '../../../shared/hooks/useLiveRefresh.js'
+import { SkeletonGrid } from '../../../shared/ui/Skeleton.jsx'
+import useUrlDialog from '../../../shared/hooks/useUrlDialog.js'
 
 // The request type and the engineer category the backend enforces. Named here
 // so the screen and the server agree; the server is still the one that decides.
@@ -53,8 +55,9 @@ export default function OwnerSiteEngineerSection({ project }) {
   const [busyId, setBusyId] = useState(null)
   const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(false)
-  // The engineer whose profile is open, and whether a request may be sent from it.
-  const [profileEngineer, setProfileEngineer] = useState(null)
+  // The engineer whose profile is open (?engineer=<uuid>, so Back closes it and a link
+  // reopens it); the engineer and whether a request may be sent are read from the lists.
+  const [profileEngineerId, openProfileEngineer, closeProfileEngineer] = useUrlDialog('engineer')
   // Whether the "Remove {name} from this project?" confirmation is showing.
   const [confirmRemove, setConfirmRemove] = useState(false)
 
@@ -100,6 +103,17 @@ export default function OwnerSiteEngineerSection({ project }) {
   )
 
   const engineerById = (engineerId) => engineers.find((engineer) => engineer.user_id === engineerId) || null
+
+  // The open profile, as each card opened it: the assigned engineer and an accepted one
+  // offer no request; a listed one does unless already working on another project.
+  const profileEngineer = (() => {
+    if (!profileEngineerId) return null
+    if (assigned?.user_id === profileEngineerId) return { engineer: assigned, canRequest: false }
+    const listed = browseList.find((engineer) => engineer.user_id === profileEngineerId)
+    if (listed) return { engineer: listed, canRequest: !listed.working_on_project }
+    const accepted = engineerById(profileEngineerId)
+    return accepted ? { engineer: accepted, canRequest: false } : null
+  })()
 
   // Asking a Site Engineer is a request like asking a builder: it needs a
   // complete profile. The project id travels with the gated action, so the
@@ -172,7 +186,7 @@ export default function OwnerSiteEngineerSection({ project }) {
           <CardGrid testId="owner-assigned-engineer">
             <ListCard
               key={assigned.user_id}
-              onClick={() => setProfileEngineer({ engineer: assigned, canRequest: false })}
+              onClick={() => openProfileEngineer(assigned.user_id)}
               avatar={<CardAvatar src={userAvatarSrc(assigned, 'ENGINEER')} alt={td(assigned.name)} />}
               title={td(assigned.name)}
               subtitle={specializationText(assigned.specialization)}
@@ -235,7 +249,7 @@ export default function OwnerSiteEngineerSection({ project }) {
                         // Already working on a project: shown dimmed, as before.
                         dimmed={working}
                         key={item.id}
-                        onClick={engineerById(item.receiver_id) ? () => setProfileEngineer({ engineer: engineerById(item.receiver_id), canRequest: false }) : undefined}
+                        onClick={engineerById(item.receiver_id) ? () => openProfileEngineer(item.receiver_id) : undefined}
                         avatar={<CardAvatar src={userAvatarSrc(item, 'ENGINEER')} alt={td(item.sender_name)} />}
                         title={td(item.sender_name)}
                         subtitle={t('role.engineer')}
@@ -266,7 +280,11 @@ export default function OwnerSiteEngineerSection({ project }) {
             <p className="mt-0.5 text-xs font-medium text-oc-muted">
               {t('ui.owner.siteEngineersNear', { place: project.pincode || t('ui.owner.yourProject') })}
             </p>
-            {loading ? null : browseList.length ? (
+            {loading ? (
+              <div className="mt-2">
+                <SkeletonGrid count={3} itemClassName="h-60" className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3" />
+              </div>
+            ) : browseList.length ? (
               <div className="mt-2">
                 <CardGrid testId="owner-engineer-cards" label={t('ui.owner.findSiteEngineer')}>
                   {browseList.map((engineer) => {
@@ -279,7 +297,7 @@ export default function OwnerSiteEngineerSection({ project }) {
                         key={engineer.user_id}
                         // Already working on a project: shown dimmed, as before.
                         dimmed={working}
-                        onClick={() => setProfileEngineer({ engineer, canRequest: !working })}
+                        onClick={() => openProfileEngineer(engineer.user_id)}
                         avatar={<CardAvatar src={userAvatarSrc(engineer, 'ENGINEER')} alt={td(engineer.name)} />}
                         title={td(engineer.name)}
                         subtitle={specializationText(engineer.specialization)}
@@ -329,12 +347,12 @@ export default function OwnerSiteEngineerSection({ project }) {
         {profileEngineer && (
           <ContractorEngineerProfileDrawer
             engineer={profileEngineer.engineer}
-            onClose={() => setProfileEngineer(null)}
+            onClose={closeProfileEngineer}
             // Send Request is offered only where the card itself offers it: an
             // available engineer with no pending request here. The request is
             // the same `send` the card's button runs.
             onSendRequest={profileEngineer.canRequest && statusFor(profileEngineer.engineer.user_id) !== 'pending'
-              ? async (engineer) => { setProfileEngineer(null); await send(engineer) }
+              ? async (engineer) => { closeProfileEngineer(); await send(engineer) }
               : undefined}
             teamStatus={null}
             requestSent={statusFor(profileEngineer.engineer.user_id) === 'pending'}

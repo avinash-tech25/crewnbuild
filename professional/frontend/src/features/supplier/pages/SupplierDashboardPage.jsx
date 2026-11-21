@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import useUrlState from '../../../shared/hooks/useUrlState.js'
+import useUrlDialog from '../../../shared/hooks/useUrlDialog.js'
+import useVisibleInterval from '../../../shared/hooks/useVisibleInterval.js'
+import { SkeletonList } from '../../../shared/ui/Skeleton.jsx'
 import { useDispatch, useSelector } from 'react-redux'
 import { useLocation, useNavigate } from 'react-router-dom'
 import {
@@ -143,8 +146,12 @@ export default function SupplierDashboard() {
   const [requestMessage, setRequestMessage] = useState('')
   const [sendingReceiverId, setSendingReceiverId] = useState(null)
   const [sentRequestKeys, setSentRequestKeys] = useState({})
-  const [selectedClientProfile, setSelectedClientProfile] = useState(null)
-  const [selectedRequestProfile, setSelectedRequestProfile] = useState(null)
+  // The client whose profile is open (?client=<project uuid, or the client's user uuid
+  // when the card names no project>) and the request whose counterparty view is open
+  // (?request=<request uuid>): in the address, so Back closes them and a refresh or a
+  // link opens them again once the lists have loaded.
+  const [selectedClientId, openClientDialog, closeClientDialog] = useUrlDialog('client')
+  const [selectedRequestId, openRequestDialog, closeRequestDialog] = useUrlDialog('request')
   const [seenClientKeys, setSeenClientKeys] = useState([])
   const [unreadMessageCount, setUnreadMessageCount] = useState(0)
   const [notificationBadgeCounts, setNotificationBadgeCounts] = useState({})
@@ -220,6 +227,12 @@ export default function SupplierDashboard() {
     })
     return clientList.filter((client) => !requested.has(`${client.type}:${client.user_id}`))
   }, [clientList, requestList])
+  const selectedClientProfile = selectedClientId
+    ? clientList.find((client) => (client.project_id ? String(client.project_id) === selectedClientId : String(client.user_id) === selectedClientId)) || null
+    : null
+  const selectedRequestProfile = selectedRequestId
+    ? requestList.find((request) => String(request.id) === selectedRequestId) || null
+    : null
 
   // The topbar search narrows whichever section is open. Fields are matched
   // against the same values each section already renders, so a result is never
@@ -352,15 +365,9 @@ export default function SupplierDashboard() {
   }
 
   useEffect(refreshSupplierData, [])
-  useEffect(() => {
-    const clientRefreshTimer = window.setInterval(refreshSupplierClients, 10000)
-    const refreshClientsOnFocus = () => refreshSupplierClients()
-    window.addEventListener('focus', refreshClientsOnFocus)
-    return () => {
-      window.clearInterval(clientRefreshTimer)
-      window.removeEventListener('focus', refreshClientsOnFocus)
-    }
-  }, [])
+  // Every 10 s while the tab is visible, and once on coming back to it (which also
+  // covers the refresh on window focus this used to do).
+  useVisibleInterval(refreshSupplierClients, 10000)
   // The supplier's category decides which dashboard (Material, Labor or
   // Equipment) is shown, so nothing type-specific renders until it is known.
   const loadSupplierProfile = useCallback(() => {
@@ -378,9 +385,8 @@ export default function SupplierDashboard() {
   }, [loadSupplierProfile])
   useEffect(() => {
     refreshUnreadMessageCount()
-    const messageCountTimer = window.setInterval(refreshUnreadMessageCount, 10000)
-    return () => window.clearInterval(messageCountTimer)
   }, [])
+  useVisibleInterval(refreshUnreadMessageCount, 10000)
   useEffect(() => {
     refreshNotificationBadgeCounts()
     const refreshWhenVisible = () => {
@@ -691,9 +697,7 @@ export default function SupplierDashboard() {
         ) : null}
       >
         {supplierProfileStatus === 'loading' && (
-          <div className="flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white p-10 text-sm font-bold text-slate-500">
-            <Loader2 className="h-4 w-4 animate-spin" /> {t('dash.supplier.profile.loading')}
-          </div>
+          <SkeletonList rows={3} rowClassName="h-60" className="grid gap-4" />
         )}
         {supplierProfileStatus === 'error' && (
           <div className="space-y-3 rounded-2xl border border-rose-200 bg-rose-50 p-8 text-center">
@@ -956,9 +960,8 @@ export default function SupplierDashboard() {
                     className={`inline-flex h-10 shrink-0 items-center gap-2 rounded-xl px-4 text-sm font-extrabold transition ${isActive ? 'bg-brand-700 text-white shadow-sm' : 'text-graphite/60 hover:bg-slate-50 hover:text-graphite'}`}
                   >
                     {kind.label}
-                    {kind.count > 0 && (
-                      <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-extrabold ${isActive ? 'bg-white/20 text-white' : 'bg-oc-amber text-graphite'}`}>{kind.count} new</span>
-                    )}
+                    {/* Always in place (hidden at 0), so a count arriving never moves the tabs. */}
+                    <span aria-hidden={kind.count > 0 ? undefined : 'true'} className={`min-w-[3.25rem] rounded-full px-1.5 py-0.5 text-center text-[10px] font-extrabold tabular-nums ${isActive ? 'bg-white/20 text-white' : 'bg-oc-amber text-graphite'} ${kind.count > 0 ? '' : 'invisible'}`}>{kind.count || 0} new</span>
                   </button>
                 )
               })}
@@ -1031,7 +1034,7 @@ export default function SupplierDashboard() {
                   onAccept={acceptSupplierRequest}
                   onReject={rejectSupplierRequest}
                   onWithdraw={withdrawSupplierRequest}
-                  onOpen={setSelectedRequestProfile}
+                  onOpen={(request) => openRequestDialog(request.id)}
                 />
               ) : (
                 <EmptyState
@@ -1054,7 +1057,7 @@ export default function SupplierDashboard() {
             onSendRequest={sendSupplierClientRequest}
             onAcceptRequest={acceptSupplierRequest}
             onRejectRequest={rejectSupplierRequest}
-            onViewProfile={setSelectedClientProfile}
+            onViewProfile={(client) => openClientDialog(client.project_id || client.user_id)}
           />
         )}
 
@@ -1121,7 +1124,7 @@ export default function SupplierDashboard() {
           <RequestProfileDashboard
             details={selectedRequestProfile}
             canViewContact={Boolean(selectedRequestProfile.can_view_contact)}
-            onClose={() => setSelectedRequestProfile(null)}
+            onClose={closeRequestDialog}
           />
         )}
         {selectedClientProfile && (
@@ -1129,7 +1132,7 @@ export default function SupplierDashboard() {
             client={selectedClientProfile}
             requestSent={Boolean(sentRequestKeys[`${selectedClientProfile.type}-${selectedClientProfile.user_id}-${selectedClientProfile.project_id || 'profile'}`])}
             sending={sendingReceiverId === selectedClientProfile.user_id}
-            onClose={() => setSelectedClientProfile(null)}
+            onClose={closeClientDialog}
             onSendRequest={sendSupplierClientRequest}
           />
         )}

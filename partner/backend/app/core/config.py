@@ -72,10 +72,11 @@ class Settings(BaseSettings):
     jwt_secret_key: SecretStr = Field(default=SecretStr(""), repr=False)
     jwt_algorithm: str = "HS256"
     access_token_minutes: int = 15
-    # A technician session's absolute lifetime; refreshing never extends it.
-    refresh_token_days: int = 30
-    # A technician session not refreshed for this long ends early.
-    session_idle_days: int = 30
+    # A technician session ends after SESSION_MAX_HOURS in total (refreshing never extends
+    # it) or SESSION_IDLE_HOURS without activity (no refresh), whichever comes first.
+    # Checked on every request, refresh and open websocket.
+    session_max_hours: int = Field(default=24, ge=1, le=24 * 30)
+    session_idle_hours: int = Field(default=12, ge=1, le=24 * 30)
     # A booking (requester) session's whole lifetime.
     requester_session_minutes: int = 60
     # A second tab presenting a just-rotated refresh token within this many seconds is

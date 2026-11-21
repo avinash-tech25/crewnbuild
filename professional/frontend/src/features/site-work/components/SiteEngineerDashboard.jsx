@@ -18,6 +18,7 @@ import { fetchEquipmentUsage, fetchProjectEquipmentRequests } from '../../equipm
 import { agreedPurchases, canRecordOnDate, dailyCostSummary, hasResourceOnDate, labourRequestsForDate, recordForDate, rentalChargeForDate, rentalsForDate } from '../siteResources.js'
 import { LabourCards, PaymentsList, PurchasedEquipment, ReceivedMaterials, RentalCards, Tag } from './SiteDayResources.jsx'
 import { EMPTY_HISTORY_FILTERS, buildMaterialHistory, filterMaterialHistory, hasActiveFilters, isMaterialCostOverride, sortLatestFirst, summarizeMaterialHistory, todayUsageSummary, usageChanges } from '../siteMaterialHistory.js'
+import { SkeletonList } from '../../../shared/ui/Skeleton.jsx'
 
 const localDateKey = (value = new Date()) => `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, '0')}-${String(value.getDate()).padStart(2, '0')}`
 const emptyForm = { work_title: '', activity_category: '', boq_reference: '', activity_unit: '', planned_quantity: '', completed_quantity: '', detailed_remarks: '', labour_worker_count: '', labour_cost: '', material_cost: '', equipment_cost: '', total_expenses: '', material_used: '', equipment_used: '', inspection_remarks: '' }
@@ -829,7 +830,7 @@ export default function SiteEngineerDashboard({ projectList = [], viewMode = 'ca
         {!dayReady ? (
           loadError
             ? <div className="p-5"><Notice notice={{ text: loadError, tone: 'error' }}><button type="button" onClick={refresh} className="rounded-lg border border-rose-300 bg-white px-3 py-1 text-xs font-extrabold">{t('se.form.retry')}</button></Notice></div>
-            : <p className="flex items-center justify-center gap-2 px-5 py-12 text-sm font-bold text-slate-500"><Loader2 className="h-4 w-4 animate-spin" />{t('se.form.loadingDay')}</p>
+            : <div className="p-5"><SkeletonList rows={3} rowClassName="h-24" /></div>
         ) : photoOnly ? (
         <div className="p-5">
           {uploadedImages.length > 0 && (

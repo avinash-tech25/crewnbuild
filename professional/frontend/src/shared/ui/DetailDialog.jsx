@@ -33,7 +33,7 @@ export function DetailDialog({ label = null, title, status = null, onClose, clos
     return () => window.removeEventListener('keydown', onKey)
   }, [onClose])
   return (
-    <div className="fixed inset-0 z-[130] grid place-items-center p-3 sm:p-6">
+    <div className="fixed inset-0 z-dialog grid place-items-center p-3 sm:p-6">
       <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
       <section
         role="dialog"

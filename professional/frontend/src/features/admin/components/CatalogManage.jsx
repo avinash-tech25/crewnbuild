@@ -11,6 +11,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useDispatch } from 'react-redux'
 import { ArrowLeft, Boxes, ChevronRight, ImageOff, ImagePlus, Images, Loader2, PackageSearch, Plus, Save, Search, Trash2, X } from 'lucide-react'
+import { SkeletonGrid } from '../../../shared/ui/Skeleton.jsx'
 import { FittedImage, StoredImage } from '../../catalog/components/CatalogProductBrowser.jsx'
 import { BrandLogo, BrandPicker } from '../../catalog/components/BrandPicker.jsx'
 import { CardAvatar, CardChip, CardGrid, CardStatus, ListCard, cardButtonClass } from '../../../shared/ui/ListCard.jsx'
@@ -421,7 +422,7 @@ export function CategoryManager({ categories, onChanged, onOpenProduct }) {
             </header>
 
             {products.loading ? (
-              <p className="flex items-center gap-2 text-xs font-semibold text-slate-500"><Loader2 className="h-4 w-4 animate-spin" /> Loading products…</p>
+              <SkeletonGrid count={6} itemClassName="h-[246px]" className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3" />
             ) : products.rows.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-slate-200 px-6 py-10 text-center">
                 <PackageSearch className="mx-auto h-7 w-7 text-slate-300" />
@@ -820,7 +821,7 @@ export function ProductEditor({ product, categories, brands, units, onClose, onS
   }
 
   return (
-    <div role="dialog" aria-modal="true" aria-label={editing ? 'Edit product' : 'New product'} className="fixed inset-0 z-[140] flex justify-center overflow-y-auto bg-slate-900/60 p-4">
+    <div role="dialog" aria-modal="true" aria-label={editing ? 'Edit product' : 'New product'} className="fixed inset-0 z-dialog-nested flex justify-center overflow-y-auto bg-slate-900/60 p-4">
       <form onSubmit={submit} className="my-auto w-full max-w-3xl space-y-4 rounded-2xl bg-white p-5 shadow-2xl">
         <header className="flex items-center justify-between">
           <h3 className="font-display text-base font-extrabold text-graphite">{editing ? `Edit ${product.name}` : 'New master product'}</h3>

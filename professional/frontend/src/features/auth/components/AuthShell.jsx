@@ -10,7 +10,7 @@
  * tailwind.config.js, so the dashboard palette (brand-*, forest-*, slate-* …)
  * is never shadowed.
  */
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ArrowLeft, Check } from 'lucide-react'
 import { Link } from 'react-router-dom'
@@ -133,7 +133,7 @@ export function AuthRolePicker({ label, value, onChange, options, locked, requir
 }
 
 // Fills the panel with a looping video when one is given, otherwise the construction photo.
-function AuthPanelBackdrop({ videoUrl }) {
+function AuthPanelBackdrop({ videoUrl, videoScrimOpacity }) {
   if (!videoUrl) {
     return (
       <div
@@ -142,38 +142,75 @@ function AuthPanelBackdrop({ videoUrl }) {
       />
     )
   }
-  return <AuthPanelVideo videoUrl={videoUrl} />
+  return <AuthPanelVideo videoUrl={videoUrl} scrimOpacity={videoScrimOpacity} />
 }
 
-function AuthPanelVideo({ videoUrl }) {
+const prefersReducedMotion = () =>
+  typeof window !== 'undefined' && Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches)
+
+/** `videoUrl`: one address, or a list of { src, type } in order of preference. */
+const videoSourcesOf = (videoUrl) => (Array.isArray(videoUrl) ? videoUrl : [{ src: videoUrl }])
+
+/**
+ * The panel's looping video (as on the old app's sign-up page): muted, inline, looping,
+ * with the construction photo as its poster. Several encodings can be given (WebM first,
+ * then MP4): the browser plays the first one it supports. Loaded lazily: the files are only
+ * attached once the panel is actually on screen, so a phone (where the panel is hidden)
+ * never downloads them. Visitors who prefer reduced motion see the poster only. The files
+ * are served from this site, so the Content Security Policy (media from 'self') allows it.
+ */
+function AuthPanelVideo({ videoUrl, scrimOpacity = 1 }) {
   const videoRef = useRef(null)
+  const [source, setSource] = useState(null)
+  const sources = source ? videoSourcesOf(source) : []
+
+  useEffect(() => {
+    const video = videoRef.current
+    if (!video || prefersReducedMotion()) return undefined
+    if (typeof IntersectionObserver === 'undefined') {
+      setSource(videoUrl)
+      return undefined
+    }
+    const observer = new IntersectionObserver((entries) => {
+      if (entries.some((entry) => entry.isIntersecting)) {
+        setSource(videoUrl)
+        observer.disconnect()
+      }
+    })
+    observer.observe(video)
+    return () => observer.disconnect()
+  }, [videoUrl])
 
   // React sets `muted` as a property but not as an attribute, and browsers only allow
   // autoplay on a muted video — so mute it here and start it explicitly.
   useEffect(() => {
     const video = videoRef.current
-    if (!video) return
+    if (!video || !source) return
     video.muted = true
-    video.play().catch(() => {
+    // The <source> children were added after mount: the element picks one on load().
+    video.load?.()
+    video.play?.()?.catch?.(() => {
       // Autoplay refused; the poster frame still shows behind the scrim.
     })
-  }, [videoUrl])
+  }, [source])
 
   return (
     <>
       <video
         ref={videoRef}
         className="absolute inset-0 h-full w-full object-cover"
-        src={videoUrl}
         poster={townUrl}
-        autoPlay
+        autoPlay={Boolean(source)}
         muted
         loop
         playsInline
-        preload="auto"
+        preload="none"
         aria-hidden="true"
-      />
-      <div className="absolute inset-0" style={{ background: scrim }} />
+        data-testid="auth-panel-video"
+      >
+        {sources.map(({ src, type }) => <source key={src} src={src} type={type} />)}
+      </video>
+      <div className="absolute inset-0" style={{ background: scrim, opacity: scrimOpacity }} />
     </>
   )
 }
@@ -204,7 +241,7 @@ function AuthPanelCharacter({ url }) {
   )
 }
 
-export function AuthShell({ eyebrow, headline, highlight, aside, videoUrl, character, children }) {
+export function AuthShell({ eyebrow, headline, highlight, aside, videoUrl, videoScrimOpacity, character, children }) {
   const { t } = useLanguage()
 
   return (
@@ -258,7 +295,7 @@ export function AuthShell({ eyebrow, headline, highlight, aside, videoUrl, chara
       </div>
 
       <div className="relative overflow-hidden max-mid:hidden">
-        <AuthPanelBackdrop videoUrl={videoUrl} />
+        <AuthPanelBackdrop videoUrl={videoUrl} videoScrimOpacity={videoScrimOpacity} />
         <AuthPanelCharacter url={character} />
         <div className="absolute inset-x-0 bottom-0 p-12 text-white">
           <span className={`${brandBadgeClass} items-center px-5 py-3`}>

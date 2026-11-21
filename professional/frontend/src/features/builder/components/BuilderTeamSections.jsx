@@ -960,7 +960,7 @@ export function MySiteEngineersSection({
               <tab.icon className="h-4 w-4" />
               {tab.label}
               {tab.count !== undefined && (
-                <span className={`grid h-5 min-w-5 place-items-center rounded-full px-1.5 text-[10px] font-extrabold ${isActive ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'}`}>{tab.count}</span>
+                <span className={`grid h-5 min-w-5 place-items-center rounded-full px-1.5 text-[10px] font-extrabold tabular-nums ${isActive ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'}`}>{tab.count}</span>
               )}
             </button>
           )
@@ -1048,7 +1048,7 @@ export function InviteEngineerDrawer({ contractorName, prefill, onClose, onGener
   const shareMessage = t('ce.shareMessage', { name: contractorName, code: inviteResult?.invite_code || '', link: inviteResult?.invite_link || '' })
 
   return (
-    <div className="fixed inset-0 z-[130] flex items-center justify-center p-4 sm:p-6">
+    <div className="fixed inset-0 z-dialog flex items-center justify-center p-4 sm:p-6">
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -1182,7 +1182,7 @@ export function AssignProjectDrawer({ engineer, projectList, onClose, onAssign, 
   }, [onClose])
 
   return (
-    <div className="fixed inset-0 z-[130]">
+    <div className="fixed inset-0 z-dialog">
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -1354,7 +1354,7 @@ export function UnassignProjectDrawer({ engineer, onClose, onUnassign, busy, suc
 
   return (
     // A small centred confirmation box (it used to be a panel on the right).
-    <div className="fixed inset-0 z-[130] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-dialog flex items-center justify-center p-4">
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -1490,7 +1490,7 @@ export function ContractorEngineerProfileDrawer({ engineer, onClose, onSendReque
   }, [onClose])
 
   return (
-    <div className="fixed inset-0 z-[130] grid place-items-center p-3 sm:p-6">
+    <div className="fixed inset-0 z-dialog grid place-items-center p-3 sm:p-6">
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}

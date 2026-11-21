@@ -10,6 +10,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { ArrowLeft, Inbox, Loader2, LogIn, Paperclip, RefreshCw, Send, Ticket } from 'lucide-react'
+import { SkeletonList } from '../../../shared/ui/Skeleton.jsx'
 import { SiteHeader } from '../../public-site/components/landing/SiteHeader.jsx'
 import { useLanguage } from '../../public-site/components/landing/useLanguage.js'
 import { containerClass } from '../../public-site/components/landing/shared.jsx'
@@ -67,7 +68,7 @@ function useLoader(loader, deps) {
 
 function LoadState({ state, children }) {
   if (state.loading && !state.data) {
-    return <p role="status" className="flex items-center gap-2 py-10 text-sm font-semibold text-oc-muted"><Loader2 size={18} className="animate-spin" aria-hidden="true" /> Loading…</p>
+    return <SkeletonList rows={4} rowClassName="h-16" className="grid gap-3 py-4" />
   }
   const status = state.error?.response?.status
   if (status === 401) return <SignInPrompt />

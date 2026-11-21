@@ -5,6 +5,8 @@
 @layer base {
   html {
     scroll-behavior: smooth;
+    /* Room for the scrollbar is always kept, so pages and dialogs never shift sideways. */
+    scrollbar-gutter: stable;
   }
   body {
     @apply bg-oc-paper font-sans text-oc-ink antialiased;
@@ -20,7 +22,7 @@
 
 @layer components {
   .container-x {
-    @apply mx-auto w-full max-w-6xl px-5 sm:px-8;
+    @apply mx-auto w-full max-w-page px-5 sm:px-8;
   }
   .btn {
     @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-extrabold transition duration-200 ease-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-oc-amber focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60;
@@ -73,5 +75,18 @@
   }
   .list-card.list-card:is(:hover, :focus-within) {
     transform: none;
+  }
+}
+
+/* Reduced motion (WCAG 2.3.3): every CSS animation and transition is cut to an instant for
+   visitors who ask for less motion; framer-motion animations follow MotionConfig. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

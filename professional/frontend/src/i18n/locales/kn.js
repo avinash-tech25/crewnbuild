@@ -3511,7 +3511,6 @@ const base = {
   'landing.footer.rights': 'ಎಲ್ಲಾ ಹಕ್ಕುಗಳನ್ನು ಕಾಯ್ದಿರಿಸಲಾಗಿದೆ.',
   'landing.footer.privacy': 'ಗೌಪ್ಯತಾ ನೀತಿ',
   'landing.footer.terms': 'ಸೇವಾ ನಿಯಮಗಳು',
-  'landing.footer.cookies': 'ಕುಕೀ ನೀತಿ',
   'landing.footer.language': 'ಭಾಷೆ',
   'landing.comingSoonPage.eyebrow': 'ಶೀಘ್ರದಲ್ಲಿ ಬರಲಿದೆ',
   'landing.comingSoonPage.headline': 'ಇನ್ನೂ ಸೈನ್-ಅಪ್‌ಗೆ',

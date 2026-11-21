@@ -150,7 +150,7 @@ describe('sign-in, registration and password reset', () => {
     const digits = await screen.findAllByRole('textbox')
     await user.click(digits[0])
     await user.paste('482913')
-    await user.click(screen.getByRole('checkbox', { name: /I agree to the Terms of Service and Privacy Policy/ }))
+    await user.click(screen.getByRole('checkbox', { name: /^I agree to the Terms & Conditions and I have read the Privacy Policy/ }))
     await user.click(screen.getByRole('button', { name: /Verify email/ }))
     await waitFor(() => expect(location.current.pathname).toBe('/onboarding'))
     expect(JSON.parse(server.calls('POST /auth/signup/verify-code')[0].data)).toEqual({

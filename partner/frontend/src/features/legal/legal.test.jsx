@@ -51,12 +51,12 @@ describe.each([
 })
 
 it.each([
-  [terms, 'CREWNBUILD Terms and Conditions (Terms of Use)'],
-  [privacy, 'CREWNBUILD Privacy Policy'],
-])('%#: the text is the Word file: title, effective date and version as printed, no placeholders', (doc, title) => {
+  [terms, 'Terms and Conditions (Terms of Use)'],
+  [privacy, 'Privacy Policy'],
+])('%#: the text is the Word file: title, version and dates, and no old brand', (doc, title) => {
   expect(doc.title).toBe(title)
-  expect([doc.effectiveDate, doc.version, doc.lastUpdated]).toEqual(['17 November 2026', '1.0', '17 November 2026'])
-  expect(JSON.stringify(doc)).not.toMatch(/gharbanao|\[[A-Z][^\]]*\]/i)
+  expect([doc.effectiveDate, doc.version, doc.lastUpdated]).toEqual(['20 November 2026', '1.1', '20 November 2026'])
+  expect(JSON.stringify(doc)).not.toMatch(/gharbanao/i)
 })
 
 it('a numbered list in the Word file is a numbered list on the page', async () => {
@@ -160,13 +160,14 @@ describe('registration consent', () => {
     return server
   }
 
-  const consentBox = () => screen.getByRole('checkbox', { name: 'I agree to the Terms of Service and Privacy Policy' })
+  const consentBox = () => screen.getByRole('checkbox', { name: /^I agree to the Terms & Conditions and I have read the Privacy Policy/ })
+  const verifyButton = () => screen.getByRole('button', { name: /Verify email/ })
   const codeValue = () => screen.getAllByRole('textbox').map((input) => input.value).join('')
 
   it.each([
-    ['Terms of Service', 'Escape', terms],
+    ['Terms & Conditions', 'Escape', terms],
     ['Privacy Policy', 'the close button', privacy],
-    ['Terms of Service', 'a click outside', terms],
+    ['Terms & Conditions', 'a click outside', terms],
   ])('"%s" opens the full text in a dialog; closing with %s keeps the form and the box unticked', async (word, how, doc) => {
     const user = userEvent.setup()
     await reachCodeStep(user)
@@ -198,11 +199,15 @@ describe('registration consent', () => {
     expect(consentBox()).not.toBeChecked()
   })
 
-  it('refuses to create the account while the box is unticked, and sends nothing', async () => {
+  it('keeps Verify email disabled until the box is ticked, and sends nothing before', async () => {
     const user = userEvent.setup()
     const server = await reachCodeStep(user)
-    await user.click(screen.getByRole('button', { name: /Verify email/ }))
-    expect(await screen.findByText('Please agree to the Terms of Service and Privacy Policy to create your account.')).toBeInTheDocument()
+    expect(consentBox()).toBeRequired()
+    expect(verifyButton()).toBeDisabled()
+    await user.click(consentBox())
+    expect(verifyButton()).toBeEnabled()
+    await user.click(consentBox())
+    expect(verifyButton()).toBeDisabled() // unticked again disables it
     expect(server.calls('POST /auth/signup/verify-code')).toHaveLength(0)
     expect(location.current.pathname).toBe('/register')
   })
@@ -211,7 +216,7 @@ describe('registration consent', () => {
     const user = userEvent.setup()
     const server = await reachCodeStep(user)
     await user.click(consentBox())
-    await user.click(screen.getByRole('button', { name: /Verify email/ }))
+    await user.click(verifyButton())
     await waitFor(() => expect(server.calls('POST /auth/signup/verify-code')).toHaveLength(1))
     const body = JSON.parse(server.calls('POST /auth/signup/verify-code')[0].data)
     expect(body).toMatchObject({ accept_terms: true, terms_version: terms.version, privacy_version: privacy.version })

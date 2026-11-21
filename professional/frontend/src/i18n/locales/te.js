@@ -3511,7 +3511,6 @@ const base = {
   'landing.footer.rights': 'అన్ని హక్కులు రిజర్వ్ చేయబడ్డాయి.',
   'landing.footer.privacy': 'గోప్యతా విధానం',
   'landing.footer.terms': 'సేవా నిబంధనలు',
-  'landing.footer.cookies': 'కుకీ విధానం',
   'landing.footer.language': 'భాష',
   'landing.comingSoonPage.eyebrow': 'త్వరలో వస్తోంది',
   'landing.comingSoonPage.headline': 'ఇంకా సైన్-అప్‌కు',

@@ -3,11 +3,16 @@
     python scripts/convert_legal_docs.py      (needs python-docx: pip install python-docx)
 
 Run it after replacing a Word file; it rewrites professional/ and partner/ frontend
-src/features/legal/content/{terms,privacy}.js. The wording is copied exactly; nothing is
-replaced. The structure comes from the Word styles:
-  Heading 1                     the title
-  first two paragraphs after it  "CREWNBUILD · crewnbuild.com" and
-                                 "Effective date: … · Version: … · Last updated: …"
+src/features/legal/content/{terms,privacy}.js. The sources are the one .docx in docs/legal
+whose name contains "Terms" and the one whose name contains "Privacy".
+
+The wording is copied exactly. The only change is the brand (BRAND below): any
+@gharbanao.in address becomes support@crewnbuild.com, gharbanao.in becomes crewnbuild.com
+and GharBanao becomes CREWNBUILD. The structure comes from the Word styles:
+  Heading 1 (optional)          the title; without one, TITLES below
+  paragraphs before the first   optional "CREWNBUILD · crewnbuild.com" and
+  section (optional)            "Effective date: … · Version: … · Last updated: …";
+                                without them, the defaults below
   Heading 2                     a section ("1. Acceptance and Eligibility", "At a Glance")
   a numbered or bulleted para   a list item (a "1." list is kept ordered)
   any other paragraph           a paragraph
@@ -28,10 +33,35 @@ from pathlib import Path
 import docx
 
 ROOT = Path(__file__).resolve().parents[1]
-SOURCES = {
-    'terms': ROOT / 'docs/legal/CREWNBUILD_Terms_and_Conditions.docx',
-    'privacy': ROOT / 'docs/legal/CREWNBUILD_Privacy_Policy.docx',
-}
+LEGAL = ROOT / 'docs/legal'
+
+
+def source(word: str) -> Path:
+    found = [path for path in LEGAL.glob('*.docx') if word.lower() in path.name.lower()]
+    if len(found) != 1:
+        raise SystemExit(f'docs/legal: expected one .docx with "{word}" in its name, found {len(found)}')
+    return found[0]
+
+
+SOURCES = {'terms': source('Terms'), 'privacy': source('Privacy')}
+# Used when a document does not print its own title / version / dates (the 20 Nov 2026
+# files do not). Raise DEFAULT_VERSION with any change of wording, together with
+# TERMS_VERSION / PRIVACY_VERSION in both backends' app/core/legal.py.
+TITLES = {'terms': 'Terms and Conditions (Terms of Use)', 'privacy': 'Privacy Policy'}
+DEFAULT_COMPANY, DEFAULT_SITE = 'CREWNBUILD', 'crewnbuild.com'
+DEFAULT_VERSION = '1.1'
+DEFAULT_DATE = '20 November 2026'
+BRAND = [
+    (re.compile(r'[A-Za-z0-9._%+-]+@gharbanao\.in', re.IGNORECASE), 'support@crewnbuild.com'),
+    (re.compile(r'gharbanao\.in', re.IGNORECASE), 'crewnbuild.com'),
+    (re.compile(r'gharbanao', re.IGNORECASE), 'CREWNBUILD'),
+]
+
+
+def brand(text: str) -> str:
+    for pattern, replacement in BRAND:
+        text = pattern.sub(replacement, text)
+    return text
 W = '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}'
 PLACEHOLDER = re.compile(r'\[[^\[\]]+\]')
 
@@ -70,7 +100,7 @@ def parts_of(paragraph) -> list:
     if merged:
         merged[0][0] = merged[0][0].lstrip()
         merged[-1][0] = merged[-1][0].rstrip()
-    return [{'b': text} if bold else text for text, bold in merged if text]
+    return [{'b': brand(text)} if bold else brand(text) for text, bold in merged if text]
 
 
 def plain(parts) -> str:
@@ -89,7 +119,7 @@ def convert(key: str, path: Path) -> dict:
     header: list[str] = []
     section = None
     for paragraph in document.paragraphs:
-        text = paragraph.text.strip()
+        text = brand(paragraph.text.strip())
         if not text:
             continue
         style = paragraph.style.name
@@ -121,12 +151,16 @@ def convert(key: str, path: Path) -> dict:
         else:
             section['blocks'].append({'type': 'list', 'ordered': ordered, 'items': [parts]})
 
-    if len(header) != 2:
-        raise SystemExit(f'{key}: expected the company line and the dates line before the first section, got {header}')
-    result['company'], result['site'] = [piece.strip() for piece in header[0].split('·')]
-    fields = {
-        name.strip(): value.strip() for name, value in (piece.split(':', 1) for piece in header[1].split('·'))
-    }
+    result.setdefault('title', TITLES[key])
+    result['company'], result['site'] = DEFAULT_COMPANY, DEFAULT_SITE
+    fields = {'Effective date': DEFAULT_DATE, 'Version': DEFAULT_VERSION, 'Last updated': DEFAULT_DATE}
+    if header:
+        if len(header) != 2:
+            raise SystemExit(f'{key}: expected the company line and the dates line, got {header}')
+        result['company'], result['site'] = [piece.strip() for piece in header[0].split('·')]
+        fields = {
+            name.strip(): value.strip() for name, value in (piece.split(':', 1) for piece in header[1].split('·'))
+        }
     result['effectiveDate'] = fields['Effective date']
     result['version'] = fields['Version']
     result['lastUpdated'] = fields['Last updated']
@@ -137,15 +171,16 @@ def convert(key: str, path: Path) -> dict:
     return {name: result[name] for name in order}
 
 
-HEADER = """// Generated from docs/legal/{source} by scripts/convert_legal_docs.py, word for word.
-// Replace the Word file and rerun the script rather than editing this by hand.
+HEADER = """// Generated from the {name} Word file in docs/legal by scripts/convert_legal_docs.py:
+// word for word, with only the brand changed. Replace the Word file and rerun the script
+// rather than editing this by hand.
 """
 
 if __name__ == '__main__':
     for key, path in SOURCES.items():
         content = convert(key, path)
         body = json.dumps(content, ensure_ascii=False, indent=2)
-        module = HEADER.format(source=path.name) + f'const {key} = {body}\n\nexport default {key}\n'
+        module = HEADER.format(name={'terms': 'Terms', 'privacy': 'Privacy Policy'}[key]) + f'const {key} = {body}\n\nexport default {key}\n'
         for app in ['professional', 'partner']:
             target = ROOT / app / 'frontend/src/features/legal/content' / f'{key}.js'
             target.parent.mkdir(parents=True, exist_ok=True)

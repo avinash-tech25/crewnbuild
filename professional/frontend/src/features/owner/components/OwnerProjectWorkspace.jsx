@@ -171,10 +171,12 @@ export default function OwnerProjectWorkspace({
             >
               <entry.icon className="h-3.5 w-3.5" />
               {entry.label}
-              {badgeCount > 0 && (
-                <span className={`grid h-4 min-w-4 place-items-center rounded-full px-1 text-[9px] font-extrabold ${
+              {/* Always in place for a section that counts (hidden at 0), so a count
+                  arriving never moves the tabs. */}
+              {!entry.view && (
+                <span aria-hidden={badgeCount > 0 ? undefined : 'true'} className={`grid h-4 min-w-4 place-items-center rounded-full px-1 text-[9px] font-extrabold tabular-nums ${
                   active ? 'bg-white/20 text-white' : 'bg-brand-100 text-brand-800'
-                }`}>
+                } ${badgeCount > 0 ? '' : 'invisible'}`}>
                   {badgeCount > 9 ? '9+' : badgeCount}
                 </span>
               )}

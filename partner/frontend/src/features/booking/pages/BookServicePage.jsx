@@ -292,7 +292,7 @@ export default function BookServicePage() {
   }
 
   return (
-    <BookingShell session={session} wide>
+    <BookingShell session={session}>
       {requester && (
         <div className="space-y-6">
           <Link

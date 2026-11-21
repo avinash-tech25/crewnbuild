@@ -1,9 +1,9 @@
-import { screen, waitFor, within } from '@testing-library/react'
+import { act, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
-import { aTechnician } from '../../test/fakeServer.js'
-import { location } from '../../test/renderApp.jsx'
-import { AVAILABLE, FIND, JOB_ID, aJob, anOffer, execution, openDashboard, soon, summary, withDeviceStandIns } from '../../test/technicianDashboard.js'
+import { aTechnician, installFakeServer } from '../../test/fakeServer.js'
+import { history, location, renderApp, technicianSignedIn } from '../../test/renderApp.jsx'
+import { AVAILABLE, FIND, JOB_ID, aJob, anOffer, dashboardRoutes, execution, openDashboard, soon, summary, withDeviceStandIns } from '../../test/technicianDashboard.js'
 
 const device = withDeviceStandIns()
 
@@ -104,7 +104,7 @@ describe('on site', () => {
     const { server } = openDashboard(AVAILABLE, onSite('ARRIVED', {
       [`POST /technicians/me/jobs/${JOB_ID}/start`]: { data: aJob('IN_PROGRESS') },
     }))
-    await user.click(await screen.findByRole('button', { name: /Active Jobs/ }, FIND))
+    await user.click(await screen.findByRole('link', { name: /Active Jobs/ }, FIND))
     const card = await screen.findByTestId('job-card', {}, FIND)
     await user.click(within(card).getByRole('button', { name: /Start work/i }))
     const form = await screen.findByTestId('start-otp-form')
@@ -124,7 +124,7 @@ describe('on site', () => {
     openDashboard(AVAILABLE, onSite('ARRIVED', {
       [`POST /technicians/me/jobs/${JOB_ID}/start`]: { status: 400, data: { detail: 'That code is not right.' } },
     }))
-    await user.click(await screen.findByRole('button', { name: /Active Jobs/ }, FIND))
+    await user.click(await screen.findByRole('link', { name: /Active Jobs/ }, FIND))
     await user.click(within(await screen.findByTestId('job-card', {}, FIND)).getByRole('button', { name: /Start work/i }))
     const form = await screen.findByTestId('start-otp-form')
     await user.click(within(form).getAllByTestId('start-otp-digit')[0])
@@ -146,7 +146,7 @@ describe('on site', () => {
       },
       [`GET /technicians/me/jobs/${JOB_ID}/media/m-1/content`]: { data: new Blob(['jpeg'], { type: 'image/jpeg' }) },
     }))
-    await user.click(await screen.findByRole('button', { name: /Active Jobs/ }, FIND))
+    await user.click(await screen.findByRole('link', { name: /Active Jobs/ }, FIND))
     await screen.findByTestId('photos-BEFORE', {}, FIND)
     const photo = new File(['jpeg-bytes'], 'before.jpg', { type: 'image/jpeg' })
     await user.upload(screen.getByTestId('photo-input-BEFORE'), photo)
@@ -163,6 +163,51 @@ describe('on site', () => {
   })
 })
 
+describe('photo viewer in the address', () => {
+  const PHOTO_ID = '0190a8b2-4c1e-7aa0-9f00-00000000c001'
+  const media = [{ id: PHOTO_ID, kind: 'BEFORE', content_type: 'image/jpeg', byte_size: 10, created_at: soon(0), can_delete: false }]
+  const routes = {
+    'GET /technicians/me/dashboard': { data: summary({ active_jobs: 1 }) },
+    'GET /technicians/me/jobs': (request) => ({ data: request.params?.bucket === 'active' ? [aJob('ARRIVED')] : [] }),
+    [`GET /technicians/me/jobs/${JOB_ID}/execution`]: { data: execution('ARRIVED', media) },
+    [`GET /technicians/me/jobs/${JOB_ID}/media/${PHOTO_ID}/content`]: { data: new Blob(['jpeg'], { type: 'image/jpeg' }) },
+  }
+
+  it('opening a photo adds ?photo=<id>, Back closes it, and the link reopens it', async () => {
+    const user = userEvent.setup()
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:photo-1')
+    openDashboard(AVAILABLE, routes)
+    await user.click(await screen.findByRole('link', { name: /Active Jobs/ }, FIND))
+    await user.click(await screen.findByRole('button', { name: 'View before work photo' }, FIND))
+    expect(location.current.pathname).toBe('/dashboard/active')
+    expect(location.current.search).toBe(`?photo=${PHOTO_ID}`)
+    expect(screen.getByTestId('photo-viewer')).toBeInTheDocument()
+    act(() => history.back())
+    await waitFor(() => expect(screen.queryByTestId('photo-viewer')).not.toBeInTheDocument())
+    expect(location.current.search).toBe('')
+    expect(location.current.pathname).toBe('/dashboard/active')
+  })
+
+  it('a deep link opens the viewer, and closing it removes the parameter in place', async () => {
+    const user = userEvent.setup()
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:photo-1')
+    installFakeServer(dashboardRoutes(AVAILABLE, routes))
+    renderApp(`/dashboard/active?photo=${PHOTO_ID}`, { auth: technicianSignedIn(AVAILABLE) })
+    expect(await screen.findByTestId('photo-viewer', {}, FIND)).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Close photo' }))
+    await waitFor(() => expect(screen.queryByTestId('photo-viewer')).not.toBeInTheDocument())
+    expect(location.current.pathname).toBe('/dashboard/active')
+    expect(location.current.search).toBe('')
+  })
+
+  it('an id that names no photo of the job opens nothing', async () => {
+    installFakeServer(dashboardRoutes(AVAILABLE, routes))
+    renderApp('/dashboard/active?photo=0190a8b2-4c1e-7aa0-9f00-00000000ffff', { auth: technicianSignedIn(AVAILABLE) })
+    await screen.findByTestId('photos-BEFORE', {}, FIND)
+    expect(screen.queryByTestId('photo-viewer')).not.toBeInTheDocument()
+  })
+})
+
 describe('profile', () => {
   it('shows the saved bank account only masked and sends a new number once in the body', async () => {
     const user = userEvent.setup()
@@ -173,7 +218,7 @@ describe('profile', () => {
       'GET /technicians/me/work-preferences': { data: { services: [], working_days: [], working_schedule_enabled: false } },
       'GET /technicians/me/catalog': { data: [] },
     })
-    await user.click(within(await screen.findByRole('navigation', { name: 'Dashboard sections' }, FIND)).getByRole('button', { name: /Profile/ }))
+    await user.click(within(await screen.findByRole('navigation', { name: 'Dashboard sections' }, FIND)).getByRole('link', { name: /Profile/ }))
     expect(await screen.findByTestId('bank-masked', {}, FIND)).toHaveTextContent('••••••9876')
     await user.click(screen.getByTestId('bank-edit'))
     expect(screen.getByTestId('bank-account_number')).toHaveValue('')

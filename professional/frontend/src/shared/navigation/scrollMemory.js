@@ -1,29 +1,41 @@
 /**
- * Remembers how far each page in this tab's history was scrolled, so a "Back" button can
- * return the visitor to the same place: the landing page's footer, not its top.
+ * Scroll position across navigation, for the whole app (mounted once, inside the router):
  *
- * The browser cannot do this by itself here: the next page loads lazily, and while its
- * loading indicator shows, the document is too short to keep the old position, so the
- * position is lost before the new page appears. `useScrollMemory` (mounted once, inside the
- * router) records the position per history entry (location.key) as the visitor scrolls;
- * `useBackNavigation` goes back one entry and restores that entry's position once the page
- * is tall enough (or after a short wait).
+ *   - a new page (another path, by a link or a redirect) opens at the top, unless its
+ *     address names a section (#id) the page scrolls to itself;
+ *   - Back and Forward (the browser's buttons and the app's own Back) return to where that
+ *     page was left: the landing page's footer, not its top;
+ *   - a change of query or hash on the same page (a tab, a filter, a legal section) keeps
+ *     the scroll position.
+ *
+ * The browser cannot restore positions by itself here: the next page loads lazily, and while
+ * its loading indicator shows, the document is too short to keep the old position. So the
+ * position is recorded per history entry (location.key) as the visitor scrolls, and restored
+ * once the returning page is tall enough (or after a short wait).
  */
 import { useEffect, useRef, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate, useNavigationType } from 'react-router-dom'
 
 const positions = new Map()
 let pendingRestore = false
 
 /** Mount once inside the router. */
 export function useScrollMemory() {
-  const { key } = useLocation()
+  const { key, pathname, hash } = useLocation()
+  const navigationType = useNavigationType()
   const current = useRef(key)
+  const lastPath = useRef(pathname)
 
   useEffect(() => {
     current.current = key
-    if (!pendingRestore) return undefined
+    const newPage = lastPath.current !== pathname
+    lastPath.current = pathname
+    const returning = navigationType === 'POP' || pendingRestore
     pendingRestore = false
+    if (!returning) {
+      if (newPage && !hash) window.scrollTo(0, 0)
+      return undefined
+    }
     const top = positions.get(key)
     if (!top) return undefined
     // Wait until the returning page is drawn and tall enough to scroll that far.
@@ -40,6 +52,8 @@ export function useScrollMemory() {
     }
     handle = window.requestAnimationFrame(tryRestore)
     return () => window.cancelAnimationFrame(handle)
+    // Once per history entry: `key` changes with every navigation.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key])
 
   useEffect(() => {

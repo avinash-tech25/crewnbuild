@@ -1,0 +1,36 @@
+/* The Crew&Build loader (ported from the old app's BrandLoader). Its animation is in
+   public/crewnbuild-intro.css, shared with the start-up screen. */
+.brand-loader {
+  --crew-loader-width: 190px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: 24px 16px;
+  color: #61736a;
+  text-align: center;
+}
+.brand-loader--page { --crew-loader-width: 280px; min-height: 100vh; min-height: 100svh; background: #ffffff; }
+.brand-loader__visual { position: relative; isolation: isolate; width: min(var(--crew-loader-width), 100%); flex-shrink: 0; background: #ffffff; }
+.brand-loader__label { max-width: 32ch; font-size: 12px; line-height: 1.6; font-weight: 600; }
+/* "Still loading the application…": the start-up screen's slow pulse (crew-busy). */
+.brand-loader__label--waiting { animation: crew-busy 1.8s ease-in-out infinite; }
+.brand-loader--inline { --crew-loader-width: 38px; display: inline-flex; flex-direction: row; gap: 8px; padding: 0; color: inherit; vertical-align: middle; }
+.brand-loader--inline .crew-motion__layers { display: none; }
+.brand-loader--inline .crew-motion__complete { display: block; animation: none; opacity: 1; }
+.brand-loader--inline .brand-loader__label { font-size: inherit; }
+html.dark .brand-loader { color: #b9d8c5; }
+html.dark .brand-loader--page { background: #ffffff; color: #61736a; }
+html.dark .brand-loader__visual { border-radius: 20px; background: #ffffff; padding: 14px; box-sizing: content-box; max-width: calc(100% - 28px); }
+html.dark .brand-loader--inline { color: inherit; }
+html.dark .brand-loader--inline .brand-loader__visual { padding: 3px; border-radius: 5px; }
+.brand-loader--still *, .brand-loader--still { animation: none !important; }
+.brand-loader--still .crew-motion__layers { display: none; }
+.brand-loader--still .crew-motion__complete { display: block; opacity: 1; }
+@media (prefers-reduced-motion: reduce) {
+  .brand-loader, .brand-loader * { animation: none !important; }
+  .crew-motion__layers { display: none; }
+  .crew-motion__complete { display: block; opacity: 1; }
+}
+@media (max-width: 480px) { .brand-loader--page { --crew-loader-width: 230px; } }

@@ -556,7 +556,7 @@ export function EquipmentRequestsSection({ requests, onChanged, compact = false 
             return (
               <button key={option} type="button" onClick={() => setFilter(option)} className={`inline-flex h-10 shrink-0 items-center gap-2 rounded-xl px-4 text-xs font-extrabold transition ${isActive ? 'bg-brand-700 text-white shadow-sm' : 'text-graphite/55 hover:bg-slate-50 hover:text-graphite'}`}>
                 {requestFilterLabel(option)}
-                {count > 0 && <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-extrabold ${isActive ? 'bg-white/20 text-white' : 'bg-brand-50 text-brand-700'}`}>{count}</span>}
+                <span aria-hidden={count > 0 ? undefined : 'true'} className={`inline-block min-w-[1.375rem] rounded-full px-1.5 py-0.5 text-center text-[10px] font-extrabold tabular-nums ${isActive ? 'bg-white/20 text-white' : 'bg-brand-50 text-brand-700'} ${count > 0 ? '' : 'invisible'}`}>{count || 0}</span>
               </button>
             )
           })}

@@ -496,7 +496,7 @@ export function SupplierFindClientsSection({ clientList, requestList = [], reque
               }`}
             >
               {tab.label}
-              {tab.count > 0 && <span className={`ml-1 rounded-full px-1.5 py-0.5 text-[10px] font-extrabold ${isActive ? 'bg-white/20 text-white' : 'bg-brand-50 text-brand-700'}`}>{tab.count}</span>}
+              <span aria-hidden={tab.count > 0 ? undefined : 'true'} className={`ml-1 inline-block min-w-[1.375rem] rounded-full px-1.5 py-0.5 text-center text-[10px] font-extrabold tabular-nums ${isActive ? 'bg-white/20 text-white' : 'bg-brand-50 text-brand-700'} ${tab.count > 0 ? '' : 'invisible'}`}>{tab.count || 0}</span>
             </button>
           )
         })}

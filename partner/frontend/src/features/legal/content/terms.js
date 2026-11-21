@@ -1,65 +1,15 @@
-// Generated from docs/legal/CREWNBUILD_Terms_and_Conditions.docx by scripts/convert_legal_docs.py, word for word.
-// Replace the Word file and rerun the script rather than editing this by hand.
+// Generated from the Terms Word file in docs/legal by scripts/convert_legal_docs.py:
+// word for word, with only the brand changed. Replace the Word file and rerun the script
+// rather than editing this by hand.
 const terms = {
   "id": "terms",
-  "title": "CREWNBUILD Terms and Conditions (Terms of Use)",
+  "title": "Terms and Conditions (Terms of Use)",
   "company": "CREWNBUILD",
   "site": "crewnbuild.com",
-  "effectiveDate": "17 November 2026",
-  "version": "1.0",
-  "lastUpdated": "17 November 2026",
+  "effectiveDate": "20 November 2026",
+  "version": "1.1",
+  "lastUpdated": "20 November 2026",
   "sections": [
-    {
-      "id": "key-points-in-plain-english",
-      "number": null,
-      "title": "Key Points in Plain English",
-      "blocks": [
-        {
-          "type": "list",
-          "ordered": false,
-          "items": [
-            [
-              "CREWNBUILD is a ",
-              {
-                "b": "technology platform and marketplace"
-              },
-              ". We are not a construction company, contractor, employer of any Worker, real-estate broker, architect, lawyer or financial adviser."
-            ],
-            [
-              "Homeowners, Contractors, Service Professionals and Suppliers deal with each other ",
-              {
-                "b": "directly"
-              },
-              ". CREWNBUILD is not a party to those contracts and does not guarantee workmanship, timelines, prices or compliance."
-            ],
-            [
-              "Our Tools give ",
-              {
-                "b": "estimates and indicative information"
-              },
-              ", not professional advice. Verify before you build, buy or pay."
-            ],
-            [
-              "Contractors and Service Professionals are responsible for ",
-              {
-                "b": "wages, PF/ESIC, licences, welfare contributions and site safety"
-              },
-              " for the people they engage. Property owners are responsible for permits, title and safe site access."
-            ],
-            [
-              "We charge subscriptions, lead credits and listing fees to Business Users. We take ",
-              {
-                "b": "no commission"
-              },
-              " on project value."
-            ],
-            [
-              "Disputes with CREWNBUILD go through our grievance process first, then arbitration for Business Users. Homeowners keep their consumer-law rights."
-            ]
-          ]
-        }
-      ]
-    },
     {
       "id": "acceptance-and-eligibility",
       "number": "1",
@@ -68,7 +18,7 @@ const terms = {
         {
           "type": "p",
           "parts": [
-            "1.1 These Terms are a legally binding agreement between CREWNBUILD, Hyderabad, Telangana, India (“CREWNBUILD”, “we”, “us”) and you, the person or entity accessing or using the Platform (“you”)."
+            "1.1 These Terms are a legally binding agreement between Crew&Build powered by Tryovate LLP . (CIN [ACN-3703]); registered office: [MJR Magnifique, Manikonda], Hyderabad, Telangana — 500 081) (“Crew&Build”, “we”, “us”) and you, the person or entity accessing or using the Platform (“you”)."
           ]
         },
         {
@@ -92,7 +42,7 @@ const terms = {
         {
           "type": "p",
           "parts": [
-            "1.5 We may update these Terms. For material changes we will give at least 15 days’ notice by email, in-app notice or website banner. If you continue to use the Platform after the effective date, you accept the update. If you do not agree, stop using the Platform and, if you have a paid plan, cancel before the change takes effect."
+            "1.5 We may update these Terms. For material changes we will give at least [15] days’ notice by email, in-app notice or website banner. If you continue to use the Platform after the effective date, you accept the update. If you do not agree, stop using the Platform and, if you have a paid plan, cancel before the change takes effect."
           ]
         },
         {
@@ -116,7 +66,7 @@ const terms = {
               {
                 "b": "Platform:"
               },
-              " crewnbuild.com and related websites, apps, Tools, dashboards, APIs and messaging services operated by CREWNBUILD."
+              " Crew&Build.com and related websites, apps, Tools, dashboards, APIs and messaging services operated by Crew&Build."
             ],
             [
               {
@@ -134,7 +84,7 @@ const terms = {
               {
                 "b": "Service Professional:"
               },
-              " a civil engineer, plumber, electrician, painter, carpenter, tiler, labour supplier or other trade professional offering services through the Platform."
+              " a civil engineer, plumber, electrician, painter, carpenter, tiler, labor supplier or other trade professional offering services through the Platform."
             ],
             [
               {
@@ -152,7 +102,7 @@ const terms = {
               {
                 "b": "Worker:"
               },
-              " any individual employed or engaged at a Site by a Contractor, Service Professional, Supplier or Homeowner, including daily-wage labourers. Workers are not CREWNBUILD users unless they register themselves."
+              " any individual employed or engaged at a Site by a Contractor, Service Professional, Supplier or Homeowner, including daily-wage laborers. Workers are not Crew&Build users unless they register themselves."
             ],
             [
               {
@@ -209,9 +159,9 @@ const terms = {
       ]
     },
     {
-      "id": "crewnbuild-s-role-marketplace-not-contractor",
+      "id": "crew-build-role-marketplace-not-contractor",
       "number": "3",
-      "title": "CREWNBUILD’s Role: Marketplace, Not Contractor",
+      "title": "Crew&Build Role: Marketplace, Not Contractor",
       "blocks": [
         {
           "type": "p",
@@ -220,7 +170,7 @@ const terms = {
             {
               "b": "What we are."
             },
-            " CREWNBUILD is a technology platform and online marketplace, and an “intermediary” under the IT Act, 2000. We provide (a) planning and estimation Tools; (b) discovery, verification and matching of Homeowners with Business Users; (c) software tools for Business Users; and (d) aggregated construction data."
+            " Crew&Build is a technology platform and online marketplace, and an “intermediary” under the IT Act, 2000. We provide (a) planning and estimation Tools; (b) discovery, verification and matching of Homeowners with Business Users; (c) software tools for Business Users; and (d) aggregated construction data."
           ]
         },
         {
@@ -230,7 +180,7 @@ const terms = {
             {
               "b": "What we are not."
             },
-            " CREWNBUILD is not, and does not act as: a construction company, builder, promoter or contractor; the employer, principal employer or labour contractor of any Worker; an agent, broker or real-estate agent of any user; an architect, structural engineer, surveyor, lawyer, chartered accountant, tax or financial adviser; a certifying authority for permits, RERA or building approvals; or a guarantor of the quality, safety, price, timelines, solvency or legal compliance of any user. We are not a party to any Engagement."
+            " Crew&Build is not, and does not act as: a construction company, builder, promoter or contractor; the employer, principal employer or labor contractor of any Worker; an agent, broker or real-estate agent of any user; an architect, structural engineer, surveyor, lawyer, chartered accountant, tax or financial adviser; a certifying authority for permits, RERA or building approvals; or a guarantor of the quality, safety, price, timelines, solvency or legal compliance of any user. We are not a party to any Engagement."
           ]
         },
         {
@@ -240,7 +190,7 @@ const terms = {
             {
               "b": "Independent businesses."
             },
-            " Business Users are independent. Nothing in these Terms or on the Platform creates employment, agency, partnership, joint venture or franchise between CREWNBUILD and any user or Worker. Business Users decide their own prices, methods, personnel, schedules and safety arrangements."
+            " Business Users are independent. Nothing in these Terms or on the Platform creates employment, agency, partnership, joint venture or franchise between Crew&Build and any user or Worker. Business Users decide their own prices, methods, personnel, schedules and safety arrangements."
           ]
         },
         {
@@ -250,7 +200,7 @@ const terms = {
             {
               "b": "Direct dealings."
             },
-            " Homeowners and Business Users contract directly with each other. CREWNBUILD does not set the price of any Project or material and, except as stated in Section 9, does not receive, hold or pay out Project payments."
+            " Homeowners and Business Users contract directly with each other. Crew&Build does not set the price of any Project or material and, except as stated in Section 9, does not receive, hold or pay out Project payments."
           ]
         },
         {
@@ -313,7 +263,7 @@ const terms = {
             {
               "b": "Your account."
             },
-            " Give accurate, complete and current information and keep it updated (within 7 days of any change, for Business Users). Verify your mobile number by OTP. Keep your credentials confidential. You are responsible for all activity under your account and must tell us promptly of any unauthorised use. You may hold one account per person or entity; Business Users may add staff under their own responsibility."
+            " Give accurate, complete and current information and keep it updated (within 7 days of any change, for Business Users). Verify your mobile number by OTP. Keep your credentials confidential. You are responsible for all activity under your account and must tell us promptly of any unauthorized use. You may hold one account per person or entity; Business Users may add staff under their own responsibility."
           ]
         },
         {
@@ -323,7 +273,7 @@ const terms = {
             {
               "b": "Business User verification."
             },
-            " To receive a Verified badge, Business Users must complete: (a) GSTIN verification, where GST registration applies; (b) identity verification through a method permitted by law (Aadhaar-based verification is voluntary, and other officially valid documents may be accepted); and (c) as relevant to your trade, evidence of professional registrations and licences, such as trade licence, contractor or labour licence, electrical or plumbing licence, and professional registration. We may require re-verification and further documents at any time."
+            " To receive a Verified badge, Business Users must complete: (a) GSTIN verification, where GST registration applies; (b) identity verification through a method permitted by law (Aadhaar-based verification is voluntary, and other officially valid documents may be accepted [confirm]); and (c) as relevant to your trade, evidence of professional registrations and licenses, such as trade license, contractor or labor license, electrical or plumbing license, and professional registration. We may require re-verification and further documents at any time."
           ]
         },
         {
@@ -337,7 +287,7 @@ const terms = {
             {
               "b": "not"
             },
-            " a certificate of skill, workmanship, financial capacity, insurance, labour-law compliance or fitness for a Project, and it is not an endorsement. All users must do their own due diligence (see Section 6.3)."
+            " a certificate of skill, workmanship, financial capacity, insurance, labor-law compliance or fitness for a Project, and it is not an endorsement. All users must do their own due diligence (see Section 6.3)."
           ]
         },
         {
@@ -353,7 +303,7 @@ const terms = {
         {
           "type": "p",
           "parts": [
-            "4.6 We may refuse, suspend or close an account under Section 19. You may delete your account at any time in settings or by emailing support@crewnbuild.com, subject to dues and legal retention."
+            "4.6 We may refuse, suspend or close an account under Section 19. You may delete your account at any time in settings or by emailing support support@crewnbuild.com, subject to dues and legal retention."
           ]
         }
       ]
@@ -392,7 +342,7 @@ const terms = {
               "harass, threaten, defame or discriminate against anyone, including on grounds of caste, religion, gender, disability or region;"
             ],
             [
-              "engage or advertise child labour, bonded or forced labour, or unlawful work practices;"
+              "engage or advertise child labor, bonded or forced labor, or unlawful work practices;"
             ],
             [
               "upload malware or interfere with the Platform’s operation or security;"
@@ -415,7 +365,7 @@ const terms = {
             {
               "b": "Content rules (IT Rules, 2021)."
             },
-            " Do not host, upload, share or transmit Content that: belongs to someone else and that you have no right to use; is obscene, pornographic, invasive of privacy, defamatory, hateful or harmful to children; infringes intellectual property; impersonates another person; is knowingly false or misleading; contains malware; threatens India’s unity, integrity, defence, security or public order; or violates any law. We will remove such Content when we are told of it or the law requires."
+            " Do not host, upload, share or transmit Content that: belongs to someone else and that you have no right to use; is obscene, pornographic, invasive of privacy, defamatory, hateful or harmful to children; infringes intellectual property; impersonates another person; is knowingly false or misleading; contains malware; threatens India’s unity, integrity, defense, security or public order; or violates any law. We will remove such Content when we are told of it or the law requires."
           ]
         },
         {
@@ -458,7 +408,7 @@ const terms = {
             {
               "b": "Enquiries and quotes."
             },
-            " When you submit an enquiry, you consent to our sharing your details with matching Business Users, as described in the Privacy Policy. Business Users may contact you. You are free to accept or ignore any quote and may withdraw your enquiry at any time. A quote is an offer from the Business User, not from CREWNBUILD."
+            " When you submit an enquiry, you consent to our sharing your details with matching Business Users [up to [N] at a time], as described in the Privacy Policy. Business Users may contact you. You are free to accept or ignore any quote and may withdraw your enquiry at any time. A quote is an offer from the Business User, not from Crew&Build."
           ]
         },
         {
@@ -476,10 +426,10 @@ const terms = {
           "ordered": false,
           "items": [
             [
-              "check licences, registrations, GST and, for builders or promoters, RERA registration, and visit past Sites or speak to past clients;"
+              "check licenses, registrations, GST and, for builders or promoters, RERA registration, and visit past Sites or speak to past clients;"
             ],
             [
-              "sign a written contract that sets out scope, drawings, BOQ, price, milestone payment schedule, timeline, defect-liability period, safety, insurance, labour-law compliance, variation and dispute terms;"
+              "sign a written contract that sets out scope, drawings, BOQ, price, milestone payment schedule, timeline, defect-liability period, safety, insurance, labor-law compliance, variation and dispute terms;"
             ],
             [
               "have structural design and drawings prepared and checked by a qualified professional and sanctioned by the local authority; and"
@@ -502,7 +452,7 @@ const terms = {
             {
               "b": "Your responsibilities as owner."
             },
-            " You are responsible for: legal title and authority to build; building permission and compliance with the sanctioned plan, building bye-laws and the National Building Code; any RERA, cess or other statutory payment that falls on the owner; safe and lawful access to the Site; disclosure of hazards (existing structures, overhead lines, underground utilities, adjoining property); timely payment as agreed; and not directing or pressuring anyone to work unsafely. If you directly hire or supervise Workers, you may be treated as their employer or principal employer under the Labour Codes and must comply accordingly."
+            " You are responsible for: legal title and authority to build; building permission and compliance with the sanctioned plan, building bye-laws and the National Building Code; any RERA, cess or other statutory payment that falls on the owner; safe and lawful access to the Site; disclosure of hazards (existing structures, overhead lines, underground utilities, adjoining property); timely payment as agreed; and not directing or pressuring anyone to work unsafely. If you directly hire or supervise Workers, you may be treated as their employer or principal employer under the Labor Codes and must comply accordingly."
           ]
         },
         {
@@ -512,7 +462,7 @@ const terms = {
             {
               "b": "Defect Tracker and legal notices."
             },
-            " The Defect and Warranty Tracker and notice generator are self-help Tools. A notice generated through them is your notice, not CREWNBUILD’s. We do not send notices, represent you or give legal advice."
+            " The Defect and Warranty Tracker and notice generator are self-help Tools. A notice generated through them is your notice, not Crew&Build. We do not send notices, represent you or give legal advice."
           ]
         },
         {
@@ -549,7 +499,7 @@ const terms = {
             {
               "b": "Leads."
             },
-            " Leads are pre-qualified using the information the Homeowner provides. We do not guarantee that a Lead is genuine, accurate or serious, or that it will convert. Conversion statistics we publish are historical averages, not promises. A Lead is offered for 2 hours. Accepting a Lead deducts one Lead Credit and reveals contact details. A Lead that expires is not charged. Accepted Leads are non-refundable except where the contact number is shown to be invalid or a duplicate, in which case we may issue a replacement credit. Unused monthly plan Leads do not carry forward."
+            " Leads are pre-qualified using the information the Homeowner provides. We do not guarantee that a Lead is genuine, accurate or serious, or that it will convert. Conversion statistics we publish are historical averages, not promises. A Lead is offered for 2 hours. Accepting a Lead deducts one Lead Credit and reveals contact details. A Lead that expires is not charged. Accepted Leads are non-refundable [except where the contact number is shown to be invalid or a duplicate, in which case we may issue a replacement credit]. Unused monthly plan Leads do not carry forward [confirm]."
           ]
         },
         {
@@ -567,9 +517,9 @@ const terms = {
           "parts": [
             "7.4 ",
             {
-              "b": "Licences and registrations."
+              "b": "Licenses and registrations."
             },
-            " You must hold, keep valid and truthfully display all registrations and licences required for your business and trade (for example GST registration, trade licence, contractor or labour licence, electrical or plumbing licence, professional registration) and any insurance you claim to hold."
+            " You must hold, keep valid and truthfully display all registrations and licenses required for your business and trade (for example GST registration, trade license, contractor or labor license, electrical or plumbing license, professional registration) and any insurance you claim to hold."
           ]
         },
         {
@@ -579,7 +529,7 @@ const terms = {
             {
               "b": "Tools are aids, not compliance."
             },
-            " The BOQ Generator, Rate Analysis Calculator, Budget Tracker, Material Logger, GST Invoice Generator, Labour Wage Register and similar Tools help you organise your work. You remain solely responsible for the correctness of quotes, invoices (including the GST treatment of composite works contracts), tax filings, statutory registers and returns. Records in our Tools are not statutory registers unless you confirm that they meet the form and content the law requires."
+            " The BOQ Generator, Rate Analysis Calculator, Budget Tracker, Material Logger, GST Invoice Generator, Labor Wage Register and similar Tools help you organize your work. You remain solely responsible for the correctness of quotes, invoices (including the GST treatment of composite works contracts), tax filings, statutory registers and returns. Records in our Tools are not statutory registers unless you confirm that they meet the form and content the law requires."
           ]
         },
         {
@@ -597,9 +547,9 @@ const terms = {
           "parts": [
             "7.7 ",
             {
-              "b": "Subcontractors and labour suppliers."
+              "b": "Subcontractors and labor suppliers."
             },
-            " You remain responsible for the conduct and legal compliance of subcontractors and labour suppliers you engage. Labour suppliers must hold any licence required for supplying contract labour."
+            " You remain responsible for the conduct and legal compliance of subcontractors and labor suppliers you engage. Labor suppliers must hold any license required for supplying contract labor."
           ]
         },
         {
@@ -636,7 +586,7 @@ const terms = {
             {
               "b": "Listing."
             },
-            " Provide accurate business, GST and contact details and keep rate cards current at least weekly, or whenever prices change. State whether rates include GST, delivery and loading, and state minimum order quantities and the validity of each rate."
+            " Provide accurate business, GST and contact details and keep rate cards current [at least weekly, or whenever prices change]. State whether rates include GST, delivery and loading, and state minimum order quantities and the validity of each rate."
           ]
         },
         {
@@ -646,7 +596,7 @@ const terms = {
             {
               "b": "Rates and orders."
             },
-            " Published rates are offers valid for the stated period. You must honour confirmed orders at the rate offered or promptly tell the buyer if you cannot. Bulk order matching is an introduction only. Supply contracts are directly between you and the buyer."
+            " Published rates are offers valid for the stated period. You must honor confirmed orders at the rate offered [or promptly tell the buyer if you cannot]. Bulk order matching is an introduction only. Supply contracts are directly between you and the buyer."
           ]
         },
         {
@@ -656,7 +606,7 @@ const terms = {
             {
               "b": "Product and legal compliance."
             },
-            " You are responsible for: supplying genuine products that meet applicable standards (including BIS certification where mandatory); correct weights and measures under the Legal Metrology Act, 2009; GST-compliant invoicing and e-way bills; lawful sourcing (for example, sand and aggregate only from authorised sources with valid permits); safe transport and delivery; and warranty, return and consumer obligations under Applicable Law."
+            " You are responsible for: supplying genuine products that meet applicable standards (including BIS certification where mandatory); correct weights and measures under the Legal Metrology Act, 2009; GST-compliant invoicing and e-way bills; lawful sourcing (for example, sand and aggregate only from authorized sources with valid permits); safe transport and delivery; and warranty, return and consumer obligations under Applicable Law."
           ]
         },
         {
@@ -693,7 +643,7 @@ const terms = {
             {
               "b": "Fees."
             },
-            " The Platform is free for Homeowners. Business Users pay subscriptions, Lead Credit packs and featured-listing fees as published on the Pricing page (currently Lead Credit packs of ₹4,000 for 5 Leads, ₹10,500 for 15 and ₹18,000 for 30; Supplier featured plans at ₹2,000, ₹4,000 and ₹8,000 per month). CREWNBUILD takes ",
+            " The Platform is free for Homeowners. Business Users pay subscriptions, Lead Credit packs and featured-listing fees as published on the Pricing page (currently Lead Credit packs of ₹4,000 for 5 Leads, ₹10,500 for 15 and ₹18,000 for 30; Supplier featured plans at ₹2,000, ₹4,000 and ₹8,000 per month). Crew&Build takes ",
             {
               "b": "no commission or percentage of any Project value"
             },
@@ -717,7 +667,7 @@ const terms = {
             {
               "b": "Taxes."
             },
-            " Fees are exclusive of GST and other taxes, which are shown on the invoice. Give your correct GSTIN to receive input tax credit."
+            " Fees are [exclusive/inclusive] of GST and other taxes, which are shown on the invoice. Give your correct GSTIN to receive input tax credit."
           ]
         },
         {
@@ -747,7 +697,7 @@ const terms = {
             {
               "b": "Project payments are between users."
             },
-            " CREWNBUILD does not receive, hold, release or guarantee Project payments, deposits, advances or wages. Escrow or milestone-payment services, if and when offered, will be provided through an RBI-authorised bank or payment partner under separate terms, which will apply only to Projects that use them. Until then, any milestone payment schedule shown on a quote is an indicative plan, not a payment instruction. For your protection, use traceable payment methods and keep records. Indian income-tax law restricts large cash transactions (for example, receipts of ₹2 lakh or more in cash)."
+            " Crew&Build does not receive, hold, release or guarantee Project payments, deposits, advances or wages. Escrow or milestone-payment services, if and when offered, will be provided through an RBI-authorized bank or payment partner under separate terms, which will apply only to Projects that use them. Until then, any milestone payment schedule shown on a quote is an indicative plan, not a payment instruction. For your protection, use traceable payment methods and keep records. Indian income-tax law restricts large cash transactions (for example, receipts of ₹2 lakh or more in cash)."
           ]
         },
         {
@@ -757,7 +707,7 @@ const terms = {
             {
               "b": "Estimates and quotes."
             },
-            " Tool estimates are non-binding. A quote binds only the Homeowner and Contractor under their written contract. Variations, change orders, price escalation, taxes and approvals should be agreed in writing between them. CREWNBUILD is not responsible for any difference between an estimate and the actual cost."
+            " Tool estimates are non-binding. A quote binds only the Homeowner and Contractor under their written contract. Variations, change orders, price escalation, taxes and approvals should be agreed in writing between them. Crew&Build is not responsible for any difference between an estimate and the actual cost."
           ]
         }
       ]
@@ -781,7 +731,7 @@ const terms = {
           "ordered": false,
           "items": [
             [
-              "Cancelled within 14 days of first purchase: full refund less the value of any Leads accepted in that period."
+              "Cancelled within 14 days of first purchase: full refund [less the value of any Leads accepted in that period]."
             ],
             [
               "Monthly plan cancelled after 14 days: no refund; access continues to the end of the paid month."
@@ -821,7 +771,7 @@ const terms = {
             {
               "b": "Our failure."
             },
-            " If we materially fail to provide a paid service for more than 7 days, you may ask for a pro-rata credit or refund. We will refund duplicate or erroneous charges in full."
+            " If we materially fail to provide a paid service for more than [7] days, you may ask for a pro-rata credit or refund. We will refund duplicate or erroneous charges in full."
           ]
         },
         {
@@ -831,7 +781,7 @@ const terms = {
             {
               "b": "How to ask."
             },
-            " Request refunds at support@crewnbuild.com or in the app. Approved refunds are paid to the original payment method within 7–10 business days. Your statutory rights under the Consumer Protection Act, 2019 are not affected."
+            " Request refunds at support@crewnbuild.com or in the app. Approved refunds are paid to the original payment method within [7–10] business days. Your statutory rights under the Consumer Protection Act, 2019 are not affected."
           ]
         },
         {
@@ -853,9 +803,9 @@ const terms = {
       ]
     },
     {
-      "id": "construction-and-labour-law-compliance",
+      "id": "construction-and-labor-law-compliance",
       "number": "11",
-      "title": "Construction and Labour Law Compliance",
+      "title": "Construction and Labor Law Compliance",
       "blocks": [
         {
           "type": "p",
@@ -864,7 +814,7 @@ const terms = {
             {
               "b": "Principle."
             },
-            " Statutory duties fall on the person who is the employer, contractor, principal employer, owner, occupier or establishment under the relevant law. CREWNBUILD is none of these. We provide a platform and Tools; we do not control, supervise or direct any Site, Worker or Project."
+            " Statutory duties fall on the person who is the employer, contractor, principal employer, owner, occupier or establishment under the relevant law. Crew&Build is none of these. We provide a platform and Tools; we do not control, supervise or direct any Site, Worker or Project."
           ]
         },
         {
@@ -886,13 +836,13 @@ const terms = {
               {
                 "b": "Labour Codes"
               },
-              ", in force since 21 November 2025, which consolidate earlier laws. The Code on Wages, 2019 (replacing the Minimum Wages Act, 1948 and the Payment of Wages Act, 1936, among others) covers minimum and timely wages, overtime, bonus and equal pay. The Code on Social Security, 2020 (replacing the EPF Act, the ESI Act, the Employees’ Compensation Act, the BOCW Welfare Cess Act, 1996 and others) covers provident fund, ESIC, employee compensation, maternity benefit, welfare cess, and social security for unorganised, gig and platform workers. The Occupational Safety, Health and Working Conditions Code, 2020 (subsuming the Building and Other Construction Workers Act, 1996, the Contract Labour Act, 1970 and the Inter-State Migrant Workmen Act, 1979, among others) covers registration, licensing, safety, health, welfare and working conditions;"
+              ", in force since 21 November 2025, which consolidate earlier laws. The Code on Wages, 2019 (replacing the Minimum Wages Act, 1948 and the Payment of Wages Act, 1936, among others) covers minimum and timely wages, overtime, bonus and equal pay. The Code on Social Security, 2020 (replacing the EPF Act, the ESI Act, the Employees’ Compensation Act, the BOCW Welfare Cess Act, 1996 and others) covers provident fund, ESIC, employee compensation, maternity benefit, welfare cess, and social security for unorganized, gig and platform workers. The Occupational Safety, Health and Working Conditions Code, 2020 (subsuming the Building and Other Construction Workers Act, 1996, the Contract Labor Act, 1970 and the Inter-State Migrant Workmen Act, 1979, among others) covers registration, licensing, safety, health, welfare and working conditions;"
             ],
             [
               "state rules and notifications under those Codes, including state minimum-wage and welfare-board requirements;"
             ],
             [
-              "the Child and Adolescent Labour (Prohibition and Regulation) Act, 1986 and the Bonded Labour System (Abolition) Act, 1976;"
+              "the Child and Adolescent Labor (Prohibition and Regulation) Act, 1986 and the Bonded Labor System (Abolition) Act, 1976;"
             ],
             [
               "the Sexual Harassment of Women at Workplace (Prevention, Prohibition and Redressal) Act, 2013;"
@@ -914,7 +864,7 @@ const terms = {
         {
           "type": "p",
           "parts": [
-            "References in the Platform, Tools or these Terms to the BOCW Act, the Minimum Wages Act, or PF or ESIC laws mean those laws as continued, replaced or re-enacted under the Labour Codes and their transitional provisions."
+            "References in the Platform, Tools or these Terms to the BOCW Act, the Minimum Wages Act, or PF or ESIC laws mean those laws as continued, replaced or re-enacted under the Labor Codes and their transitional provisions."
           ]
         },
         {
@@ -937,7 +887,7 @@ const terms = {
           "ordered": false,
           "items": [
             [
-              "establishment and worker registration, and contractor or labour licences, where required;"
+              "establishment and worker registration, and contractor or labor licenses, where required;"
             ],
             [
               "paying at least the applicable minimum or floor wage on time, preferably by bank or digital transfer, with proper overtime, no unlawful deductions, and wage slips and records;"
@@ -955,10 +905,10 @@ const terms = {
               "Site safety: a safety plan, protective equipment, scaffolding, excavation, working-at-height, electrical and fire safety, first aid, drinking water, sanitation and other welfare facilities, safety training, and reporting of accidents;"
             ],
             [
-              "not engaging child or bonded labour, and meeting obligations towards inter-state migrant Workers; and"
+              "not engaging child or bonded labor, and meeting obligations towards inter-state migrant Workers; and"
             ],
             [
-              "the compliance of their subcontractors and labour suppliers."
+              "the compliance of their subcontractors and labor suppliers."
             ]
           ]
         },
@@ -977,7 +927,7 @@ const terms = {
         {
           "type": "p",
           "parts": [
-            "CREWNBUILD is responsible only for operating the Platform in accordance with Applicable Law (including the IT Act, the DPDP Act, the Consumer Protection Act, 2019 and the E-Commerce Rules, 2020), carrying out the verification checks described in Section 4, and running the grievance process in Section 20. To the extent CREWNBUILD is classed as an “aggregator” under the Code on Social Security, 2020 or a state law on gig or platform workers, it will meet the registration, reporting and contribution duties that apply to it. These are CREWNBUILD’s own duties and do not make CREWNBUILD the employer of any person or a party to any Engagement."
+            "Crew&Build is responsible only for operating the Platform in accordance with Applicable Law (including the IT Act, the DPDP Act, the Consumer Protection Act, 2019 and the E-Commerce Rules, 2020), carrying out the verification checks described in Section 4, and running the grievance process in Section 20. To the extent Crew&Build is classed as an “aggregator” under the Code on Social Security, 2020 or a state law on gig or platform workers, it will meet the registration, reporting and contribution duties that apply to it. These are Crew&Build own duties and do not make Crew&Build the employer of any person or a party to any Engagement."
           ]
         },
         {
@@ -987,7 +937,7 @@ const terms = {
             {
               "b": "Your declarations."
             },
-            " Each Business User declares that it complies, and will keep complying, with Section 11.2. On request, you must give us evidence (for example registrations, licences, PF and ESIC codes, insurance). We may display certain details on your profile."
+            " Each Business User declares that it complies, and will keep complying, with Section 11.2. On request, you must give us evidence (for example registrations, licenses, PF and ESIC codes, insurance). We may display certain details on your profile."
           ]
         },
         {
@@ -1017,7 +967,7 @@ const terms = {
             {
               "b": "Information to authorities."
             },
-            " We may share Business User and Worker information with labour, social-security and other authorities where the law requires, and you consent to this."
+            " We may share Business User and Worker information with labor, social-security and other authorities where the law requires, and you consent to this."
           ]
         },
         {
@@ -1040,7 +990,7 @@ const terms = {
         {
           "type": "p",
           "parts": [
-            "12.1 Disputes about work quality, delay, cost, defects, payments, materials or Workers are between the users concerned. CREWNBUILD is not an arbitrator, does not adjudicate, and is not liable for outcomes."
+            "12.1 Disputes about work quality, delay, cost, defects, payments, materials or Workers are between the users concerned. Crew&Build is not an arbitrator, does not adjudicate, and is not liable for outcomes."
           ]
         },
         {
@@ -1100,7 +1050,7 @@ const terms = {
             {
               "b": "Our IP."
             },
-            " The Platform, software, Tools, algorithms (including the Trust Score and benchmark methodologies), BOQ templates, rate databases, price indices, design, text, graphics, and the names and logos “CREWNBUILD” and “CREWNBUILD Verified” belong to CREWNBUILD or its licensors and are protected under the Copyright Act, 1957, the Trade Marks Act, 1999 and other laws. We give you a limited, personal, non-exclusive, non-transferable, revocable licence to use the Platform as these Terms allow."
+            " The Platform, software, Tools, algorithms (including the Trust Score and benchmark methodologies), BOQ templates, rate databases, price indices, design, text, graphics, and the names and logos “Crew&Build” and “Crew&Build Verified” belong to Crew&Build or its licensors and are protected under the Copyright Act, 1957, the Trade Marks Act, 1999 and other laws. We give you a limited, personal, non-exclusive, non-transferable, revocable license to use the Platform as these Terms allow."
           ]
         },
         {
@@ -1138,13 +1088,13 @@ const terms = {
           "parts": [
             "13.5 ",
             {
-              "b": "Licence to us."
+              "b": "License to us."
             },
-            " You give CREWNBUILD a worldwide, non-exclusive, royalty-free, sub-licensable licence to host, store, reproduce, format, display and distribute your Content on and through the Platform to run, secure, support and improve it. For ",
+            " You give Crew&Build a worldwide, non-exclusive, royalty-free, sub-licensable license to host, store, reproduce, format, display and distribute your Content on and through the Platform to run, secure, support and improve it. For ",
             {
               "b": "aggregated and de-identified data"
             },
-            " derived from Content and use (data that cannot identify you), the licence is perpetual and irrevocable, so that we can produce benchmarks, indices and analytics. Personal data is handled only under the Privacy Policy and the DPDP Act. The licence for other Content ends when you delete it, except for copies in backups, items already shared with others, and aggregated data."
+            " derived from Content and use (data that cannot identify you), the license is perpetual and irrevocable, so that we can produce benchmarks, indices and analytics. Personal data is handled only under the Privacy Policy and the DPDP Act. The license for other Content ends when you delete it, except for copies in backups, items already shared with others, and aggregated data."
           ]
         },
         {
@@ -1197,7 +1147,7 @@ const terms = {
         {
           "type": "p",
           "parts": [
-            "14.1 The Platform works with third-party services (payment gateways, KYC partners, maps, WhatsApp and messaging, hosting) and may link to third-party sites. They are governed by their own terms and privacy practices, and CREWNBUILD is not responsible for them."
+            "14.1 The Platform works with third-party services (payment gateways, KYC partners, maps, WhatsApp and messaging, hosting) and may link to third-party sites. They are governed by their own terms and privacy practices, and Crew&Build is not responsible for them."
           ]
         }
       ]
@@ -1235,13 +1185,13 @@ const terms = {
         {
           "type": "p",
           "parts": [
-            "16.1 To the fullest extent permitted by Applicable Law, CREWNBUILD is not liable for any indirect, incidental, special, consequential or punitive loss, or for loss of profit, revenue, business, goodwill, opportunity or data."
+            "16.1 To the fullest extent permitted by Applicable Law, Crew&Build is not liable for any indirect, incidental, special, consequential or punitive loss, or for loss of profit, revenue, business, goodwill, opportunity or data."
           ]
         },
         {
           "type": "p",
           "parts": [
-            "16.2 CREWNBUILD is not liable for the acts, omissions or defaults of any user or third party, including: construction defects, structural failure, delays, cost overruns, abandonment of work, non-payment, poor workmanship, and substandard or short-supplied materials; injury, illness or death of any Worker or other person at or near a Site; damage to property, including neighbouring property; wage, PF/ESIC, tax or other statutory defaults; fraud or misrepresentation by a user; and third-party claims."
+            "16.2 Crew&Build is not liable for the acts, omissions or defaults of any user or third party, including: construction defects, structural failure, delays, cost overruns, abandonment of work, non-payment, poor workmanship, and substandard or short-supplied materials; injury, illness or death of any Worker or other person at or near a Site; damage to property, including neighboring property; wage, PF/ESIC, tax or other statutory defaults; fraud or misrepresentation by a user; and third-party claims."
           ]
         },
         {
@@ -1251,7 +1201,7 @@ const terms = {
             {
               "b": "Cap."
             },
-            " Subject to Section 16.4, CREWNBUILD’s total liability to you for all claims relating to the Platform is limited to:"
+            " Subject to Section 16.4, Crew&Build total liability to you for all claims relating to the Platform is limited to:"
           ]
         },
         {
@@ -1265,7 +1215,7 @@ const terms = {
               "for paid subscribers: the fees you paid to us in the 3 months before the event giving rise to the claim; and"
             ],
             [
-              "for construction defects, Site accidents and defaults by contractors, suppliers or other third parties: nil, because CREWNBUILD is not a party to any Engagement."
+              "for construction defects, Site accidents and defaults by contractors, suppliers or other third parties: nil, because Crew&Build is not a party to any Engagement."
             ]
           ]
         },
@@ -1276,7 +1226,7 @@ const terms = {
             {
               "b": "Exclusions."
             },
-            " Nothing in these Terms limits liability for fraud, wilful misconduct, death or personal injury caused by CREWNBUILD’s own negligence, or any liability that cannot be limited under Applicable Law, including the Consumer Protection Act, 2019."
+            " Nothing in these Terms limits liability for fraud, willful misconduct, death or personal injury caused by Crew&Build own negligence, or any liability that cannot be limited under Applicable Law, including the Consumer Protection Act, 2019."
           ]
         },
         {
@@ -1299,7 +1249,7 @@ const terms = {
             {
               "b": "Business Users."
             },
-            " You will defend and indemnify CREWNBUILD, its directors, officers, employees and affiliates against claims, losses, penalties, damages, costs and reasonable legal fees arising from: your breach of these Terms or Applicable Law; your Content; any Engagement or supply contract; accidents, injury or death of Workers or third parties arising from your operations; any wage, PF/ESIC, welfare-cess, tax or other statutory liability relating to your Workers or business; data-protection breaches concerning Worker or Lead data you handle; and your fraud, negligence or misrepresentation."
+            " You will defend and indemnify Crew&Build, its directors, officers, employees and affiliates against claims, losses, penalties, damages, costs and reasonable legal fees arising from: your breach of these Terms or Applicable Law; your Content; any Engagement or supply contract; accidents, injury or death of Workers or third parties arising from your operations; any wage, PF/ESIC, welfare-cess, tax or other statutory liability relating to your Workers or business; data-protection breaches concerning Worker or Lead data you handle; and your fraud, negligence or misrepresentation."
           ]
         },
         {
@@ -1309,7 +1259,7 @@ const terms = {
             {
               "b": "Homeowners."
             },
-            " You will indemnify CREWNBUILD against losses arising from your breach of these Terms, false information, unlawful Content, or violation of Applicable Law (including unsafe Site conditions you create and statutory duties you owe as owner or employer)."
+            " You will indemnify Crew&Build against losses arising from your breach of these Terms, false information, unlawful Content, or violation of Applicable Law (including unsafe Site conditions you create and statutory duties you owe as owner or employer)."
           ]
         },
         {
@@ -1319,7 +1269,7 @@ const terms = {
             {
               "b": "Process."
             },
-            " We will notify you promptly of a claim. You may control the defence with counsel reasonably acceptable to us, but may not settle in a way that admits fault by CREWNBUILD without our consent. We will give reasonable cooperation at your cost."
+            " We will notify you promptly of a claim. You may control the defense with counsel reasonably acceptable to us, but may not settle in a way that admits fault by Crew&Build without our consent. We will give reasonable cooperation at your cost."
           ]
         }
       ]
@@ -1332,7 +1282,7 @@ const terms = {
         {
           "type": "p",
           "parts": [
-            "18.1 Neither party is liable for failure or delay caused by events beyond its reasonable control, including natural disasters (flood, cyclone, earthquake, extreme monsoon), epidemic or pandemic, fire, war, terrorism, riot, strike or bandh, government orders and construction or sand-mining restrictions (including pollution-control bans), change of law, shortages of materials or labour, power, telecom, internet, cloud or payment-system failure, and cyber-attack despite reasonable safeguards."
+            "18.1 Neither party is liable for failure or delay caused by events beyond its reasonable control, including natural disasters (flood, cyclone, earthquake, extreme monsoon), epidemic or pandemic, fire, war, terrorism, riot, strike or bandh, government orders and construction or sand-mining restrictions (including pollution-control bans), change of law, shortages of materials or labor, power, telecom, internet, cloud or payment-system failure, and cyber-attack despite reasonable safeguards."
           ]
         },
         {
@@ -1344,7 +1294,7 @@ const terms = {
         {
           "type": "p",
           "parts": [
-            "18.3 This section governs CREWNBUILD’s relationship with you. Users should provide for force majeure in their own contracts; CREWNBUILD is not responsible for how it applies between them."
+            "18.3 This section governs Crew&Build relationship with you. Users should provide for force majeure in their own contracts; Crew&Build is not responsible for how it applies between them."
           ]
         }
       ]
@@ -1363,13 +1313,13 @@ const terms = {
         {
           "type": "p",
           "parts": [
-            "19.2 We may suspend or terminate access, with notice where practicable, if you breach these Terms or Applicable Law; give false verification information; are the subject of credible complaints about safety, wages or fraud; fail to pay; or if a court or authority requires it. We may also end a free account, or the Platform generally, on 30 days’ notice."
+            "19.2 We may suspend or terminate access, with notice where practicable, if you breach these Terms or Applicable Law; give false verification information; are the subject of credible complaints about safety, wages or fraud; fail to pay; or if a court or authority requires it. We may also end a free account, or the Platform generally, on [30] days’ notice."
           ]
         },
         {
           "type": "p",
           "parts": [
-            "19.3 On termination, your access ends and your public profile is removed. Obligations that arose before termination continue, and we retain data as set out in the Privacy Policy. You may export your records for 30 days after closure unless the law or a legitimate dispute prevents it."
+            "19.3 On termination, your access ends and your public profile is removed. Obligations that arose before termination continue, and we retain data as set out in the Privacy Policy. You may export your records for [30] days after closure unless the law or a legitimate dispute prevents it."
           ]
         },
         {
@@ -1398,25 +1348,25 @@ const terms = {
         {
           "type": "p",
           "parts": [
-            "Name: Grievance Officer, CREWNBUILD"
+            "Name: [Grievance Officer Name] · Designation: [Designation]"
           ]
         },
         {
           "type": "p",
           "parts": [
-            "Address: CREWNBUILD, Hyderabad, Telangana, India"
+            "Address: Crew&Build Technologies Pvt. Ltd., [Building Name, Street Address], Hyderabad, Telangana — 500 081"
           ]
         },
         {
           "type": "p",
           "parts": [
-            "Email: support@crewnbuild.com · Phone: +91 628 1921 628"
+            "Email: [support@crewnbuild.com] · Phone: [+91-628121628]"
           ]
         },
         {
           "type": "p",
           "parts": [
-            "Hours: Monday to Friday, 10:00 AM – 6:00 PM IST, business days"
+            "Hours: [Monday to Friday, 10:00 AM – 7:00 PM IST], business days"
           ]
         },
         {
@@ -1455,7 +1405,7 @@ const terms = {
             {
               "b": "Step 1: talk to us."
             },
-            " Send a written notice describing the dispute to legal@crewnbuild.com (and, if relevant, use Section 20). The parties will try in good faith to resolve it within 30 days."
+            " Send a written notice describing the dispute to support@crewnbuild.com (and, if relevant, use Section 20). The parties will try in good faith to resolve it within 30 days."
           ]
         },
         {
@@ -1465,7 +1415,7 @@ const terms = {
             {
               "b": "Step 2: mediation (Business Users)."
             },
-            " If the dispute is unresolved, the parties may try mediation under the Mediation Act, 2023 for a further 30 days."
+            " If the dispute is unresolved, the parties may try mediation under the Mediation Act, 2023 for a further 30 days. [Optional]"
           ]
         },
         {
@@ -1475,9 +1425,9 @@ const terms = {
             {
               "b": "Step 3: arbitration (Business Users)."
             },
-            " A dispute with a Business User involving a claim above ₹50,000 that is not resolved under Steps 1 and 2 will be finally settled by arbitration under the Arbitration and Conciliation Act, 1996. There will be a sole arbitrator agreed by the parties, failing which one will be appointed under Section 11 of that Act. The ",
+            " A dispute with a Business User involving a claim above ₹[50,000] that is not resolved under Steps 1 and 2 will be finally settled by arbitration under the Arbitration and Conciliation Act, 1996. There will be a sole arbitrator agreed by the parties, failing which one will be appointed under Section 11 of that Act [or by [arbitral institution]]. The ",
             {
-              "b": "seat and venue are Hyderabad, Telangana"
+              "b": "seat and venue are [Hyderabad, Telangana]"
             },
             ", the language is English, and the proceedings are confidential. The award is final and binding."
           ]
@@ -1489,7 +1439,7 @@ const terms = {
             {
               "b": "Homeowners and other consumers."
             },
-            " Nothing in these Terms limits your right as a “consumer” to approach a Consumer Disputes Redressal Commission under the Consumer Protection Act, 2019, including by e-filing, in the place the Act allows. We will not require a consumer to arbitrate a dispute that falls within a Commission’s jurisdiction. A consumer and CREWNBUILD may agree to mediation or arbitration after a dispute arises."
+            " Nothing in these Terms limits your right as a “consumer” to approach a Consumer Disputes Redressal Commission under the Consumer Protection Act, 2019, including by e-filing, in the place the Act allows. We will not require a consumer to arbitrate a dispute that falls within a Commission’s jurisdiction. A consumer and Crew&Build may agree to mediation or arbitration after a dispute arises."
           ]
         },
         {
@@ -1499,7 +1449,7 @@ const terms = {
             {
               "b": "Courts."
             },
-            " Subject to the above, the courts at Hyderabad, Telangana have exclusive jurisdiction over any matter that is not referred to arbitration, to support arbitration and enforce awards, and for urgent interim relief (including to protect intellectual property or confidential information). Claims with a Business User of ₹50,000 or less are decided by those courts."
+            " Subject to the above, the courts at [Hyderabad, Telangana] have exclusive jurisdiction over any matter that is not referred to arbitration, to support arbitration and enforce awards, and for urgent interim relief (including to protect intellectual property or confidential information). Claims with a Business User of ₹[50,000] or less are decided by those courts."
           ]
         },
         {
@@ -1522,7 +1472,7 @@ const terms = {
             {
               "b": "Entire agreement."
             },
-            " These Terms, the Privacy Policy and any supplementary terms are the entire agreement between you and CREWNBUILD on their subject matter."
+            " These Terms, the Privacy Policy and any supplementary terms are the entire agreement between you and Crew&Build on their subject matter."
           ]
         },
         {
@@ -1572,7 +1522,7 @@ const terms = {
             {
               "b": "Notices."
             },
-            " We may notify you by email, SMS, WhatsApp, in-app notice or on the Platform. Notices to us go to legal@crewnbuild.com, with a copy to the registered office. Email notices are treated as received 24 hours after sending."
+            " We may notify you by email, SMS, WhatsApp, in-app notice or on the Platform. Notices to us go to support@crewnbuild.com, with a copy to the registered office. Email notices are treated as received 24 hours after sending."
           ]
         },
         {
@@ -1582,7 +1532,7 @@ const terms = {
             {
               "b": "Change in law."
             },
-            " If the Labour Codes, the DPDP Rules or other laws change or new rules take effect, we may update these Terms to stay compliant, subject to Section 1.5."
+            " If the Labor Codes, the DPDP Rules or other laws change or new rules take effect, we may update these Terms to stay compliant, subject to Section 1.5."
           ]
         },
         {
@@ -1607,10 +1557,10 @@ const terms = {
           "ordered": false,
           "items": [
             [
-              "General support: support@crewnbuild.com"
+              "General support: info@crewnbuild.com"
             ],
             [
-              "Legal and compliance: legal@crewnbuild.com"
+              "Legal and compliance: support@crewnbuild.com"
             ],
             [
               "Grievance Officer: support@crewnbuild.com"
@@ -1619,7 +1569,7 @@ const terms = {
               "Privacy and DPDP requests: support@crewnbuild.com"
             ],
             [
-              "Office: CREWNBUILD, Hyderabad, Telangana, India"
+              "Registered office: Crew&Build powered by Tryovate LLP., [MJR Magnifique, Manikonda], Hyderabad, Telangana — 500 081, India · CIN [ACN-3703]"
             ]
           ]
         }

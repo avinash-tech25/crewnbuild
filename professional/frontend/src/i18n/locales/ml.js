@@ -3511,7 +3511,6 @@ const base = {
   'landing.footer.rights': 'എല്ലാ അവകാശങ്ങളും നിക്ഷിപ്തം.',
   'landing.footer.privacy': 'സ്വകാര്യതാ നയം',
   'landing.footer.terms': 'സേവന നിബന്ധനകൾ',
-  'landing.footer.cookies': 'കുക്കി നയം',
   'landing.footer.language': 'ഭാഷ',
   'landing.comingSoonPage.eyebrow': 'ഉടൻ വരുന്നു',
   'landing.comingSoonPage.headline': 'ഇതുവരെ സൈൻ-അപ്പിന്',

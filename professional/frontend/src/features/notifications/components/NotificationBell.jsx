@@ -302,12 +302,12 @@ export default function NotificationBell({ onOpen = null }) {
 
       {showing && (
         <>
-          <div className="fixed inset-0 z-40" onClick={closeAll} />
+          <div className="fixed inset-0 z-dropdown" onClick={closeAll} />
           {/* On a phone the bell is not at the screen's right edge (messages and
               the avatar follow it), so a panel anchored to it ran off the left
               edge; below lg it is pinned to the viewport's right edge, and on a phone it
               spans the page gutters. */}
-          <div className="absolute right-0 top-12 z-50 max-lg:fixed max-lg:right-4 max-lg:top-[60px] max-sm:left-4 max-sm:w-auto w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-brand-100 bg-white shadow-card">
+          <div className="absolute right-0 top-12 z-dropdown max-lg:fixed max-lg:right-4 max-lg:top-[60px] max-sm:left-4 max-sm:w-auto w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-brand-100 bg-white shadow-card">
             <div className="flex items-center justify-between border-b border-brand-50 px-4 py-3">
               <p className="font-display text-sm font-bold text-graphite">{t('dash.common.notifications')}</p>
               <button onClick={markAllAsRead} className="text-xs font-bold text-brand-700">{t('dash.common.markAllRead')}</button>

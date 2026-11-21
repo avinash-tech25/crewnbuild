@@ -54,7 +54,9 @@ function SidebarNavItem({ item, active, collapsed, onClick, onHover, onHoverEnd 
   const badgeCount = Number(item.badge || 0)
   return (
     <button
+      type="button"
       onClick={onClick}
+      aria-current={active ? 'page' : undefined}
       onMouseEnter={(event) => onHover(item.label, event.currentTarget)}
       onMouseLeave={onHoverEnd}
       onFocus={(event) => onHover(item.label, event.currentTarget)}
@@ -82,7 +84,7 @@ function SidebarNavItem({ item, active, collapsed, onClick, onHover, onHoverEnd 
         <span className={`h-2 w-2 shrink-0 rounded-full bg-oc-amber shadow-[0_0_0_4px_rgba(46,125,85,0.2)] ${collapsed ? 'absolute right-2.5 top-2' : 'ml-auto'}`} />
       )}
       {!item.hasDot && badgeCount > 0 && (
-        <span className={`grid h-4 min-w-4 shrink-0 place-items-center rounded-full px-1 text-[9px] font-extrabold leading-none ${
+        <span className={`grid h-4 min-w-4 shrink-0 place-items-center rounded-full px-1 text-[9px] font-extrabold leading-none tabular-nums ${
           active ? 'bg-oc-deep text-oc-amber' : 'bg-oc-sunken text-oc-muted'
         } ${collapsed ? 'absolute right-2 top-2' : 'ml-auto'}`}>
           {badgeCount > 9 ? '9+' : badgeCount}
@@ -103,6 +105,7 @@ function SidebarNavItem({ item, active, collapsed, onClick, onHover, onHoverEnd 
 // always render with their labels.
 export function DashboardSidebar({ items, activeId, onNav, collapsed }) {
   const [tooltip, setTooltip] = useState(null)
+  const { t } = useLanguage()
 
   const showTooltip = (label, element) => {
     if (collapsed) {
@@ -114,7 +117,7 @@ export function DashboardSidebar({ items, activeId, onNav, collapsed }) {
 
   return (
     <div className="flex items-center gap-2">
-      <nav className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto">
+      <nav aria-label={t('ui.shared.dashboardNav')} className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto">
         {items.map((item) => (
           <SidebarNavItem
             key={item.id}
@@ -136,7 +139,7 @@ export function DashboardSidebar({ items, activeId, onNav, collapsed }) {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -6 }}
             transition={{ duration: 0.14, ease: 'easeOut' }}
-            className="pointer-events-none fixed z-[120] whitespace-nowrap rounded-lg bg-oc-night px-2.5 py-1.5 text-xs font-bold text-white shadow-xl"
+            className="pointer-events-none fixed z-dropdown whitespace-nowrap rounded-lg bg-oc-night px-2.5 py-1.5 text-xs font-bold text-white shadow-xl"
             style={{ left: tooltip.x, top: tooltip.y, y: '-50%' }}
           >
             {tooltip.label}
@@ -202,7 +205,7 @@ export function DashboardTopbar({ searchValue, onSearchChange, searchPlaceholder
     // White, like the landing page's top bar, with a hairline above the
     // green navigation. Structure, contents and dimensions are untouched.
     <header
-      className="sticky top-0 z-30 bg-white shadow-[inset_0_-1px_0_rgba(8,62,43,.12)]"
+      className="sticky top-0 z-header bg-white shadow-[inset_0_-1px_0_rgba(8,62,43,.12)]"
     >
       {/* On phones the language, bell, messages and avatar leave search no
           width at all (it was crushed under the language pill at 320px), so
@@ -336,7 +339,7 @@ export function DashboardTopbar({ searchValue, onSearchChange, searchPlaceholder
                   initial={{ opacity: 0, y: -6, scale: 0.97 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   transition={{ duration: 0.16, ease: 'easeOut' }}
-                  className="dash-canvas dash-canvas-overlay fixed inset-0 z-[140]"
+                  className="dash-canvas dash-canvas-overlay fixed inset-0 z-dropdown"
                 >
                   <div className="absolute inset-0" onClick={() => setUserMenuOpen(false)} />
                   <div
@@ -559,7 +562,8 @@ export default function DashboardShell({
   const adPlacement = adConsole && activeId ? `${adConsole}:${activeId}` : adConsole
 
   const sidebarProps = { items: sidebarItems, activeId, onNav }
-  const pageWidth = wide ? 'max-w-[1584px] px-4' : 'max-w-[1400px] px-4 sm:px-5'
+  // The default is the one page width every screen shares (`max-w-page`, 1400px).
+  const pageWidth = wide ? 'max-w-[1584px] px-4' : 'max-w-page px-4 sm:px-5'
 
   return (
     <div className={`dash-canvas min-h-screen dash-yellow-bg text-oc-ink ${plainBackground ? 'before:!bg-none !bg-[#F3F4F6] dark:!bg-[#0a1014]' : ''}`}>

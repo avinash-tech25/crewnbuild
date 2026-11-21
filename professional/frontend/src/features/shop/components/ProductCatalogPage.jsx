@@ -40,6 +40,8 @@ import { CategoryStrip } from '../../catalog/components/CategoryStrip.jsx'
 import { CatalogSearchOverlay } from '../../catalog/components/CatalogSearchOverlay.jsx'
 import { ProductDetailView, ProductTile, bestOffer } from '../../catalog/components/ProductDetailView.jsx'
 import { discountedPrice } from '../../catalog/components/PriceTag.jsx'
+import { useUrlParams } from '../../../shared/hooks/useUrlState.js'
+import useUrlDialog, { isUuid } from '../../../shared/hooks/useUrlDialog.js'
 
 export default function ProductCatalogPage({ loadSuppliers, reloadKey = '', cartProjectId = null, canAddToCart = false, title = 'Product Catalog', onOpenCart, compactHeader = false }) {
   const dispatch = useDispatch()
@@ -60,6 +62,18 @@ export default function ProductCatalogPage({ loadSuppliers, reloadKey = '', cart
   } = useSelector(selectCatalogBrowse)
   const [addingOfferId, setAddingOfferId] = useState(null)
   const [cartMessage, setCartMessage] = useState('')
+  // The address holds the chosen category (?category=<uuid>), the search words (?q=) and
+  // the open product (?item=<uuid>), so a refresh, a link and Back restore them; the
+  // browse state follows the address. Filters replace the entry, a product adds one.
+  const [urlParams, patchUrl] = useUrlParams()
+  const urlCategoryId = isUuid(urlParams.get('category')) ? urlParams.get('category') : null
+  const urlQuery = urlParams.get('q') || ''
+  const [urlProductId, openProduct, closeProduct] = useUrlDialog('item')
+  const chooseCategory = (id) => patchUrl({ category: id, item: null }, { replace: true })
+  const changeQuery = (value) => {
+    dispatch(setBrowseQuery(value))
+    patchUrl({ q: value }, { replace: true })
+  }
 
   // Fresh on every visit and whenever the caller's supplier feed changes
   // (another project, pincode or country).
@@ -67,8 +81,22 @@ export default function ProductCatalogPage({ loadSuppliers, reloadKey = '', cart
     dispatch(resetBrowse())
     dispatch(loadBrowseCategories())
     dispatch(loadBrowseOffers(loadSuppliers))
+    // The search words from the address, after the reset.
+    if (urlQuery) dispatch(setBrowseQuery(urlQuery))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dispatch, reloadKey])
+
+  // The address's category and product, into the browse state (after the reset above).
+  useEffect(() => {
+    if (urlCategoryId !== (selectedCategoryId ?? null)) dispatch(selectBrowseCategory(urlCategoryId))
+    // Read against the address only: the browse state is what follows it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dispatch, reloadKey, urlCategoryId])
+  useEffect(() => {
+    if (urlProductId === (selectedProductId ?? null)) return
+    dispatch(urlProductId ? openBrowseProduct(urlProductId) : closeBrowseProduct())
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dispatch, reloadKey, urlProductId, urlCategoryId])
 
   // The cart the steppers read: the active project's, from the existing cart API.
   useEffect(() => {
@@ -135,14 +163,14 @@ export default function ProductCatalogPage({ loadSuppliers, reloadKey = '', cart
           showAppBanner
           product={selectedProduct}
           offers={offersByProduct[selectedProductId] || []}
-          onBack={() => dispatch(closeBrowseProduct())}
+          onBack={() => closeProduct()}
           onAddToCart={canAddToCart ? addToCart : undefined}
           renderOfferAction={canAddToCart ? (offer) => <CartStepper offer={offer} projectId={cartProjectId} onMessage={setCartMessage} size="sm" /> : undefined}
           addingOfferId={addingOfferId}
           message={cartMessage}
           related={related}
           relatedPrice={cheapest}
-          onOpenProduct={(id) => dispatch(openBrowseProduct(id))}
+          onOpenProduct={(id) => openProduct(id)}
         />
       </section>
     )
@@ -152,14 +180,14 @@ export default function ProductCatalogPage({ loadSuppliers, reloadKey = '', cart
     <CatalogSearchOverlay
       categories={categories}
       query={searchQuery}
-      onQueryChange={(value) => dispatch(setBrowseQuery(value))}
+      onQueryChange={changeQuery}
       results={searchList}
       searching={searching}
       onSelectCategory={(id) => {
         dispatch(setBrowseQuery(''))
-        dispatch(selectBrowseCategory(id))
+        patchUrl({ q: null, category: id, item: null }, { replace: true })
       }}
-      onOpenProduct={(id) => dispatch(openBrowseProduct(id))}
+      onOpenProduct={(id) => openProduct(id)}
     />
   )
   const cartButton = canAddToCart && onOpenCart ? (
@@ -201,7 +229,7 @@ export default function ProductCatalogPage({ loadSuppliers, reloadKey = '', cart
 
       {/* The admin's categories, as circles with their pictures. */}
       {categories.length > 0 && (
-        <CategoryStrip categories={categories} selectedId={selectedCategoryId ?? ''} onSelect={(id) => dispatch(selectBrowseCategory(id))} />
+        <CategoryStrip categories={categories} selectedId={selectedCategoryId ?? ''} onSelect={chooseCategory} />
       )}
 
       {cartMessage && <p className="rounded-lg bg-brand-50 px-3 py-2 text-xs font-bold text-brand-800">{cartMessage}</p>}
@@ -232,7 +260,7 @@ export default function ProductCatalogPage({ loadSuppliers, reloadKey = '', cart
                   key={product.id}
                   product={product}
                   offer={cheapest(product)}
-                  onOpen={() => dispatch(openBrowseProduct(product.id))}
+                  onOpen={() => openProduct(product.id)}
                   footer={canAddToCart && cheapest(product) ? (
                     <CartStepper offer={cheapest(product)} projectId={cartProjectId} onMessage={setCartMessage} size="sm" full />
                   ) : null}

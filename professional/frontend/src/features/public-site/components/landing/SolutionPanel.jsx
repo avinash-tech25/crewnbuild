@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { ArrowRight, ChevronRight } from "lucide-react";
 import { buttonClass, creamButtonClass } from "./shared.jsx";
 import ConstructionVilla from "./LazyConstructionVilla.jsx";
+import { AppLink } from "../../../../shared/navigation/AppLink.jsx";
 import { letterStaggerGroup, popIn, useScrollReveal } from "./scrollReveal.js";
 
 // Stacked shadows extrude the wordmark into a solid block. The offsets use em so the
@@ -125,9 +126,9 @@ export function SolutionPanel({ text }) {
         <p className="max-w-[520px] mt-6 text-[15px] leading-[1.75] max-wide:text-[13px]" style={{ color: tone.body, transition: "color 900ms linear" }}>{text.solution.body}</p>
 
         <div className="flex flex-wrap items-center gap-x-6 gap-y-4 mt-8 whitespace-nowrap">
-          <a className={`${isNight ? creamButtonClass : buttonClass} max-wide:px-6`} href="/signup">
+          <AppLink className={`${isNight ? creamButtonClass : buttonClass} max-wide:px-6`} href="/signup">
             {text.nav.start} <ArrowRight size={16} className="rtl:-scale-x-100" />
-          </a>
+          </AppLink>
           <a className="group flex items-center gap-[7px] text-xs font-extrabold" style={{ color: tone.link, transition: "color 900ms linear" }} href="#roles">
             {text.solution.explore}
             <ChevronRight size={16} className="transition-transform duration-200 group-hover:translate-x-1 rtl:-scale-x-100 rtl:group-hover:-translate-x-1" />

@@ -25,19 +25,19 @@ describe('technician dashboard sections in the address', () => {
   ])('%s opens on its section (a refresh or bookmark)', async (path, label) => {
     open(path)
     const nav = await screen.findByRole('navigation', { name: 'Dashboard sections' }, FIND)
-    expect(nav.querySelector('[aria-pressed="true"]')).toHaveTextContent(label)
+    expect(nav.querySelector('[aria-current="page"]')).toHaveTextContent(label)
   })
 
   it('records each section, and Back returns to the one before', async () => {
     const user = userEvent.setup()
     open('/dashboard')
-    await user.click(await screen.findByRole('button', { name: /Accepted Jobs/ }, FIND))
+    await user.click(await screen.findByRole('link', { name: /Accepted Jobs/ }, FIND))
     expect(location.current.pathname).toBe('/dashboard/accepted')
-    await user.click(screen.getByRole('button', { name: /Completed Jobs/ }))
+    await user.click(screen.getByRole('link', { name: /Completed Jobs/ }))
     expect(location.current.pathname).toBe('/dashboard/completed')
     act(() => history.back())
     await waitFor(() => expect(location.current.pathname).toBe('/dashboard/accepted'))
-    expect(screen.getByRole('button', { name: /Accepted Jobs/, pressed: true })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /Accepted Jobs/, current: 'page' })).toBeInTheDocument()
     act(() => history.back())
     await waitFor(() => expect(location.current.pathname).toBe('/dashboard'))
   })

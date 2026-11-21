@@ -190,7 +190,7 @@ export default function WeatherIndicator({ view, details = null, onRetry = null,
           aria-label={td('Weather report')}
           data-testid="weather-popover"
           style={{ position: 'fixed', top: position.top, left: position.left, width: position.width, maxHeight: position.maxHeight }}
-          className="z-[80] overflow-y-auto rounded-2xl border border-oc-line bg-white p-3 text-start text-oc-ink shadow-[0_18px_40px_rgba(23,32,28,.22)]"
+          className="z-dropdown overflow-y-auto rounded-2xl border border-oc-line bg-white p-3 text-start text-oc-ink shadow-[0_18px_40px_rgba(23,32,28,.22)]"
         >
           <div className="flex items-start gap-2">
             <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-oc-green" aria-hidden="true" />

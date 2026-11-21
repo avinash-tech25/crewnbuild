@@ -53,7 +53,7 @@ describe('job cards share one anatomy', () => {
           : [],
       }),
     })
-    await user.click(await screen.findByRole('button', { name: /Accepted Jobs/ }, FIND))
+    await user.click(await screen.findByRole('link', { name: /Accepted Jobs/ }, FIND))
     const grid = await screen.findByTestId('job-list', {}, FIND)
     const cards = expectUniformCards(grid)
     expect(cards).toHaveLength(2)
@@ -80,7 +80,7 @@ describe('job cards share one anatomy', () => {
         data: request.params?.bucket === 'cancelled' ? [cancelled(), cancelled({ id: SECOND_ID, service_name: 'Tap Replacement' })] : [],
       }),
     })
-    await user.click(await screen.findByRole('button', { name: /Cancelled Jobs/ }, FIND))
+    await user.click(await screen.findByRole('link', { name: /Cancelled Jobs/ }, FIND))
     const grid = await screen.findByTestId('job-list', {}, FIND)
     const cards = expectUniformCards(grid)
     expect(cards).toHaveLength(2)

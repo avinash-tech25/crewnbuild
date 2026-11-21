@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Navigate, useParams } from 'react-router-dom'
+import { Link, Navigate, useParams } from 'react-router-dom'
 import Logo from '../../../shared/ui/Logo.jsx'
 import { HardHat, UserRound } from 'lucide-react'
 
@@ -48,7 +48,7 @@ export default function InviteLanding() {
             Opening the Site Engineer signup…
           </div>
           <p className="mt-4 text-xs text-graphite/55">
-            Already have an account? <a href="/login" className="font-bold text-brand-700">Sign in</a> and open Join Team with this code.
+            Already have an account? <Link to="/login" className="font-bold text-brand-700">Sign in</Link> and open Join Team with this code.
           </p>
         </div>
       </section>

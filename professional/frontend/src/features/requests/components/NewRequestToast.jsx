@@ -13,7 +13,7 @@ export default function NewRequestToast({ inbox, onOpen }) {
   const { toast, dismissToast, soundStatus, enableSound } = inbox
   if (!toast.open || !toast.count || typeof document === 'undefined') return null
   return createPortal(
-    <div className="fixed bottom-4 end-4 z-[140] w-[calc(100vw-2rem)] max-w-sm" role="status" aria-live="polite">
+    <div className="fixed bottom-4 end-4 z-toast w-[calc(100vw-2rem)] max-w-sm" role="status" aria-live="polite">
       <div className="flex items-start gap-3 rounded-2xl border border-brand-200 bg-white p-3 shadow-[0_18px_40px_-18px_rgba(15,23,42,0.45)]">
         <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand-50 text-brand-700"><BellRing className="h-5 w-5" /></span>
         <button

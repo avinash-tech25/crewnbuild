@@ -168,7 +168,7 @@ export default function ServiceLocationPicker({
         )}
 
         {results.length > 0 && (
-          <ul className="absolute z-[1000] mt-1 max-h-64 w-full overflow-auto rounded-xl border border-oc-line bg-white shadow-ocsoft">
+          <ul className="absolute z-dropdown mt-1 max-h-64 w-full overflow-auto rounded-xl border border-oc-line bg-white shadow-ocsoft">
             {matched && (
               <li className="border-b border-oc-line bg-oc-sunken px-3.5 py-2 text-xs text-oc-muted">
                 No exact match. Showing places for “{matched}” — pick the area, then drag the pin to the building.
@@ -195,7 +195,7 @@ export default function ServiceLocationPicker({
             center={[location.latitude, location.longitude]}
             zoom={zoom}
             scrollWheelZoom
-            className="h-full w-full"
+            className="isolate h-full w-full"
           >
             <TileLayer url={MAP_TILES.url} attribution={MAP_TILES.attribution} maxZoom={MAP_TILES.maxZoom} />
             <Marker
@@ -221,7 +221,7 @@ export default function ServiceLocationPicker({
             disabled={locating}
             title="Use my current location"
             aria-label="Use my current location"
-            className="absolute bottom-3 right-3 z-[1000] grid h-10 w-10 place-items-center rounded-full border border-oc-line bg-white text-oc-green shadow-ocsoft transition hover:bg-oc-mint disabled:opacity-60"
+            className="absolute bottom-3 right-3 z-10 grid h-10 w-10 place-items-center rounded-full border border-oc-line bg-white text-oc-green shadow-ocsoft transition hover:bg-oc-mint disabled:opacity-60"
           >
             {locating ? <Loader2 className="h-5 w-5 animate-spin" /> : <LocateFixed className="h-5 w-5" />}
           </button>

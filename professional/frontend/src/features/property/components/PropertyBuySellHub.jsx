@@ -434,7 +434,7 @@ export default function PropertyBuySellHub({
       )}
 
       {loadingDetail && !openListing && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-slate-900/30">
+        <div className="fixed inset-0 z-dialog grid place-items-center bg-slate-900/30">
           <Loader2 className="h-6 w-6 animate-spin text-white" />
         </div>
       )}

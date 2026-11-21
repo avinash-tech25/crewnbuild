@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { ImageOff, ImagePlus, Trash2, X } from 'lucide-react'
 import { Spinner } from '../../../shared/ui/ui.jsx'
 import { PHOTO_ACCEPT } from '../jobExecutionRules.js'
+import useRecordParam from '../../../shared/navigation/useRecordParam.js'
 
 /**
  * One kind of job photo (before work, after work, or the customer's), shown from
@@ -12,7 +13,11 @@ export default function JobPhotos({
   title, kind, photos, urls, limit, canAdd, addHint, uploading, deletingId, onAdd, onDelete, emptyText,
 }) {
   const input = useRef(null)
-  const [viewing, setViewing] = useState(null)
+  // The open photo is in the address (?photo=<photo id>): Back closes it, a link reopens it.
+  // Each section only answers for its own photos, so one id opens one viewer.
+  const viewer = useRecordParam('photo')
+  const viewingUrl = photos.some((photo) => photo.id === viewer.value) ? urls[viewer.value] : null
+  const viewing = viewingUrl && viewingUrl !== 'error' ? viewingUrl : null
   const [confirming, setConfirming] = useState(null)
 
   const pick = (event) => {
@@ -35,7 +40,7 @@ export default function JobPhotos({
           return (
             <div key={photo.id} className="group relative aspect-square overflow-hidden rounded-lg border border-oc-line bg-oc-sunken">
               {url && url !== 'error' ? (
-                <button type="button" className="h-full w-full" onClick={() => setViewing(url)} aria-label={`View ${title.toLowerCase()} photo`}>
+                <button type="button" className="h-full w-full" onClick={() => viewer.open(photo.id)} aria-label={`View ${title.toLowerCase()} photo`}>
                   <img src={url} alt="" className="h-full w-full object-cover" data-testid="job-photo" />
                 </button>
               ) : (
@@ -93,7 +98,7 @@ export default function JobPhotos({
       {photos.length === 0 && !canAdd && !uploading && <p className="mt-1 text-sm text-oc-muted">{emptyText}</p>}
       {addHint && <p className="mt-2 text-xs text-oc-muted">{addHint}</p>}
 
-      {viewing && <PhotoViewer url={viewing} title={title} onClose={() => setViewing(null)} />}
+      {viewing && <PhotoViewer url={viewing} title={title} onClose={viewer.close} />}
     </section>
   )
 }
@@ -106,7 +111,7 @@ function PhotoViewer({ url, title, onClose }) {
   }, [onClose])
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-black/80 p-4" role="dialog" aria-modal="true" aria-label={title} onClick={onClose} data-testid="photo-viewer">
+    <div className="fixed inset-0 z-dialog grid place-items-center bg-black/80 p-4" role="dialog" aria-modal="true" aria-label={title} onClick={onClose} data-testid="photo-viewer">
       <button type="button" onClick={onClose} className="absolute right-4 top-4 grid h-10 w-10 place-items-center rounded-full bg-white text-oc-ink" aria-label="Close photo">
         <X className="h-5 w-5" />
       </button>

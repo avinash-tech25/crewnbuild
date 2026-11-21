@@ -65,11 +65,12 @@ export default function OwnerSupplierHub({
             >
               <tab.icon className="h-3.5 w-3.5" />
               {tab.label}
-              {Boolean(tab.badge) && (
-                <span className={`grid h-4 min-w-4 place-items-center rounded-full px-1 text-[9px] font-extrabold ${
+              {/* Always in place (hidden at 0), so a count arriving never moves the tabs. */}
+              {tab.badge !== undefined && (
+                <span aria-hidden={tab.badge ? undefined : 'true'} className={`grid h-4 min-w-4 place-items-center rounded-full px-1 text-[9px] font-extrabold tabular-nums ${
                   active ? 'bg-white/20 text-white' : 'bg-brand-100 text-brand-800'
-                }`}>
-                  {tab.badge}
+                } ${tab.badge ? '' : 'invisible'}`}>
+                  {tab.badge || 0}
                 </span>
               )}
             </button>

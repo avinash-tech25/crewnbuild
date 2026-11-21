@@ -1,35 +1,37 @@
 # Terms of Service and Privacy Policy
 
-The two Word files in this folder are the source and the final text:
+The two Word files in this folder are the source (updated 20 November 2026):
 
-- `CREWNBUILD_Terms_and_Conditions.docx`
-- `CREWNBUILD_Privacy_Policy.docx`
+- the Terms: the one `.docx` whose name contains "Terms" (its file name still carries the
+  old brand; the script finds it by that word, so the name can change freely);
+- the Privacy Policy: the one `.docx` whose name contains "Privacy".
 
 `python scripts/convert_legal_docs.py` (needs `pip install python-docx`) turns them into the
 content both web apps render, written to `src/features/legal/content/{terms,privacy}.js` in
 `professional/frontend` and `partner/frontend` (identical copies; the apps share no code).
-The wording is copied exactly: nothing is replaced or removed. The structure comes from the
-Word styles (Heading 1 title, Heading 2 sections, bulleted and numbered lists, bold runs),
-and the effective date, version and last-updated date from the line under the title. Replace
-a Word file and rerun the script; never edit the generated files by hand.
+Every section, heading, number, list and sentence is copied word for word. The only change
+is the brand: any `@gharbanao.in` address becomes `support@crewnbuild.com`, `gharbanao.in`
+becomes `crewnbuild.com`, and "GharBanao" becomes "CREWNBUILD". In the 20 Nov files that
+touched: Terms 10.5 (support@), 21.2 and 22.6 (legal@); Privacy 1.1 (the site), 6.3 and 8.2
+(dpdp@). Replace a Word file and rerun the script; never edit the generated files by hand.
 
-Both apps publish:
+The 20 Nov files print no title, effective date or version. The script then uses its
+defaults: the titles "Terms and Conditions (Terms of Use)" and "Privacy Policy", version
+**1.1**, effective and last updated **20 November 2026** (`DEFAULT_VERSION`,
+`DEFAULT_DATE` in the script).
 
-- `/legal`, the Legal hub: a welcome card, one card per policy (our short summary, its
-  version and effective date, a link to the full text) and a Contact card
-  (support@crewnbuild.com, +91 628 1921 628);
-- `/terms` and `/privacy`, the full texts, each with a table of contents and a Back link to
-  `/legal`.
+Both apps publish `/legal` (the Legal hub), `/terms` and `/privacy`, linked from the footers'
+Legal column; the sign-up consent line opens either text in a dialog. Each account records
+the `terms_version`, `privacy_version` and `terms_accepted_at` it agreed to; the backends
+refuse sign-up without acceptance (see "Versions" below).
 
-All three are public and linked from the footers' Legal column. The sign-up consent line
-opens either text in a dialog. Each account records the `terms_version`, `privacy_version`
-and `terms_accepted_at` it agreed to; the backends refuse sign-up without acceptance (see
-"Versions" below).
-
-The final texts have no [placeholders] left. They name two mailboxes, support@crewnbuild.com
-and legal@crewnbuild.com: confirm both exist before publishing.
+Bracketed placeholders in the texts are shown as written, for example `[ACN-3703]`, `[15]`,
+`[Grievance Officer Name]`, `[Designation]`, `[KYC partner]`, `[cloud region]`; the script
+prints the full list.
 
 ## Statements that do not match the app (flagged, not changed)
+
+Written against the 17 November texts; not re-checked against the 20 November update.
 
 The final texts fixed the Aadhaar statements: technicians' Aadhaar number is stored
 encrypted and shown masked, and their face photo is used to verify identity and then
@@ -181,10 +183,11 @@ the repository; PB = `partner/backend/app`, PrB = `professional/backend/app`.
 
 ## Versions
 
-The version printed in each Word file is the version an account accepts: both are **1.0**,
-effective 17 November 2026. The backends accept sign-up only with these versions
-(`TERMS_VERSION` / `PRIVACY_VERSION` in `professional/backend/app/core/legal.py` and
+Both texts are version **1.1** (20 November 2026); 1.0 was the 17 November text. The
+backends accept sign-up only with the current versions (`TERMS_VERSION` /
+`PRIVACY_VERSION` in `professional/backend/app/core/legal.py` and
 `partner/backend/app/core/legal.py`); a test in each backend checks that they equal the
-version in the frontend's generated text. When a text changes: replace the Word file with
-its new version printed, rerun the script, and change both constants in the same commit.
-Accounts keep the version they accepted.
+version in the frontend's generated text. When a text changes: replace the Word file, raise
+the version (in the document, or `DEFAULT_VERSION` in the script when the document prints
+none), rerun the script, and change both constants in the same commit. Accounts keep the
+version they accepted.

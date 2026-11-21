@@ -3511,7 +3511,6 @@ const base = {
   'landing.footer.rights': 'सर्वाधिकार सुरक्षित।',
   'landing.footer.privacy': 'गोपनीयता नीति',
   'landing.footer.terms': 'सेवा की शर्तें',
-  'landing.footer.cookies': 'कुकी नीति',
   'landing.footer.language': 'भाषा',
   'landing.comingSoonPage.eyebrow': 'जल्द आ रहा है',
   'landing.comingSoonPage.headline': 'अभी साइन-अप के लिए',

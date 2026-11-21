@@ -21,7 +21,7 @@ export const baseNav = [
   { id: 'productCatalog', labelKey: 'ui.productCatalog', icon: Boxes, bareIcon: true },
 ]
 
-export const defaultProjectImage = 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=900&q=80'
+export const defaultProjectImage = '/site-images/photo-1600585154340-be6161a56a0c-w900.jpg'
 // A project tab's address word: /contractor/projects/:projectId/<slug>. The first tab is
 // the project's default and has no word of its own (/contractor/projects/:projectId).
 export const PROJECT_TAB_SLUGS = {

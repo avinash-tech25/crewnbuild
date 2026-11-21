@@ -11,6 +11,7 @@ import { useEffect, useState } from 'react'
 import { CheckCircle2, Eye, EyeOff, RefreshCw, Search } from 'lucide-react'
 import { DetailDialog, DetailSection } from '../../../shared/ui/DetailDialog.jsx'
 import { fetchDeletedAccount, fetchDeletedAccounts } from '../adminApi.js'
+import { SkeletonList } from '../../../shared/ui/Skeleton.jsx'
 
 function when(value) {
   return value ? new Date(value).toLocaleString() : '—'
@@ -113,7 +114,7 @@ export function AccountDeletionPage({ Panel, useAsync }) {
   })
 
   return (
-    <div className="mx-auto max-w-7xl space-y-4 p-4">
+    <div className="mx-auto max-w-page space-y-4 p-4">
       <Panel
         title="Account deletion"
         subtitle="Accounts deleted by their holders from Profile Settings. Read only."
@@ -129,7 +130,7 @@ export function AccountDeletionPage({ Panel, useAsync }) {
         )}
       >
         {error && <p className="px-6 py-4 text-sm font-semibold text-rose-700">{error}</p>}
-        {!error && loading && !rows.length && <p className="px-6 py-4 text-sm text-slate-500">Loading…</p>}
+        {!error && loading && !rows.length && <SkeletonList rows={5} rowClassName="h-12" className="grid gap-2.5 px-6 py-4" />}
         {!error && !loading && !rows.length && (
           <p className="flex items-center gap-2 px-6 py-6 text-sm text-slate-500"><CheckCircle2 className="h-4 w-4" />No deleted accounts{query ? ` matching “${query}”` : ''}.</p>
         )}

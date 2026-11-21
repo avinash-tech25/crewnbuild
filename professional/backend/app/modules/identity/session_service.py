@@ -97,7 +97,7 @@ class SessionService:
         issued = self._issue(
             user=user,
             family_id=uuid.uuid4(),
-            expires_at=now + timedelta(days=self.settings.refresh_token_days),
+            expires_at=now + timedelta(hours=self.settings.session_max_hours),
             client=client,
             now=now,
         )
@@ -139,7 +139,7 @@ class SessionService:
         return (
             row.revoked_at is None
             and row.expires_at > now
-            and row.last_used_at + timedelta(days=self.settings.session_idle_days) > now
+            and row.last_used_at + timedelta(hours=self.settings.session_idle_hours) > now
         )
 
     def validate(self, claims: AccessClaims) -> UserSession | None:

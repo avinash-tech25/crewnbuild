@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { ArrowRight, CalendarDays, ChevronDown, ClipboardList, Phone, Star } from 'lucide-react'
-import { Alert, EmptyState, Spinner } from '../../../shared/ui/ui.jsx'
+import { Alert, EmptyState } from '../../../shared/ui/ui.jsx'
+import { SkeletonGrid } from '../../../shared/ui/Skeleton.jsx'
 import { technicianTypeByCode } from '../../../shared/constants/technicianTypes.js'
 import { apiErrorMessage } from '../../../shared/api/apiClient.js'
 import { fetchMyBookings } from '../bookingApi.js'
@@ -81,7 +82,7 @@ export default function MyBookings() {
       </div>
       <Alert tone="error">{message}</Alert>
       {bookings === null ? (
-        <div className="flex justify-center py-8 text-oc-green"><Spinner className="h-6 w-6" /></div>
+        <SkeletonGrid count={3} itemClassName="h-36" label="Loading your bookings" testId="booking-list-loading" />
       ) : bookings.length === 0 ? (
         <EmptyState icon={ClipboardList} title="No bookings yet">Choose a service above to book a technician near you.</EmptyState>
       ) : shown.length === 0 ? (

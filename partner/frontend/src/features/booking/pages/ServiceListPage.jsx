@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { ArrowLeft, ArrowRight, Wrench } from 'lucide-react'
-import { Alert, Spinner } from '../../../shared/ui/ui.jsx'
+import { Alert } from '../../../shared/ui/ui.jsx'
+import { SkeletonGrid } from '../../../shared/ui/Skeleton.jsx'
 import { serviceImage } from '../../../shared/constants/serviceImages.js'
 import { technicianTypeBySlug } from '../../../shared/constants/technicianTypes.js'
 import useRequesterSession from '../useRequesterSession.js'
@@ -37,7 +38,7 @@ export default function ServiceListPage() {
   if (!type) return <Navigate to="/book-technician" replace />
 
   return (
-    <BookingShell session={session} wide>
+    <BookingShell session={session}>
       {requester && (
         <div className="space-y-8">
           <div>
@@ -53,7 +54,7 @@ export default function ServiceListPage() {
           <Alert tone="error">{message}</Alert>
 
           {services === null && !message ? (
-            <div className="flex justify-center py-16 text-oc-green"><Spinner className="h-8 w-8" /></div>
+            <SkeletonGrid count={8} itemClassName="h-44 rounded-2xl" className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6 2xl:grid-cols-8" label="Loading services" testId="service-list-loading" />
           ) : (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6 2xl:grid-cols-8">
               {(services || []).map((service) => (

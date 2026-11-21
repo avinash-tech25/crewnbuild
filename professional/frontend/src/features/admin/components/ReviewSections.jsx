@@ -20,6 +20,7 @@ import {
   updateReport,
 } from '../adminApi.js'
 import { can } from '../adminAccess.js'
+import { SkeletonList } from '../../../shared/ui/Skeleton.jsx'
 
 const VERIFICATION_TABS = [
   ['PENDING', 'Pending'],
@@ -151,7 +152,7 @@ export function VerificationPage({ identity, Panel, useAsync }) {
 
       <div className="divide-y divide-slate-100">
         {error && <p className="px-5 py-10 text-center text-sm text-slate-500">{error}</p>}
-        {!error && loading && <p className="px-5 py-10 text-center text-sm text-slate-500">Loading…</p>}
+        {!error && loading && <SkeletonList rows={4} rowClassName="h-16" className="grid gap-3 px-5 py-4" />}
         {!error && !loading && !data?.accounts.length && (
           <p className="px-5 py-10 text-center text-sm font-medium text-slate-500">
             {tab === 'PENDING' ? 'Nothing is waiting for review.' : 'Nothing here yet.'}
@@ -358,7 +359,7 @@ export function ReportsPage({ identity, Panel, useAsync }) {
 
       <div className="divide-y divide-slate-100">
         {error && <p className="px-5 py-10 text-center text-sm text-slate-500">{error}</p>}
-        {!error && loading && <p className="px-5 py-10 text-center text-sm text-slate-500">Loading…</p>}
+        {!error && loading && <SkeletonList rows={4} rowClassName="h-16" className="grid gap-3 px-5 py-4" />}
         {!error && !loading && !data?.reports.length && (
           <p className="px-5 py-10 text-center text-sm font-medium text-slate-500">
             No reports here. That is good news.

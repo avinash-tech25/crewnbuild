@@ -123,7 +123,7 @@ export default function LocationLeadsPrompt({ open, currentPincode = '', onDismi
   }
 
   return (
-    <div className="fixed inset-0 z-[140] grid place-items-center overflow-y-auto bg-slate-900/50 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="location-leads-title">
+    <div className="fixed inset-0 z-dialog-nested grid place-items-center overflow-y-auto bg-slate-900/50 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="location-leads-title">
       <form onSubmit={saveLocation} className="relative w-full max-w-xl rounded-2xl border border-oc-line bg-white p-5 shadow-2xl">
         {/* No onDismiss: the step is required. */}
         {onDismiss && (

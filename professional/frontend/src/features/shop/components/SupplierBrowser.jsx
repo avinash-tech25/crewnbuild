@@ -41,6 +41,9 @@ import { formatNumber } from '../../../shared/utils/formatters.js'
 import { listingSearchScore } from '../../../shared/utils/catalogSearch.js'
 import { optionLabel, SUPPLIER_CATEGORY_KEYS, SUPPLIER_TYPE_KEYS, SUPPLIER_OFFERING_KEYS, DEFAULT_SUPPLIER_OFFERING_KEYS } from '../../../i18n/optionKeys.js'
 import { supplierTypeOptions } from '../../onboarding/profileConstants.js'
+import { useUrlParams } from '../../../shared/hooks/useUrlState.js'
+import { SkeletonGrid } from '../../../shared/ui/Skeleton.jsx'
+import useUrlDialog from '../../../shared/hooks/useUrlDialog.js'
 
 // The wording for one supplier's catalogue, chosen by that supplier's own saved
 // category. Falls back to the screen's existing wording when they have not
@@ -133,18 +136,30 @@ export default function SupplierBrowser({
   const [suppliers, setSuppliers] = useState([])
   const [loading, setLoading] = useState(true)
   const [projectId, setProjectId] = useState(buyerProjects[0]?.id || '')
-  const [ownSearch, setOwnSearch] = useState('')
+  // The filters live in the address (?search=, ?material=, ?type=), replaced rather than
+  // added to the history on each change, so a refresh or a link keeps them.
+  const [urlParams, patchUrl] = useUrlParams()
+  const ownSearch = urlParams.get('search') || ''
+  const setOwnSearch = (value) => patchUrl({ search: value }, { replace: true })
   const search = searchValue ?? ownSearch
   const setSearch = onSearchChange ?? setOwnSearch
-  const [category, setCategory] = useState('')
-  const [supplierTypeFilter, setSupplierTypeFilter] = useState('')
+  const category = urlParams.get('material') || ''
+  const setCategory = (value) => patchUrl({ material: value }, { replace: true })
+  const typeParam = urlParams.get('type') || ''
+  const supplierTypeFilter = supplierTypeOptions.includes(typeParam) ? typeParam : ''
+  const setSupplierTypeFilter = (next) => {
+    const value = typeof next === 'function' ? next(supplierTypeFilter) : next
+    patchUrl({ type: value }, { replace: true })
+  }
   const dispatch = useDispatch()
   // The live basket count, straight off the existing cart state — the same
   // number the Cart tab badge shows, never a second tally.
   const cartCount = useSelector(selectCartCount)
   const [viewedSupplier, setViewedSupplier] = useState(null)
   const [supplierCategory, setSupplierCategory] = useState('')
-  const [viewedProduct, setViewedProduct] = useState(null)
+  // The product open over the catalogue (?product=<uuid>): Back closes it, and a refresh
+  // or a link opens it again, with its supplier's catalogue under it.
+  const [viewedProductId, openProductDialog, closeProductDialog] = useUrlDialog('product')
   const [cartMessage, setCartMessage] = useState('')
   const [busy, setBusy] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
@@ -248,11 +263,27 @@ export default function SupplierBrowser({
       setViewedSupplier({ ...supplier, ...profile, products: profile.profile_products || [] })
       // Opened from a matching product: show that product straight away.
       const opened = openProductId && (profile.profile_products || []).find((item) => item.id === openProductId)
-      if (opened) setViewedProduct(opened)
+      if (opened) openProductDialog(opened.id)
     } catch (error) {
       setErrorMessage(error.response?.data?.detail || t('dash.engineer.suppliers.unableLoad'))
     }
   }
+
+  const viewedProduct = viewedProductId
+    ? (viewedSupplier?.products || []).find((item) => String(item.id) === viewedProductId) || null
+    : null
+  // A product named in the address with no catalogue open (a refresh or a link): open the
+  // supplier from the feed that sells it, the same way a click does. Once per product.
+  const productOpenedFromAddress = useRef(null)
+  useEffect(() => {
+    if (!viewedProductId || loading || viewedSupplier || productOpenedFromAddress.current === viewedProductId) return
+    // The feed may arrive in steps (a caller's projects first): wait for the seller.
+    const seller = suppliers.find((supplier) => (supplier.products || []).some((item) => String(item.id) === viewedProductId))
+    if (!seller) return
+    productOpenedFromAddress.current = viewedProductId
+    viewSupplier(seller)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewedProductId, loading, viewedSupplier, suppliers])
 
   // Auto-scroll to the materials section when a supplier is selected.
   useEffect(() => {
@@ -481,10 +512,8 @@ export default function SupplierBrowser({
         {showSupplierTypeFilter && !inlineTypeFilter && supplierTypeRow('mt-3')}
 
         {loading ? (
-          <div className="mt-4 grid gap-2">
-            {[0, 1, 2].map((index) => (
-              <div key={index} className="h-16 animate-pulse rounded-xl border border-slate-100 bg-slate-50" />
-            ))}
+          <div className="mt-4">
+            <SkeletonGrid count={3} itemClassName="h-60" className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3" />
           </div>
         ) : suppliers.length === 0 ? (
           <div className="mt-4">
@@ -503,7 +532,10 @@ export default function SupplierBrowser({
               action={
                 <button
                   type="button"
-                  onClick={() => { setSearch(''); setCategory('') }}
+                  onClick={() => {
+                    // One address change for both filters when both are the address's.
+                    if (onSearchChange) { setSearch(''); setCategory('') } else patchUrl({ search: '', material: '' }, { replace: true })
+                  }}
                   className="mt-3 inline-flex h-9 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 text-xs font-extrabold text-slate-700 transition hover:border-brand-300 hover:bg-brand-50 hover:text-brand-800"
                 >
                   {t('dash.engineer.suppliers.clearFilters')}
@@ -829,7 +861,7 @@ export default function SupplierBrowser({
                           key={product.id}
                           product={product}
                           busy={busy}
-                          onOpen={(item) => { setCartMessage(''); setViewedProduct(item) }}
+                          onOpen={(item) => { setCartMessage(''); openProductDialog(item.id) }}
                           onAddToCart={canBuy ? addToCart : undefined}
                         />
                       ))}
@@ -855,10 +887,11 @@ export default function SupplierBrowser({
           onSendBuyRequest={canBuy ? async (wanted) => {
             const result = await dispatch(addProductToCart({ projectId: activeProjectId, productId: viewedProduct.id, quantity: wanted }))
             if (result.meta.requestStatus !== 'fulfilled') return setCartMessage(result.payload)
-            setViewedProduct(null)
+            // In place, not Back: the cart is opened next, and Back would undo that.
+            closeProductDialog({ replace: true })
             onOpenCart?.()
           } : undefined}
-          onClose={() => setViewedProduct(null)}
+          onClose={() => closeProductDialog()}
         />
       )}
     </div>

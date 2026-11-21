@@ -282,6 +282,6 @@ class OAuthSignInService:
             raise OAuthRefusedError(403, "ACCOUNT_SUSPENDED", SUSPENDED_MESSAGE)
         issued = self.sessions.start(user, client)
         response = RedirectResponse(f"{self.settings.frontend_origin}/oauth/callback", status_code=302)
-        set_session_cookies(response, self.settings, issued.access_token, issued.refresh_token, issued.expires_at)
+        set_session_cookies(response, self.settings, issued.access_token, issued.refresh_token)
         clear_oauth_state_cookie(response, self.settings)
         return response

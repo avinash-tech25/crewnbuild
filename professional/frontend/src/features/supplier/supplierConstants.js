@@ -36,7 +36,7 @@ export const equipmentNav = [
   { id: 'equipmentAssignments', labelKey: 'labor.nav.assignments', icon: Truck, bareIcon: true },
 ]
 
-export const defaultProjectImage = 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=900&q=80'
+export const defaultProjectImage = '/site-images/photo-1600585154340-be6161a56a0c-w900.jpg'
 export const supplierDocumentTypes = [
   'Shop License',
   'GST Certificate',

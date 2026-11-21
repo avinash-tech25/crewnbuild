@@ -38,7 +38,7 @@ function Notice({ notice }) {
 export function LaborDialog({ title, onClose, children }) {
   const { t } = useLanguage()
   return (
-    <div className="fixed inset-0 z-[80] grid place-items-center bg-slate-900/40 p-4" role="dialog" aria-modal="true" aria-label={title}>
+    <div className="fixed inset-0 z-dialog grid place-items-center bg-slate-900/40 p-4" role="dialog" aria-modal="true" aria-label={title}>
       <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-4 shadow-2xl sm:p-5">
         <div className="mb-3 flex items-start justify-between gap-3">
           <h3 className="font-display text-base font-extrabold text-graphite">{title}</h3>
@@ -451,7 +451,7 @@ export function LaborRequestsSection({ requests, services, onChanged, compact = 
                 className={`inline-flex h-10 shrink-0 items-center gap-2 rounded-xl px-4 text-xs font-extrabold transition ${isActive ? 'bg-brand-700 text-white shadow-sm' : 'text-graphite/55 hover:bg-slate-50 hover:text-graphite'}`}
               >
                 {requestFilterLabel(option)}
-                {count > 0 && <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-extrabold ${isActive ? 'bg-white/20 text-white' : 'bg-brand-50 text-brand-700'}`}>{count}</span>}
+                <span aria-hidden={count > 0 ? undefined : 'true'} className={`inline-block min-w-[1.375rem] rounded-full px-1.5 py-0.5 text-center text-[10px] font-extrabold tabular-nums ${isActive ? 'bg-white/20 text-white' : 'bg-brand-50 text-brand-700'} ${count > 0 ? '' : 'invisible'}`}>{count || 0}</span>
               </button>
             )
           })}
@@ -598,7 +598,7 @@ export function LaborAssignmentsSection({ requests, services, refreshKey = 0 }) 
             className={`inline-flex h-10 shrink-0 items-center gap-2 rounded-xl px-4 text-xs font-extrabold transition ${showHistory === tab.id ? 'bg-brand-700 text-white shadow-sm' : 'text-graphite/55 hover:bg-slate-50 hover:text-graphite'}`}
           >
             {tab.label}
-            {tab.count > 0 && <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-extrabold ${showHistory === tab.id ? 'bg-white/20 text-white' : 'bg-brand-50 text-brand-700'}`}>{tab.count}</span>}
+            <span aria-hidden={tab.count > 0 ? undefined : 'true'} className={`inline-block min-w-[1.375rem] rounded-full px-1.5 py-0.5 text-center text-[10px] font-extrabold tabular-nums ${showHistory === tab.id ? 'bg-white/20 text-white' : 'bg-brand-50 text-brand-700'} ${tab.count > 0 ? '' : 'invisible'}`}>{tab.count || 0}</span>
           </button>
         ))}
       </div>

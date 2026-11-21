@@ -5,6 +5,7 @@ import SessionNav from "../../../../shared/ui/SessionNav.jsx";
 import { useAccountLinks } from "../../../../shared/auth/sessionLinks.js";
 import { useLanguage } from "../../../../i18n/LanguageContext.jsx";
 import PublicWeatherIndicator from "../../../weather/components/PublicWeatherIndicator.jsx";
+import { AppLink, AppNavLink } from "../../../../shared/navigation/AppLink.jsx";
 
 // A solid white bar across the top of the page. Once the visitor scrolls, the bar itself and
 // everything in it fades out and only the logo stays, on its own white badge in the corner.
@@ -160,7 +161,8 @@ const startPillClass =
   "shadow-[0_11px_25px_rgba(244,183,64,.28)] transition-[transform,background] duration-200 ease-soft " +
   "hover:-translate-y-[3px] hover:bg-[#e9a92f] active:scale-[.97]";
 
-const headerContainerClass = "w-[min(100%-48px,1400px)] mx-auto";
+// The one page width (`max-w-page`, 1400px) with the same 24px a side it always kept.
+const headerContainerClass = "w-[calc(100%-48px)] max-w-page mx-auto";
 
 // A thin light-grey rule between items of the white bar (row layout only; the
 // open menu already rules its entries off with borders). Its negative margins
@@ -192,8 +194,12 @@ export function SiteHeader({ text, brandHref = "#top" }) {
   // Us, calculators, support tickets) a bare "#roles" pointed at a section that
   // page does not have, so the click did nothing. Same rule as View plans below.
   const sectionHref = (id) => (brandHref === "#top" ? `#${id}` : `/#${id}`);
-  // Contact us is marked as the current page on the Contact & Support pages.
+  // Contact us is marked as the current page on the Contact & Support pages
+  // (NavLink: /contact-us and everything under it). `active` is only the
+  // fallback for a render outside the router.
   const onContactPage = typeof window !== "undefined" && window.location.pathname.startsWith("/contact-us");
+  const contactClass = ({ isActive }) =>
+    `${linkClass} ${menuMode ? "border-b-0" : ""} ${isActive ? `text-oc-deep ${menuMode ? "" : "relative after:absolute after:inset-x-0 after:-bottom-[7px] after:h-[3px] after:rounded-full after:bg-oc-amber"}` : ""}`;
 
   // The bar leaves with the menu still open otherwise, and it would be open again on return.
   useEffect(() => { if (scrolled) setMenuOpen(false); }, [scrolled]);
@@ -242,27 +248,28 @@ export function SiteHeader({ text, brandHref = "#top" }) {
           {!menuMode && <NavRule className={navLinkRuleClass} />}
           <a className={linkClass} href={sectionHref("world")} onClick={() => setMenuOpen(false)}><LayoutGrid {...navIconProps} />{text.nav.world}</a>
           {!menuMode && <NavRule className={navLinkRuleClass} />}
-          <a
-            className={`${linkClass} ${menuMode ? "border-b-0" : ""} ${onContactPage ? `text-oc-deep ${menuMode ? "" : "relative after:absolute after:inset-x-0 after:-bottom-[7px] after:h-[3px] after:rounded-full after:bg-oc-amber"}` : ""}`}
+          <AppNavLink
+            className={contactClass}
             href="/contact-us"
-            aria-current={onContactPage ? "page" : undefined}
+            active={onContactPage}
             onClick={() => setMenuOpen(false)}
-          ><Phone {...navIconProps} />{text.nav.contactUs}</a>
+          ><Phone {...navIconProps} />{text.nav.contactUs}</AppNavLink>
           {/* Phones have no room for these in the bar, so the menu carries them. */}
           <div className={`${crowded ? "" : "wide:hidden"} flex flex-col gap-[10px] pt-[14px] border-t border-[rgba(8,62,43,.16)]`}>
             {signedInUser ? (
               <SessionNav stacked goClassName={smallButtonClass} onNavigate={() => setMenuOpen(false)} />
             ) : (
               <>
-                <a
+                <AppLink
                   className="inline-flex min-h-[42px] items-center justify-center rounded-full border border-[rgba(8,62,43,.3)] text-xs font-extrabold text-oc-deep"
                   href="/login"
+                  onClick={() => setMenuOpen(false)}
                 >
                   {text.nav.signIn}
-                </a>
-                <a className={smallButtonClass} href="/signup">
+                </AppLink>
+                <AppLink className={smallButtonClass} href="/signup" onClick={() => setMenuOpen(false)}>
                   {text.nav.start} <ArrowRight size={15} className="rtl:-scale-x-100" />
-                </a>
+                </AppLink>
               </>
             )}
           </div>
@@ -316,10 +323,10 @@ export function SiteHeader({ text, brandHref = "#top" }) {
             <SessionNav goClassName={startPillClass} />
           ) : (
             <>
-              <a className={signInPillClass} href="/login">{text.nav.signIn}</a>
-              <a className={startPillClass} href="/signup">
+              <AppLink className={signInPillClass} href="/login">{text.nav.signIn}</AppLink>
+              <AppLink className={startPillClass} href="/signup">
                 {text.nav.start} <ArrowRight size={15} className="rtl:-scale-x-100" />
-              </a>
+              </AppLink>
             </>
           )}
         </div>

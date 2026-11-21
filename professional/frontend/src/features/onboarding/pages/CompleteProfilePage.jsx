@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { ArrowLeft, ArrowRight, Home, Lock } from 'lucide-react'
 import Logo from '../../../shared/ui/Logo.jsx'
+import { AppLink } from '../../../shared/navigation/AppLink.jsx'
 import { usePincodeAreaLookup } from '../../../shared/hooks/usePincodeAreaLookup.js'
 import { findBranchByDisplay, lookupBranchList, onlyBranchOf } from '../../../shared/utils/pincodeBranches.js'
 import { uploadLocalFile } from '../../../shared/api/uploadApi.js'
@@ -803,12 +804,12 @@ export default function CompleteProfilePage() {
 
       <header className="relative z-10 flex items-center justify-between border-b border-slate-200 bg-white px-5 lg:px-10">
         <Logo />
-        <a href="/" className="inline-flex h-9 items-center gap-2 rounded-md border border-slate-200 bg-white px-4 text-sm font-semibold transition hover:border-brand-300 hover:bg-brand-50">
+        <AppLink href="/" className="inline-flex h-9 items-center gap-2 rounded-md border border-slate-200 bg-white px-4 text-sm font-semibold transition hover:border-brand-300 hover:bg-brand-50">
           <ArrowLeft className="h-4 w-4" /> {t('shared.backHome')}
-        </a>
+        </AppLink>
       </header>
 
-      <section className={`relative z-10 mx-auto w-full px-5 lg:px-8 ${usesSetupLayout ? 'max-w-[1580px] py-3' : isCompactProfile ? 'max-w-[1580px] py-3' : 'max-w-[1480px] py-4'}`}>
+      <section className={`relative z-10 mx-auto w-full px-5 lg:px-8 max-w-page ${usesSetupLayout || isCompactProfile ? 'py-3' : 'py-4'}`}>
         {!usesSetupLayout && (
         <div className={`relative mb-3 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-[0_14px_50px_-42px_rgba(15,23,42,0.35)] ${isCompactProfile ? 'min-h-[126px]' : ''}`}>
           <div className="absolute inset-y-0 right-0 hidden w-1/2 bg-[url('/login-background.png')] bg-cover bg-[center_38%] opacity-35 lg:block" />

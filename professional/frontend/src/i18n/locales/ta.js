@@ -3511,7 +3511,6 @@ const base = {
   'landing.footer.rights': 'அனைத்து உரிமைகளும் பாதுகாக்கப்பட்டவை.',
   'landing.footer.privacy': 'தனியுரிமைக் கொள்கை',
   'landing.footer.terms': 'சேவை விதிமுறைகள்',
-  'landing.footer.cookies': 'குக்கீ கொள்கை',
   'landing.footer.language': 'மொழி',
   'landing.comingSoonPage.eyebrow': 'விரைவில் வருகிறது',
   'landing.comingSoonPage.headline': 'இன்னும் பதிவுக்கு',

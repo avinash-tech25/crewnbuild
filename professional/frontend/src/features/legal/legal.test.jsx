@@ -35,12 +35,12 @@ const current = (scope) => within(sectionList(scope)).getAllByRole('link').filte
 
 describe('the documents are the Word files, word for word', () => {
   it.each([
-    [terms, 'CREWNBUILD Terms and Conditions (Terms of Use)'],
-    [privacy, 'CREWNBUILD Privacy Policy'],
-  ])('%#: title, effective date and version as printed', (doc, title) => {
+    [terms, 'Terms and Conditions (Terms of Use)'],
+    [privacy, 'Privacy Policy'],
+  ])('%#: title, version and dates, and no old brand', (doc, title) => {
     expect(doc.title).toBe(title)
-    expect([doc.effectiveDate, doc.version, doc.lastUpdated]).toEqual(['17 November 2026', '1.0', '17 November 2026'])
-    expect(JSON.stringify(doc)).not.toMatch(/gharbanao|\[[A-Z][^\]]*\]/i)
+    expect([doc.effectiveDate, doc.version, doc.lastUpdated]).toEqual(['20 November 2026', '1.1', '20 November 2026'])
+    expect(JSON.stringify(doc)).not.toMatch(/gharbanao/i)
   })
 })
 
@@ -195,6 +195,20 @@ describe('Back from a policy page', () => {
   })
 })
 
+it('the text is justified, hyphenated English, with each clause number in its own column', async () => {
+  installFakeServer()
+  renderApp('/terms#cancellations', { auth: signedOut })
+  const heading = await screen.findByRole('heading', { level: 2, name: '10. Cancellations and Refunds' }, SLOW)
+  const section = heading.closest('section')
+  expect(section.querySelector('[lang="en"]')).toHaveClass('font-sans')
+  const number = within(section).getByText('10.5')
+  const clause = number.parentElement
+  expect(clause).toHaveClass('grid')
+  expect(number.nextElementSibling).toHaveClass('text-justify', 'hyphens-auto')
+  expect(number.nextElementSibling).toHaveTextContent(/^How to ask\. Request refunds at support@crewnbuild\.com/)
+  for (const item of section.querySelectorAll('li')) expect(item).toHaveClass('text-justify')
+})
+
 it('a numbered list in the Word file is a numbered list on the page', async () => {
   const section = terms.sections.find((candidate) => candidate.blocks.some((block) => block.ordered))
   installFakeServer()
@@ -307,8 +321,11 @@ async function fillPhoneSignup(user) {
   await screen.findByText('Mobile number verified')
 }
 
+// The one required consent box of every sign-up form.
+const consentBox = () => screen.getByRole('checkbox', { name: /^I agree to the Terms & Conditions and I have read the Privacy Policy/ })
+
 describe.each([
-  ['Terms of Service', terms, 'close'],
+  ['Terms & Conditions', terms, 'close'],
   ['Privacy Policy', privacy, 'escape'],
 ])('sign-up consent: %s', (name, doc, closeWith) => {
   it('opens the document over the form, keeps the form, and needs the box ticked', async () => {
@@ -317,7 +334,7 @@ describe.each([
     renderApp('/signup?role=OWNER', { auth: signedOut })
     await fillPhoneSignup(user)
 
-    const checkbox = screen.getByRole('checkbox', { name: /I agree to the Terms of Service and Privacy Policy/ })
+    expect(consentBox()).toBeRequired()
     const opener = screen.getByRole('button', { name })
     await user.click(opener)
     const dialog = await screen.findByRole('dialog', { name: SHORT_TITLES[doc.id] })
@@ -337,7 +354,7 @@ describe.each([
     expect(shownHeading(dialog)).toHaveTextContent(label(doc.sections.at(-2)))
     expect(location.current.hash).toBe('')
     expect(location.current.pathname).toBe('/signup')
-    expect(checkbox).not.toBeChecked()
+    expect(consentBox()).not.toBeChecked()
 
     if (closeWith === 'close') await user.click(within(dialog).getByRole('button', { name: 'Close' }))
     else await user.keyboard('{Escape}')
@@ -345,16 +362,20 @@ describe.each([
     expect(document.activeElement).toBe(opener)
     expect(screen.getByPlaceholderText('Your name')).toHaveValue('Asha Rao')
     expect(screen.getByText('Mobile number verified')).toBeInTheDocument()
-    expect(checkbox).not.toBeChecked()
+    // Reading the document ticked nothing.
+    expect(consentBox()).not.toBeChecked()
 
-    // Unticked: refused with a message, nothing sent.
-    await user.click(screen.getByRole('button', { name: /Create Account/ }))
-    expect(await screen.findByRole('alert')).toHaveTextContent('Please accept the Terms of Service and Privacy Policy.')
+    // Create Account stays disabled until the box is ticked; nothing is sent before.
+    const create = () => screen.getByRole('button', { name: /Create Account/ })
+    expect(create()).toBeDisabled()
+    await user.click(consentBox())
+    expect(create()).toBeEnabled()
+    await user.click(consentBox())
+    expect(create()).toBeDisabled()
     expect(server.calls('POST /auth/signup')).toHaveLength(0)
 
-    await user.click(checkbox)
-    expect(checkbox).toBeChecked()
-    await user.click(screen.getByRole('button', { name: /Create Account/ }))
+    await user.click(consentBox())
+    await user.click(create())
     await waitFor(() => expect(server.calls('POST /auth/signup')).toHaveLength(1))
     expect(JSON.parse(server.calls('POST /auth/signup')[0].data)).toMatchObject({
       name: 'Asha Rao',
@@ -368,7 +389,7 @@ describe.each([
 })
 
 describe('sign-up consent: the password form', () => {
-  it('a click outside closes the document; an unticked box sends nothing; the request carries the versions', async () => {
+  it('a click outside closes the document; Create account waits for the box; the request carries the versions', async () => {
     const user = userEvent.setup()
     const server = installFakeServer({
       'GET /auth/phone/config': { data: { enabled: false, login: false, dial_code: '+91', digits: 10 } },
@@ -393,15 +414,14 @@ describe('sign-up consent: the password form', () => {
     await user.click(screen.getByTestId('legal-dialog-backdrop'))
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
     expect(screen.getByPlaceholderText('you@example.com')).toHaveValue('asha@example.in')
-    const checkbox = screen.getByRole('checkbox', { name: /I agree/ })
-    expect(checkbox).not.toBeChecked()
+    expect(consentBox()).not.toBeChecked()
 
-    await user.click(screen.getByRole('button', { name: /Create account/ }))
-    expect(await screen.findByRole('alert')).toHaveTextContent('Please accept the Terms of Service and Privacy Policy.')
+    const create = () => screen.getByRole('button', { name: /Create account/ })
+    expect(create()).toBeDisabled()
     expect(server.calls('POST /auth/signup')).toHaveLength(0)
 
-    await user.click(checkbox)
-    await user.click(screen.getByRole('button', { name: /Create account/ }))
+    await user.click(consentBox())
+    await user.click(create())
     await waitFor(() => expect(server.calls('POST /auth/signup')).toHaveLength(1))
     expect(JSON.parse(server.calls('POST /auth/signup')[0].data)).toMatchObject({
       email: 'asha@example.in',

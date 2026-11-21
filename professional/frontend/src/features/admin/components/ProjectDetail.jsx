@@ -14,6 +14,7 @@ import { Flag, HardHat, MapPin, User } from 'lucide-react'
 import { DetailDialog, DetailSection as Section } from '../../../shared/ui/DetailDialog.jsx'
 import { fetchProjectDetail } from '../adminApi.js'
 import { completionPercent, formatPercent } from '../../../shared/utils/projectProgress.js'
+import { SkeletonList } from '../../../shared/ui/Skeleton.jsx'
 
 function Field({ label, children }) {
   if (children === null || children === undefined || children === '') return null
@@ -94,7 +95,7 @@ export function ProjectDetailDrawer({ projectId, onClose }) {
         {error === NOT_FOUND && <NotFoundPanel />}
         {error && error !== NOT_FOUND && <p className="px-6 py-10 text-center text-sm text-slate-500">{error}</p>}
         {!error && !detail && (
-          <p className="px-6 py-10 text-center text-sm text-slate-500">Loading…</p>
+          <SkeletonList rows={4} rowClassName="h-20" className="grid gap-4 px-6 py-6" />
         )}
 
         {detail && (

@@ -240,7 +240,7 @@ function RequestDetailsDrawer({ request, onClose, variant = 'owner', award = nul
 
   return (
     // A centred window over the board (it used to slide in from the right).
-    <div className="fixed inset-0 z-[130] grid place-items-center p-3 sm:p-6">
+    <div className="fixed inset-0 z-dialog grid place-items-center p-3 sm:p-6">
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -560,8 +560,8 @@ export function ContractorRequestsBoard({ requestList, onAccept, onReject, onWit
             </button>
             {sortMenuOpen && (
               <>
-                <button type="button" aria-hidden="true" tabIndex={-1} className="fixed inset-0 z-30 cursor-default" onClick={() => setSortMenuOpen(false)} />
-                <div className="absolute right-0 z-40 mt-1.5 w-56 rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg">
+                <button type="button" aria-hidden="true" tabIndex={-1} className="fixed inset-0 z-dropdown cursor-default" onClick={() => setSortMenuOpen(false)} />
+                <div className="absolute right-0 z-dropdown mt-1.5 w-56 rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg">
                   <p className="px-2.5 pb-1 pt-1.5 text-[10px] font-extrabold uppercase tracking-wide text-slate-400">{t('shop.eo.sortBy')}</p>
                   {SORTS.map((sort) => (
                     <button

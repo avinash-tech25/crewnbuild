@@ -17,7 +17,8 @@ import privacy from '../../legal/content/privacy.js'
 // Contact number only (the code goes to email): exactly 10 digits, the same rule as the backend.
 const MOBILE_PATTERN = /^\d{10}$/
 const MOBILE_ERROR = 'Enter a valid 10 digit mobile number.'
-const CONSENT_ERROR = 'Please agree to the Terms of Service and Privacy Policy to create your account.'
+const CONSENT_ERROR =
+  'Please agree to the Terms & Conditions and confirm that you have read the Privacy Policy to create your account.'
 const LEGAL = { terms, privacy }
 
 /**
@@ -47,6 +48,7 @@ export default function RegisterPage() {
   const [message, setMessage] = useState({ tone: 'info', text: '' })
   const [resendIn, setResendIn] = useState(0)
   // Ticked only by the technician; reading the documents never ticks it.
+  // One required consent: the Terms accepted and the Privacy Policy read.
   const [accepted, setAccepted] = useState(false)
   const [consentError, setConsentError] = useState('')
   const [reading, setReading] = useState(null)
@@ -189,6 +191,7 @@ export default function RegisterPage() {
                 type="checkbox"
                 className="mt-0.5 h-4 w-4 accent-oc-green"
                 checked={accepted}
+                required
                 aria-required="true"
                 aria-invalid={consentError ? 'true' : undefined}
                 aria-describedby={consentError ? 'accept-terms-error' : undefined}
@@ -198,17 +201,18 @@ export default function RegisterPage() {
                 }}
               />
               <span>
+                {/* Each name opens its document; that never ticks the box. */}
                 I agree to the{' '}
                 <button type="button" className="font-extrabold text-oc-green underline-offset-2 hover:underline"
-                  onClick={(event) => { event.preventDefault(); setReading('terms') }}>Terms of Service</button>
-                {' '}and{' '}
+                  onClick={(event) => { event.preventDefault(); setReading('terms') }}>Terms &amp; Conditions</button>
+                {' '}and I have read the{' '}
                 <button type="button" className="font-extrabold text-oc-green underline-offset-2 hover:underline"
                   onClick={(event) => { event.preventDefault(); setReading('privacy') }}>Privacy Policy</button>
               </span>
             </label>
             {consentError && <p id="accept-terms-error" role="alert" className="mt-1 text-sm font-bold text-red-700">{consentError}</p>}
           </div>
-          <button type="submit" className="btn-primary w-full py-3" disabled={busy || code.length !== 6}>
+          <button type="submit" className="btn-primary w-full py-3" disabled={busy || code.length !== 6 || !accepted}>
             {busy ? <Spinner className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />} Verify email
           </button>
           <div className="flex items-center justify-between text-sm">

@@ -24,7 +24,7 @@ export default class ModalErrorBoundary extends Component {
   render() {
     if (!this.state.error) return this.props.children
     return (
-      <div className="fixed inset-0 z-[150] flex items-center justify-center bg-slate-900/40 p-4" role="alertdialog" aria-modal="true">
+      <div className="fixed inset-0 z-dialog-top flex items-center justify-center bg-slate-900/40 p-4" role="alertdialog" aria-modal="true">
         <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-5 text-center shadow-2xl">
           <p className="font-display text-base font-extrabold text-slate-950">{this.props.title || 'Something went wrong'}</p>
           <p className="mt-1.5 text-sm text-slate-500">{this.props.message || 'This window could not be opened. Please close it and try again.'}</p>

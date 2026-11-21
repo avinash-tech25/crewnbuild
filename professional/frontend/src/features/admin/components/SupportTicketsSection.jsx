@@ -18,6 +18,8 @@ import {
   fetchStaffTicket, fetchStaffTickets, openAttachment, replyAsStaff, staffAttachmentPath, supportErrorMessage,
 } from '../../support/supportApi.js'
 import { StatusBadge } from '../../support/pages/SupportTicketsPage.jsx'
+import LoadingRows from './LoadingRows.jsx'
+import { SkeletonList } from '../../../shared/ui/Skeleton.jsx'
 
 const STATUSES = [
   ['', 'All statuses'],
@@ -72,7 +74,7 @@ function TicketPanel({ id, canManage, onClose, onChanged }) {
       closeLabel="Close"
       status={ticket && <span className="font-mono">{ticket.reference} · {ticket.category_label} · {ticket.issue_label}</span>}
     >
-          {!ticket && !error && <p className="flex items-center gap-2 text-sm text-slate-500"><Loader2 className="h-4 w-4 animate-spin" /> Loading…</p>}
+          {!ticket && !error && <SkeletonList rows={3} rowClassName="h-20" />}
           {ticket && (
             <>
               <DetailSection className="space-y-4 text-sm">
@@ -187,7 +189,7 @@ export function SupportTicketsAdminPage({ identity, Panel, useAsync }) {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {loading && !tickets.length ? (
-                  <tr><td colSpan={5} className="px-4 py-10 text-center text-slate-500">Loading…</td></tr>
+                  <LoadingRows colSpan={5} />
                 ) : tickets.length ? tickets.map((ticket) => (
                   <tr key={ticket.id} className="cursor-pointer hover:bg-slate-50" onClick={() => setOpenId(ticket.id)}>
                     <td className="px-4 py-3 font-mono text-xs">

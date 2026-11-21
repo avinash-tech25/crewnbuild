@@ -36,6 +36,8 @@ import { SearchOverlay } from './SearchOverlay.jsx'
 import { StorefrontProductCard } from './StorefrontProductCard.jsx'
 import { CardGrid } from '../../../shared/ui/ListCard.jsx'
 import { StorefrontProductDetail } from './StorefrontProductDetail.jsx'
+import { useUrlParams } from '../../../shared/hooks/useUrlState.js'
+import useUrlDialog, { isUuid } from '../../../shared/hooks/useUrlDialog.js'
 import { matchesWords, sellingPrice } from '../storefrontShared.js'
 
 // Every filter control: one height, radius and padding. `active` marks a
@@ -147,6 +149,10 @@ export function relatedListings(listing, productList) {
 }
 
 
+// The fixed filter choices the address may hold.
+const STORE_STATUSES = ['Published', 'Unpublished']
+const STORE_STOCK = ['in', 'low', 'out']
+
 const listingStatus = (product) => {
   if (product.is_published === false) return 'Unpublished'
   const state = stockState(product.quantity, product.low_stock_threshold)
@@ -171,7 +177,42 @@ export function SupplierStorefront({ productList = [], message = '', pincode = '
   const searchBar = useRef(null)
   const openSearch = () => { if (!searchOpen) { setDraft(search || ''); setSearchOpen(true) } }
   const closeSearch = () => setSearchOpen(false)
-  const [viewedId, setViewedId] = useState(null)
+  // The listing whose page is open (?listing=<uuid>): Back returns to the list, a refresh
+  // or a link opens it again. Closing it together with a filter change is done in place.
+  const [viewedId, openListing, closeListing] = useUrlDialog('listing')
+  const setViewedId = (id) => {
+    if (id != null) openListing(id)
+    else if (viewedId) closeListing({ replace: true })
+  }
+
+  // The main filters mirrored in the address (replaced, never a history entry each), so a
+  // refresh or a link keeps them: read once on arrival, written on every change.
+  const [urlParams, patchUrl] = useUrlParams()
+  const filtersFromAddress = useRef(false)
+  useEffect(() => {
+    const read = (name) => urlParams.get(name) || ''
+    if (isUuid(read('storeCategory'))) setCategoryId(read('storeCategory'))
+    if (isUuid(read('storeSub'))) setSubcategoryId(read('storeSub'))
+    if (read('storeQ')) setSearch(read('storeQ'))
+    if (STORE_STATUSES.includes(read('storeStatus'))) setStatus(read('storeStatus'))
+    if (STORE_STOCK.includes(read('storeStock'))) setAvailability(read('storeStock'))
+    filtersFromAddress.current = true
+    // Once, on arrival.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+  useEffect(() => {
+    // The first pass still holds the filters from before the address was read.
+    if (!filtersFromAddress.current) return
+    if (filtersFromAddress.current === true) { filtersFromAddress.current = 'synced'; return }
+    patchUrl({
+      storeCategory: categoryId || null,
+      storeSub: subcategoryId || null,
+      storeQ: String(search || '').trim() || null,
+      storeStatus: status && status !== 'All' ? status : null,
+      storeStock: availability && availability !== 'All' ? availability : null,
+    }, { replace: true })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [categoryId, subcategoryId, search, status, availability])
   const [editing, setEditing] = useState(null) // listing id open in the editor
 
   // Top Categories: the catalog's categories (global entities, each with its
@@ -304,10 +345,10 @@ export function SupplierStorefront({ productList = [], message = '', pincode = '
           country={country}
           related={relatedListings(viewed, productList)}
           onOpenRelated={(listing) => {
-            setViewedId(listing.id)
+            openListing(listing.id)
             if (typeof window !== 'undefined' && window.scrollTo) window.scrollTo({ top: 0, behavior: 'smooth' })
           }}
-          onBack={() => setViewedId(null)}
+          onBack={() => closeListing()}
           onEdit={() => setEditing(viewed.id)}
           onTogglePublish={() => togglePublish(viewed)}
           onDelete={() => onDeleteProduct(viewed.id)}
@@ -378,7 +419,7 @@ export function SupplierStorefront({ productList = [], message = '', pincode = '
                     key={listing.id}
                     listing={listing}
                     country={country}
-                    onOpen={() => setViewedId(listing.id)}
+                    onOpen={() => openListing(listing.id)}
                     onEdit={() => setEditing(listing.id)}
                     onTogglePublish={() => togglePublish(listing)}
                     onDelete={() => onDeleteProduct(listing.id)}
@@ -401,7 +442,7 @@ export function SupplierStorefront({ productList = [], message = '', pincode = '
         onClose={closeSearch}
         onSubmitQuery={(words) => { setSearch(words); setViewedId(null); setSearchOpen(false) }}
         onSelectCategory={(category) => { setSearch(''); chooseCategory(String(category.id)); setSearchOpen(false) }}
-        onOpenListing={(listing) => { setViewedId(listing.id); setSearchOpen(false) }}
+        onOpenListing={(listing) => { openListing(listing.id); setSearchOpen(false) }}
       />
 
       {/* The existing listing editor: price, discount, stock, threshold, published. */}

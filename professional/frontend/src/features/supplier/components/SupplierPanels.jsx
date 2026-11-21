@@ -38,7 +38,7 @@ export function ClientProfileModal({ client, requestSent, sending, canViewContac
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/45 p-3 backdrop-blur-sm sm:p-6">
+    <div className="fixed inset-0 z-dialog bg-black/45 p-3 backdrop-blur-sm sm:p-6">
       <div className="mx-auto flex max-h-[92vh] max-w-4xl flex-col overflow-hidden rounded-2xl border border-brand-100 bg-white shadow-[0_30px_90px_-40px_rgba(15,23,42,0.9)]">
         <div className="flex items-start justify-between gap-4 border-b border-brand-100 px-5 py-4">
           <div className="min-w-0">

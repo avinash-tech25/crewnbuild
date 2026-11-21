@@ -1,4 +1,5 @@
 import { useLanguage } from '../../i18n/LanguageContext.jsx'
+import { AppLink } from '../navigation/AppLink.jsx'
 
 /**
  * "CREWNBUILD" is deliberately NOT translated, here or in the image's alt text.
@@ -16,7 +17,7 @@ export default function Logo({ light = false, withTagline = true, compact = fals
   const tag = light ? 'text-slate-300' : 'text-brand-700'
   const isSmall = small || compact
   return (
-    <a href="/" className={`flex items-center select-none ${compact ? 'justify-center gap-0' : isSmall ? 'gap-2' : 'gap-2'}`} title={compact ? 'CREWNBUILD' : undefined}>
+    <AppLink href="/" className={`flex items-center select-none ${compact ? 'justify-center gap-0' : isSmall ? 'gap-2' : 'gap-2'}`} title={compact ? 'CREWNBUILD' : undefined}>
       <span className={`grid shrink-0 place-items-center ${isSmall ? 'h-12 w-[78px]' : 'h-16 w-[104px]'}`}>
         {/* Transparent C&B mark, cropped to the artwork; the box matches its
             landscape shape (about 1.62 : 1) so nothing is clipped. */}
@@ -34,6 +35,6 @@ export default function Logo({ light = false, withTagline = true, compact = fals
           )}
         </span>
       )}
-    </a>
+    </AppLink>
   )
 }

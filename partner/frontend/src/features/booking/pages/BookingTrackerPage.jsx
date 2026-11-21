@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { ArrowLeft, Check, Clock, MapPin, Navigation, Phone, RefreshCw, SearchX, X } from 'lucide-react'
 import { Alert, EmptyState, SearchLoader, Spinner, formatDate } from '../../../shared/ui/ui.jsx'
+import { Skeleton, SkeletonStatus } from '../../../shared/ui/Skeleton.jsx'
 import LiveTrackingPanel from '../../tracking/components/LiveTrackingPanel.jsx'
 import { technicianTypeByCode } from '../../../shared/constants/technicianTypes.js'
 import { formatDistance } from '../../../shared/constants/tracking.js'
@@ -76,7 +77,13 @@ function TrackerBody({ bookingId, onUnauthorized }) {
   if (!booking) {
     return message.text
       ? <div className="mx-auto max-w-lg"><Alert tone="error">{message.text}</Alert></div>
-      : <div className="flex justify-center py-16 text-oc-green"><Spinner className="h-8 w-8" /></div>
+      : (
+        // The booking card and its progress aside, as they will appear.
+        <SkeletonStatus label="Loading your booking" className="grid items-start gap-4 lg:grid-cols-[1.2fr_1fr]" testId="booking-loading">
+          <Skeleton className="h-72 w-full rounded-2xl" />
+          <Skeleton className="h-72 w-full rounded-2xl" />
+        </SkeletonStatus>
+      )
   }
 
   const type = technicianTypeByCode(booking.technician_type)

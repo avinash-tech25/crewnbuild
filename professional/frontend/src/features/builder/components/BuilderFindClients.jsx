@@ -352,7 +352,7 @@ export function ClientProfileDrawer({ selectedClientProfile, clientRequestState,
   return (
     // A large centred window, as a site engineer's profile opens, for a
     // homeowner's client details and a supplier's profile alike.
-    <div className="fixed inset-0 z-[130] grid place-items-center p-3 sm:p-6">
+    <div className="fixed inset-0 z-dialog grid place-items-center p-3 sm:p-6">
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -448,7 +448,7 @@ export function SendRequestDrawer({ client, requestType, onClose, onSend, busy, 
   }
 
   return (
-    <div className="fixed inset-0 z-[140] sm:flex sm:items-center sm:justify-center sm:p-6">
+    <div className="fixed inset-0 z-dialog-nested sm:flex sm:items-center sm:justify-center sm:p-6">
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}

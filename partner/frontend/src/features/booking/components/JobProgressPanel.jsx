@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Camera, Check, ClipboardList, ImageOff } from 'lucide-react'
 import { Spinner, formatDate } from '../../../shared/ui/ui.jsx'
+import { SkeletonList } from '../../../shared/ui/Skeleton.jsx'
 import { usePrivatePhotos } from '../../../shared/hooks/usePrivatePhotos.js'
 import { fetchBookingExecution, fetchBookingPhoto } from '../bookingApi.js'
 import { LIVE_PROGRESS_STATUSES, progressView, stageLabel } from '../jobProgress.js'
@@ -61,7 +62,7 @@ export default function JobProgressPanel({ bookingId, status }) {
       </div>
 
       {!view ? (
-        <div className="flex justify-center py-6 text-oc-green"><Spinner className="h-6 w-6" /></div>
+        <SkeletonList count={2} itemClassName="h-20" label="Loading job progress" testId="job-progress-loading" />
       ) : (
         <>
           <div>

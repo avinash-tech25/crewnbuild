@@ -139,14 +139,71 @@ def test_reusing_an_old_refresh_token_ends_the_whole_family(client: TestClient, 
     assert "reuse" in reasons
 
 
-def test_an_idle_session_expires(client: TestClient, database: Session) -> None:
+def age_sessions(database: Session, idle: timedelta) -> None:
+    """As if the last activity (refresh) of every session was `idle` ago."""
+    for row in database.scalars(select(UserSession)):
+        row.last_used_at = utc_now() - idle
+    database.commit()
+
+
+def test_the_session_ends_after_12_hours_without_activity(client: TestClient, database: Session) -> None:
     create_user(database)
     sign_in(client)
-    for row in database.scalars(select(UserSession)):
-        row.last_used_at = utc_now() - timedelta(days=31)
+    age_sessions(database, idle=timedelta(hours=11, minutes=59))
+    assert client.get("/api/v1/auth/session").status_code == 200
+    age_sessions(database, idle=timedelta(hours=12, minutes=1))
+    assert client.get("/api/v1/auth/session").status_code == 401
+    assert client.post("/api/v1/auth/refresh").status_code == 401  # nothing to continue from
+
+
+def test_the_session_ends_24_hours_after_sign_in_however_active(client: TestClient, database: Session) -> None:
+    create_user(database)
+    sign_in(client)
+    (row,) = database.scalars(select(UserSession)).all()
+    assert abs((row.expires_at - row.created_at) - timedelta(hours=24)) < timedelta(seconds=5)
+    # Refreshing while active keeps the same absolute end; it never extends it.
+    assert refresh(client).status_code == 200  # type: ignore[attr-defined]
+    database.expire_all()
+    rows = database.scalars(select(UserSession)).all()
+    assert len(rows) == 2 and {r.expires_at for r in rows} == {row.expires_at}
+    # Active a minute ago, but signed in more than 24 hours ago: over.
+    age_sessions(database, idle=timedelta(minutes=1))
+    for live in database.scalars(select(UserSession).where(UserSession.revoked_at.is_(None))):
+        live.expires_at = utc_now() - timedelta(minutes=1)
     database.commit()
     assert client.get("/api/v1/auth/session").status_code == 401
     assert client.post("/api/v1/auth/refresh").status_code == 401
+
+
+def test_an_expired_session_closes_open_websockets(client: TestClient, database: Session) -> None:
+    from app.core.security.access_tokens import read_access_claims
+    from app.modules.identity.repository import SessionRepository
+    from app.modules.identity.session_service import SessionService
+
+    create_user(database)
+    sign_in(client)
+    settings = client.app.state.settings  # type: ignore[attr-defined]
+    claims = read_access_claims(settings, client.cookies.get("pro_at") or "", allow_expired=True)
+    assert claims is not None
+    service = SessionService(SessionRepository(database), settings)
+    assert service.family_is_live(claims) is True
+    age_sessions(database, idle=timedelta(hours=13))
+    assert service.family_is_live(claims) is False  # the socket's periodic re-check fails
+
+
+def test_the_sign_in_cookies_end_with_the_browser(client: TestClient, database: Session) -> None:
+    create_user(database)
+    response = client.post("/api/v1/auth/login", json={"email": "asha@example.in", "password": STRONG_PASSWORD})
+    assert response.status_code == 200, response.text
+    cookies = [value for name, value in response.headers.multi_items() if name.lower() == "set-cookie"]
+    session_cookies = [cookie for cookie in cookies if cookie.startswith(("pro_at=", "pro_rt="))]
+    assert len(session_cookies) == 2
+    for cookie in session_cookies:
+        assert "max-age" not in cookie.lower() and "expires" not in cookie.lower(), cookie
+    refreshed = client.post("/api/v1/auth/refresh", headers={"X-CSRF-Token": response.json()["csrf_token"]})
+    for name, value in refreshed.headers.multi_items():
+        if name.lower() == "set-cookie" and value.startswith(("pro_at=", "pro_rt=")):
+            assert "max-age" not in value.lower() and "expires" not in value.lower(), value
 
 
 def test_a_suspension_ends_existing_sessions(client: TestClient, database: Session) -> None:

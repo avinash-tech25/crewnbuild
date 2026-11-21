@@ -26,7 +26,7 @@ export default function VerifiedSuccess({ user, typeMeta, available, saving, can
 
   return (
     <div
-      className="fixed inset-0 z-50 overflow-y-auto bg-oc-deep/70 backdrop-blur-sm"
+      className="fixed inset-0 z-dialog overflow-y-auto bg-oc-deep/70 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       aria-labelledby="verified-title"

@@ -9,7 +9,7 @@ import { FEEDBACK_STORAGE_KEY } from '../feedbackStorage.js'
 function ModalOverlay({ onClose, children, maxWidth = 'max-w-2xl' }) {
   return (
     <div
-      className="fixed inset-0 z-[120] grid place-items-center overflow-y-auto bg-slate-900/45 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-dialog grid place-items-center overflow-y-auto bg-slate-900/45 p-4 backdrop-blur-sm"
       onClick={onClose}
     >
       <div

@@ -1,11 +1,10 @@
+import BrandLoader from './BrandLoader.jsx'
+
 /**
- * The neutral screen a protected route shows while the server confirms the session
+ * The whole-screen Crew&Build loader: shown while a lazy page loads (the router's Suspense
+ * fallback) and while a protected route waits for the server to confirm the session
  * (section 8.1): nothing private, nothing that could flash and disappear.
  */
 export default function FullPageLoader() {
-  return (
-    <div className="flex min-h-svh items-center justify-center bg-oc-paper" role="status" aria-label="Loading">
-      <span className="h-10 w-10 animate-spin rounded-full border-4 border-oc-green/20 border-t-oc-green" />
-    </div>
-  )
+  return <BrandLoader variant="page" />
 }

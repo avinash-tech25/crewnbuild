@@ -31,6 +31,7 @@ import {
   requestBodyWithStatus,
 } from '../messageHelpers.jsx'
 import { RequestProfileDashboard } from '../../requests/components/RequestProfileDashboard.jsx'
+import useVisibleInterval from '../../../shared/hooks/useVisibleInterval.js'
 
 function DaySeparator({ label }) {
   return (
@@ -110,9 +111,9 @@ export default function MessageThread() {
 
   useEffect(() => {
     loadConversations()
-    const pollingTimer = window.setInterval(loadConversations, 15000)
-    return () => window.clearInterval(pollingTimer)
   }, [])
+  // Every 15 s while the tab is visible, and once on coming back to it.
+  useVisibleInterval(loadConversations, 15000)
 
   const loadMessages = async (options = {}) => {
     if (!selectedConversation) return

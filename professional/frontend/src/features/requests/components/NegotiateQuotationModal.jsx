@@ -46,7 +46,7 @@ export default function NegotiateQuotationModal({ quotation, builderName, budget
   const secondary = 'inline-flex min-h-10 items-center justify-center rounded-xl border border-oc-line bg-white px-4 py-2 text-sm font-extrabold text-oc-ink transition hover:bg-oc-sunken disabled:cursor-not-allowed disabled:opacity-50'
 
   return (
-    <div className="fixed inset-0 z-[140] grid place-items-center overflow-y-auto bg-slate-900/50 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="negotiate-quotation-title">
+    <div className="fixed inset-0 z-dialog-nested grid place-items-center overflow-y-auto bg-slate-900/50 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="negotiate-quotation-title">
       <form onSubmit={submit} className="w-full max-w-md rounded-2xl bg-white p-5 text-oc-ink shadow-xl">
         <p id="negotiate-quotation-title" className="font-display text-lg font-extrabold">{t('award.form.title')}</p>
         {builderName && <p className="mt-0.5 truncate text-sm font-semibold text-oc-muted">{td(builderName)}</p>}

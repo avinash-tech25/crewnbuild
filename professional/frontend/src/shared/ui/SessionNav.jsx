@@ -61,7 +61,7 @@ export default function SessionNav({ goClassName = '', stacked = false, onNaviga
           id={menuId}
           role="menu"
           aria-label={t('session.accountMenu')}
-          className={`absolute end-0 top-full z-50 mt-2 w-56 rounded-xl border border-oc-line bg-white p-1.5 shadow-ocsoft ${stacked ? 'start-1/2 -translate-x-1/2' : ''}`}
+          className={`absolute end-0 top-full z-dropdown mt-2 w-56 rounded-xl border border-oc-line bg-white p-1.5 shadow-ocsoft ${stacked ? 'start-1/2 -translate-x-1/2' : ''}`}
         >
           {name && <p className="truncate px-3 pb-1.5 pt-1 text-xs font-semibold text-oc-muted" title={name}>{name}</p>}
           <Link role="menuitem" to={links.dashboard} onClick={go} className={itemClass}>

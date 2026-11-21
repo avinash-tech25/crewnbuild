@@ -1,4 +1,5 @@
 import { screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import { anAccount, installFakeServer } from '../../test/fakeServer.js'
 import { location, renderApp, signedInAs, signedOut } from '../../test/renderApp.jsx'
@@ -58,6 +59,26 @@ describe('Site Weather', () => {
     renderApp('/weather', { auth: signedInAs(anAccount({ role: 'OWNER' })) })
     await waitFor(() => expect(server.calls(`GET /weather/projects/${PROJECT_ID}/current`)).toHaveLength(1))
     expect((await screen.findAllByText(/Rao Family Home/, {}, FIND)).length).toBeGreaterThan(0)
+  })
+
+  it('reads the alert history filters and page from the address, and keeps a change there', async () => {
+    const user = userEvent.setup()
+    const server = installFakeServer({
+      'GET /weather/projects': { data: catalog() },
+      'GET /weather/me/current': { data: siteView() },
+      'GET /weather/me/forecast/hourly': { data: { hours: [] } },
+      'GET /weather/me/forecast/daily': { data: { days: [] } },
+      'GET /weather/me/alerts': { data: { alerts: [] } },
+      'GET /weather/alerts/history': { data: { alerts: [], total: 80, page_size: 25 } },
+    })
+    renderApp('/weather?hSeverity=WARNING&hPage=2&hStatus=bogus', { auth: signedInAs(anAccount({ role: 'SUPPLIER' })) })
+    await waitFor(() => expect(server.calls('GET /weather/alerts/history').length).toBeGreaterThan(0), FIND)
+    // An unknown status reads as no filter.
+    expect(server.calls('GET /weather/alerts/history')[0].params).toEqual({ severity: 'WARNING', page: 2 })
+
+    await user.click(await screen.findByRole('button', { name: 'Next' }, FIND))
+    await waitFor(() => expect(new URLSearchParams(location.current.search).get('hPage')).toBe('3'))
+    expect(server.calls('GET /weather/alerts/history').at(-1).params).toEqual({ severity: 'WARNING', page: 3 })
   })
 
   it('says so when weather is not set up on the server', async () => {

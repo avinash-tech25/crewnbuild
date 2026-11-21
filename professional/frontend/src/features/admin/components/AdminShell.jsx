@@ -26,7 +26,7 @@ function readCollapsed() {
   }
 }
 
-function SidebarItem({ item, active, collapsed, badge, onSelect, onKeyDown }) {
+function SidebarItem({ item, active, collapsed, badge, hasBadgeSlot, onSelect, onKeyDown }) {
   const badgeId = badge ? `admin-nav-badge-${item.id}` : undefined
   return (
     <li>
@@ -45,12 +45,15 @@ function SidebarItem({ item, active, collapsed, badge, onSelect, onKeyDown }) {
         <item.icon className={`h-[18px] w-[18px] shrink-0 ${active ? 'text-oc-deep' : 'text-white/75 group-hover:text-white'}`} aria-hidden="true" />
         {/* The label stays in the accessible name even when only the icon shows. */}
         <span className={collapsed ? 'sr-only' : 'min-w-0 flex-1 truncate'}>{item.label}</span>
-        {badge > 0 && (
+        {/* A section that has a queue (`item.id in badges`) keeps its badge slot,
+            invisible at 0, so the label's truncation does not change when the
+            count arrives. Fixed minimum width, even-width digits. */}
+        {(badge > 0 || (hasBadgeSlot && !collapsed)) && (
           <span
             aria-hidden="true"
             className={`grid h-5 min-w-5 shrink-0 place-items-center rounded-full px-1.5 text-[11px] font-extrabold tabular-nums ${
               active ? 'bg-oc-deep text-white' : 'bg-oc-amber text-oc-deep'
-            } ${collapsed ? 'absolute -right-0.5 -top-0.5 h-4 min-w-4 px-1 text-[10px]' : ''}`}
+            } ${collapsed ? 'absolute -right-0.5 -top-0.5 h-4 min-w-4 px-1 text-[10px]' : ''} ${badge > 0 ? '' : 'invisible'}`}
           >
             {badge > 99 ? '99+' : badge}
           </span>
@@ -116,6 +119,7 @@ function Sidebar({ groups, activeId, badges, collapsed, onSelect, onToggleCollap
                   active={activeId === item.id}
                   collapsed={collapsed}
                   badge={badges?.[item.id] || 0}
+                  hasBadgeSlot={Boolean(badges) && item.id in badges}
                   onSelect={onSelect}
                   onKeyDown={moveFocus}
                 />
@@ -224,7 +228,7 @@ export default function AdminShell({
     <div className="admin-console dash-canvas min-h-screen bg-[#F3F4F6] text-oc-ink">
       {/* Wide screens: the fixed sidebar. */}
       <aside
-        className={`fixed inset-y-0 left-0 z-40 hidden border-r border-oc-deep lg:block ${collapsed ? 'w-[76px]' : 'w-64'} transition-[width] duration-200`}
+        className={`fixed inset-y-0 left-0 z-drawer hidden border-r border-oc-deep lg:block ${collapsed ? 'w-[76px]' : 'w-64'} transition-[width] duration-200`}
         data-testid="admin-sidebar"
       >
         <Sidebar {...sidebarProps} collapsed={collapsed} onToggleCollapsed={toggleCollapsed} />
@@ -232,7 +236,7 @@ export default function AdminShell({
 
       {/* Narrow screens: the same sidebar as a drawer. */}
       {drawerOpen && (
-        <div className="fixed inset-0 z-[120] lg:hidden" role="dialog" aria-modal="true" aria-label="Admin menu">
+        <div className="fixed inset-0 z-drawer lg:hidden" role="dialog" aria-modal="true" aria-label="Admin menu">
           <div className="absolute inset-0 bg-slate-900/50" onClick={() => setDrawerOpen(false)} />
           <div className="absolute inset-y-0 left-0 w-72 max-w-[85vw] shadow-2xl">
             <Sidebar {...sidebarProps} collapsed={false} mobile onClose={() => setDrawerOpen(false)} />
@@ -255,7 +259,7 @@ export default function AdminShell({
           onSearchChange={() => {}}
           leading={<TitleBlock title={title} trail={trail} onMenu={() => setDrawerOpen(true)} />}
         />
-        <main className="dashboard-main mx-auto w-full max-w-[1400px] flex-1 space-y-4 px-4 py-5 sm:px-6">
+        <main className="dashboard-main mx-auto w-full max-w-page flex-1 space-y-4 px-4 py-5 sm:px-6">
           {children}
         </main>
       </div>

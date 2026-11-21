@@ -39,6 +39,8 @@ import { OwnerProfileSection, OwnerMessagesSection, OwnerProjectsSection } from 
 import OwnerOverviewSection from '../components/OwnerOverviewSection.jsx'
 import OwnerProjectWorkspace, { DEFAULT_PROJECT_VIEW, PROJECT_SECTION_DASHBOARD, PROJECT_VIEW_BY_SLUG, PROJECT_VIEW_SLUGS, projectSectionIds, projectSectionLabel } from '../components/OwnerProjectWorkspace.jsx'
 import useUrlState from '../../../shared/hooks/useUrlState.js'
+import useUrlDialog from '../../../shared/hooks/useUrlDialog.js'
+import useVisibleInterval from '../../../shared/hooks/useVisibleInterval.js'
 import NotFoundPanel from '../../../shared/dashboard/NotFoundPanel.jsx'
 import { useLatestOnly, useLiveRefresh } from '../../../shared/hooks/useLiveRefresh.js'
 import useRequestInbox, { useMarkSeenWhenOpened } from '../../../shared/hooks/useRequestInbox.js'
@@ -192,8 +194,9 @@ export default function HomeownerDashboard() {
   const [assigningBuilderId, setAssigningBuilderId] = useState(null)
   const [projectUpdateMessage, setProjectUpdateMessage] = useState('')
   const [sendingReceiverId, setSendingReceiverId] = useState(null)
-  // The builder whose profile is open in the centred window over Find Builders.
-  const [viewingBuilderId, setViewingBuilderId] = useState(null)
+  // The builder whose profile is open in the centred window over Find Builders, in the
+  // address (?profile=<uuid>): Back closes it, a refresh or a link opens it again.
+  const [viewingBuilderId, openBuilderProfile, closeBuilderProfile] = useUrlDialog('profile')
   // A project opens on its Project Dashboard (the overview view).
   // Set by a project card's Edit: the project page opens its Overview already in edit mode.
   const [editProjectOnOpen, setEditProjectOnOpen] = useState(false)
@@ -537,9 +540,9 @@ export default function HomeownerDashboard() {
 
   useEffect(() => {
     refreshUnreadMessageCount()
-    const messageCountTimer = window.setInterval(refreshUnreadMessageCount, 10000)
-    return () => window.clearInterval(messageCountTimer)
   }, [])
+  // Every 10 s while the tab is visible, and once on coming back to it.
+  useVisibleInterval(refreshUnreadMessageCount, 10000)
 
   useEffect(() => {
     refreshNotificationBadgeCounts()
@@ -1282,7 +1285,7 @@ export default function HomeownerDashboard() {
               requestList: filteredRequestList.filter((request) => request.project_id === openedProject.id),
               // Opens the builder's profile in a centred window over this list,
               // rather than replacing the dashboard with the full-screen page.
-              onViewProfile: (contractor) => setViewingBuilderId(contractor.user_id),
+              onViewProfile: (contractor) => openBuilderProfile(contractor.user_id),
               onSendRequest: sendOwnerContractorRequest,
               // The same handlers the Requests tab above uses, so answering a
               // builder's request from their card behaves identically.
@@ -1339,7 +1342,7 @@ export default function HomeownerDashboard() {
       <NewRequestToast inbox={requestInbox} onOpen={openRequestsFromToast} />
 
       {viewingBuilderId && (
-        <ContractorProfileDetails variant="modal" contractorId={viewingBuilderId} projectId={openedProject?.id} onClose={() => setViewingBuilderId(null)} />
+        <ContractorProfileDetails variant="modal" contractorId={viewingBuilderId} projectId={openedProject?.id} onClose={closeBuilderProfile} />
       )}
 
       {showHelp && <HelpCenterModal onClose={() => setShowHelp(false)} />}

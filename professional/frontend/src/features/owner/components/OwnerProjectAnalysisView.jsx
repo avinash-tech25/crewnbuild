@@ -18,6 +18,7 @@ import { formatProjectDate, money } from '../ownerHelpers.js'
 import {
   MISSING_ANALYSIS, analysisError, analysisFigures, budgetRows, materialRows, recentExpenses, spendingTrend, workItemProgress,
 } from '../ownerProjectAnalysis.js'
+import { SkeletonList } from '../../../shared/ui/Skeleton.jsx'
 
 // Series colours, one per spending category, fixed in this order. Validated
 // with the dataviz checks: the light steps on the light surface, the dark
@@ -324,7 +325,8 @@ export default function OwnerProjectAnalysisView({ project, viewer = 'owner' }) 
   const expenses = useMemo(() => recentExpenses(data?.expenses), [data])
 
   if (state.status === 'loading') {
-    return <p className="flex items-center justify-center gap-2 py-16 text-sm font-semibold text-oc-muted"><Loader2 className="h-4 w-4 animate-spin" />{t('owner.analysis.loading')}</p>
+    // Placeholders the size of the figures and panels that replace them.
+    return <SkeletonList rows={3} rowClassName="h-60" className="grid gap-4" />
   }
   if (state.status === 'error' || !figures) {
     const failure = state.status === 'error' ? state.error : MISSING_ANALYSIS

@@ -116,6 +116,48 @@ def test_refresh_rotation_and_reuse(client: TestClient, database: Session) -> No
     assert signed.status_code == 200
 
 
+def idle_for(database: Session, idle: timedelta) -> None:
+    """As if every technician session was last refreshed `idle` ago."""
+    for row in database.scalars(select(AuthSession)):
+        row.last_used_at = naive_utc_now() - idle
+    database.commit()
+
+
+def test_a_technician_session_ends_after_12_hours_without_activity(client: TestClient, database: Session) -> None:
+    finished_technician(database)
+    sign_in(client)
+    idle_for(database, timedelta(hours=11, minutes=59))
+    assert client.get("/api/v1/auth/me").status_code == 200
+    idle_for(database, timedelta(hours=12, minutes=1))
+    assert client.get("/api/v1/auth/me").status_code == 401
+    assert client.post("/api/v1/auth/refresh").status_code == 401
+
+
+def test_a_technician_session_ends_24_hours_after_sign_in_however_active(client: TestClient, database: Session) -> None:
+    finished_technician(database)
+    sign_in(client)
+    (row,) = database.scalars(select(AuthSession)).all()
+    assert abs((row.expires_at - row.created_at) - timedelta(hours=24)) < timedelta(seconds=5)
+    assert client.post("/api/v1/auth/refresh").status_code == 200  # refreshing keeps the same end
+    database.expire_all()
+    assert {r.expires_at for r in database.scalars(select(AuthSession))} == {row.expires_at}
+    for live in database.scalars(select(AuthSession).where(AuthSession.revoked_at.is_(None))):
+        live.last_used_at = naive_utc_now() - timedelta(minutes=1)  # active a minute ago
+        live.expires_at = naive_utc_now() - timedelta(minutes=1)  # but signed in over 24 hours ago
+    database.commit()
+    assert client.get("/api/v1/auth/me").status_code == 401
+    assert client.post("/api/v1/auth/refresh").status_code == 401
+
+
+def test_the_technician_cookies_end_with_the_browser(client: TestClient, database: Session) -> None:
+    finished_technician(database)
+    response = sign_in(client)
+    cookies = [v for k, v in response.headers.multi_items() if k.lower() == "set-cookie" and v.startswith("par_")]
+    assert {cookie.split("=", 1)[0] for cookie in cookies} >= {"par_at", "par_rt"}
+    for cookie in cookies:
+        assert "max-age" not in cookie.lower() and "expires" not in cookie.lower(), cookie
+
+
 def test_logout_ends_the_session(client: TestClient, database: Session) -> None:
     finished_technician(database)
     sign_in(client)

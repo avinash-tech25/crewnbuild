@@ -85,9 +85,12 @@ const projectPath = (projectId, tab = DEFAULT_PROJECT_TAB) => {
 const ENGINEER_SUB_TABS = ['team', 'find', 'suppliers', 'pending']
 const FIND_CLIENT_TABS = ['houseowners', 'suppliers']
 const BUY_SELL_TABS = ['buy', 'sell']
+const isInviteWord = (value) => value === 'engineer'
 import ContractorAnalyticsSection from '../components/BuilderAnalyticsSection.jsx'
 import { useProfileGate, useResumeGatedAction } from '../../../shared/hooks/useProfileGate.js'
 import useUrlState from '../../../shared/hooks/useUrlState.js'
+import useUrlDialog from '../../../shared/hooks/useUrlDialog.js'
+import useVisibleInterval from '../../../shared/hooks/useVisibleInterval.js'
 import DashboardShell from '../../../shared/dashboard/DashboardShell.jsx'
 import DeleteAccountSection from '../../accounts/components/DeleteAccountSection.jsx'
 import EmailVerificationSection from '../../accounts/components/EmailVerificationSection.jsx'
@@ -209,7 +212,14 @@ export default function ContractorDashboard() {
   // A project id that is not one of this builder's projects: the not-found view. The
   // server refuses its data anyway; nothing about it is asked for.
   const projectNotFound = Boolean(projectLocation.projectId) && projectsLoaded && !selectedProject
-  const [selectedClientProfile, setSelectedClientProfile] = useState(null)
+  // The open homeowner lead (?client=<project uuid>) and supplier profile
+  // (?supplier=<user uuid>): in the address, so Back closes them and a refresh or a link
+  // opens them again. The supplier's profile is loaded into `supplierProfile`.
+  const [clientProfileId, openClientProfile, closeClientProfile] = useUrlDialog('client')
+  const [supplierProfileId, openSupplierProfileDialog, closeSupplierProfile] = useUrlDialog('supplier')
+  const [supplierProfile, setSupplierProfile] = useState(null)
+  // The card a supplier profile was opened from, so it shows at once while the profile loads.
+  const supplierProfileSeed = useRef(null)
   // Open Full Details lands on Site Activity, the default tab (no word in the address).
   const selectedProjectTab = projectLocation.tab
   const setSelectedProjectTab = useCallback((tab) => {
@@ -252,14 +262,20 @@ export default function ContractorDashboard() {
   // project's location, then the builder's own pincode.
   const [engineersPincode, setEngineersPincode] = useState('')
   const nearbyEngineersRequest = useRef(0)
-  const [inviteModalOpen, setInviteModalOpen] = useState(false)
+  // Invite Site Engineer (?invite=engineer), in the address like the profiles.
+  const [inviteDialog, openInviteDialog, closeInviteDialog] = useUrlDialog('invite', isInviteWord)
+  const inviteModalOpen = Boolean(inviteDialog)
   const [invitePrefill, setInvitePrefill] = useState({})
   const [inviteResult, setInviteResult] = useState(null)
   const [inviteError, setInviteError] = useState('')
   const [inviteBusy, setInviteBusy] = useState(false)
-  const [selectedEngineerProfile, setSelectedEngineerProfile] = useState(null)
+  // The engineer whose profile is open (?engineer=<user uuid>), read from the lists.
+  const [engineerProfileId, openEngineerProfile, closeEngineerProfile] = useUrlDialog('engineer')
   const [engineerSectionMessage, setEngineerSectionMessage] = useState('')
-  const [assignTarget, setAssignTarget] = useState(null)
+  // Assign to Project (?assign=<engineer user uuid>) and Assign Supplier
+  // (?assignSupplier=<supplier uuid>) in the address; the unassign confirmations stay in
+  // memory, so a link can never open a removal.
+  const [assignTargetId, openAssignDialog, closeAssignDialog] = useUrlDialog('assign')
   const [assignSuccessProject, setAssignSuccessProject] = useState(null)
   const [assignBusy, setAssignBusy] = useState(false)
   const [assignModalMessage, setAssignModalMessage] = useState('')
@@ -269,7 +285,7 @@ export default function ContractorDashboard() {
   const [contractorSuppliers, setContractorSuppliers] = useState([])
   // Suppliers already on the open project, for the Team tab.
   const [projectSuppliers, setProjectSuppliers] = useState([])
-  const [assignSupplierTarget, setAssignSupplierTarget] = useState(null)
+  const [assignSupplierTargetId, openAssignSupplierDialog, closeAssignSupplierDialog] = useUrlDialog('assignSupplier')
   const [assignSupplierSuccessProject, setAssignSupplierSuccessProject] = useState(null)
   const [assignSupplierBusy, setAssignSupplierBusy] = useState(false)
   const [assignSupplierMessage, setAssignSupplierMessage] = useState('')
@@ -441,14 +457,10 @@ export default function ContractorDashboard() {
 
   useEffect(() => {
     refreshContractorData()
-    const contractorDataTimer = window.setInterval(refreshContractorData, 10000)
-    const refreshOnFocus = () => refreshContractorData()
-    window.addEventListener('focus', refreshOnFocus)
-    return () => {
-      window.clearInterval(contractorDataTimer)
-      window.removeEventListener('focus', refreshOnFocus)
-    }
   }, [])
+  // Every 10 s while the tab is visible, and once on coming back to it (which also
+  // covers the refresh on window focus this used to do).
+  useVisibleInterval(refreshContractorData, 10000)
   useEffect(() => {
     if (!nearbyClientAccountKey) {
       setSeenClientKeys([])
@@ -463,9 +475,8 @@ export default function ContractorDashboard() {
   }, [activeId, nearbyClientAccountKey, nearbyClientKeys.join('|')])
   useEffect(() => {
     refreshUnreadMessageCount()
-    const messageCountTimer = window.setInterval(refreshUnreadMessageCount, 10000)
-    return () => window.clearInterval(messageCountTimer)
   }, [])
+  useVisibleInterval(refreshUnreadMessageCount, 10000)
   useEffect(() => {
     refreshNotificationBadgeCounts()
     const refreshWhenVisible = () => {
@@ -671,32 +682,48 @@ export default function ContractorDashboard() {
     }
   }
 
-  const openSupplierProfile = async (supplier) => {
+  const openSupplierProfile = (supplier) => {
     setRequestMessage('')
+    const supplierUserId = supplier.user_id || supplier.owner_id || supplier.id
+    supplierProfileSeed.current = { id: String(supplierUserId || ''), supplier }
+    openSupplierProfileDialog(supplierUserId)
+  }
+
+  // Loads the supplier profile named in the address, from a click or a link alike.
+  useEffect(() => {
+    if (!supplierProfileId) {
+      setSupplierProfile(null)
+      setSupplierProfileMessage('')
+      return undefined
+    }
+    let alive = true
+    const seed = supplierProfileSeed.current?.id === supplierProfileId
+      ? supplierProfileSeed.current.supplier
+      : { user_id: supplierProfileId }
     setSupplierProfileMessage(t('dash.msg.loadingSupplierProfile'))
     // A supplier from the first moment, so the full-screen supplier page opens
     // straight away (with its loading note) rather than a homeowner's side
     // panel that only became the supplier's once the profile had loaded.
-    setSelectedClientProfile({ ...supplier, client_type: 'SUPPLIER' })
-    const supplierUserId = supplier.user_id || supplier.owner_id || supplier.id
-    if (!supplierUserId) {
-      setSupplierProfileMessage(t('dash.err.loadSupplierProfile'))
-      return
-    }
-    try {
-      const profile = await fetchSupplierProfile(supplierUserId)
-      setSelectedClientProfile({
-        ...supplier,
-        ...profile,
-        client_type: 'SUPPLIER',
-        owner_id: supplier.owner_id || profile.user_id || supplierUserId,
-        user_id: profile.user_id || supplier.user_id || supplierUserId,
+    setSupplierProfile({ ...seed, client_type: 'SUPPLIER' })
+    fetchSupplierProfile(supplierProfileId)
+      .then((profile) => {
+        if (!alive) return
+        setSupplierProfile({
+          ...seed,
+          ...profile,
+          client_type: 'SUPPLIER',
+          owner_id: seed.owner_id || profile.user_id || supplierProfileId,
+          user_id: profile.user_id || seed.user_id || supplierProfileId,
+        })
+        setSupplierProfileMessage('')
       })
-      setSupplierProfileMessage('')
-    } catch (error) {
-      setSupplierProfileMessage(error.response?.data?.detail || t('dash.err.loadSupplierProfile'))
-    }
-  }
+      .catch((error) => {
+        if (alive) setSupplierProfileMessage(error.response?.data?.detail || t('dash.err.loadSupplierProfile'))
+      })
+    return () => { alive = false }
+    // `t` changes with the language only; the profile is loaded per supplier.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [supplierProfileId])
 
   // The location prompt saved a pincode: adopt the updated account, load the
   // leads for that pincode through the existing find-clients request, and open
@@ -712,8 +739,8 @@ export default function ContractorDashboard() {
   }
 
   const selectDashboardSection = (sectionId) => {
+    // Another section is another address, which closes an open profile by itself.
     if (sectionId !== 'findClients') {
-      setSelectedClientProfile(null)
       setSendRequestTarget(null)
     }
     if (sectionId === 'findClients') {
@@ -785,7 +812,7 @@ export default function ContractorDashboard() {
     setInvitePrefill(prefill || {})
     setInviteResult(null)
     setInviteError('')
-    setInviteModalOpen(true)
+    openInviteDialog('engineer')
   }
 
   const handleRevokeInvitation = async (invitationId) => {
@@ -899,13 +926,13 @@ export default function ContractorDashboard() {
   }
 
   const openAssignProject = (engineer) => {
-    setAssignTarget(engineer)
+    openAssignDialog(engineer.user_id)
     setAssignSuccessProject(null)
     setAssignModalMessage('')
   }
 
   const openAssignSupplier = (supplier) => {
-    setAssignSupplierTarget(supplier)
+    openAssignSupplierDialog(supplier.id)
     setAssignSupplierSuccessProject(null)
     setAssignSupplierMessage('')
   }
@@ -1030,6 +1057,21 @@ export default function ContractorDashboard() {
     return { ...translatedItem, badge: notificationBadgeCounts[item.id] }
   })
   const ownerClientList = nearbyProjectList.filter((client) => client.client_type !== 'SUPPLIER')
+  // The dialogs named in the address, read from the lists they were opened from, so a
+  // refresh or a link shows them once those lists have loaded.
+  const selectedClientProfile = supplierProfileId
+    ? supplierProfile
+    : (clientProfileId ? ownerClientList.find((client) => String(client.id) === clientProfileId) || null : null)
+  const sameUser = (id) => (engineer) => String(engineer?.user_id) === id
+  const selectedEngineerProfile = engineerProfileId
+    ? [teamData.active, teamData.pending_requests, teamData.outgoing_requests, nearbyEngineers]
+      .map((list) => (list || []).find(sameUser(engineerProfileId)))
+      .find(Boolean) || null
+    : null
+  const assignTarget = assignTargetId ? (teamData.active || []).find(sameUser(assignTargetId)) || null : null
+  const assignSupplierTarget = assignSupplierTargetId
+    ? contractorSuppliers.find((supplier) => String(supplier.id) === assignSupplierTargetId) || null
+    : null
   const supplierClientList = nearbyProjectList.filter((client) => client.client_type === 'SUPPLIER')
   const completedProjectCount = normalizePortfolioProjects(contractorProfileDetails?.completed_project_details || []).length
   const contractorDisplayName = contractorProfileDetails?.company_name || contractorProfileDetails?.name || user?.name || t('dash.common.builder')
@@ -1321,7 +1363,7 @@ export default function ContractorDashboard() {
             contractorName={contractorDisplayName}
             onInvite={openInviteModal}
             onRespond={handleRespondEngineerJoinRequest}
-            onViewEngineer={setSelectedEngineerProfile}
+            onViewEngineer={(engineer) => openEngineerProfile(engineer.user_id)}
             onAssignProject={openAssignProject}
             onUnassignProject={openUnassignProject}
             onRevokeInvitation={handleRevokeInvitation}
@@ -1365,7 +1407,7 @@ export default function ContractorDashboard() {
             setActiveFindClientTab={setActiveFindClientTab}
             openOwnerClientList={openOwnerClientList}
             supplierClientList={supplierClientList}
-            onSelectClient={setSelectedClientProfile}
+            onSelectClient={(client) => openClientProfile(client.id)}
             // Which pincode these leads are for, and the way to change it:
             // in the section's tab row, on the right.
             locationAction={locationPrompt.eligible ? (
@@ -1398,7 +1440,7 @@ export default function ContractorDashboard() {
           <InviteEngineerDrawer
             contractorName={contractorDisplayName}
             prefill={invitePrefill}
-            onClose={() => setInviteModalOpen(false)}
+            onClose={closeInviteDialog}
             onGenerate={generateInvite}
             inviteResult={inviteResult}
             error={inviteError}
@@ -1410,7 +1452,7 @@ export default function ContractorDashboard() {
         {selectedEngineerProfile && (
           <ContractorEngineerProfileDrawer
             engineer={selectedEngineerProfile}
-            onClose={() => setSelectedEngineerProfile(null)}
+            onClose={closeEngineerProfile}
             teamStatus={
               teamData?.active?.some((e) => e.user_id === selectedEngineerProfile.user_id)
                 ? 'active'
@@ -1430,7 +1472,7 @@ export default function ContractorDashboard() {
             projectList={projectList}
             teamData={teamData}
             contractorSuppliers={contractorSuppliers}
-            onClose={() => setAssignSupplierTarget(null)}
+            onClose={closeAssignSupplierDialog}
             onAssign={confirmAssignSupplier}
             busy={assignSupplierBusy}
             successProject={assignSupplierSuccessProject}
@@ -1458,7 +1500,7 @@ export default function ContractorDashboard() {
             engineer={assignTarget}
             projectList={projectList}
             assignedByProject={assignedEngineerByProject}
-            onClose={() => setAssignTarget(null)}
+            onClose={closeAssignDialog}
             onAssign={confirmAssignProject}
             busy={assignBusy}
             successProject={assignSuccessProject}
@@ -1488,10 +1530,7 @@ export default function ContractorDashboard() {
             onSendRequest={openSendRequest}
             sendingReceiverId={sendingReceiverId}
             supplierProfileMessage={supplierProfileMessage}
-            onClose={() => {
-              setSelectedClientProfile(null)
-              setSupplierProfileMessage('')
-            }}
+            onClose={supplierProfileId ? closeSupplierProfile : closeClientProfile}
           />
         )}
       </AnimatePresence>

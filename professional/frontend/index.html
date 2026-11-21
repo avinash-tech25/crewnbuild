@@ -14,18 +14,28 @@
       name="description"
       content="CREWNBUILD — Premium construction & engineering. Design, build, renovate and deliver residential, commercial and infrastructure projects with absolute trust."
     />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
     <title>CREWNBUILD — Build Anything. Trust Everything.</title>
     <!-- The saved theme, before first paint (a file, not inline, for a strict CSP: FE-09). -->
     <script src="/theme-preference.js"></script>
+    <!-- The start-up screen (Crew&Build logo) shown until the app has rendered: its styles,
+         the logo it shows, and its timing script, all files for a strict CSP (FE-09). -->
+    <link rel="preload" as="image" href="/crew-and-build-logo.png" />
+    <link rel="stylesheet" href="/crewnbuild-intro.css" />
+    <script src="/crewnbuild-intro-lifecycle.js"></script>
   </head>
   <body>
+    <div id="crewnbuild-intro" role="status" aria-live="polite" aria-label="CREWNBUILD. Connecting People. Building Together.">
+      <div>
+        <div class="crew-intro-art">
+          <img class="crew-intro-original" src="/crew-and-build-logo.png" width="654" height="400" alt="CREWNBUILD — Connecting People. Building Together." />
+        </div>
+        <div class="crew-intro-fallback" hidden><strong>CREWNBUILD</strong><p>Connecting People. Building Together.</p></div>
+        <p class="crew-intro-busy">Still loading the application…</p>
+        <p class="crew-intro-recovery">The website is taking longer to start. Check your connection or <a href="">reload this page</a>.</p>
+      </div>
+    </div>
     <div id="root"></div>
+    <script async src="/crewnbuild-intro.js"></script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

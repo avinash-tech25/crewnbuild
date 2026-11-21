@@ -67,6 +67,26 @@ export const verifyStoredSession = createAsyncThunk(
   },
 )
 
+/**
+ * Ask the server again whether the session the page is showing is still live: when a tab
+ * that was left open comes back into view, or a page is restored from the back/forward
+ * cache. The server ends a session after SESSION_IDLE_HOURS without activity and
+ * SESSION_MAX_HOURS in total, so a signed-in header must not outlive it. Rejected with
+ * 'refused' when the server ended it (the caller signs the store out) and 'unreachable'
+ * when it did not answer (nothing changes).
+ */
+export const recheckSession = createAsyncThunk(
+  'auth/recheckSession',
+  async (_, { rejectWithValue }) => {
+    try {
+      return await confirmSessionOnLoad()
+    } catch (error) {
+      return rejectWithValue(error.response ? 'refused' : 'unreachable')
+    }
+  },
+  { condition: (_, { getState }) => getState().auth.sessionStatus === 'verified' },
+)
+
 function signInThunk(type, request, refusedMessage) {
   return createAsyncThunk(type, async (details, { rejectWithValue }) => {
     try {
@@ -148,6 +168,9 @@ const authSlice = createSlice({
     builder
       .addCase(verifyStoredSession.fulfilled, (state, action) => {
         signedIn(state, action.payload.user)
+      })
+      .addCase(recheckSession.fulfilled, (state, action) => {
+        if (state.sessionStatus === 'verified') signedIn(state, action.payload.user)
       })
       .addCase(verifyStoredSession.rejected, (state, action) => {
         if (action.payload === 'superseded') return

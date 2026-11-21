@@ -16,7 +16,6 @@
  * figures, which live with their sources in `calculators/constants.js`. They
  * quote no price and name no product: they are arithmetic, not catalogue.
  */
-import { useState } from 'react'
 import { Calculator, Compass, FileCheck, Landmark, Layers, Paintbrush, Receipt, Scale, ReceiptIndianRupee, Stamp, TrendingUp, Truck, Wallet } from 'lucide-react'
 import EstimateCalculator from '../components/EstimateCalculator.jsx'
 import PaintCalculator from '../calculators/PaintCalculator.jsx'
@@ -34,6 +33,7 @@ import PropertyRoiCalculator from '../calculators/PropertyRoiCalculator.jsx'
 import { SiteHeader } from '../../public-site/components/landing/SiteHeader.jsx'
 import { useLanguage } from '../../public-site/components/landing/useLanguage.js'
 import { useLanguage as useAppLanguage } from '../../../i18n/LanguageContext.jsx'
+import useUrlState from '../../../shared/hooks/useUrlState.js'
 
 // Navigation labels only — these name the screens, they are not business data.
 // `embedded` marks the one calculator that is a whole page of its own.
@@ -74,12 +74,16 @@ const CALCULATORS = [
 // position, because it is the only one in the component, and applied from here
 // so `EstimateCalculator.jsx` keeps every class it has — the same arrangement
 // the two overrides above already use.
+const CALCULATOR_IDS = CALCULATORS.map((item) => item.id)
+
 const embeddedPageChrome = '[&>div>div:first-child]:hidden [&>div>main]:!pt-0 [&_.max-w-3xl]:!max-w-none'
 
 export default function CalculatorHub() {
   // The construction estimate is the one the landing page's button promises, so
   // it is the one already open when the hub loads.
-  const [selected, setSelected] = useState(CALCULATORS[0].id)
+  // The chosen calculator is the address's (?calc=paint), so a refresh, a link and Back
+  // show the same one; the construction estimate keeps the short /estimate.
+  const [selected, setSelected] = useUrlState('calc', CALCULATORS[0].id, CALCULATOR_IDS)
   const { text } = useLanguage()
   const { t } = useAppLanguage()
   const active = CALCULATORS.find((item) => item.id === selected) || CALCULATORS[0]

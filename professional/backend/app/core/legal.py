@@ -15,8 +15,8 @@ from typing import Any
 from pydantic import BaseModel, StrictBool, ValidationError, field_validator
 from pydantic_core import PydanticCustomError
 
-TERMS_VERSION = "1.0"
-PRIVACY_VERSION = "1.0"
+TERMS_VERSION = "1.1"
+PRIVACY_VERSION = "1.1"
 
 TERMS_NOT_ACCEPTED = "Accept the Terms of Service and the Privacy Policy to create an account."
 TERMS_OUTDATED = "The Terms of Service have changed. Reload the page and accept the current version."

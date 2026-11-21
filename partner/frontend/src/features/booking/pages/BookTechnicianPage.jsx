@@ -20,7 +20,7 @@ export default function BookTechnicianPage() {
   const requester = session.requester
 
   return (
-    <BookingShell session={session} wide>
+    <BookingShell session={session}>
       {requester && (
         <div className="space-y-5">
           {/* The page's own banner: the existing heading and explanation on a

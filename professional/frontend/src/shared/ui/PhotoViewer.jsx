@@ -10,7 +10,7 @@ export default function PhotoViewer({ photos = [], activeIndex, onChange, onBack
   const photo = photos[index]
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/90 p-4" role="dialog" aria-modal="true" aria-label={title}>
+    <div className="fixed inset-0 z-dialog-top flex items-center justify-center bg-slate-950/90 p-4" role="dialog" aria-modal="true" aria-label={title}>
       <div className="flex max-h-[95vh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
         <header className="flex items-center justify-between gap-4 border-b border-slate-200 px-4 py-3">
           <button type="button" onClick={onBack} className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-extrabold text-slate-800">{t('dash.common.back')}</button>

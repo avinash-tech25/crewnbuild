@@ -35,11 +35,12 @@ export default function SiteHeader() {
 
   return (
     <header
-      className={`sticky top-0 z-30 w-full border-b transition duration-300 ease-soft ${BAR} ${BAR_EDGE} ${
+      className={`sticky top-0 z-header w-full border-b transition duration-300 ease-soft ${BAR} ${BAR_EDGE} ${
         scrolled ? 'shadow-ocsoft' : ''
       }`}
     >
-      <div className="mx-auto flex h-[58px] max-md:h-[52px] w-full items-center gap-6 px-5 sm:px-8">
+      {/* The same column as the page below it (max-w-page, the .container-x width and padding). */}
+      <div className="mx-auto flex h-[58px] max-md:h-[52px] w-full max-w-page items-center gap-6 px-5 sm:px-8">
         <Logo wordmark />
         <nav className="ml-6 hidden items-center gap-7 text-xs font-bold text-oc-muted md:flex">
           {NAV_LINKS.map((link) => (

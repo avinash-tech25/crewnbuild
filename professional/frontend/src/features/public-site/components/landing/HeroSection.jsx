@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { Check, ChevronLeft, ChevronRight, Calculator } from "lucide-react";
 import { RoleCharacter, containerClass, townUrl } from "./shared.jsx";
 import { roleMeta } from "./content.js";
+import { AppLink } from "../../../../shared/navigation/AppLink.jsx";
 
 const scrimStops = "rgba(6,45,31,.9) 0%, rgba(6,45,31,.82) 38%, rgba(6,45,31,.55) 60%, rgba(6,45,31,.2) 80%, rgba(6,45,31,.12) 100%";
 
@@ -144,13 +145,13 @@ export function HeroContent({ text, activeIndex, onSelect }) {
         </div>
 
         {/* Get Free Estimate — directly below the 1-2-3-4-5 tabs */}
-        <a
+        <AppLink
           href="/estimate"
           className="inline-flex items-center gap-[7px] mt-4 px-4 py-2.5 rounded-full text-[11px] font-extrabold text-oc-deep bg-oc-amber border border-oc-amber backdrop-blur-[10px] transition-[transform,box-shadow] duration-200 ease-soft hover:-translate-y-[2px] hover:shadow-[0_10px_22px_rgba(244,183,64,.28)]"
         >
           <Calculator size={14} />
           {text.freeEstimate?.button || "Get Free Estimate"}
-        </a>
+        </AppLink>
 
         {/* On a phone the character takes its own row under the text instead of
             floating over it. */}

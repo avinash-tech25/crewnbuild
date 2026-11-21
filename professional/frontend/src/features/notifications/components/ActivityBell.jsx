@@ -48,8 +48,8 @@ export default function ActivityBell({ items = [] }) {
 
       {isOpen && (
         <>
-          <div className="fixed inset-0 z-40" onClick={toggle} />
-          <div className="absolute right-0 top-12 z-50 max-lg:fixed max-lg:right-4 max-lg:top-[60px] max-sm:left-4 max-sm:w-auto w-[min(20rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_24px_60px_-24px_rgba(15,23,42,0.45)]">
+          <div className="fixed inset-0 z-dropdown" onClick={toggle} />
+          <div className="absolute right-0 top-12 z-dropdown max-lg:fixed max-lg:right-4 max-lg:top-[60px] max-sm:left-4 max-sm:w-auto w-[min(20rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_24px_60px_-24px_rgba(15,23,42,0.45)]">
             <div className="flex items-center gap-2.5 border-b border-slate-100 px-4 py-3">
               <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-brand-50 text-brand-700 ring-1 ring-brand-100">
                 <Clock3 className="h-4 w-4" />

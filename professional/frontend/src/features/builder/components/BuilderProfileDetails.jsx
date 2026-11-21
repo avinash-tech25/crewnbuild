@@ -49,7 +49,7 @@ const CompactContext = createContext(false)
 function ModalFrame({ label, closeLabel, onClose, children }) {
   const { t } = useLanguage()
   return (
-    <div className="fixed inset-0 z-[120] grid place-items-center bg-slate-900/40 p-3 backdrop-blur-sm sm:p-6" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose() }}>
+    <div className="fixed inset-0 z-dialog grid place-items-center bg-slate-900/40 p-3 backdrop-blur-sm sm:p-6" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose() }}>
       <div
         role="dialog"
         aria-modal="true"
@@ -541,7 +541,7 @@ export default function ContractorProfileDetails({ variant = 'page', contractorI
   )
 
   const content = (
-      <main className={isModal ? 'space-y-2.5' : 'mx-auto max-w-[1500px] space-y-4 p-4 sm:p-6'}>
+      <main className={isModal ? 'space-y-2.5' : 'mx-auto max-w-page space-y-4 p-4 sm:p-6'}>
         {!isModal && <div className="text-xs font-semibold text-graphite/55">{t('dash.contractor.dashboardBreadcrumb')} / <span className="text-graphite">{td(profile.company_name)}</span></div>}
 
         {isModal ? compactHeader : (
@@ -647,7 +647,7 @@ export default function ContractorProfileDetails({ variant = 'page', contractorI
         </section>
         )}
 
-        <nav className={`dash-scroll sticky z-20 flex gap-1 overflow-x-auto rounded-2xl border border-brand-100 bg-white px-2 shadow-card ${isModal ? 'top-0' : 'top-16'}`}>
+        <nav className={`dash-scroll sticky z-sticky flex gap-1 overflow-x-auto rounded-2xl border border-brand-100 bg-white px-2 shadow-card ${isModal ? 'top-0' : 'top-16'}`}>
           {tabs.map((tab) => (
             <button key={tab} type="button" aria-pressed={activeTab === tab} onClick={() => setActiveTab(tab)} className={`shrink-0 border-b-2 font-bold capitalize ${isModal ? 'px-3 py-2 text-xs' : 'px-5 py-3 text-sm'} ${activeTab === tab ? 'border-brand-700 text-brand-800' : 'border-transparent text-graphite/55'}`}>
               {t(TAB_LABEL_KEYS[tab])}
@@ -669,8 +669,8 @@ export default function ContractorProfileDetails({ variant = 'page', contractorI
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-cream to-white text-graphite">
-      <header className="sticky top-0 z-30 border-b border-brand-100 bg-white/90 backdrop-blur-xl">
-        <div className="mx-auto flex h-16 max-w-[1500px] items-center justify-between px-4 sm:px-6">
+      <header className="sticky top-0 z-header border-b border-brand-100 bg-white/90 backdrop-blur-xl">
+        <div className="mx-auto flex h-16 max-w-page items-center justify-between px-4 sm:px-6">
           <Logo />
           <button onClick={() => navigate(-1)} className="rounded-full border border-brand-100 bg-white px-4 py-2 text-sm font-bold text-brand-700 shadow-sm">{t('dash.common.back')}</button>
         </div>

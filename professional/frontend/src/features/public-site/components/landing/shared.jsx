@@ -1,8 +1,15 @@
+import { AppLink } from "../../../../shared/navigation/AppLink.jsx";
 export const logoUrl = "/crew and build logo.png";
 export const hubUrl = "/landing/3d-hub.png";
 export const equipmentUrl = "/landing/equipment-miniatures.png";
 export const townUrl = "/landing/mini-city.png";
 export const introVideoUrl = "/landing/intro.mp4";
+// The sign-up page's panel video (the old app's gemini_generated_video_285b4167.mp4).
+export const signupVideoUrl = [
+  // 1280x720, no audio: VP9 WebM (892 kB) first, H.264 MP4 (715 kB, faststart) for the rest.
+  { src: "/landing/signup.webm", type: "video/webm" },
+  { src: "/landing/signup.mp4", type: "video/mp4" },
+];
 export const siteMonitorUrl = "/landing/site-monitor.png";
 export const siteUpdatePhotoUrl = "/landing/site-update.jpg";
 export const connectionLostUrl = "/landing/connection-lost.png";
@@ -10,7 +17,8 @@ export const underDevelopmentUrl = "/landing/under-development.png";
 export const lockedOutUrl = "/landing/forgot-password.png";
 export const resetDoneUrl = "/landing/password-reset-done.png";
 
-export const containerClass = "w-[min(100%-48px,1240px)] mx-auto";
+// The one page width (max-w-page), with the landing's 24px side gutters.
+export const containerClass = "w-[calc(100%-48px)] max-w-page mx-auto";
 
 // Vertical rhythm for the sections that sit on paper rather than a coloured band.
 export const sectionPaddingClass = "py-[clamp(4.5rem,3rem+6vw,8rem)]";
@@ -55,7 +63,7 @@ export const brandBadgeClass =
 // The logo is cropped to its artwork (about 1.62 : 1); the boxes keep that shape.
 export function Brand({ href = "/", logoOnly = false, small = false }) {
   return (
-    <a className={`inline-flex items-center ${small ? "gap-2" : "gap-[10px]"} text-[15px] tracking-[.17em] group`} href={href} aria-label="CREWNBUILD home">
+    <AppLink className={`inline-flex items-center ${small ? "gap-2" : "gap-[10px]"} text-[15px] tracking-[.17em] group`} href={href} aria-label="CREWNBUILD home">
       <img
         src={logoUrl}
         alt=""
@@ -64,7 +72,7 @@ export function Brand({ href = "/", logoOnly = false, small = false }) {
                    group-hover:scale-[1.04] group-hover:drop-shadow-[0_12px_16px_rgba(8,62,43,.4)]`}
       />
       {!logoOnly && <strong className="font-extrabold font-display">CREWNBUILD</strong>}
-    </a>
+    </AppLink>
   );
 }
 

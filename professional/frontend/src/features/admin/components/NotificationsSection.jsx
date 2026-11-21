@@ -14,6 +14,7 @@ import { fetchAdminNotifications, sendAnnouncement } from '../adminApi.js'
 import { PAGE_SIZE, Pagination } from './AdminPagination.jsx'
 import { formatDateTime } from '../../../shared/utils/formatters.js'
 import { can } from '../adminAccess.js'
+import LoadingRows from './LoadingRows.jsx'
 
 export function NotificationsPage({ identity, Panel, useAsync }) {
   const [offset, setOffset] = useState(0)
@@ -198,13 +199,7 @@ export function NotificationsPage({ identity, Panel, useAsync }) {
                 </td>
               </tr>
             )}
-            {!error && loading && (
-              <tr>
-                <td colSpan={5} className="px-4 py-10 text-center text-sm text-slate-500">
-                  Loading…
-                </td>
-              </tr>
-            )}
+            {!error && loading && <LoadingRows colSpan={5} />}
             {!error && !loading && !data?.notifications.length && (
               <tr>
                 <td colSpan={5} className="px-4 py-10 text-center text-sm font-medium text-slate-500">

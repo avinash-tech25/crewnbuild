@@ -67,6 +67,7 @@ import {
   updateAdministrator,
   setViewingCountry,
 } from '../adminApi.js'
+import LoadingRows from '../components/LoadingRows.jsx'
 
 // India is the only market, so every administrator works platform-wide; the role names
 // say what someone may do, not where. (The server keeps its country fields, always IN.)
@@ -126,6 +127,7 @@ const OTHER_PAGES = { notifications: 'Notifications' }
 // The sidebar's counts, from the dashboard's own queues (GET /admin/overview): only
 // the queues that are work waiting, never a plain total.
 const BADGE_SOURCES = { verification: 'pending_verifications', reports: 'open_reports', leads: 'stalled_requests' }
+const emptyBadges = () => Object.fromEntries(Object.keys(BADGE_SOURCES).map((section) => [section, 0]))
 
 function StatusPill({ value }) {
   const active = (value || 'ACTIVE').toUpperCase() === 'ACTIVE'
@@ -378,7 +380,7 @@ function UsersPage({ identity }) {
           </thead>
           <tbody className="divide-y divide-slate-100">
             {error && <EmptyRow colSpan={9} message={error} />}
-            {!error && loading && <EmptyRow colSpan={9} message="Loading…" />}
+            {!error && loading && <LoadingRows colSpan={9} />}
             {!error && !loading && !data?.users.length && (
               <EmptyRow colSpan={9} message="No accounts match these filters." />
             )}
@@ -503,7 +505,7 @@ function ProjectsPage() {
           </thead>
           <tbody className="divide-y divide-slate-100">
             {error && <EmptyRow colSpan={6} message={error} />}
-            {!error && loading && <EmptyRow colSpan={6} message="Loading…" />}
+            {!error && loading && <LoadingRows colSpan={6} />}
             {!error && !loading && !data?.projects.length && (
               <EmptyRow colSpan={6} message="No projects yet." />
             )}
@@ -922,7 +924,7 @@ function AdministratorsPage({ identity }) {
           </thead>
           <tbody className="divide-y divide-slate-100">
             {error && <EmptyRow colSpan={6} message={error} />}
-            {!error && loading && <EmptyRow colSpan={6} message="Loading…" />}
+            {!error && loading && <LoadingRows colSpan={6} />}
             {!error &&
               !loading &&
               data?.admins.map((admin) => {
@@ -1052,7 +1054,9 @@ function AdminConsole({ identity, error, onIdentityChanged }) {
 
   // The sidebar's counts: the dashboard's own queues, read again when the
   // administrator moves to another section so a count follows the work done.
-  const [badges, setBadges] = useState({})
+  // Every queue section starts at 0 (an invisible badge slot) so the sidebar does not
+  // shift when the counts arrive.
+  const [badges, setBadges] = useState(emptyBadges)
   useEffect(() => {
     if (!identity) return undefined
     let cancelled = false
@@ -1062,7 +1066,7 @@ function AdminConsole({ identity, error, onIdentityChanged }) {
         const attention = data?.attention || {}
         setBadges(Object.fromEntries(Object.entries(BADGE_SOURCES).map(([section, key]) => [section, attention[key] || 0])))
       })
-      .catch(() => { if (!cancelled) setBadges({}) })
+      .catch(() => { if (!cancelled) setBadges(emptyBadges()) })
     return () => { cancelled = true }
   }, [identity, activeId])
 

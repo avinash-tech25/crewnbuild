@@ -2,6 +2,7 @@ import { ArrowLeft, Globe, Wrench } from "lucide-react";
 import { Brand, buttonClass, languagePillClass, underDevelopmentUrl } from "../components/landing/shared.jsx";
 import { useLanguage } from "../components/landing/useLanguage.js";
 import { roleMeta } from "../components/landing/content.js";
+import { AppLink } from "../../../shared/navigation/AppLink.jsx";
 
 // The page is reached as /coming-soon?role=equipment, so it can name and picture whichever
 // module is not open yet. Without a role it still reads as a general "not ready" page.
@@ -59,15 +60,15 @@ export default function ComingSoon() {
         <p className="mt-4 text-sm leading-[1.75] text-oc-muted">{copy.body}</p>
 
         <div className="flex flex-wrap items-center justify-center gap-3 mt-7">
-          <a className={buttonClass} href="/signup">{copy.chooseAnother}</a>
-          <a
+          <AppLink className={buttonClass} href="/signup">{copy.chooseAnother}</AppLink>
+          <AppLink
             className="inline-flex items-center gap-2 min-h-[50px] px-6 rounded-full border border-oc-line bg-white text-xs font-extrabold text-oc-ink
                        transition-colors duration-200 hover:bg-oc-mint"
             href="/"
           >
             <ArrowLeft size={15} className="rtl:-scale-x-100" />
             {copy.backHome}
-          </a>
+          </AppLink>
         </div>
       </div>
     </div>

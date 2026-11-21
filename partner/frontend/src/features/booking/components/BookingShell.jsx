@@ -6,17 +6,16 @@ import { Alert, Spinner } from '../../../shared/ui/ui.jsx'
  * Frame for every booking page. Renders the page only once the the Professional app
  * House Owner or Site Engineer has been verified by the Partner backend.
  *
- * `wide` lets a page use nearly the full window instead of the site's usual
- * content width -- the service list does, so its cards reach the edges. Every
- * other booking page leaves it off and looks exactly as before.
+ * Every booking page uses the one page width (.container-x, max-w-page), so moving
+ * between the trade list, a service list and the tracker never changes the frame.
  */
-export default function BookingShell({ session, children, wide = false }) {
+export default function BookingShell({ session, children }) {
   const { status, requester, message, reconnect } = session
-  const frame = wide ? 'mx-auto w-full max-w-[1800px] px-4 sm:px-6' : 'container-x'
+  const frame = 'container-x'
 
   return (
     <div className="min-h-screen bg-oc-paper">
-      <header className="sticky top-0 z-20 border-b border-oc-line bg-white/90 backdrop-blur-md">
+      <header className="sticky top-0 z-header border-b border-oc-line bg-white/90 backdrop-blur-md">
         <div className={`${frame} flex h-16 items-center gap-3`}>
           {/* The landing page's logo and wordmark (the same two files). */}
           <Logo to="/book-technician" wordmark />

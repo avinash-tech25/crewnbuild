@@ -227,7 +227,7 @@ export default function TrackingMap({
         center={opening}
         zoom={followMode ? 16 : MAP_DEFAULT_ZOOM}
         scrollWheelZoom
-        className="h-full w-full"
+        className="isolate h-full w-full"
       >
         <TileLayer url={MAP_TILES.url} attribution={MAP_TILES.attribution} maxZoom={MAP_TILES.maxZoom} />
 

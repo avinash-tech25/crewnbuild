@@ -16,6 +16,7 @@ import { useSearchParams } from 'react-router-dom'
 import { AlertTriangle, RefreshCw } from 'lucide-react'
 import { fetchMarketplaceActivity } from '../adminApi.js'
 import { PAGE_SIZE, Pagination } from './AdminPagination.jsx'
+import LoadingRows from './LoadingRows.jsx'
 
 const STATUS_TABS = [
   ['', 'All'],
@@ -138,13 +139,7 @@ export function LeadsPage({ Panel, useAsync }) {
                   </td>
                 </tr>
               )}
-              {!error && loading && (
-                <tr>
-                  <td colSpan={8} className="px-4 py-10 text-center text-sm text-slate-500">
-                    Loading…
-                  </td>
-                </tr>
-              )}
+              {!error && loading && <LoadingRows colSpan={8} />}
               {!error && !loading && !data?.requests.length && (
                 <tr>
                   <td colSpan={8} className="px-4 py-10 text-center text-sm font-medium text-slate-500">

@@ -41,7 +41,7 @@ export default function Navbar() {
 
   return (
     <header
-      className={`fixed inset-x-0 top-0 z-50 border-b border-slate-200/70 bg-[#fcfaf3]/90 backdrop-blur-xl transition-all duration-300 ${
+      className={`fixed inset-x-0 top-0 z-header border-b border-slate-200/70 bg-[#fcfaf3]/90 backdrop-blur-xl transition-all duration-300 ${
         scrolled ? 'shadow-[0_10px_40px_-24px_rgba(15,23,42,0.35)]' : ''
       }`}
     >

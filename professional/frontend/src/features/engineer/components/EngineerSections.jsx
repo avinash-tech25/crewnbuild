@@ -804,7 +804,7 @@ export function ContractorProfileModal({ contractor, profile, onClose, onRequest
   const data = profile || contractor || {}
   const contactVisible = profile?.can_view_contact
   return (
-    <div className="fixed inset-0 z-[120] grid place-items-center p-4">
+    <div className="fixed inset-0 z-dialog grid place-items-center p-4">
       <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={onClose} />
       <div className="relative max-h-[88vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-2xl">
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-100 bg-white/95 px-5 py-3.5 backdrop-blur">
@@ -911,7 +911,7 @@ export function ContractorProfileModal({ contractor, profile, onClose, onRequest
 export function OpportunityDetailModal({ opportunity, onClose, onApply, applied, message }) {
   const { t, td } = useLanguage()
   return (
-    <div className="fixed inset-0 z-[120] grid place-items-center p-4">
+    <div className="fixed inset-0 z-dialog grid place-items-center p-4">
       <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={onClose} />
       <div className="relative max-h-[88vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-2xl">
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-100 bg-white/95 px-5 py-3.5 backdrop-blur">

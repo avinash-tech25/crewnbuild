@@ -12,6 +12,7 @@ import { roleDestination, roleMeta } from "./content.js";
 import { useEffect, useState } from "react";
 import { useLanguage } from "../../../../i18n/LanguageContext.jsx";
 import { Link } from "react-router-dom";
+import { AppLink } from "../../../../shared/navigation/AppLink.jsx";
 import { useAccountLinks } from "../../../../shared/auth/sessionLinks.js";
 import { fetchSupportConfig } from "../../../support/supportApi.js";
 import { SUPPORT_PHONE, phoneHref } from "../../../../shared/constants/support.js";
@@ -77,8 +78,8 @@ export function SiteFooter({ text, language, onSelectLanguage }) {
                 <li><Link className={columnLink} to={accountHome}>{t("ui.dashboard")}</Link></li>
               ) : (
                 <>
-                  <li><a className={columnLink} href="/signup">{text.nav.start}</a></li>
-                  <li><a className={columnLink} href="/login">{text.nav.signIn}</a></li>
+                  <li><AppLink className={columnLink} href="/signup">{text.nav.start}</AppLink></li>
+                  <li><AppLink className={columnLink} href="/login">{text.nav.signIn}</AppLink></li>
                 </>
               )}
             </ul>
@@ -91,14 +92,14 @@ export function SiteFooter({ text, language, onSelectLanguage }) {
                   while the module is still in development. */}
               {text.roles.map((role, index) => (
                 <li key={role.title}>
-                  <a className={columnLink} href={roleDestination(roleMeta[index].key)}>
+                  <AppLink className={columnLink} href={roleDestination(roleMeta[index].key)}>
                     {role.title}
                     {roleMeta[index].comingSoon && (
                       <span className="ms-2 text-[9px] font-extrabold uppercase tracking-[.08em] text-oc-amber rtl:tracking-normal">
                         {text.comingSoon}
                       </span>
                     )}
-                  </a>
+                  </AppLink>
                 </li>
               ))}
             </ul>
@@ -118,7 +119,7 @@ export function SiteFooter({ text, language, onSelectLanguage }) {
             <ul className={columnList}>
               {/* Contact details live on the Contact Us page, which shows only the
                   channels configured on the server (GET /support/config). */}
-              <ContactRow icon={Mail}><a className={columnLink} href="/contact-us">{text.nav.contactUs}</a></ContactRow>
+              <ContactRow icon={Mail}><AppLink className={columnLink} href="/contact-us">{text.nav.contactUs}</AppLink></ContactRow>
               <ContactRow icon={MapPin}><span>{text.footer.city}</span></ContactRow>
               {contact?.email && (
                 <ContactRow icon={Mail}><a className={`${columnLink} min-w-0 [overflow-wrap:anywhere]`} href={`mailto:${contact.email}`} dir="ltr">{contact.email}</a></ContactRow>
@@ -138,10 +139,6 @@ export function SiteFooter({ text, language, onSelectLanguage }) {
 
         <div className="flex flex-wrap items-center justify-between gap-5 text-[11px] text-[#7b847d] max-wide:block">
           <span>© {new Date().getFullYear()} CREWNBUILD. {text.footer.rights}</span>
-
-          <div className="flex gap-[22px] max-wide:flex-wrap max-wide:gap-x-5 max-wide:gap-y-3 max-wide:mt-[13px]">
-            <a className="transition-colors duration-200 hover:text-oc-amber" href="#cookies">{text.footer.cookies}</a>
-          </div>
 
           {/* Powered by Trysol: the supplied image (logo + name) as is, only sized down. */}
           <div className="flex items-center gap-2 max-wide:mt-[13px]" dir="ltr">

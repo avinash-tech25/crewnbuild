@@ -58,20 +58,36 @@ export function rainAmount(mm) {
   return typeof mm === 'number' && Number.isFinite(mm) ? `${Math.round(mm * 10) / 10} mm` : DASH
 }
 
-// The place a technician chose, kept in this browser only. Storage can be blocked.
-export function loadChosenPlace(storage = globalThis.localStorage) {
+// The place a technician chose, kept in this browser only and for at most 30 days (it can
+// be close to their home). Storage can be blocked.
+export const CHOSEN_PLACE_DAYS = 30
+const CHOSEN_PLACE_MS = CHOSEN_PLACE_DAYS * 24 * 60 * 60 * 1000
+
+export function loadChosenPlace(storage = globalThis.localStorage, now = Date.now()) {
   try {
     const place = JSON.parse(storage?.getItem(PLACE_KEY) || 'null')
-    return place && Number.isFinite(place.latitude) && Number.isFinite(place.longitude) ? { ...place, source: 'CHOSEN' } : null
+    if (!place) return null
+    // Older than 30 days, or saved before choices carried a date: forgotten.
+    if (!Number.isFinite(place.savedAt) || now - place.savedAt > CHOSEN_PLACE_MS) {
+      storage?.removeItem(PLACE_KEY)
+      return null
+    }
+    if (!Number.isFinite(place.latitude) || !Number.isFinite(place.longitude)) return null
+    const { savedAt: _savedAt, ...chosen } = place
+    return { ...chosen, source: 'CHOSEN' }
   } catch {
     return null
   }
 }
 
-export function saveChosenPlace(place, storage = globalThis.localStorage) {
+export function saveChosenPlace(place, storage = globalThis.localStorage, now = Date.now()) {
   try {
-    if (place) storage?.setItem(PLACE_KEY, JSON.stringify({ name: place.name, latitude: place.latitude, longitude: place.longitude }))
-    else storage?.removeItem(PLACE_KEY)
+    if (place) {
+      storage?.setItem(
+        PLACE_KEY,
+        JSON.stringify({ name: place.name, latitude: place.latitude, longitude: place.longitude, savedAt: now }),
+      )
+    } else storage?.removeItem(PLACE_KEY)
   } catch {
     /* blocked storage: the choice simply lasts for this visit */
   }

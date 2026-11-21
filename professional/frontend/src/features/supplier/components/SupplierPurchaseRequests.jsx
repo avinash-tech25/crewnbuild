@@ -20,6 +20,7 @@ import { formatMoney } from '../../../shared/utils/countryConfig.js'
 import { useProfileGate, useResumeGatedAction } from '../../../shared/hooks/useProfileGate.js'
 import { useLiveRefresh } from '../../../shared/hooks/useLiveRefresh.js'
 import { DataTable, tdClass, thClass } from '../../../shared/ui/DataTable.jsx'
+import { SkeletonList } from '../../../shared/ui/Skeleton.jsx'
 
 const REFRESH_MS = 30000
 const STATUS_STYLE = {
@@ -172,7 +173,7 @@ export default function SupplierPurchaseRequests({ country, onChanged }) {
   })
 
   if (loading) {
-    return <p className="flex items-center gap-2 py-8 text-sm font-semibold text-graphite/50"><Loader2 className="h-4 w-4 animate-spin" /> Loading purchase requests…</p>
+    return <SkeletonList rows={4} rowClassName="h-12" className="grid gap-2" />
   }
   if (error) return <p className="rounded-xl bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700">{error}</p>
 

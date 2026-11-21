@@ -12,8 +12,9 @@
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { SkeletonGrid } from '../../../shared/ui/Skeleton.jsx'
 import {
-  ArrowRight, ChevronDown, Clock, HardHat, Headset, Layers, Loader2, Mail, Phone, RefreshCw, Search, Ticket,
+  ArrowRight, ChevronDown, Clock, HardHat, Headset, Layers, Mail, Phone, RefreshCw, Search, Ticket,
   UserRound, Wallet, Wrench,
 } from 'lucide-react'
 import { SiteHeader } from '../../public-site/components/landing/SiteHeader.jsx'
@@ -259,9 +260,7 @@ export default function ContactUsPage() {
           )}
 
           {!config && !loadError && (
-            <p className="flex items-center gap-2 py-10 text-sm font-semibold text-oc-muted" role="status">
-              <Loader2 size={18} className="animate-spin" aria-hidden="true" /> Loading support options…
-            </p>
+            <SkeletonGrid count={2} itemClassName="h-[420px]" className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(380px,500px)] xl:gap-10" />
           )}
 
           {config && flow && (

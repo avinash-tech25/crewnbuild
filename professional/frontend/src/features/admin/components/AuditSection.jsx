@@ -22,6 +22,7 @@ import {
 } from 'lucide-react'
 import { fetchAuditLog } from '../adminApi.js'
 import { PAGE_SIZE, Pagination } from './AdminPagination.jsx'
+import LoadingRows from './LoadingRows.jsx'
 
 // How each action reads and looks. Anything unrecognised falls back to neutral
 // rather than being hidden, so an action added later still appears.
@@ -198,13 +199,7 @@ export function AuditPage({ Panel, useAsync }) {
                 </td>
               </tr>
             )}
-            {!error && loading && (
-              <tr>
-                <td colSpan={5} className="px-4 py-10 text-center text-sm text-slate-500">
-                  Loading…
-                </td>
-              </tr>
-            )}
+            {!error && loading && <LoadingRows colSpan={5} />}
             {!error && !loading && !data?.entries.length && (
               <tr>
                 <td colSpan={5} className="px-4 py-10 text-center text-sm font-medium text-slate-500">

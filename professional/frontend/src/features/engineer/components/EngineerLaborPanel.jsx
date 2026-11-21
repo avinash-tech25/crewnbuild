@@ -24,6 +24,7 @@ import {
 import { formatLaborDate, LaborCardStatus, LaborDailyRecordsTable, LaborDialog } from '../../labour/components/SupplierLaborSections.jsx'
 import { allocationSummary, availableCount, MAX_WORKERS, offeredServices, workersRequestError } from '../../labour/laborRequestRules.js'
 import { useLatestOnly, useLiveRefresh } from '../../../shared/hooks/useLiveRefresh.js'
+import { SkeletonList } from '../../../shared/ui/Skeleton.jsx'
 
 const inputClass = 'h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-graphite outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20'
 const labelClass = 'mb-1 block text-[11px] font-extrabold uppercase tracking-wide text-graphite/55'
@@ -473,7 +474,7 @@ export default function EngineerLaborPanel({ projects = [], activeProjectId = nu
       </div>
 
       {loading ? (
-        <p className="flex items-center gap-2 py-6 text-sm font-semibold text-graphite/50"><Loader2 className="h-4 w-4 animate-spin" /> {t('labor.engineer.loading')}</p>
+        <SkeletonList rows={3} rowClassName="h-60" />
       ) : loadError ? (
         <p className="rounded-xl bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700">{loadError}</p>
       ) : (

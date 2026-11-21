@@ -15,7 +15,6 @@ The OAuth transaction cookie is sent only to the OAuth routes, so it cannot use
 `__Host-` (which requires Path=/); it uses `__Secure-` when secure.
 """
 
-from datetime import UTC, datetime
 from typing import Any
 
 from starlette.requests import HTTPConnection
@@ -48,15 +47,13 @@ def _cookie_options(settings: Settings) -> dict[str, Any]:
     }
 
 
-def set_session_cookies(
-    response: Response, settings: Settings, access_token: str, refresh_token: str, refresh_expires_at: datetime
-) -> None:
+def set_session_cookies(response: Response, settings: Settings, access_token: str, refresh_token: str) -> None:
+    """Browser-session cookies (no Max-Age / Expires): closing the browser ends the sign-in.
+    The server enforces the real lifetimes: the access token's expiry and the session's
+    SESSION_IDLE_HOURS / SESSION_MAX_HOURS."""
     options = _cookie_options(settings)
-    response.set_cookie(
-        access_cookie_name(settings), access_token, max_age=settings.access_token_minutes * 60, **options
-    )
-    refresh_seconds = max(int((refresh_expires_at - datetime.now(UTC)).total_seconds()), 0)
-    response.set_cookie(refresh_cookie_name(settings), refresh_token, max_age=refresh_seconds, **options)
+    response.set_cookie(access_cookie_name(settings), access_token, **options)
+    response.set_cookie(refresh_cookie_name(settings), refresh_token, **options)
 
 
 def clear_session_cookies(response: Response, settings: Settings) -> None:

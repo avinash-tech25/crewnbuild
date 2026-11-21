@@ -149,7 +149,7 @@ export default function EngineerLiveCamera() {
 
   return (
     <div className="min-h-screen bg-slate-100 px-4 py-6 sm:px-6">
-      <div className="mx-auto max-w-6xl space-y-4">
+      <div className="mx-auto max-w-page space-y-4">
         <section className="relative overflow-hidden rounded-2xl bg-[linear-gradient(135deg,#0b5233,#083e2b)] shadow-[0_18px_50px_-38px_rgba(2,6,23,0.9)]">
           <div className="pointer-events-none absolute -right-20 -top-24 h-72 w-72 rounded-full bg-emerald-300/10 blur-3xl" aria-hidden="true" />
           <div className="relative flex flex-wrap items-center gap-4 px-4 py-4 sm:px-6 sm:py-5">

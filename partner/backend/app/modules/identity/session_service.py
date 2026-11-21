@@ -6,8 +6,9 @@ names its row (`sid`) and family (`fam`) and is honoured only while that row is 
 not revoked, inside the family's absolute lifetime and, for a technician, refreshed
 recently enough. Refreshing retires the row it used and adds the next; a retired refresh
 token presented again means it was copied, and the whole family is revoked (except two
-tabs refreshing at once, REFRESH_SUPERSEDED). A technician session lasts
-REFRESH_TOKEN_DAYS, a booking (requester) session REQUESTER_SESSION_MINUTES.
+tabs refreshing at once, REFRESH_SUPERSEDED). A technician session lasts at most
+SESSION_MAX_HOURS and ends after SESSION_IDLE_HOURS without a refresh; a booking
+(requester) session lasts REQUESTER_SESSION_MINUTES.
 """
 
 import uuid
@@ -83,7 +84,7 @@ class SessionService:
             user_id,
             scope,
             new_uuid7(),
-            now + timedelta(days=self.settings.refresh_token_days),
+            now + timedelta(hours=self.settings.session_max_hours),
             client,
             now,
         )
@@ -164,7 +165,7 @@ class SessionService:
         if row.revoked_at is not None or row.expires_at <= now:
             return False
         if row.principal_type == PRINCIPAL_TECHNICIAN:
-            return row.last_used_at + timedelta(days=self.settings.session_idle_days) > now
+            return row.last_used_at + timedelta(hours=self.settings.session_idle_hours) > now
         return True
 
     def validate(self, claims: AccessClaims, principal_type: str) -> AuthSession | None:

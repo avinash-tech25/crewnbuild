@@ -13,6 +13,7 @@
 import { AlertTriangle, ArrowRight, Building2, CheckCircle2, Clock, Flag, ShieldAlert, Users, UserX } from 'lucide-react'
 import { fetchAdminOverview } from '../adminApi.js'
 import { mayOpen } from '../adminAccess.js'
+import { SkeletonGrid } from '../../../shared/ui/Skeleton.jsx'
 
 
 // Each card keeps its name whatever the number is. The name is what the card is;
@@ -99,7 +100,11 @@ export function Overview({ identity, Panel, useAsync, onNav }) {
     return <Panel title="Dashboard" subtitle={error} />
   }
   if (loading || !data) {
-    return <Panel title="Dashboard" subtitle="Loading…" />
+    return (
+      <Panel title="Dashboard" subtitle="Loading…">
+        <SkeletonGrid count={6} itemClassName="h-[88px]" className="grid gap-3 p-5 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6" />
+      </Panel>
+    )
   }
 
   const attention = data.attention || {}

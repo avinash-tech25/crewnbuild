@@ -131,7 +131,7 @@ th{background:#f8fafc}.n{text-align:right}tfoot td{font-weight:700}</style></hea
   return createPortal(
     <div
       onClick={onClose}
-      className="fixed inset-0 z-[150] grid place-items-center bg-slate-900/40 p-3 backdrop-blur-sm sm:p-6"
+      className="fixed inset-0 z-dialog-nested grid place-items-center bg-slate-900/40 p-3 backdrop-blur-sm sm:p-6"
     >
       {/* The application's one details window: header (label, title, status
           line), a grey body that scrolls, its sections white cards. */}

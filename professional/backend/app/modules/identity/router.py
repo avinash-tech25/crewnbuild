@@ -127,7 +127,7 @@ def client_info(request: Request) -> ClientInfo:
 def answer_with_session(
     response: Response, settings: Settings, auth: AuthService, user: User, issued: IssuedSession
 ) -> dict[str, Any]:
-    set_session_cookies(response, settings, issued.access_token, issued.refresh_token, issued.expires_at)
+    set_session_cookies(response, settings, issued.access_token, issued.refresh_token)
     return auth.session_response(user, issued.csrf_token)
 
 

@@ -3869,7 +3869,6 @@ const base = {
   'landing.footer.rights': 'جميع الحقوق محفوظة.',
   'landing.footer.privacy': 'سياسة الخصوصية',
   'landing.footer.terms': 'شروط الخدمة',
-  'landing.footer.cookies': 'سياسة ملفات تعريف الارتباط',
   'landing.footer.language': 'اللغة',
   'landing.comingSoonPage.eyebrow': 'قريباً',
   'landing.comingSoonPage.headline': 'التسجيل بهذا الدور',

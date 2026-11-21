@@ -32,6 +32,7 @@ import { cropAdvertImage, shapeFor } from '../advertCrop.js'
 import AdvertCropper from './AdvertCropper.jsx'
 import { useAdminCountry } from './AdminCountry.jsx'
 import { can } from '../adminAccess.js'
+import { SkeletonGrid } from '../../../shared/ui/Skeleton.jsx'
 
 // The currency an advert's price is in, by the country it runs in (India is the only
 // market). Used before the server has given the advert its own currency; the old console
@@ -845,7 +846,7 @@ export function AdsPage({ identity, Panel }) {
       )}
 
       {loading ? (
-        <p className="text-sm font-semibold text-oc-muted">Loading…</p>
+        <SkeletonGrid count={3} itemClassName="h-[246px]" className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3" />
       ) : adverts.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-oc-line px-4 py-10 text-center">
           <ImageIcon className="mx-auto h-6 w-6 text-slate-300" />

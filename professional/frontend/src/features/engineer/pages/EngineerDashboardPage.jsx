@@ -6,6 +6,8 @@ import {
 } from 'lucide-react'
 import { CART_GATED_ACTIONS, pendingActionIs, useProfileGate, useResumeGatedAction } from '../../../shared/hooks/useProfileGate.js'
 import useUrlState, { useUrlParams } from '../../../shared/hooks/useUrlState.js'
+import useUrlDialog from '../../../shared/hooks/useUrlDialog.js'
+import useVisibleInterval from '../../../shared/hooks/useVisibleInterval.js'
 import NotFoundPanel from '../../../shared/dashboard/NotFoundPanel.jsx'
 import { canBookPartner, openPartnerBooking } from '../../partner-booking/partnerBooking.js'
 import { accessRole } from '../../../shared/auth/roles.js'
@@ -195,9 +197,12 @@ export default function EngineerDashboard() {
   const [joinMessage, setJoinMessage] = useState('')
   const [joinError, setJoinError] = useState('')
   const [sectionMessage, setSectionMessage] = useState('')
-  const [selectedContractor, setSelectedContractor] = useState(null)
+  // The builder whose profile is open (?builder=<user uuid>) and the opportunity whose
+  // details are open (?opportunity=<project uuid>): in the address, so Back closes them
+  // and a refresh or a link opens them again.
+  const [selectedContractorId, openContractorDialog, closeContractorDialog] = useUrlDialog('builder')
   const [contractorProfile, setContractorProfile] = useState(null)
-  const [selectedOpportunity, setSelectedOpportunity] = useState(null)
+  const [selectedOpportunityId, openOpportunityDialog, closeOpportunityDialog] = useUrlDialog('opportunity')
   const [profileSaveMessage, setProfileSaveMessage] = useState('')
   const [profileSaveError, setProfileSaveError] = useState('')
   const [profileImageMessage, setProfileImageMessage] = useState('')
@@ -284,20 +289,15 @@ export default function EngineerDashboard() {
 
   useEffect(() => {
     refreshEngineerData()
-    const refreshTimer = window.setInterval(refreshEngineerData, 15000)
-    const refreshOnFocus = () => refreshEngineerData()
-    window.addEventListener('focus', refreshOnFocus)
-    return () => {
-      window.clearInterval(refreshTimer)
-      window.removeEventListener('focus', refreshOnFocus)
-    }
   }, [user?.pincode])
+  // Every 15 s while the tab is visible, and once on coming back to it (which also
+  // covers the refresh on window focus this used to do).
+  useVisibleInterval(refreshEngineerData, 15000)
 
   useEffect(() => {
     refreshNotifications()
-    const notificationTimer = window.setInterval(refreshNotifications, 15000)
-    return () => window.clearInterval(notificationTimer)
   }, [])
+  useVisibleInterval(refreshNotifications, 15000)
   // A supplier-side change (order decision, labor/equipment answer, supplier
   // assignment) arrives as the existing live hint; reload the list so the
   // Suppliers badge follows at once rather than at the next 15 s refresh.
@@ -365,7 +365,7 @@ export default function EngineerDashboard() {
       saveAppliedOpportunity(opportunity.project_id)
       setAppliedKeys(readAppliedOpportunities())
       setSectionMessage(t('dash.msg.applicationSent', { name: td(result.receiver_name) || t('dash.theBuilder') }))
-      setSelectedOpportunity(null)
+      if (String(selectedOpportunityId) === String(opportunity.project_id)) closeOpportunityDialog()
     } catch (error) {
       setSectionMessage(error.response?.data?.detail || t('dash.engineer.msg.unableApply'))
       if (String(error.response?.status) === '409') {
@@ -375,16 +375,25 @@ export default function EngineerDashboard() {
     }
   }
 
-  const viewContractorProfile = async (contractor) => {
+  const viewContractorProfile = (contractor) => openContractorDialog(contractor.user_id || contractor.id)
+
+  // The open builder's profile is loaded for the id in the address, from a click or a link.
+  useEffect(() => {
     setContractorProfile(null)
-    setSelectedContractor(contractor)
-    try {
-      const profile = await fetchContractorProfile(contractor.user_id || contractor.id)
-      setContractorProfile(profile)
-    } catch {
-      setContractorProfile(null)
-    }
-  }
+    if (!selectedContractorId) return undefined
+    let alive = true
+    fetchContractorProfile(selectedContractorId)
+      .then((profile) => { if (alive) setContractorProfile(profile) })
+      .catch(() => { if (alive) setContractorProfile(null) })
+    return () => { alive = false }
+  }, [selectedContractorId])
+  const selectedContractor = selectedContractorId
+    ? contractors.find((contractor) => String(contractor.user_id || contractor.id) === selectedContractorId)
+      || (contractorProfile ? { ...contractorProfile, user_id: selectedContractorId } : null)
+    : null
+  const selectedOpportunity = selectedOpportunityId
+    ? opportunities.find((opportunity) => String(opportunity.project_id) === selectedOpportunityId) || null
+    : null
 
   const saveProfile = async (form) => {
     setProfileSaveMessage('')
@@ -612,8 +621,8 @@ export default function EngineerDashboard() {
   }
 
   // A project's card opens its site calendar on that project, by id in the address.
+  // (Another address, so an open opportunity closes with it.)
   const openSiteLog = (project) => {
-    setSelectedOpportunity(null)
     navigate(project?.id ? `${NAV_PATHS.calendar}?project=${encodeURIComponent(project.id)}` : NAV_PATHS.calendar)
     window.scrollTo({ top: 0, behavior: 'auto' })
   }
@@ -811,11 +820,12 @@ export default function EngineerDashboard() {
                   }`}
                 >
                   {tab.label}
-                  {Boolean(tab.badge) && (
-                    <span className={`ml-1.5 inline-grid h-4 min-w-4 place-items-center rounded-full px-1 text-[9px] font-extrabold ${
+                  {/* Always in place (hidden at 0), so a count arriving never moves the tabs. */}
+                  {tab.badge !== undefined && (
+                    <span aria-hidden={tab.badge ? undefined : 'true'} className={`ml-1.5 inline-grid h-4 min-w-4 place-items-center rounded-full px-1 text-[9px] font-extrabold tabular-nums ${
                       findOppTab === tab.id ? 'bg-white/20 text-white' : 'bg-brand-100 text-brand-800'
-                    }`}>
-                      {tab.badge}
+                    } ${tab.badge ? '' : 'invisible'}`}>
+                      {tab.badge || 0}
                     </span>
                   )}
                 </button>
@@ -875,7 +885,7 @@ export default function EngineerDashboard() {
                 opportunities={opportunities}
                 appliedKeys={appliedKeys}
                 onApply={applyOpportunity}
-                onView={setSelectedOpportunity}
+                onView={(opportunity) => openOpportunityDialog(opportunity.project_id)}
                 message={sectionMessage}
               />
             )}
@@ -952,10 +962,7 @@ export default function EngineerDashboard() {
         <ContractorProfileModal
           contractor={selectedContractor}
           profile={contractorProfile}
-          onClose={() => {
-            setSelectedContractor(null)
-            setContractorProfile(null)
-          }}
+          onClose={closeContractorDialog}
           onRequestJoin={(contractorId) => sendJoinRequest(contractorId)}
           requestState={selectedContractorState}
           message={sectionMessage}
@@ -967,7 +974,7 @@ export default function EngineerDashboard() {
           opportunity={selectedOpportunity}
           applied={appliedKeys.includes(String(selectedOpportunity.project_id))}
           onApply={applyOpportunity}
-          onClose={() => setSelectedOpportunity(null)}
+          onClose={closeOpportunityDialog}
           message={sectionMessage}
         />
       )}

@@ -293,7 +293,7 @@ export default function SupplierMyProjects({ projectList = [], materialRequestLi
 
       {openProjectNotFound && <NotFoundPanel backLabel={t('ui.myProjects')} onBack={() => setOpenProject(null)} />}
       {openProject && (
-        <div className="fixed inset-0 z-[130] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-dialog flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-950/50" onClick={() => setOpenProject(null)} />
           <div className="relative max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-2xl">
             <div className="flex items-start gap-3 border-b border-slate-100 p-5">

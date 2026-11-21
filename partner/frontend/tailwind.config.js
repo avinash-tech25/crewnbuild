@@ -18,6 +18,24 @@ export default {
           sunken: '#f1f5f3',
         },
       },
+      // One stacking scale (layout stability): every fixed/sticky layer uses a name, so a
+      // dialog is always above menus, toasts and headers, and a photo viewer or a crash
+      // screen above any dialog.
+      // The one page width (layout stability): every screen's content column uses it
+      // (max-w-page, or .container-x with its side padding).
+      maxWidth: {
+        page: '1400px',
+      },
+      zIndex: {
+        sticky: '20',
+        header: '30',
+        drawer: '40',
+        dropdown: '50',
+        toast: '60',
+        dialog: '70',
+        'dialog-nested': '75',
+        'dialog-top': '80',
+      },
       fontFamily: {
         display: ['"Manrope"', 'system-ui', 'sans-serif'],
         sans: ['Inter', 'system-ui', 'sans-serif'],

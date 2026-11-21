@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { BarChart3, IndianRupee, ReceiptText, RotateCw } from 'lucide-react'
 import { Alert, EmptyState, Spinner, formatDate } from '../../../shared/ui/ui.jsx'
+import { Skeleton, SkeletonStatus } from '../../../shared/ui/Skeleton.jsx'
 import { apiErrorMessage } from '../../../shared/api/apiClient.js'
 import { earningsApi } from '../earningsApi.js'
 import { formatRupees } from '../../../shared/utils/money.js'
@@ -87,8 +88,12 @@ export default function EarningsPanel() {
   }
   if (!summary || !items) {
     return (
-      <div className="card p-6" data-testid="earnings">
-        <p className="flex items-center gap-2 text-sm text-oc-muted" data-testid="earnings-loading"><Spinner className="h-4 w-4" /> Loading your earnings…</p>
+      <div data-testid="earnings">
+        <SkeletonStatus label="Loading your earnings…" className="space-y-5" testId="earnings-loading">
+          <Skeleton className="h-36 w-full rounded-[24px]" />
+          <Skeleton className="h-56 w-full rounded-2xl" />
+          <Skeleton className="h-40 w-full rounded-2xl" />
+        </SkeletonStatus>
       </div>
     )
   }

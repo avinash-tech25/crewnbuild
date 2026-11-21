@@ -124,7 +124,8 @@ const base = {
   'signup.flow.verifyFirst': 'Verify your email address to continue.',
   'signup.terms': 'I agree to the Terms of Service and Privacy Policy.',
   // {terms} and {privacy} become buttons that open the documents (site.footer.link.terms / .privacy).
-  'signup.termsConsent': 'I agree to the {terms} and {privacy}.',
+  'signup.termsConsent': 'I agree to the {terms} and I have read the {privacy}',
+  'signup.consent.termsLink': 'Terms & Conditions',
   'legal.lastUpdated': 'Last updated',
   'legal.close': 'Close',
   'legal.sections': 'Sections',
@@ -219,7 +220,7 @@ const base = {
   'validation.address': 'Enter your complete address.',
   'validation.pincode': 'Enter a valid 6 digit pincode.',
   'validation.password': 'Use 10+ characters with upper, lower, a number, and a symbol.',
-  'validation.terms': 'Please accept the Terms of Service and Privacy Policy.',
+  'validation.terms': 'Please agree to the Terms & Conditions and confirm that you have read the Privacy Policy.',
   'validation.signupFailed': 'Unable to create account.',
   'location.fetching': 'Fetching area...',
   'location.notFound': 'Area not found for this pincode.',
@@ -3979,6 +3980,7 @@ const base = {
   'ui.shared.darkMode': 'Dark Mode',
   'ui.shared.user': 'User',
   'ui.shared.breadcrumb': 'Breadcrumb',
+  'ui.shared.dashboardNav': 'Dashboard sections',
   'ui.shared.statusDraft': 'Draft',
   'ui.shared.statusListed': 'Listed',
   'ui.shared.statusUnderOffer': 'Under Offer',
@@ -4189,7 +4191,6 @@ const base = {
   'landing.footer.rights': 'All rights reserved.',
   'landing.footer.privacy': 'Privacy policy',
   'landing.footer.terms': 'Terms of service',
-  'landing.footer.cookies': 'Cookie policy',
   'landing.footer.language': 'Language',
   'landing.comingSoonPage.eyebrow': 'Coming soon',
   'landing.comingSoonPage.headline': 'Not open for sign-up',
@@ -5196,6 +5197,9 @@ const base = {
   'ui.requestId': 'Request ID',
   'shop.quantityWhole': 'Enter a whole number of {unit}.',
   'shop.engineer.noSupplier': 'Ask your builder to assign a supplier to this project.',
+  'loader.label': 'Loading',
+  'loader.loading': 'Loading…',
+  'loader.stillLoading': 'Still loading the application…',
 }
 
 export default base

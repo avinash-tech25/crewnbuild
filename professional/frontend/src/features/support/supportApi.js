@@ -54,8 +54,11 @@ export const replyToMyTicket = (reference, body) => runMutation(supportApi.endpo
  * client (a file for the browser, not data for the store), not linked.
  */
 export async function openAttachment(path) {
-  // Opened first, synchronously, so the browser does not treat it as a pop-up.
+  // Opened first, synchronously, so the browser does not treat it as a pop-up. Its link
+  // back to this page is cut at once (the effect of noopener; the flag itself would leave
+  // no handle to load the file into).
   const tab = window.open('', '_blank')
+  if (tab) tab.opener = null
   try {
     const response = await apiClient.get(path, { responseType: 'blob' })
     const url = URL.createObjectURL(response.data)

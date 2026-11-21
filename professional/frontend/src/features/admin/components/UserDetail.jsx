@@ -14,6 +14,7 @@ import { Check, Copy, ExternalLink, FileText, ShieldCheck } from 'lucide-react'
 import { imageUrl } from '../../../shared/api/apiClient.js'
 import { DetailDialog, DetailSection as Section } from '../../../shared/ui/DetailDialog.jsx'
 import { fetchUserDetail } from '../adminApi.js'
+import { SkeletonList } from '../../../shared/ui/Skeleton.jsx'
 
 function Field({ label, children }) {
   if (children === null || children === undefined || children === '') return null
@@ -134,7 +135,7 @@ export function UserDetailDrawer({ userId, onClose }) {
         {error === NOT_FOUND && <NotFoundPanel />}
         {error && error !== NOT_FOUND && <p className="px-6 py-10 text-center text-sm text-slate-500">{error}</p>}
         {!error && !detail && (
-          <p className="px-6 py-10 text-center text-sm text-slate-500">Loading…</p>
+          <SkeletonList rows={4} rowClassName="h-20" className="grid gap-4 px-6 py-6" />
         )}
 
         {detail && (

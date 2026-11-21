@@ -650,7 +650,7 @@ export function ProjectDetailRow({ icon: Icon, label, value }) {
   )
 }
 
-export const defaultProjectImage = 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=900&q=80'
+export const defaultProjectImage = '/site-images/photo-1600585154340-be6161a56a0c-w900.jpg'
 // The Overview's Edit form, filled from the project as it is now. Only the
 // fields PATCH /projects/{id}/requirement already saves are offered; pincode,
 // country and construction type stay as they are (see the form below).
@@ -895,7 +895,7 @@ export function ProjectDetailPanel({ project, ownerName, activeTab, onRequestUpd
                 )}
                 {unassignError && <p className="mt-2 rounded-xl bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 ring-1 ring-red-100">{unassignError}</p>}
                 {unassignOpen && currentAward && (
-                  <div className="fixed inset-0 z-[140] grid place-items-center overflow-y-auto bg-slate-900/50 p-4 backdrop-blur-sm" role="dialog" aria-modal="true">
+                  <div className="fixed inset-0 z-dialog-nested grid place-items-center overflow-y-auto bg-slate-900/50 p-4 backdrop-blur-sm" role="dialog" aria-modal="true">
                     <div className="w-full max-w-md rounded-2xl bg-white p-5 text-oc-ink shadow-xl">
                       <p className="font-display text-lg font-extrabold">{t('quote.unassignTitle')}</p>
                       <dl className="mt-3 grid gap-1 text-sm">
@@ -992,7 +992,7 @@ export function ProjectDetailPanel({ project, ownerName, activeTab, onRequestUpd
               {assignTarget && (
                 // The existing assignment (onAssignBuilder -> /project-requests/assign),
                 // confirmed first. Busy state blocks a second submission.
-                <div className="fixed inset-0 z-[140] grid place-items-center overflow-y-auto bg-slate-900/50 p-4 backdrop-blur-sm" role="dialog" aria-modal="true">
+                <div className="fixed inset-0 z-dialog-nested grid place-items-center overflow-y-auto bg-slate-900/50 p-4 backdrop-blur-sm" role="dialog" aria-modal="true">
                   <div className="w-full max-w-md rounded-2xl bg-white p-5 text-oc-ink shadow-xl">
                     <p className="font-display text-lg font-extrabold">{t(assignTarget.mode === 'request' ? 'quote.requestConfirmation' : 'quote.assignBuilder')}</p>
                     <dl className="mt-3 grid gap-1 text-sm">
@@ -1579,14 +1579,14 @@ export function ProjectListTable({
       {deleteMessage && !deleteMessageOnCard && (
         <p
           role={deleteSucceeded ? 'status' : 'alert'}
-          className={`fixed left-1/2 top-20 z-[125] w-[min(92vw,30rem)] -translate-x-1/2 rounded-xl border px-4 py-2.5 text-center text-sm font-bold shadow-lg ${deleteSucceeded ? 'border-emerald-100 bg-emerald-50 text-emerald-800' : 'border-red-100 bg-red-50 text-red-700'}`}
+          className={`fixed left-1/2 top-20 z-toast w-[min(92vw,30rem)] -translate-x-1/2 rounded-xl border px-4 py-2.5 text-center text-sm font-bold shadow-lg ${deleteSucceeded ? 'border-emerald-100 bg-emerald-50 text-emerald-800' : 'border-red-100 bg-red-50 text-red-700'}`}
         >
           {deleteMessage}
         </p>
       )}
 
       {pendingDelete && (
-        <div className="fixed inset-0 z-[120] grid place-items-center bg-oc-night/50 p-4 backdrop-blur-sm" role="dialog" aria-modal="true">
+        <div className="fixed inset-0 z-dialog grid place-items-center bg-oc-night/50 p-4 backdrop-blur-sm" role="dialog" aria-modal="true">
           <div className="w-full max-w-md rounded-2xl border border-oc-line bg-white p-5 shadow-2xl">
             <div className="flex items-start gap-3">
               <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-red-50 text-red-600 ring-1 ring-red-100">

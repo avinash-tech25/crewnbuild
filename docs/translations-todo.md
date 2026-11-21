@@ -4,7 +4,7 @@ The Professional web app is translated into Arabic (`ar`), Hindi (`hi`), Kannada
 
 **How this list was made:** every key in `locales/en.js` that the old app's English text (`Kuwait-Version/Octabuild/frontend 7/frontend/src/i18n/translations.js`, the state R7 started from) did not have, checked against each language file. All other English keys are unchanged since the old app, and no language lost a translation it had there.
 
-**Status (20 Nov 2026):** 43 keys, missing in all six languages. 21 are the Legal hub (/legal), the Terms / Privacy Policy pages and the sign-up consent line (`features/legal`, `features/auth/pages/SignupPage.jsx`). Seventeen are from the request details change (a supplier or builder shown by who they are, `features/requests/counterparty.js` and `features/requests/components/PartyDetails.jsx`); two are the My Suppliers project coverage labels; two are the public header's account menu; one is the Site Engineer's note when a project has no supplier to order from.
+**Status (21 Nov 2026):** 48 keys, missing in all six languages. 21 are the Legal hub (/legal), the Terms / Privacy Policy pages and the sign-up consent line (`features/legal`, `features/auth/pages/SignupPage.jsx`). Seventeen are from the request details change (a supplier or builder shown by who they are, `features/requests/counterparty.js` and `features/requests/components/PartyDetails.jsx`); two are the My Suppliers project coverage labels; two are the public header's account menu; one is the Site Engineer's note when a project has no supplier to order from; three are the Crew&Build loading screen (`shared/ui/BrandLoader.jsx`); one is the dashboard section navigation's spoken name (`shared/dashboard/DashboardShell.jsx`).
 
 | Key | English | Where it shows | Missing in |
 | --- | --- | --- | --- |
@@ -30,7 +30,8 @@ The Professional web app is translated into Arabic (`ar`), Hindi (`hi`), Kannada
 | `session.signOut` | Sign out | Public pages' account menu | ar, hi, kn, ml, ta, te |
 | `session.accountMenu` | Account menu | Account menu button's spoken name | ar, hi, kn, ml, ta, te |
 | `shop.engineer.noSupplier` | Ask your builder to assign a supplier to this project. | Site Engineer > Suppliers > Material > Product Catalog, when the chosen project has no supplier assigned | ar, hi, kn, ml, ta, te |
-| `signup.termsConsent` | I agree to the {terms} and {privacy}. | Sign-up: the consent checkbox. Keep `{terms}` and `{privacy}`; they become the buttons `site.footer.link.terms` / `site.footer.link.privacy` (already translated). Replaces `signup.terms` | ar, hi, kn, ml, ta, te |
+| `signup.termsConsent` | I agree to the {terms} and I have read the {privacy} | Sign-up: the consent checkbox. Keep `{terms}` and `{privacy}`; they become the buttons `signup.consent.termsLink` and `site.footer.link.privacy` (already translated) | ar, hi, kn, ml, ta, te |
+| `signup.consent.termsLink` | Terms & Conditions | Sign-up: the Terms button in the consent line (opens the Terms) | ar, hi, kn, ml, ta, te |
 | `legal.lastUpdated` | Last updated | /terms, /privacy and the sign-up document window: line at the bottom of the card | ar, hi, kn, ml, ta, te |
 | `legal.close` | Close | Sign-up document window: the × button's spoken name | ar, hi, kn, ml, ta, te |
 | `legal.sections` | Sections | /terms, /privacy and the sign-up document window: the section list (its label; the dropdown's label on small screens) | ar, hi, kn, ml, ta, te |
@@ -51,6 +52,10 @@ The Professional web app is translated into Arabic (`ar`), Hindi (`hi`), Kannada
 | `legal.hub.refundLink` | View Cancellation Policy | /legal: link to /terms#cancellations | ar, hi, kn, ml, ta, te |
 | `legal.hub.contactTitle` | Contact | /legal: contact box heading | ar, hi, kn, ml, ta, te |
 | `legal.hub.contactText` | Questions about these policies? Write to us or call. | /legal: contact box text | ar, hi, kn, ml, ta, te |
+| `loader.label` | Loading | Loading screen (Crew&Build logo, while a page loads or the session is checked): its spoken name | ar, hi, kn, ml, ta, te |
+| `loader.loading` | Loading… | Loading screen: the line under the logo | ar, hi, kn, ml, ta, te |
+| `loader.stillLoading` | Still loading the application… | Loading screen: replaces that line after about 3 seconds | ar, hi, kn, ml, ta, te |
+| `ui.shared.dashboardNav` | Dashboard sections | Every dashboard: the spoken name of the green section navigation strip | ar, hi, kn, ml, ta, te |
 
 **Not covered by this list:**
 

@@ -1,4 +1,4 @@
-import { Suspense, lazy, useCallback, useEffect, useState } from 'react'
+import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { RefreshCw } from 'lucide-react'
@@ -6,6 +6,7 @@ import { Alert, Spinner } from '../../shared/ui/ui.jsx'
 import { PARTNER_SESSION, apiErrorMessage, technicianSession } from '../../shared/api/apiClient.js'
 import { checkTechnicianSession, logout, setUser } from '../../shared/auth/authSlice.js'
 import { fetchCurrentTechnician } from '../../features/technician/technicianApi.js'
+import { useScrollMemory } from '../../shared/navigation/scrollMemory.js'
 
 /**
  * The route table. Two principals use this app and never mix:
@@ -105,10 +106,45 @@ function GuestOnly({ children }) {
   return signedIn && kind === PARTNER_SESSION ? <Navigate to="/dashboard" replace /> : children
 }
 
-/** Asks the server for the technician session once on load, and signs out when it ends. */
+// A tab coming back into view asks the server again at most this often.
+const RECHECK_INTERVAL_MS = 30_000
+
+/**
+ * Asks the server for the technician session once on load, and signs out when it ends.
+ * The server ends a technician session after SESSION_IDLE_HOURS without activity or
+ * SESSION_MAX_HOURS in total, so a tab left open asks again when it comes back into view
+ * (or is restored from the back/forward cache): a session that is over signs the page out
+ * instead of leaving "My dashboard" and the account on screen. A server that does not
+ * answer changes nothing.
+ */
 export function useTechnicianSessionLifecycle() {
   const dispatch = useDispatch()
   const status = useSelector((state) => state.auth.status)
+  const signedIn = useSelector((state) => state.auth.signedIn)
+  const lastRecheck = useRef(0)
+
+  useEffect(() => {
+    if (!signedIn) return undefined
+    const recheck = () => {
+      fetchCurrentTechnician().catch((error) => {
+        if (error?.response?.status === 401) dispatch(logout())
+      })
+    }
+    const onVisible = () => {
+      if (document.visibilityState !== 'visible' || Date.now() - lastRecheck.current < RECHECK_INTERVAL_MS) return
+      lastRecheck.current = Date.now()
+      recheck()
+    }
+    const onPageShow = (event) => {
+      if (event.persisted) recheck()
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    window.addEventListener('pageshow', onPageShow)
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible)
+      window.removeEventListener('pageshow', onPageShow)
+    }
+  }, [dispatch, signedIn])
 
   useEffect(() => {
     if (status === 'checking') dispatch(checkTechnicianSession())
@@ -123,6 +159,8 @@ export function useTechnicianSessionLifecycle() {
 }
 
 export function AppRoutes() {
+  // A new page opens at the top; Back returns to where the page was left.
+  useScrollMemory()
   return (
     <Suspense fallback={<PageLoader />}>
       <Routes>

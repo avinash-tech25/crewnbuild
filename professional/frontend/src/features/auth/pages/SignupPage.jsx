@@ -28,7 +28,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { ArrowRight, ClipboardCheck, Loader2, Mail, UserRound } from 'lucide-react'
 import { AuthField, AuthRolePicker, AuthShell } from '../components/AuthShell.jsx'
 import { RequiredMark } from '../../accounts/components/ProfileCompletionMeter.jsx'
-import { buttonClass, introVideoUrl } from '../../public-site/components/landing/shared.jsx'
+import { buttonClass, signupVideoUrl } from '../../public-site/components/landing/shared.jsx'
 import { PasswordVerification } from '../components/PasswordVerification.jsx'
 import { PhoneConfigWait } from '../components/PhoneConfigWait.jsx'
 import { PhoneVerification } from '../components/PhoneVerification.jsx'
@@ -67,7 +67,8 @@ export default function SignupPage() {
   const [phone, setPhone] = useState('')
   const [phoneCountry, setPhoneCountry] = useState('India')
   const [phoneToken, setPhoneToken] = useState(null)
-  const [acceptedTerms, setAcceptedTerms] = useState(false)
+  // One required consent: the Terms accepted and the Privacy Policy read.
+  const [consented, setConsented] = useState(false)
   // 'terms' | 'privacy' while that document is open over the form (null: closed).
   // Reading it accepts nothing; only the checkbox does.
   const [openDocument, setOpenDocument] = useState(null)
@@ -88,7 +89,7 @@ export default function SignupPage() {
     if (phoneFirst) {
       if (!selectedApiRole) return t('signup.needRole')
       if (!phoneToken) return t('signup.phone.verifyFirst')
-      if (!acceptedTerms) return t('validation.terms')
+      if (!consented) return t('validation.terms')
       return ''
     }
     if (!emailPattern.test(email.trim())) return t('validation.email')
@@ -96,7 +97,7 @@ export default function SignupPage() {
       return t('validation.phone')
     }
     if (!emailVerified) return t('signup.flow.verifyFirst')
-    if (!acceptedTerms) return t('validation.terms')
+    if (!consented) return t('validation.terms')
     return ''
   }
 
@@ -222,8 +223,10 @@ export default function SignupPage() {
       {t(labelKey)}
     </button>
   )
+  // "I agree to the {terms} and I have read the {privacy}": each name opens its document in
+  // a window (which never ticks the box); only the box itself records the consent.
   const consentText = t('signup.termsConsent').split(/(\{terms\}|\{privacy\})/).map((piece) => {
-    if (piece === '{terms}') return documentButton('terms', 'site.footer.link.terms')
+    if (piece === '{terms}') return documentButton('terms', 'signup.consent.termsLink')
     if (piece === '{privacy}') return documentButton('privacy', 'site.footer.link.privacy')
     return piece
   })
@@ -232,9 +235,10 @@ export default function SignupPage() {
     <label className="mt-1 flex items-start gap-2 text-[11px] font-semibold leading-[1.6] text-oc-muted">
       <input
         type="checkbox"
-        checked={acceptedTerms}
+        checked={consented}
+        required
         aria-required="true"
-        onChange={(event) => { setAcceptedTerms(event.target.checked); setSignupAlert('') }}
+        onChange={(event) => { setConsented(event.target.checked); setSignupAlert('') }}
         className="mt-0.5 h-3.5 w-3.5 shrink-0 rounded border-oc-line accent-oc-green"
       />
       <span>{consentText}<RequiredMark /></span>
@@ -263,7 +267,8 @@ export default function SignupPage() {
       headline={t('signup.start')}
       highlight={t('signup.highlight')}
       aside={t('auth.aside.signup')}
-      videoUrl={introVideoUrl}
+      videoUrl={signupVideoUrl}
+      videoScrimOpacity={0.55}
     >
       {!phoneConfig ? (
         <PhoneConfigWait unreachable={unreachable} onRetry={retry} />
@@ -282,7 +287,7 @@ export default function SignupPage() {
           />
           {termsField}
           {alertBox}
-          <button type="submit" disabled={status === 'loading' || !phoneFirstReady} className={submitClass}>
+          <button type="submit" disabled={status === 'loading' || !phoneFirstReady || !consented} className={submitClass}>
             {status === 'loading' ? t('signup.loading') : t('signup.createAccount')}
             {status === 'loading'
               ? <Loader2 size={16} className="animate-spin" />
@@ -335,7 +340,7 @@ export default function SignupPage() {
           {emailVerified && (
             <button
               type="submit"
-              disabled={status === 'loading'}
+              disabled={status === 'loading' || !consented}
               className={submitClass}
             >
               {status === 'loading' ? t('signup.loading') : t('signup.submit')}

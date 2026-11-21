@@ -27,7 +27,7 @@ export function LegalShell({ title, children }) {
     <div className="min-h-screen overflow-x-clip bg-oc-deep font-display print:bg-white">
       <div className="print:hidden"><SiteHeader text={text} brandHref="/" /></div>
       <main className="px-4 pb-20 pt-[104px] text-white max-wide:pt-[92px] print:p-0 print:text-black">
-        <div className="mx-auto max-w-[1080px]">
+        <div className="mx-auto max-w-page">
           <div className="print:hidden">
             <button type="button" onClick={goBack} className={BACK}>{arrow}{t('legal.back')}</button>
           </div>

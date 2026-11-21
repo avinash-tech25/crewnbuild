@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { Navigate, useNavigate, useParams } from 'react-router-dom'
+import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 import { Ban, BellRing, BriefcaseBusiness, Volume2, VolumeX, ChevronRight, Coffee, IndianRupee, CheckCircle2, CircleCheckBig, Inbox, LocateFixed, LogOut, MapPin, MessageSquare, Power, Radio, ShieldAlert, ShieldCheck, UserRound, Wallet } from 'lucide-react'
 import Logo from '../../../shared/ui/Logo.jsx'
 import { CardGrid } from '../../../shared/ui/ListCard.jsx'
 import { Alert, EmptyState, Spinner } from '../../../shared/ui/ui.jsx'
+import { SkeletonList } from '../../../shared/ui/Skeleton.jsx'
 import { technicianTypeByCode } from '../../../shared/constants/technicianTypes.js'
 import useJobOffers from '../useJobOffers.js'
 import useTechnicianLocation from '../useTechnicianLocation.js'
@@ -27,10 +28,9 @@ import WorkPreferencesSection from '../components/WorkPreferencesSection.jsx'
 import { ratingSummary } from '../../booking/rating.js'
 import { isVerifiedProfessional, markVerifiedSuccessSeen, shouldShowVerifiedSuccess } from '../verification.js'
 
-// The dashboard is denser than the marketing pages, so it uses a wider shell than
-// container-x (max-w-6xl). Capped rather than full-bleed so the cards keep a sane
-// measure and a deliberate gutter remains on very wide monitors.
-const SHELL = 'mx-auto w-full max-w-[1560px] px-5 sm:px-8'
+// The one page width every Partner screen uses (max-w-page, as .container-x), so the
+// header and content line up with the rest of the app and nothing jumps between pages.
+const SHELL = 'mx-auto w-full max-w-page px-5 sm:px-8'
 
 const TABS = [
   { id: 'new', label: 'New Requests', icon: Inbox, empty: 'No job requests right now.', emptyBody: 'Stay available with the app open: a booking near you appears here the moment it is made, with a sound.' },
@@ -63,6 +63,25 @@ function workStatusOf(user) {
 
 const SUMMARY_KEYS = { new: 'new_requests', accepted: 'accepted_jobs', active: 'active_jobs', completed: 'completed_jobs', cancelled: 'cancelled_jobs' }
 const JOB_TABS = ['new', 'accepted', 'active', 'completed', 'cancelled']
+const sectionPath = (id) => (id === 'new' ? '/dashboard' : `/dashboard/${id}`)
+
+/**
+ * A tab's count. The slot is always there for a counted tab -- invisible and hidden from
+ * screen readers at 0 -- with a fixed minimum width and tabular figures, so a count
+ * arriving, changing or going away never moves the tabs beside it.
+ */
+function TabBadge({ count, active }) {
+  const shown = count > 0
+  return (
+    <span
+      aria-hidden={shown ? undefined : 'true'}
+      data-testid="tab-badge"
+      className={`inline-block min-w-[1.5rem] rounded-full px-1.5 text-center text-[11px] tabular-nums ${shown ? '' : 'invisible'} ${active ? 'bg-white/25' : 'bg-oc-mint text-oc-green'}`}
+    >
+      {shown ? count : 0}
+    </span>
+  )
+}
 
 // The phone-style bar at the bottom of small screens. It only switches the same
 // sections as the tab bar above; Messages has no feature behind it yet, so it is
@@ -119,7 +138,7 @@ export default function TechnicianDashboard() {
   const { section } = useParams()
   const unknownSection = Boolean(section) && (section === 'new' || !TABS.some((item) => item.id === section))
   const tab = section && !unknownSection ? section : 'new'
-  const setTab = useCallback((id) => navigate(id === 'new' ? '/dashboard' : `/dashboard/${id}`), [navigate])
+  const setTab = useCallback((id) => navigate(sectionPath(id)), [navigate])
   const [summary, setSummary] = useState(null)
   const [jobs, setJobs] = useState([])
   const [loadingJobs, setLoadingJobs] = useState(true)
@@ -352,7 +371,7 @@ export default function TechnicianDashboard() {
           onContinue={closeVerified}
         />
       )}
-      <header className="sticky top-0 z-20 border-b border-oc-line bg-white/90 backdrop-blur-md">
+      <header className="sticky top-0 z-header border-b border-oc-line bg-white/90 backdrop-blur-md">
         <div className={`${SHELL} flex h-16 items-center gap-4`}>
           <Logo to="/dashboard" />
           <span className="hidden rounded-full bg-oc-mint px-3 py-1 text-xs font-extrabold text-oc-green sm:inline">{typeMeta.label} dashboard</span>
@@ -469,23 +488,25 @@ export default function TechnicianDashboard() {
         </section>
 
         <nav className="flex gap-1 overflow-x-auto rounded-2xl border border-oc-line bg-white p-1" aria-label="Dashboard sections">
+          {/* Each section is its own URL, so these are links (aria-current marks the open one). */}
           {TABS.map((item) => (
-            <button
+            <Link
               key={item.id}
-              type="button"
-              aria-pressed={tab === item.id}
-              onClick={() => { setNotice({ tone: 'info', text: '' }); setTab(item.id) }}
+              to={sectionPath(item.id)}
+              aria-current={tab === item.id ? 'page' : undefined}
+              onClick={() => setNotice({ tone: 'info', text: '' })}
               className={`flex shrink-0 items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-extrabold transition ${
                 tab === item.id ? 'bg-oc-green text-white' : 'text-oc-muted hover:bg-oc-sunken hover:text-oc-ink'
               }`}
             >
               <item.icon className="h-4 w-4" /> {item.label}
-              {(item.id === 'new' ? dispatchOffers.offers.length : summary?.[SUMMARY_KEYS[item.id]] ?? 0) > 0 && (
-                <span className={`rounded-full px-1.5 text-[11px] ${tab === item.id ? 'bg-white/25' : 'bg-oc-mint text-oc-green'}`}>
-                  {item.id === 'new' ? dispatchOffers.offers.length : summary[SUMMARY_KEYS[item.id]]}
-                </span>
+              {SUMMARY_KEYS[item.id] && (
+                <TabBadge
+                  count={item.id === 'new' ? dispatchOffers.offers.length : summary?.[SUMMARY_KEYS[item.id]] ?? 0}
+                  active={tab === item.id}
+                />
               )}
-            </button>
+            </Link>
           ))}
         </nav>
 
@@ -542,7 +563,7 @@ export default function TechnicianDashboard() {
             )}
           </div>
         ) : loadingJobs ? (
-          <div className="flex justify-center py-16 text-oc-green"><Spinner className="h-8 w-8" /></div>
+          <SkeletonList count={3} itemClassName="h-44" className="space-y-5" label="Loading jobs" testId="job-list-loading" />
         ) : jobs.length === 0 ? (
           <EmptyState icon={activeTab.icon} title={activeTab.empty}>{activeTab.emptyBody}</EmptyState>
         ) : (
@@ -561,7 +582,7 @@ export default function TechnicianDashboard() {
       </main>
 
       <nav
-        className="fixed inset-x-0 bottom-0 z-30 border-t border-oc-line bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md md:hidden"
+        className="fixed inset-x-0 bottom-0 z-header border-t border-oc-line bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md md:hidden"
         aria-label="Main"
         data-testid="bottom-nav"
       >

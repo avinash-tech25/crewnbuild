@@ -62,7 +62,7 @@ export function LegalDialog({ doc, onClose }) {
   }, [])
 
   return createPortal(
-    <div className="fixed inset-0 z-[140] grid place-items-center p-3 sm:p-6">
+    <div className="fixed inset-0 z-dialog-nested grid place-items-center p-3 sm:p-6">
       <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm" onClick={onClose} aria-hidden="true" data-testid="legal-dialog-backdrop" />
       <section
         ref={frame}

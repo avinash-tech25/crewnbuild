@@ -73,7 +73,7 @@ export function CatalogSearchOverlay({
       </label>
 
       {open && (
-        <div role="dialog" aria-label="Search" className="absolute z-30 mt-2 w-full rounded-xl border border-slate-200 bg-white p-4 shadow-xl">
+        <div role="dialog" aria-label="Search" className="absolute z-dropdown mt-2 w-full rounded-xl border border-slate-200 bg-white p-4 shadow-xl">
           {!typed ? (
             <>
               <p className="mb-3 text-[11px] font-extrabold uppercase tracking-wide text-graphite/50">Top categories</p>

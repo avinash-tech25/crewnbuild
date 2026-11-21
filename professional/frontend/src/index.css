@@ -9,6 +9,9 @@
   html {
     scroll-behavior: smooth;
     scrollbar-color: #cbd5e1 #ffffff;
+    /* Room for the scrollbar is always kept, so a long page and a short one (or a dialog
+       that locks scrolling) never shift the layout sideways. */
+    scrollbar-gutter: stable;
   }
   body {
     @apply bg-white text-graphite font-sans antialiased;
@@ -26,7 +29,7 @@
 
 @layer components {
   .container-x {
-    @apply mx-auto w-full max-w-7xl px-5 sm:px-8;
+    @apply mx-auto w-full max-w-page px-5 sm:px-8;
   }
   .h-display {
     @apply font-display font-extrabold tracking-tighter text-graphite;
@@ -1351,5 +1354,18 @@ html.dark .dash-canvas .list-card.list-card:is(:hover, :focus-within) :is(.text-
   }
   .list-card.list-card:is(:hover, :focus-within) {
     transform: none;
+  }
+}
+
+/* Reduced motion (WCAG 2.3.3): every CSS animation and transition is cut to an instant for
+   visitors who ask for less motion; framer-motion animations follow MotionConfig. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

@@ -29,7 +29,7 @@ const working = (extra = {}) => ({
 
 async function openActiveJob(user, extra) {
   const opened = openDashboard(AVAILABLE, working(extra))
-  await user.click(await screen.findByRole('button', { name: /Active Jobs/ }, FIND))
+  await user.click(await screen.findByRole('link', { name: /Active Jobs/ }, FIND))
   await screen.findByTestId('job-card', {}, FIND)
   return opened
 }
@@ -128,7 +128,7 @@ async function openProfile(user, extra = {}) {
     'GET /technicians/me/work-preferences': { data: { offers_all_services: true, service_ids: [], service_radius_km: 10, working_schedule_enabled: false, working_days: [] } },
     ...extra,
   })
-  await user.click(within(await screen.findByRole('navigation', { name: 'Dashboard sections' }, FIND)).getByRole('button', { name: /Profile/ }))
+  await user.click(within(await screen.findByRole('navigation', { name: 'Dashboard sections' }, FIND)).getByRole('link', { name: /Profile/ }))
   return opened
 }
 

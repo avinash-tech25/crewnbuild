@@ -43,6 +43,7 @@ import { ProductServiceBadges } from '../../catalog/components/ProductServiceBad
 import { BulkPricingList } from '../../catalog/components/BulkPricing.jsx'
 import { CategoryStrip } from '../../catalog/components/CategoryStrip.jsx'
 import { formatMoney } from '../../../shared/utils/countryConfig.js'
+import { SkeletonGrid } from '../../../shared/ui/Skeleton.jsx'
 
 const selling = (listing) => discountedPrice(listing.price, listing.discount_percentage)
 /** Every typed word must appear in the listing's name, brand, category,
@@ -326,7 +327,7 @@ export function OwnerMarketplace({ projectId, pincode, country = 'India', onOpen
       {error && <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs font-bold text-amber-700">{error}</p>}
 
       {loading ? (
-        <p className="flex items-center gap-2 py-10 text-sm font-semibold text-graphite/45"><Loader2 className="h-4 w-4 animate-spin" /> Loading suppliers near {pincode}…</p>
+        <SkeletonGrid count={3} itemClassName="h-60" className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3" />
       ) : listings.length === 0 ? (
         <div className="rounded-xl border border-dashed border-slate-300 px-6 py-12 text-center">
           <PackageSearch className="mx-auto h-8 w-8 text-slate-300" />

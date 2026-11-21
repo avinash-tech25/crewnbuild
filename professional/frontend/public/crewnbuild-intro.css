@@ -1,0 +1,69 @@
+/* The start-up screen (index.html) and the shared logo animation (React BrandLoader).
+   Loaded as a file, not an inline <style>, for a strict CSP (FE-09). */
+html.crew-intro-active, html.crew-intro-active body { margin: 0; background: #ffffff; }
+#crewnbuild-intro { display: none; }
+html.crew-intro-active #root { visibility: hidden; }
+html.crew-intro-active { overflow: hidden; scrollbar-gutter: stable; }
+html.crew-intro-active #crewnbuild-intro {
+  position: fixed; inset: 0; z-index: 2147483647; display: grid;
+  place-items: center; min-height: 100vh; min-height: 100svh;
+  padding: 24px; box-sizing: border-box; background: #ffffff;
+  color: #083e2b; opacity: 1; transition: opacity 300ms ease;
+  font-family: system-ui, sans-serif; text-align: center;
+}
+#crewnbuild-intro .crew-intro-art { width: min(340px, 76vw); aspect-ratio: 654 / 400; position: relative; }
+#crewnbuild-intro .crew-intro-original { display: block; width: 100%; height: auto; visibility: hidden; animation: crew-intro-static-fallback 0s 1500ms forwards; }
+@keyframes crew-intro-static-fallback { to { visibility: visible; } }
+#crewnbuild-intro .crew-intro-recovery { display: none; max-width: 32ch; margin: 16px auto 0; font-size: 14px; line-height: 1.6; }
+#crewnbuild-intro a { color: inherit; }
+@media (prefers-reduced-motion: reduce) {
+  html.crew-intro-active #crewnbuild-intro { transition: none; }
+  #crewnbuild-intro .crew-intro-original { visibility: visible; animation: none; }
+}
+
+/* Shared motion; scene timings come from TIMELINE in crewnbuild-motion.js. */
+.crew-motion { --crew-ease: cubic-bezier(.4, 0, .2, 1); display: block; width: 100%; height: auto; overflow: visible; }
+.crew-motion__daylight { transform-box: fill-box; transform-origin: left center; animation: crew-reveal-x var(--helmet-duration) var(--crew-ease) var(--helmet-at) both; }
+.crew-motion__helmet { animation: crew-soft-light var(--helmet-duration) ease-out var(--helmet-at) both; }
+.crew-motion__rise { transform-box: fill-box; animation: crew-build var(--duration) cubic-bezier(.22, 1, .36, 1) var(--at) both; }
+.crew-motion__window { animation: crew-activate var(--duration) ease-in-out var(--at) both; }
+.crew-motion__foundation { transform-box: fill-box; transform-origin: center; animation: crew-reveal-x var(--capsule-duration) var(--crew-ease) var(--capsule-at) both; }
+.crew-motion__crew { animation: crew-activate var(--crew-duration) var(--crew-ease) var(--crew-at) both; }
+.crew-motion__ampersand { animation: crew-activate var(--ampersand-duration) ease-in-out var(--ampersand-at) both; }
+.crew-motion__build { animation: crew-activate var(--build-duration) var(--crew-ease) var(--build-at) both; }
+.crew-motion__tagline { animation: crew-tagline var(--tagline-duration) var(--crew-ease) var(--tagline-at) both; }
+/* Resolve the temporary tone before handing off to the unmodified PNG.
+   Both layers share the same viewBox; neither moves or changes dimensions.
+   An opaque white backing prevents raster alpha edges blending with copies
+   beneath them. The original asset alone determines every final visible pixel. */
+.crew-motion__join { animation: crew-resolve var(--resolve-duration) ease-in-out var(--resolve-at) both; }
+.crew-motion__complete { animation: crew-final var(--complete-duration) ease-in-out var(--complete-at) both; }
+.crew-motion__layers { animation: crew-retire 0s calc(var(--complete-at) + var(--complete-duration)) forwards; }
+@keyframes crew-resolve { from { opacity: 1; } to { opacity: 0; } }
+@keyframes crew-final { from { opacity: 0; } to { opacity: 1; } }
+@keyframes crew-retire { to { visibility: hidden; } }
+@keyframes crew-reveal-x { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes crew-soft-light { from { opacity: 0; } 40% { opacity: .85; } to { opacity: 1; } }
+@keyframes crew-build { from { transform: translateY(100%); } to { transform: translateY(0); } }
+@keyframes crew-activate { from { opacity: 0; } to { opacity: 1; } }
+@keyframes crew-tagline { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: translateY(0); } }
+
+#crewnbuild-intro .crew-intro-art { isolation: isolate; background: #ffffff; }
+#crewnbuild-intro .crew-intro-original { position: absolute; inset: 0; }
+#crewnbuild-intro.crew-intro-playing .crew-intro-original { visibility: hidden; animation: none; }
+#crewnbuild-intro .crew-intro-fallback { padding: 24px; font-size: clamp(16px, 3vw, 24px); }
+#crewnbuild-intro .crew-intro-fallback p { font-size: 14px; }
+#crewnbuild-intro.crew-intro-failed .crew-motion { display: none; }
+#crewnbuild-intro.crew-intro-failed .crew-intro-original { visibility: visible; animation: none; }
+#crewnbuild-intro .crew-intro-busy { visibility: hidden; position: absolute; inset-inline: 0; margin: 12px 0 0; font-size: 12px; color: #61736a; }
+#crewnbuild-intro.crew-intro-waiting .crew-intro-busy { visibility: visible; animation: crew-busy 1.8s ease-in-out infinite; }
+#crewnbuild-intro.crew-intro-failed .crew-intro-busy { display: none; }
+@keyframes crew-busy { 50% { opacity: .55; } }
+@media (prefers-reduced-motion: reduce) {
+  .crew-motion * { animation: none !important; }
+  .crew-motion__layers { display: none; }
+  .crew-motion__complete { display: block; opacity: 1; }
+  #crewnbuild-intro *, #crewnbuild-intro { animation: none !important; transition: none !important; }
+  #crewnbuild-intro .crew-motion { display: none; }
+  #crewnbuild-intro.crew-intro-playing .crew-intro-original { visibility: visible; }
+}

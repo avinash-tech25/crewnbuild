@@ -25,6 +25,7 @@ import useUrlState from '../../../shared/hooks/useUrlState.js'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { ArrowLeft, Boxes, CheckCircle2, CircleDot, ChevronLeft, ChevronRight, Film, ImageOff, ImagePlus, Images, LayoutGrid, Loader2, PackageSearch, RefreshCw, Search, Star, Tags, Trash2, Upload, X } from 'lucide-react'
+import { SkeletonGrid } from '../../../shared/ui/Skeleton.jsx'
 import { imageUrl } from '../../../shared/api/apiClient.js'
 import {
   deleteAdminCatalogImage,
@@ -174,6 +175,15 @@ export function CatalogPage({ Panel, canManage = false }) {
     return () => clearTimeout(timer)
   }, [loadProducts])
 
+  // Until the first answer arrives (including the debounce before it is asked), the cards
+  // area keeps its skeleton rather than flashing "No catalog products found".
+  const askedOnce = useRef(false)
+  const [answeredOnce, setAnsweredOnce] = useState(false)
+  useEffect(() => {
+    if (loading) askedOnce.current = true
+    else if (askedOnce.current) setAnsweredOnce(true)
+  }, [loading])
+
   const openProduct = (id) => {
     setPreview(!canManage)
     dispatch(selectAdminCatalogProduct(id))
@@ -231,9 +241,15 @@ export function CatalogPage({ Panel, canManage = false }) {
               }`}
             >
               <Icon className="h-4 w-4" /> {label}
-              {counts[key] != null && (
-                <span className={`rounded-full px-1.5 text-[10px] ${active ? 'bg-brand-100 text-brand-800' : 'bg-slate-100 text-slate-500'}`}>{counts[key]}</span>
-              )}
+              {/* A fixed slot with even-width digits, kept (invisible) while the
+                  count is 0 or still loading, so the tabs never shift sideways
+                  when a count arrives or changes. */}
+              <span
+                aria-hidden={counts[key] ? undefined : 'true'}
+                className={`min-w-[2rem] rounded-full px-1.5 text-center text-[10px] tabular-nums ${active ? 'bg-brand-100 text-brand-800' : 'bg-slate-100 text-slate-500'} ${counts[key] ? '' : 'invisible'}`}
+              >
+                {counts[key] || 0}
+              </span>
             </button>
           )
         })}
@@ -301,10 +317,12 @@ export function CatalogPage({ Panel, canManage = false }) {
 
           {/* The cards: whatever the catalog holds, straight from the API. */}
           <div className="p-4 sm:p-6">
-            {products.length === 0 ? (
+            {products.length === 0 && (loading || !answeredOnce) ? (
+              <SkeletonGrid count={6} itemClassName="h-[246px]" className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3" />
+            ) : products.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-slate-200 px-6 py-12 text-center">
                 <PackageSearch className="mx-auto h-7 w-7 text-slate-300" />
-                <p className="mt-2 text-sm font-extrabold text-graphite">{loading ? 'Loading products…' : 'No catalog products found'}</p>
+                <p className="mt-2 text-sm font-extrabold text-graphite">No catalog products found</p>
                 {!loading && (
                   <p className="mt-1 text-xs font-semibold text-slate-500">
                     {search || categoryId || brandId ? 'Try another search or filter.' : 'Products appear here as soon as the catalog SQL has created them. Press Refresh after running it.'}

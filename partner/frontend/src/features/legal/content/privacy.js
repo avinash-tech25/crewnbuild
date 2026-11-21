@@ -1,50 +1,15 @@
-// Generated from docs/legal/CREWNBUILD_Privacy_Policy.docx by scripts/convert_legal_docs.py, word for word.
-// Replace the Word file and rerun the script rather than editing this by hand.
+// Generated from the Privacy Policy Word file in docs/legal by scripts/convert_legal_docs.py:
+// word for word, with only the brand changed. Replace the Word file and rerun the script
+// rather than editing this by hand.
 const privacy = {
   "id": "privacy",
-  "title": "CREWNBUILD Privacy Policy",
+  "title": "Privacy Policy",
   "company": "CREWNBUILD",
   "site": "crewnbuild.com",
-  "effectiveDate": "17 November 2026",
-  "version": "1.0",
-  "lastUpdated": "17 November 2026",
+  "effectiveDate": "20 November 2026",
+  "version": "1.1",
+  "lastUpdated": "20 November 2026",
   "sections": [
-    {
-      "id": "at-a-glance",
-      "number": null,
-      "title": "At a Glance",
-      "blocks": [
-        {
-          "type": "list",
-          "ordered": false,
-          "items": [
-            [
-              "We collect only what we need to run CREWNBUILD: account details, project details you choose to share, business and verification details for Contractors and Suppliers, payment records, and device data."
-            ],
-            [
-              {
-                "b": "Homeowner tools run on your device."
-              },
-              " Figures such as your income, property price or budget stay on your device unless you choose to save, share or submit them."
-            ],
-            [
-              {
-                "b": "We do not sell your personal data."
-              }
-            ],
-            [
-              "We share your details with a Contractor or Supplier only when you ask us to connect you or you give your consent."
-            ],
-            [
-              "We never display Aadhaar numbers. Where a technician provides an Aadhaar number for verification, we store it only in encrypted form and show it masked to the last four digits."
-            ],
-            [
-              "You can access, correct, erase, withdraw consent and nominate someone. Write to support@crewnbuild.com."
-            ]
-          ]
-        }
-      ]
-    },
     {
       "id": "who-we-are-and-what-this-policy-covers",
       "number": "1",
@@ -53,7 +18,7 @@ const privacy = {
         {
           "type": "p",
           "parts": [
-            "1.1 CREWNBUILD, based in Hyderabad, Telangana, India (“CREWNBUILD”, “we”, “us”), operates crewnbuild.com and related websites, apps, tools and messaging services (the “Platform”). The Platform is a technology marketplace that connects Homeowners, Contractors and Service Professionals (such as civil engineers, plumbers, electricians, painters and labour suppliers) and Material Suppliers, and gives each of them planning, estimation and business tools."
+            "1.1 Crew&Build powered by Tryovate LLP . (CIN [ACN-3703]), with its registered office at [MJR Magnifique, Manikonda], Hyderabad, Telangana — 500 081, India (“Crew&Build”, “we”, “us”), operates crewnbuild.com and related websites, apps, tools and messaging services (the “Platform”). The Platform is a technology marketplace that connects Homeowners, Contractors and Service Professionals (such as civil engineers, plumbers, electricians, painters and labor suppliers) and Material Suppliers, and gives each of them planning, estimation and business tools."
           ]
         },
         {
@@ -77,7 +42,7 @@ const privacy = {
         {
           "type": "p",
           "parts": [
-            "1.5 Read this Policy together with our Terms and Conditions. Capitalised terms not defined here have the meaning given in the Terms."
+            "1.5 Read this Policy together with our Terms and Conditions. Capitalized terms not defined here have the meaning given in the Terms."
           ]
         }
       ]
@@ -144,10 +109,10 @@ const privacy = {
               "Identity and contact: name, photograph, mobile number, email address."
             ],
             [
-              "Business and professional: firm name and type, GSTIN, PAN where needed for invoicing, trade or professional registrations and licences, service areas, work types, rate cards, portfolio and project history, ratings, reviews and defect-response record."
+              "Business and professional: firm name and type, GSTIN, PAN where needed for invoicing, trade or professional registrations and licenses, service areas, work types, rate cards, portfolio and project history, ratings, reviews and defect-response record."
             ],
             [
-              "Verification (KYC): identity verification through a method permitted by law, which may be Aadhaar-based (see Section 7). We keep the verification result and a name-match outcome. Technicians on our Partner app provide their Aadhaar number and a live face photo during onboarding; the Aadhaar number is stored encrypted and shown only masked, and the face photo is used only to verify identity and is deleted once it is no longer needed for verification."
+              "Verification (KYC): identity verification through a method permitted by law, which may be Aadhaar-based (see Section 7). We keep the verification result, a name-match outcome and a non-reversible token. We do not keep your full Aadhaar number, biometrics or the verification file beyond the verification session [confirm with KYC partner]."
             ],
             [
               "Financial: subscription and lead-credit payment records, meaning transaction ID, amount, status, masked card, UPI or bank reference, billing and GST details, and e-mandate details. Card numbers, CVV and UPI PINs are handled by our payment gateway and never reach us."
@@ -164,7 +129,7 @@ const privacy = {
             {
               "b": "Suppliers."
             },
-            " Business name, authorised signatory’s name and contact details, GSTIN (verified against the GST portal), PAN where needed for invoicing, address, material categories, service areas, rate cards, enquiry history and listing-payment records."
+            " Business name, authorized signatory’s name and contact details, GSTIN (verified against the GST portal), PAN where needed for invoicing, address, material categories, service areas, rate cards, enquiry history and listing-payment records."
           ]
         },
         {
@@ -174,7 +139,7 @@ const privacy = {
             {
               "b": "Workers and other individuals whose data users enter."
             },
-            " Contractors, Service Professionals and Homeowners may enter details of Workers (including daily-wage labourers) into the Labour Wage Register: name, mobile number, trade or skill, attendance, wage rate, advances, payslips, bank or UPI details for payment, and, if the user chooses, identifiers such as UAN, ESIC or e-Shram numbers. Incident reports may include injury details, which is health information. We receive this data from the user, not from the Worker."
+            " Contractors, Service Professionals and Homeowners may enter details of Workers (including daily-wage laborers) into the Labor Wage Register: name, mobile number, trade or skill, attendance, wage rate, advances, pay slips, bank or UPI details for payment, and, if the user chooses, identifiers such as UAN, ESIC or e-Shram numbers. Incident reports may include injury details, which is health information. We receive this data from the user, not from the Worker."
           ]
         },
         {
@@ -204,7 +169,7 @@ const privacy = {
             {
               "b": "Sensitive data."
             },
-            " We do not intentionally ask for health, caste, religion, political belief, sexual orientation or biometric data, except the face photo technicians provide for identity verification (Section 7). Passwords, financial details and any incident or health details a user enters are given enhanced security as “sensitive personal data or information” under the SPDI Rules."
+            " We do not intentionally ask for health, caste, religion, political belief, sexual orientation or biometric data. Passwords, financial details and any incident or health details a user enters are given enhanced security as “sensitive personal data or information” under the SPDI Rules."
           ]
         }
       ]
@@ -258,7 +223,7 @@ const privacy = {
               {
                 "b": "Communicate with you."
               },
-              " Service messages (OTPs, receipts, lead alerts, defect notices, reminders) go with the service you asked for. Marketing and newsletters (such as CREWNBUILD Weekly) need your separate consent, which you can withdraw at any time."
+              " Service messages (OTPs, receipts, lead alerts, defect notices, reminders) go with the service you asked for. Marketing and newsletters (such as Crew&Build Weekly) need your separate consent, which you can withdraw at any time."
             ],
             [
               {
@@ -326,7 +291,7 @@ const privacy = {
             {
               "b": "Our service providers (Data Processors)."
             },
-            " Payment gateways (Razorpay), KYC and verification partners, cloud hosting (Amazon Web Services, Mumbai region), SMS, email and WhatsApp providers, analytics, customer-support, fraud-prevention and accounting tools, and professional advisers. They process data only on our instructions under written contracts with confidentiality and security obligations."
+            " Payment gateways [name], KYC and verification partners [name], cloud hosting [provider and region], SMS, email and WhatsApp providers, analytics, customer-support, fraud-prevention and accounting tools, and professional advisers. They process data only on our instructions under written contracts with confidentiality and security obligations."
           ]
         },
         {
@@ -336,7 +301,7 @@ const privacy = {
             {
               "b": "Government, regulators and courts."
             },
-            " Where required by law or a lawful order, for example to tax, labour, social-security (such as worker registration or aggregator reporting), RERA and law-enforcement authorities, CERT-In, courts and the Data Protection Board of India, or to establish, exercise or defend legal claims."
+            " Where required by law or a lawful order, for example to tax, labor, social-security (such as worker registration or aggregator reporting), RERA and law-enforcement authorities, CERT-In, courts and the Data Protection Board of India, or to establish, exercise or defend legal claims."
           ]
         },
         {
@@ -346,7 +311,7 @@ const privacy = {
             {
               "b": "Business transfers."
             },
-            " In a merger, acquisition, financing or sale of assets, data may pass to the successor, who must honour this Policy. We will tell you about material changes."
+            " In a merger, acquisition, financing or sale of assets, data may pass to the successor, who must honor this Policy. We will tell you about material changes."
           ]
         },
         {
@@ -356,7 +321,7 @@ const privacy = {
             {
               "b": "At your direction."
             },
-            " For example, when you share a WhatsApp progress card or a payslip. Once shared, the recipient’s and WhatsApp’s own practices apply."
+            " For example, when you share a WhatsApp progress card or a pay slip. Once shared, the recipient’s and WhatsApp’s own practices apply."
           ]
         },
         {
@@ -386,7 +351,7 @@ const privacy = {
             {
               "b": "Transfers outside India."
             },
-            " Primary storage is in India (Amazon Web Services, Mumbai region). Some processors (for example email or analytics) may process data outside India. We transfer data abroad only as the DPDP Act permits (not to any country the Government restricts) and with contractual safeguards."
+            " Primary storage is in India [cloud region]. Some processors (for example email or analytics) may process data outside India. We transfer data abroad only as the DPDP Act permits (not to any country the Government restricts) and with contractual safeguards."
           ]
         }
       ]
@@ -416,7 +381,7 @@ const privacy = {
             {
               "b": "that user is the Data Fiduciary"
             },
-            " and CREWNBUILD is their ",
+            " and Crew&Build is their ",
             {
               "b": "Data Processor"
             },
@@ -426,7 +391,7 @@ const privacy = {
         {
           "type": "p",
           "parts": [
-            "6.2 Users must: (a) have a lawful basis to enter the data; (b) give each Worker a clear notice, in a language the Worker understands, of what is recorded and why; (c) collect only what is necessary (please do not enter full Aadhaar numbers or biometric data); (d) keep data accurate; (e) never record data of children or of anyone engaged in breach of the law; and (f) honour Workers’ requests."
+            "6.2 Users must: (a) have a lawful basis to enter the data; (b) give each Worker a clear notice, in a language the Worker understands, of what is recorded and why; (c) collect only what is necessary (please do not enter full Aadhaar numbers or biometric data); (d) keep data accurate; (e) never record data of children or of anyone engaged in breach of the law; and (f) honor Workers’ requests."
           ]
         },
         {
@@ -438,7 +403,7 @@ const privacy = {
         {
           "type": "p",
           "parts": [
-            "6.4 We do not use Worker data for our own marketing and do not contact Workers directly, except for security, legal compliance and de-identified analytics. If CREWNBUILD later offers services directly to Workers, we will publish a separate notice."
+            "6.4 We do not use Worker data for our own marketing and do not contact Workers directly, except for security, legal compliance and de-identified analytics. If Crew&Build later offers services directly to Workers, we will publish a separate notice."
           ]
         }
       ]
@@ -455,19 +420,19 @@ const privacy = {
             {
               "b": "voluntary"
             },
-            ". Where available, you may choose another officially valid document (for example PAN, driving licence or voter ID). Homeowners are not asked for Aadhaar."
+            ". Where available, you may choose another officially valid document [for example PAN, driving license or voter ID; confirm]. Homeowners are not asked for Aadhaar."
           ]
         },
         {
           "type": "p",
           "parts": [
-            "7.2 Technicians on our Partner app enter their Aadhaar number and take a live face photo during onboarding, with their consent; we use them only to verify identity. Other verification may use a UIDAI-permitted route (such as offline verification or DigiLocker)."
+            "7.2 We verify through a UIDAI-permitted route (such as offline verification or Digi Locker through [KYC partner]) and do not collect your Aadhaar number or biometrics ourselves."
           ]
         },
         {
           "type": "p",
           "parts": [
-            "7.3 We store Aadhaar numbers only in encrypted form, never display them publicly or in full (only the last four digits), and handle Aadhaar-related data as the Aadhaar Act, 2016 requires. We keep the verification status and name-match outcome."
+            "7.3 We do not store full Aadhaar numbers or biometrics, never display Aadhaar numbers publicly, and handle Aadhaar-related data as the Aadhaar Act, 2016 requires. We keep only the verification status, name-match outcome, [last four digits] and a non-reversible token."
           ]
         },
         {
@@ -588,7 +553,7 @@ const privacy = {
               {
                 "b": "Verification (KYC) records of Contractors, Service Professionals and Suppliers:"
               },
-              " 5 years after account closure, for fraud prevention, audit and legal claims."
+              " [5] years after account closure, for fraud prevention, audit and legal claims."
             ],
             [
               {
@@ -624,13 +589,13 @@ const privacy = {
               {
                 "b": "Deleted accounts:"
               },
-              " personal data is erased within 30 days, except data we must retain by law or for legal claims, which is kept restricted and erased when no longer needed. Backups are overwritten within 90 days."
+              " personal data is erased within 30 days, except data we must retain by law or for legal claims, which is kept restricted and erased when no longer needed. Backups are overwritten within [90] days."
             ],
             [
               {
                 "b": "Inactive accounts:"
               },
-              " if an account has been inactive for 3 years, we will tell you before erasing it."
+              " if an account has been inactive for [3] years, we will tell you before erasing it."
             ]
           ]
         }
@@ -644,7 +609,7 @@ const privacy = {
         {
           "type": "p",
           "parts": [
-            "10.1 We maintain reasonable security safeguards (as required by the DPDP Act, the DPDP Rules and the SPDI Rules), including: encryption in transit and at rest; role-based access, multi-factor authentication for staff and audit logging; hashing, masking or tokenisation of sensitive identifiers; PCI-DSS compliant payment processing; vulnerability scanning and penetration testing; secure development and change control; backups and disaster recovery; vendor due diligence; and staff training and confidentiality obligations."
+            "10.1 We maintain reasonable security safeguards (as required by the DPDP Act, the DPDP Rules and the SPDI Rules), including: encryption in transit and at rest; role-based access, multi-factor authentication for staff and audit logging; hashing, masking or tokenization of sensitive identifiers; PCI-DSS compliant payment processing; vulnerability scanning and penetration testing; secure development and change control; backups and disaster recovery; vendor due diligence; and staff training and confidentiality obligations. [Align with ISO/IEC 27001; confirm.]"
           ]
         },
         {
@@ -677,79 +642,27 @@ const privacy = {
         {
           "type": "p",
           "parts": [
-            "11.1 The Platform is for adults (18 and over). We do not knowingly collect children’s data. Users must not enter a child’s data in the Labour Register. If we learn that we hold a child’s data without the verifiable parental consent required by Section 9 of the DPDP Act, we will delete it. We do not track children, monitor their behaviour or target advertising at them."
-          ]
-        }
-      ]
-    },
-    {
-      "id": "data-protection-officer-and-grievance-redressal",
-      "number": "12",
-      "title": "Data Protection Officer and Grievance Redressal",
-      "blocks": [
-        {
-          "type": "p",
-          "parts": [
-            "12.1 ",
-            {
-              "b": "Data Protection Officer / Grievance Officer (Privacy)"
-            }
-          ]
-        },
-        {
-          "type": "p",
-          "parts": [
-            "Name: Data Protection Officer, CREWNBUILD"
-          ]
-        },
-        {
-          "type": "p",
-          "parts": [
-            "Address: CREWNBUILD, Hyderabad, Telangana, India"
-          ]
-        },
-        {
-          "type": "p",
-          "parts": [
-            "Email: support@crewnbuild.com · Phone: +91 628 1921 628"
-          ]
-        },
-        {
-          "type": "p",
-          "parts": [
-            "Hours: Monday to Friday, 9:00 AM – 6:00 PM IST, business days"
-          ]
-        },
-        {
-          "type": "p",
-          "parts": [
-            "12.2 We acknowledge within 72 hours and aim to resolve within 30 days. If you are not satisfied, you may approach the Data Protection Board of India in the manner prescribed under the DPDP Act, after using our grievance process."
-          ]
-        },
-        {
-          "type": "p",
-          "parts": [
-            "12.3 For complaints about Platform content or services that are not about personal data, see the Grievance Officer details in our Terms."
+            "11.1 The Platform is for adults (18 and over). We do not knowingly collect children’s data. Users must not enter a child’s data in the Labor Register. If we learn that we hold a child’s data without the verifiable parental consent required by Section 9 of the DPDP Act, we will delete it. We do not track children, monitor their behavior or target advertising at them."
           ]
         }
       ]
     },
     {
       "id": "changes-to-this-policy",
-      "number": "13",
+      "number": "12",
       "title": "Changes to This Policy",
       "blocks": [
         {
           "type": "p",
           "parts": [
-            "13.1 We may update this Policy. For material changes we will notify you by email, in-app notice or website banner at least 15 days in advance and, where the law requires, ask for fresh consent. Earlier versions are available on request."
+            "13.1 We may update this Policy. For material changes we will notify you by email, in-app notice or website banner at least [15] days in advance and, where the law requires, ask for fresh consent. Earlier versions are available on request."
           ]
         }
       ]
     },
     {
       "id": "contact-us",
-      "number": "14",
+      "number": "13",
       "title": "Contact Us",
       "blocks": [
         {
@@ -757,16 +670,16 @@ const privacy = {
           "ordered": false,
           "items": [
             [
-              "Privacy and DPDP requests: support@crewnbuild.com"
+              "Privacy and DPDP requests: info@crewnbuild.com"
             ],
             [
               "General support: support@crewnbuild.com"
             ],
             [
-              "Legal and compliance: legal@crewnbuild.com"
+              "Legal and compliance: support@crewnbuild.com"
             ],
             [
-              "Office: CREWNBUILD, Hyderabad, Telangana, India"
+              "Registered office: Crew&Build powered by Tryovate LLP. [MJR Magnifique, Manikonda], Hyderabad, Telangana — 500 081, India · CIN [ACN-3703] ·"
             ]
           ]
         }

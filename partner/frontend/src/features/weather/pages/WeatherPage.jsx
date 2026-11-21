@@ -16,6 +16,7 @@ import {
 } from 'lucide-react'
 import Logo from '../../../shared/ui/Logo.jsx'
 import { Alert, Spinner } from '../../../shared/ui/ui.jsx'
+import { Skeleton, SkeletonStatus } from '../../../shared/ui/Skeleton.jsx'
 import { apiErrorMessage } from '../../../shared/api/apiClient.js'
 import { describeWeatherPlace, fetchTechnicianWeather, searchWeatherPlaces } from '../weatherApi.js'
 import {
@@ -23,7 +24,7 @@ import {
   saveChosenPlace, severityStyle, sourceLabel,
 } from '../weatherFormat.js'
 
-const SHELL = 'mx-auto w-full max-w-[1100px] px-5 sm:px-8'
+const SHELL = 'mx-auto w-full max-w-page px-5 sm:px-8'
 const REFRESH_MS = 10 * 60 * 1000
 
 const CONDITION_ICONS = {
@@ -241,7 +242,8 @@ export default function WeatherPage() {
 
   useEffect(() => { load(place) }, [load, place])
   useEffect(() => {
-    const timer = setInterval(() => load(place), REFRESH_MS)
+    // Like every other poll in the app: nothing is fetched while the tab is hidden.
+    const timer = setInterval(() => { if (document.visibilityState === 'visible') load(place) }, REFRESH_MS)
     return () => clearInterval(timer)
   }, [load, place])
 
@@ -276,7 +278,7 @@ export default function WeatherPage() {
 
   return (
     <div className="min-h-screen bg-oc-paper">
-      <header className="sticky top-0 z-20 border-b border-oc-line bg-white/90 backdrop-blur-md">
+      <header className="sticky top-0 z-header border-b border-oc-line bg-white/90 backdrop-blur-md">
         <div className={`${SHELL} flex h-16 items-center gap-3`}>
           <Logo to="/dashboard" />
           <button type="button" onClick={() => navigate('/dashboard')} className="btn-ghost ml-auto px-3 sm:px-5">
@@ -296,7 +298,13 @@ export default function WeatherPage() {
           </button>
         </section>
 
-        {state === 'loading' && !weather && <div className="grid place-items-center py-10 text-oc-green"><Spinner className="h-7 w-7" /></div>}
+        {state === 'loading' && !weather && (
+          <SkeletonStatus label="Loading weather" className="space-y-4" testId="weather-loading">
+            <Skeleton className="h-24 w-full rounded-2xl" />
+            <Skeleton className="h-44 w-full rounded-2xl" />
+            <Skeleton className="h-32 w-full rounded-2xl" />
+          </SkeletonStatus>
+        )}
         {state === 'error' && <Alert tone="error">{error}</Alert>}
 
         {weather && (

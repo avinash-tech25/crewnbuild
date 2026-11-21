@@ -260,7 +260,7 @@ export function OwnerRequestsSection({
         const flow = requestFlowStatus(request, awards[request.id], 'owner')
         return (
           // A centred window over the list, laid out like the builder's request window.
-          <div className="fixed inset-0 z-[130] grid place-items-center p-3 sm:p-6">
+          <div className="fixed inset-0 z-dialog grid place-items-center p-3 sm:p-6">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}

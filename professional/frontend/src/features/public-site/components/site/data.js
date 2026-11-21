@@ -2,19 +2,19 @@
 
 export const IMG = {
   heroSite:
-    'https://images.unsplash.com/photo-1693639767415-27ff64ce4da2?auto=format&fit=crop&w=1400&q=80',
+    '/site-images/photo-1693639767415-27ff64ce4da2-w1400.jpg',
   heroConstruction:
-    'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?auto=format&fit=crop&w=1920&q=80',
+    '/site-images/photo-1541888946425-d81bb19240f5-w1920.jpg',
   heroEngineer:
-    'https://images.unsplash.com/photo-1581094794329-c8112a89af12?auto=format&fit=crop&w=1200&q=80',
+    '/site-images/photo-1581094794329-c8112a89af12-w1200.jpg',
   blueprint:
-    'https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&w=1200&q=80',
+    '/site-images/photo-1503387762-592deb58ef4e-w1200.jpg',
   teamWork:
-    'https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=1200&q=80',
+    '/site-images/photo-1522071820081-009f0129c71c-w1200.jpg',
   planning:
-    'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=1200&q=80',
+    '/site-images/photo-1454165804606-c3d57bc86b40-w1200.jpg',
   cranes:
-    'https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=1200&q=80',
+    '/site-images/photo-1504307651254-35680f356dfd-w1200.jpg',
 }
 
 export const SERVICES = [
@@ -33,7 +33,7 @@ export const SERVICES = [
       'Homes built to last — from single-family houses to gated communities, delivered with transparent pricing and fixed timelines.',
     points: ['Independent homes', 'Villas & bungalows', 'Gated communities', 'Interior fit-out'],
     image:
-      'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80',
+      '/site-images/photo-1600585154340-be6161a56a0c-w1200.jpg',
   },
   {
     id: 'commercial',
@@ -42,7 +42,7 @@ export const SERVICES = [
       'Office towers, retail spaces, warehouses and factories — engineered for efficiency, safety and future expansion.',
     points: ['Office buildings', 'Retail & showrooms', 'Warehouses', 'Factories & plants'],
     image:
-      'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1200&q=80',
+      '/site-images/photo-1486406146926-c627a92ad1ab-w1200.jpg',
   },
   {
     id: 'renovation',
@@ -51,7 +51,7 @@ export const SERVICES = [
       'Structural retrofits, facelifts and interior transformations that extend the life of your asset and raise its value.',
     points: ['Structural retrofit', 'Facade upgrades', 'Interior remodeling', 'Restoration'],
     image:
-      'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=1200&q=80',
+      '/site-images/photo-1600607687939-ce8a6c25118c-w1200.jpg',
   },
   {
     id: 'pm',
@@ -68,7 +68,7 @@ export const SERVICES = [
       'Electrical, plumbing, HVAC and sustainable energy systems — plus smart-home and fire-safety integration by certified teams.',
     points: ['Electrical & plumbing', 'HVAC systems', 'Solar & green energy', 'Smart home integration'],
     image:
-      'https://images.unsplash.com/photo-1581094794329-c8112a89af12?auto=format&fit=crop&w=1200&q=80',
+      '/site-images/photo-1581094794329-c8112a89af12-w1200.jpg',
   },
 ]
 
@@ -81,7 +81,7 @@ export const PROJECTS = [
     year: '2025',
     area: '2.1 lakh sq.ft',
     image:
-      'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1200&q=80',
+      '/site-images/photo-1486406146926-c627a92ad1ab-w1200.jpg',
     featured: true,
   },
   {
@@ -92,7 +92,7 @@ export const PROJECTS = [
     year: '2025',
     area: '14 villas',
     image:
-      'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80',
+      '/site-images/photo-1600585154340-be6161a56a0c-w1200.jpg',
   },
   {
     id: 'metrolink',
@@ -102,7 +102,7 @@ export const PROJECTS = [
     year: '2024',
     area: '11.4 km',
     image:
-      'https://images.unsplash.com/photo-1517646287270-a5a9ca602e5c?auto=format&fit=crop&w=1200&q=80',
+      '/site-images/photo-1517646287270-a5a9ca602e5c-w1200.jpg',
   },
   {
     id: 'forge',
@@ -112,7 +112,7 @@ export const PROJECTS = [
     year: '2024',
     area: '96,000 sq.ft',
     image:
-      'https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=1200&q=80',
+      '/site-images/photo-1504307651254-35680f356dfd-w1200.jpg',
   },
   {
     id: 'harbor',
@@ -122,7 +122,7 @@ export const PROJECTS = [
     year: '2023',
     area: '68 apartments',
     image:
-      'https://images.unsplash.com/photo-1568605114967-8130f3a36994?auto=format&fit=crop&w=1200&q=80',
+      '/site-images/photo-1568605114967-8130f3a36994-w1200.jpg',
   },
   {
     id: 'lumina',
@@ -132,7 +132,7 @@ export const PROJECTS = [
     year: '2023',
     area: '32,000 sq.ft',
     image:
-      'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=1200&q=80',
+      '/site-images/photo-1600607687939-ce8a6c25118c-w1200.jpg',
   },
   {
     id: 'cedar',
@@ -142,7 +142,7 @@ export const PROJECTS = [
     year: '2023',
     area: '8 homes',
     image:
-      'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=1200&q=80',
+      '/site-images/photo-1580587771525-78b9dba3b914-w1200.jpg',
   },
   {
     id: 'nexus',
@@ -152,7 +152,7 @@ export const PROJECTS = [
     year: '2022',
     area: '1.6 lakh sq.ft',
     image:
-      'https://images.unsplash.com/photo-1487958449943-2429e8be8625?auto=format&fit=crop&w=1200&q=80',
+      '/site-images/photo-1487958449943-2429e8be8625-w1200.jpg',
   },
   {
     id: 'skyloft',
@@ -162,7 +162,7 @@ export const PROJECTS = [
     year: '2022',
     area: '5,400 sq.ft',
     image:
-      'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=1200&q=80',
+      '/site-images/photo-1618221195710-dd6b41faaea6-w1200.jpg',
   },
 ]
 
@@ -217,25 +217,25 @@ export const TEAM = [
     name: 'Arvind Rao',
     role: 'Founder & Managing Director',
     bio: 'Civil engineer with 26 years across roads, ports and high-rise residential.',
-    image: 'https://randomuser.me/api/portraits/men/32.jpg',
+    image: '/site-images/portrait-men-32.jpg',
   },
   {
     name: 'Meera Krishnan',
     role: 'Chief Architect',
     bio: 'Leads the design studio — award-winning work in sustainable housing.',
-    image: 'https://randomuser.me/api/portraits/women/44.jpg',
+    image: '/site-images/portrait-women-44.jpg',
   },
   {
     name: 'Vikram Shetty',
     role: 'Head of Engineering',
     bio: 'Structural specialist for seismic zones and heavy infrastructure.',
-    image: 'https://randomuser.me/api/portraits/men/75.jpg',
+    image: '/site-images/portrait-men-75.jpg',
   },
   {
     name: 'Ananya Iyer',
     role: 'Projects Director',
     bio: 'Runs delivery operations — 850+ projects shipped on schedule.',
-    image: 'https://randomuser.me/api/portraits/women/68.jpg',
+    image: '/site-images/portrait-women-68.jpg',
   },
 ]
 
@@ -246,7 +246,7 @@ export const TESTIMONIALS = [
     quote:
       'CREWNBUILD built our dream home on budget and three weeks early. The weekly photo updates meant we were never out of the loop.',
     rating: 5,
-    image: 'https://randomuser.me/api/portraits/men/41.jpg',
+    image: '/site-images/portrait-men-41.jpg',
   },
   {
     name: 'Karthik Reddy',
@@ -254,7 +254,7 @@ export const TESTIMONIALS = [
     quote:
       'Their project management discipline is unmatched. Milestones hit, quality audited, and every rupee accounted for.',
     rating: 5,
-    image: 'https://randomuser.me/api/portraits/men/12.jpg',
+    image: '/site-images/portrait-men-12.jpg',
   },
   {
     name: 'Priya Nair',
@@ -262,7 +262,7 @@ export const TESTIMONIALS = [
     quote:
       'From permits to paint, they handled everything. As a first-time builder I felt guided at every single step.',
     rating: 5,
-    image: 'https://randomuser.me/api/portraits/women/26.jpg',
+    image: '/site-images/portrait-women-26.jpg',
   },
   {
     name: 'Aditya Shah',
@@ -270,7 +270,7 @@ export const TESTIMONIALS = [
     quote:
       'Our retail revamp was done in 60 days flat with zero business interruption. Professional, transparent and fast.',
     rating: 5,
-    image: 'https://randomuser.me/api/portraits/men/64.jpg',
+    image: '/site-images/portrait-men-64.jpg',
   },
   {
     name: 'Farah Khan',
@@ -278,7 +278,7 @@ export const TESTIMONIALS = [
     quote:
       'The material ledger and cost dashboard meant I always knew where my money went. Rare honesty in construction.',
     rating: 5,
-    image: 'https://randomuser.me/api/portraits/women/50.jpg',
+    image: '/site-images/portrait-women-50.jpg',
   },
   {
     name: 'Suresh Goud',
@@ -286,7 +286,7 @@ export const TESTIMONIALS = [
     quote:
       'They delivered our factory shell in nine months — quality that passed every third-party inspection on the first try.',
     rating: 5,
-    image: 'https://randomuser.me/api/portraits/men/22.jpg',
+    image: '/site-images/portrait-men-22.jpg',
   },
 ]
 

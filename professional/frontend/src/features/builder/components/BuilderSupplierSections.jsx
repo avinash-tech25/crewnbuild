@@ -41,7 +41,7 @@ export function AssignSupplierDrawer({ supplier, projectList, teamData, contract
   }
 
   return (
-    <div className="fixed inset-0 z-[130] sm:flex sm:items-center sm:justify-center sm:p-6">
+    <div className="fixed inset-0 z-dialog sm:flex sm:items-center sm:justify-center sm:p-6">
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -242,7 +242,7 @@ export function UnassignSupplierDrawer({ supplier, onClose, onUnassign, busy, su
 
   return (
     // A small centred confirmation box (it used to be a panel on the right).
-    <div className="fixed inset-0 z-[130] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-dialog flex items-center justify-center p-4">
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}

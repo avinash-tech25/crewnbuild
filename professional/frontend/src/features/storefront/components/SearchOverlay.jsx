@@ -241,7 +241,7 @@ export function SearchOverlay({
       ref={panel}
       role="region"
       aria-label="Search"
-      className="fixed z-[120] overflow-y-auto rounded-xl border border-slate-200 bg-white px-4 py-4 shadow-[0_12px_32px_-12px_rgba(15,23,42,0.30)]"
+      className="fixed z-dropdown overflow-y-auto rounded-xl border border-slate-200 bg-white px-4 py-4 shadow-[0_12px_32px_-12px_rgba(15,23,42,0.30)]"
       style={{ top: box.top, left: box.left, width: box.width, maxHeight: box.maxHeight }}
     >
       {body}
