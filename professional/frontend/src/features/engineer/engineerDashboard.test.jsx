@@ -273,8 +273,9 @@ describe('Site Engineer orders material from the project suppliers', () => {
     expect(result).not.toBeInTheDocument()
     await user.clear(search)
     await user.click(screen.getByRole('link', { name: 'Order details' }))
-    expect(await screen.findByText(/Estimated Amount/, {}, FIND)).toBeInTheDocument()
+    expect(await screen.findByRole('dialog', { name: 'Order details' }, FIND)).toBeInTheDocument()
     expect(location.current.pathname).toBe('/engineer/orders')
+    expect(new URLSearchParams(location.current.search).get('order')).toBe(purchase.id)
   })
 
   it('moves direct nested order links to the top-level legacy history view', async () => {

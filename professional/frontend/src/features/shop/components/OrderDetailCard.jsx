@@ -57,7 +57,19 @@ function Fact({ icon: Icon, label, value }) {
   )
 }
 
-export default function OrderDetailCard({ order, counterpartyLabel, counterparty, onClose, actions, invoiceFrom }) {
+const LINE_TONES = {
+  PENDING: 'bg-amber-50 text-amber-700',
+  ACCEPTED: 'bg-sky-50 text-sky-800',
+  FULFILLED: 'bg-emerald-50 text-emerald-700',
+  REJECTED: 'bg-rose-50 text-rose-700',
+}
+
+/**
+ * `extraFacts`: more { icon, label, value } tiles beside the standard four (the delivery
+ * location, for example). Each line shows its own status and, when the order data has
+ * them, when it was fulfilled and received: the order's delivery history.
+ */
+export default function OrderDetailCard({ order, counterpartyLabel, counterparty, onClose, actions, invoiceFrom, extraFacts = [] }) {
   const { t, td } = useLanguage()
 
   useEffect(() => {
@@ -179,6 +191,7 @@ th{background:#f8fafc}.n{text-align:right}tfoot td{font-weight:700}</style></hea
                 reader; `formatDateTime` follows the selected language. */}
             <Fact icon={CalendarDays} label={t('shop.placedOn')} value={formatDateTime(order.placedAt)} />
             <Fact icon={Hash} label={t('shop.orderReference')} value={String(order.code || '').slice(0, 8)} />
+            {extraFacts.map((fact) => <Fact key={fact.label} {...fact} />)}
           </div>
 
           <section className="overflow-hidden rounded-xl border border-oc-line bg-white">
@@ -207,6 +220,15 @@ th{background:#f8fafc}.n{text-align:right}tfoot td{font-weight:700}</style></hea
                   <p className="text-[11px] font-semibold text-graphite/50">
                     {countryFormatMoney(item.price)} {t('dash.supplier.per')} {td(item.unit)}
                   </p>
+                  {item.status && (
+                    <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] font-semibold text-graphite/60">
+                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-extrabold ${LINE_TONES[item.status] || 'bg-slate-100 text-slate-700'}`}>
+                        {t(`shop.purchase.state.${item.status}`)}
+                      </span>
+                      {item.fulfilled_at && <span>{t('ui.status.fulfilled')}: {formatDateTime(item.fulfilled_at)}</span>}
+                      {item.received_at && <span>{t('shop.received')}: {formatDateTime(item.received_at)}</span>}
+                    </p>
+                  )}
                 </div>
                 <div className="shrink-0 text-right">
                   <p className="text-sm font-extrabold text-graphite">{formatNumber(item.quantity)} {td(item.unit)}</p>

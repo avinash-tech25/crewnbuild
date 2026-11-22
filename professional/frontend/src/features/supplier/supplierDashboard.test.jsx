@@ -123,8 +123,9 @@ describe('Supplier dashboard: orders, clients and requests', () => {
       'GET /supplier/material-requests': { data: [anOrderLine()] },
     })
     expect(await screen.findByText('Meena Iyer', {}, FIND)).toBeInTheDocument()
-    expect(screen.getByText('Pending')).toBeInTheDocument()
-    expect(screen.getByText(/8,400/)).toBeInTheDocument()
+    const row = screen.getByTestId('order-row')
+    expect(within(row).getByText('Pending')).toBeInTheDocument()
+    expect(within(row).getByText(/8,400/)).toBeInTheDocument()
   })
 
   it('lists a nearby builder as a builder and sends them a request', async () => {
