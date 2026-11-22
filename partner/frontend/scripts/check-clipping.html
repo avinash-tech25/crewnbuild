@@ -1,0 +1,99 @@
+<!doctype html>
+<html><head><meta charset="utf-8"></head>
+<body>
+<pre id="out">MEASURING</pre>
+<script>
+// Browser check for clipped content. Usage: npm run build, copy this file to dist/_clip.html,
+// npx vite preview, then open /_clip.html?routes=/,/legal&widths=360,768,1024,1440,1920 in
+// Chrome (or headless: chrome --headless=new --virtual-time-budget=200000 --dump-dom URL).
+// Every line should read OK. Delete dist/_clip.html afterwards.
+//
+// For each route and width: load the page in an iframe and list every visible piece of text,
+// image or control whose box is cut off by an ancestor that clips (overflow hidden/clip) or by
+// the window. Scroll containers (overflow auto/scroll) count as scrollable, not clipped.
+// Decorative subtrees (aria-hidden="true") and hidden/transparent content are skipped.
+// On a page with a [role=tablist] (the landing hero) every tab is clicked and the page is
+// re-checked several times during the slide animation.
+const params = new URLSearchParams(location.search)
+const ROUTES = (params.get('routes') || '/').split(',')
+const WIDTHS = (params.get('widths') || '360,768,1024,1440,1920').split(',').map(Number)
+const out = document.getElementById('out')
+const results = []
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+
+function shown(el, win) {
+  for (let node = el; node && node.nodeType === 1; node = node.parentElement) {
+    if (node.getAttribute('aria-hidden') === 'true') return false
+    const style = win.getComputedStyle(node)
+    if (style.display === 'none' || style.visibility === 'hidden' || Number(style.opacity) === 0) return false
+  }
+  return true
+}
+
+function hasOwnContent(el) {
+  if (['IMG', 'SVG', 'BUTTON', 'INPUT', 'SELECT', 'TEXTAREA', 'VIDEO'].includes(el.tagName.toUpperCase())) return true
+  return [...el.childNodes].some((node) => node.nodeType === 3 && node.textContent.trim())
+}
+
+function clipped(doc, win, label) {
+  const found = []
+  const viewport = doc.documentElement.clientWidth
+  for (const el of doc.body.querySelectorAll('*')) {
+    if (!hasOwnContent(el) || !shown(el, win)) continue
+    const box = el.getBoundingClientRect()
+    if (box.width < 1 || box.height < 1) continue
+    let cut = null
+    let scrollable = false
+    for (let parent = el.parentElement; parent && parent !== doc.body; parent = parent.parentElement) {
+      const overflow = win.getComputedStyle(parent).overflowX
+      if (overflow === 'auto' || overflow === 'scroll') { scrollable = true; break } // scrollable, not clipped
+      if (overflow === 'hidden' || overflow === 'clip') {
+        const clip = parent.getBoundingClientRect()
+        if (box.left < clip.left - 1 || box.right > clip.right + 1) { cut = `by ${parent.tagName.toLowerCase()}.${String(parent.className).slice(0, 40)}`; break }
+      }
+    }
+    if (!cut && !scrollable && (box.left < -1 || box.right > viewport + 1)) cut = 'by the window'
+    if (cut) {
+      const text = (el.textContent || el.getAttribute('aria-label') || el.getAttribute('alt') || el.tagName).trim().replace(/\s+/g, ' ').slice(0, 50)
+      found.push(`${label}: "${text}" x=${Math.round(box.left)}..${Math.round(box.right)} ${cut}`)
+    }
+  }
+  return found
+}
+
+function check(route, width) {
+  return new Promise((resolve) => {
+    const frame = document.createElement('iframe')
+    frame.style.width = width + 'px'
+    frame.style.height = '900px'
+    frame.src = route
+    document.body.appendChild(frame)
+    frame.onload = async () => {
+      await wait(4500)
+      const win = frame.contentWindow
+      const doc = frame.contentDocument
+      const issues = new Set(clipped(doc, win, 'loaded'))
+      const tabs = [...doc.querySelectorAll('[role="tablist"] [role="tab"]')]
+      for (const [index, tab] of tabs.entries()) {
+        tab.click()
+        let elapsed = 0
+        for (const after of [0, 80, 160, 320, 700]) {
+          await wait(after - elapsed)
+          elapsed = after
+          for (const issue of clipped(doc, win, `slide ${index + 1} +${after}ms`)) issues.add(issue)
+        }
+      }
+      results.push(`${route} @${width}: ${issues.size === 0 ? 'OK' : issues.size + ' clipped'}${tabs.length ? ` (${tabs.length} slides checked)` : ''}`)
+      for (const issue of [...issues].slice(0, 6)) results.push('   ' + issue)
+      frame.remove()
+      resolve()
+    }
+  })
+}
+
+;(async () => {
+  for (const route of ROUTES) for (const width of WIDTHS) await check(route, width)
+  out.textContent = 'MEASURED\n' + results.join('\n')
+})()
+</script>
+</body></html>

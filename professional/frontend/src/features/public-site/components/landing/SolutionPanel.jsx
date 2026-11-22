@@ -92,7 +92,7 @@ export function SolutionPanel({ text }) {
 
   return (
     <div
-            className="grid grid-cols-2 items-center gap-[60px] px-[max(24px,calc((100vw-1240px)/2))] py-[110px] max-mid:grid-cols-1 max-mid:py-[82px] max-wide:block max-wide:px-[18px] max-wide:py-[70px]"
+            className="grid grid-cols-2 items-center gap-[60px] px-[max(24px,calc((100%-1400px)/2))] py-[110px] max-mid:grid-cols-1 max-mid:py-[82px] max-wide:block max-wide:px-[18px] max-wide:py-[70px]"
             style={{ background: tone.background, color: tone.heading, transition: "background 900ms linear, color 900ms linear" }}
           >
       <div className="max-w-[560px]">

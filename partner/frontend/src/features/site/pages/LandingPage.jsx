@@ -158,16 +158,11 @@ export default function LandingPage() {
           onKeyDown={handleArrowKeys}
           className="container-x relative grid items-center gap-12 pb-14 pt-8 lg:min-h-[calc(100svh-4rem)] lg:grid-cols-[1.05fr_1fr] lg:pb-20 lg:pt-10"
         >
-          {/* Pulled towards the edge on wide screens, where the centred
-              container leaves a gutter the copy does not need. The whole column
-              moves, not the headline alone: the eyebrow, the paragraph, the
-              trade tabs and the stat row all hang off the same left edge, and
-              shifting one of them would simply break that line.
-
-              The offsets stay within the gutter they are cancelling -- 32px
-              against `sm:px-8` from 1024px, 48px once there is centring slack to
-              spend at 1280px -- so nothing is ever pushed under the clip. */}
-          <div className="animate-fadeUp lg:-ms-8 xl:-ms-12">
+          {/* The column starts at the page container's edge, the header logo's edge
+              (both use the one page width, max-w-page). No negative offset: the hero
+              clips overflow, so anything pulled past the container's padding would be
+              cut off at some width or during the entrance animation. */}
+          <div className="animate-fadeUp">
             {/* The shared `.eyebrow`, `.btn-ghost` and card styles are built for
                 the light page below, so the hero states its own light-on-dark
                 versions instead of overriding them -- every other page keeps the

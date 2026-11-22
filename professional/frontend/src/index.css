@@ -9,9 +9,15 @@
   html {
     scroll-behavior: smooth;
     scrollbar-color: #cbd5e1 #ffffff;
-    /* Room for the scrollbar is always kept, so a long page and a short one (or a dialog
-       that locks scrolling) never shift the layout sideways. */
-    scrollbar-gutter: stable;
+  }
+  /* From the landing's 701px breakpoint, room for the scrollbar is always kept, so a long
+     page and a short one (or a dialog that locks scrolling) never shift the layout
+     sideways. Narrower windows keep their full width: there every pixel is needed, and
+     phones draw their scrollbar over the page anyway. */
+  @media (min-width: 701px) {
+    html {
+      scrollbar-gutter: stable;
+    }
   }
   body {
     @apply bg-white text-graphite font-sans antialiased;
@@ -1367,5 +1373,19 @@ html.dark .dash-canvas .list-card.list-card:is(:hover, :focus-within) :is(.text-
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/* The landing header's top strip, when the room it actually has is under 352px (a narrow
+   desktop window whose scrollbar takes part of it): slightly smaller text and separators so
+   "Supply" is never cut off by the strip's overflow clip. Phones (overlay scrollbars) keep
+   the strip exactly as it was. After the utilities, so it wins over their sizes. */
+@container (max-width: 351px) {
+  .top-strip {
+    gap: 4px;
+    font-size: 9px;
+  }
+  .top-strip .top-strip-sep {
+    margin-inline: 2px;
   }
 }

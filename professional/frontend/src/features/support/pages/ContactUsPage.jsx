@@ -191,7 +191,7 @@ export default function ContactUsPage() {
               196px card matches the stripe's 12deg slant. */}
           {/* Ends at the page content's edge (the same gutter as the text), not the
               screen's, so the photo sits nearer the search bar. */}
-          <div aria-hidden="true" className="absolute inset-y-0 end-[max(24px,calc((100%-1240px)/2))] hidden md:block">
+          <div aria-hidden="true" className="absolute inset-y-0 end-[max(24px,calc((100%-1400px)/2))] hidden md:block">
             <div className="h-full overflow-hidden [clip-path:polygon(2.6rem_0,100%_0,100%_100%,0_100%)] rtl:[clip-path:polygon(0_0,calc(100%-2.6rem)_0,100%_100%,0_100%)]">
               <img src={heroImageUrl} alt="" className="h-full w-auto max-w-none" />
             </div>

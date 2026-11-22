@@ -111,14 +111,14 @@ const trustIndicators = [
 
 function TopStrip() {
   return (
-    <div className="relative z-[21] w-full bg-oc-deep text-white">
-      <div className={`${headerContainerClass} flex h-[36px] items-center gap-[18px] overflow-hidden whitespace-nowrap text-[12px] font-bold leading-none max-wide:h-[32px] max-wide:gap-3 max-wide:text-[10.5px] max-[400px]:gap-2 max-[400px]:text-[10px] max-[380px]:gap-[6px]`}>
+    <div className="relative z-[21] w-full bg-oc-deep text-white [container-type:inline-size]">
+      <div className={`top-strip ${headerContainerClass} flex h-[36px] items-center gap-[18px] overflow-hidden whitespace-nowrap text-[12px] font-bold leading-none max-wide:h-[32px] max-wide:gap-3 max-wide:text-[10.5px] max-[400px]:gap-2 max-[400px]:text-[10px] max-[380px]:gap-[6px]`}>
         <span className="font-extrabold tracking-[.01em] text-oc-amber">India&apos;s Construction Network</span>
         <span aria-hidden="true" className="h-[14px] w-px shrink-0 bg-white/35 max-[350px]:hidden" />
         <ul className="m-0 flex list-none items-center p-0 text-white/85 max-[350px]:hidden" aria-label="What you can do on Crew&Build">
           {topStripActions.map((action, index) => (
             <li key={action} className="flex items-center">
-              {index > 0 && <span aria-hidden="true" className="mx-[12px] h-[12px] w-px bg-white/30 max-wide:mx-2 max-[400px]:mx-[5px] max-[380px]:mx-[4px]" />}
+              {index > 0 && <span aria-hidden="true" className="top-strip-sep mx-[12px] h-[12px] w-px bg-white/30 max-wide:mx-2 max-[400px]:mx-[5px] max-[380px]:mx-[4px]" />}
               {action}
             </li>
           ))}

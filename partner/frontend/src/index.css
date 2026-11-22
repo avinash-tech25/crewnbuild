@@ -5,8 +5,13 @@
 @layer base {
   html {
     scroll-behavior: smooth;
-    /* Room for the scrollbar is always kept, so pages and dialogs never shift sideways. */
-    scrollbar-gutter: stable;
+  }
+  /* From 768px (md), room for the scrollbar is always kept, so pages and dialogs never
+     shift sideways; narrower windows keep their full width (phones overlay it anyway). */
+  @media (min-width: 768px) {
+    html {
+      scrollbar-gutter: stable;
+    }
   }
   body {
     @apply bg-oc-paper font-sans text-oc-ink antialiased;

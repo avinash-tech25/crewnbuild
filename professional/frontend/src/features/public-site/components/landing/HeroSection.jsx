@@ -62,10 +62,11 @@ export function HeroContent({ text, activeIndex, onSelect }) {
       onKeyDown={handleArrowKeys}
       className={`${containerClass} relative block min-h-svh wide:min-h-0 pt-[clamp(88px,11vh,120px)] pb-[72px] max-wide:pt-[92px] max-wide:pb-[56px]`}
     >
-      {/* From 701px the text column lines up with the header's logo: the hero sits
-          in the 1240px page container while the header uses 1400px, so the column
-          moves left by the difference between the two containers' left edges. */}
-      <div className="relative z-[5] w-[min(58%,760px)] max-mid:w-[min(72%,760px)] max-wide:w-full max-wide:pe-1 wide:ms-[calc((min(100vw-48px,1240px)-min(100vw-48px,1400px))/2)]">
+      {/* The text column starts at the container's edge, which is the header's logo
+          edge: the hero and the header share the one page width (max-w-page). No
+          negative offset: the section clips overflow, so anything pushed past the
+          container's edge would be cut off. */}
+      <div className="relative z-[5] w-[min(58%,760px)] max-mid:w-[min(72%,760px)] max-wide:w-full max-wide:pe-1">
         {/* One grid cell holds every step's text: invisible copies size the cell
             to the tallest step at this width, so the tabs, the button, the
             character and the section below stay put whichever step is shown. */}
