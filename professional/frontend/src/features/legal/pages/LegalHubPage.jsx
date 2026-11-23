@@ -1,6 +1,6 @@
 /**
  * The public Legal hub (/legal): one card with an introduction, a short summary of each
- * policy with a link to it (Terms, Privacy, and the Cancellation & Refund Policy, which is
+ * policy with a link to it (Terms, Privacy, the Disclaimer, and the Cancellation & Refund Policy, which is
  * section 10 of the Terms), and a Contact box. The summaries are ours; the policies'
  * wording is only on /terms and /privacy.
  */
@@ -16,6 +16,7 @@ export const SUPPORT_EMAIL = 'support@crewnbuild.com'
 const POLICIES = [
   { id: 'terms', to: '/terms', titleKey: 'legal.hub.termsTitle', summaryKey: 'legal.hub.termsSummary', linkKey: 'legal.hub.termsLink' },
   { id: 'privacy', to: '/privacy', titleKey: 'legal.hub.privacyTitle', summaryKey: 'legal.hub.privacySummary', linkKey: 'legal.hub.privacyLink' },
+  { id: 'disclaimer', to: '/disclaimer', titleKey: 'legal.hub.disclaimerTitle', summaryKey: 'legal.hub.disclaimerSummary', linkKey: 'legal.hub.disclaimerLink' },
   { id: 'refunds', to: '/terms#cancellations', titleKey: 'legal.hub.refundTitle', summaryKey: 'legal.hub.refundSummary', linkKey: 'legal.hub.refundLink' },
 ]
 

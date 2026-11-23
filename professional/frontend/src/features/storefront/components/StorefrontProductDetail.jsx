@@ -19,6 +19,7 @@
  *     supplier's own listings only.
  * Nothing is invented: a content section without data is not shown.
  */
+import { DisclaimerNote } from '../../../shared/ui/DisclaimerNote.jsx'
 import { useEffect, useState } from 'react'
 import {
   ArrowLeft, BellRing, Boxes, ChevronDown, ChevronLeft, ChevronRight, CircleHelp, Clock3, Eye, EyeOff, FileText,
@@ -241,6 +242,7 @@ export function StorefrontProductDetail({
               </p>
               <BulkPricingList tiers={listing.bulk_pricing} unit={listing.unit} country={country} className="mt-3" />
               <div className="mt-3"><StockBadge quantity={listing.quantity} threshold={listing.low_stock_threshold} unit={listing.unit} /></div>
+              <DisclaimerNote kind="prices" className="mt-3" />
             </div>
 
             {/* Service strip: one bar, thin dividers between the items */}

@@ -23,6 +23,7 @@
  * cart, quantity or Add to Cart here: a supplier sells these products, never
  * buys them.
  */
+import { DisclaimerNote } from '../../../shared/ui/DisclaimerNote.jsx'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { ArrowUpDown, ChevronDown, ChevronRight, LayoutGrid, PackageSearch, X } from 'lucide-react'
 import { useLanguage } from '../../../i18n/LanguageContext.jsx'
@@ -427,6 +428,7 @@ export function SupplierStorefront({ productList = [], message = '', pincode = '
                 ))}
               </CardGrid>
             )}
+            {productList.length > 0 && <DisclaimerNote kind="prices" className="mt-3" />}
           </div>
         </div>
       )}

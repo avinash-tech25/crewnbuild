@@ -602,7 +602,7 @@ export function OwnerContractorsSection({ requestMessage, contractorList, sendin
               // Only a live verification decision from the backend earns the
               // badge; it is no longer shown on every builder.
               ...(contractor.is_verified === true
-                ? [{ key: 'verified', text: t('dash.common.verified'), icon: BadgeCheck, tone: 'brand' }]
+                ? [{ key: 'verified', text: t('dash.common.verified'), icon: BadgeCheck, tone: 'brand', title: t('disclaimer.note.verified') }]
                 : []),
             ]
             // The request controls, shared by the card and the table row.
@@ -686,7 +686,7 @@ export function OwnerContractorsSection({ requestMessage, contractorList, sendin
                       {/* Verified / Newly joined, beside the name. */}
                       <div className="flex shrink-0 flex-col items-start gap-1">
                         {pills.filter((pill) => pill.key !== 'rating').map((pill) => (
-                          <EntityPill key={pill.key} tone={pill.tone} icon={pill.icon}>{pill.text}</EntityPill>
+                          <EntityPill key={pill.key} tone={pill.tone} icon={pill.icon} title={pill.title}>{pill.text}</EntityPill>
                         ))}
                       </div>
                     </div>
@@ -786,7 +786,7 @@ export function OwnerContractorsSection({ requestMessage, contractorList, sendin
                 ]}
                 chips={[
                   newlyJoined && <CardChip key="new" tone="green" icon={Sparkles}>{t('dash.owner.contractors.newlyJoined')}</CardChip>,
-                  contractor.is_verified === true && <CardChip key="verified" tone="blue" icon={BadgeCheck}>{t('dash.common.verified')}</CardChip>,
+                  contractor.is_verified === true && <CardChip key="verified" tone="blue" icon={BadgeCheck} title={t('disclaimer.note.verified')}>{t('dash.common.verified')}</CardChip>,
                   ...serviceChips(contractor.services_offered),
                 ]}
                 secondary={(

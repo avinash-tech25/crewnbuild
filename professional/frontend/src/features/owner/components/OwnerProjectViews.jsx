@@ -1,3 +1,4 @@
+import { DisclaimerNote } from '../../../shared/ui/DisclaimerNote.jsx'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { AlertTriangle, Calculator, Calendar, Globe2, HardHat, Home, IndianRupee, MapPin, Pencil, Plus, RotateCw, Save, Trash2, X } from 'lucide-react'
 import PincodeAreaHint from '../../../shared/ui/PincodeAreaHint.jsx'
@@ -1246,6 +1247,7 @@ export function ProjectDetailPanel({ project, ownerName, activeTab, onRequestUpd
 
           {activeTab === 'payments' && (
             <div className="space-y-3">
+              <DisclaimerNote kind="payments" />
               {(project.escrow_milestones || []).map((milestone) => (
                 <div key={milestone.id} className="flex items-center justify-between rounded-xl border border-oc-line p-4">
                   <div>

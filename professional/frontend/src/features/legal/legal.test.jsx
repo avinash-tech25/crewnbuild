@@ -264,13 +264,13 @@ describe('the Legal hub', () => {
 })
 
 describe('footer links', () => {
-  it('the landing footer Legal column leads to /legal, /terms and /privacy', async () => {
+  it('the landing footer Legal column leads to /legal, /terms, /privacy and /disclaimer', async () => {
     const user = userEvent.setup()
     installFakeServer()
     renderApp('/legal', { auth: signedOut })
     const footer = (await screen.findAllByRole('contentinfo', {}, SLOW)).at(-1)
     const column = within(footer).getAllByRole('heading', { name: 'Legal' })[0].parentElement
-    expect(within(column).getAllByRole('link').map((link) => link.getAttribute('href'))).toEqual(['/legal', '/terms', '/privacy'])
+    expect(within(column).getAllByRole('link').map((link) => link.getAttribute('href'))).toEqual(['/legal', '/terms', '/privacy', '/disclaimer'])
     await user.click(within(column).getByRole('link', { name: 'Privacy policy' }))
     expect(await screen.findByRole('heading', { level: 1, name: 'Privacy Policy' }, SLOW)).toBeInTheDocument()
     expect(location.current.pathname).toBe('/privacy')

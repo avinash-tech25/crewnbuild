@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { ArrowRight, BadgeCheck, Globe, Handshake, LayoutGrid, Menu, Phone, Users, Workflow, X } from "lucide-react";
 import { Brand, smallButtonClass } from "./shared.jsx";
 import SessionNav from "../../../../shared/ui/SessionNav.jsx";
@@ -185,6 +185,9 @@ export function SiteHeader({ text, brandHref = "#top" }) {
   // Signed in: "Go to dashboard" and the account menu instead of Sign in / Get started.
   const { user: signedInUser } = useAccountLinks();
   const languageLabel = t("language.label");
+  // Disclaimer 12.1 (English prevails), as the switcher's tooltip and description.
+  const languageNote = t("disclaimer.note.language");
+  const languageNoteId = useId();
   const rowRef = useRef(null);
   const weatherRef = useRef(null);
   const { menuMode, crowded } = useMenuMode(rowRef, language, weatherRef);
@@ -290,6 +293,7 @@ export function SiteHeader({ text, brandHref = "#top" }) {
             Each language is named in itself, so the list stays readable
             whichever one is active. */}
         <label
+          title={languageNote}
           className={`${barItemClass} inline-flex items-center gap-[7px] min-h-[38px] px-[15px] max-[1365px]:px-[12px] me-[6px] max-[1365px]:me-0 rounded-full bg-white/[.34] text-oc-deep text-[11px] font-extrabold
                      border border-[rgba(8,62,43,.3)] ease-soft hover:bg-white/[.7] hover:-translate-y-[2px]
                      focus-within:ring-2 focus-within:ring-oc-deep/40
@@ -297,10 +301,12 @@ export function SiteHeader({ text, brandHref = "#top" }) {
         >
           <Globe size={14} className="shrink-0 max-[380px]:hidden" />
           <span className="sr-only">{languageLabel}</span>
+          <span id={languageNoteId} className="sr-only">{languageNote}</span>
           <select
             value={language}
             onChange={(event) => setLanguage(event.target.value)}
             aria-label={languageLabel}
+            aria-describedby={languageNoteId}
             /* The focus ring lives on the label above, not here: a ring on this
                square-cornered <select> painted a rectangle inside the rounded
                pill, and a <select> matches :focus-visible on a plain mouse

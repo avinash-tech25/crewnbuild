@@ -18,6 +18,7 @@
  * active project and can add an offer to that project's cart through the same
  * cart action the supplier browser uses; a Builder's page is browse-only.
  */
+import { DisclaimerNote } from '../../../shared/ui/DisclaimerNote.jsx'
 import { useEffect, useMemo, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { PackageSearch, ShoppingCart } from 'lucide-react'
@@ -268,6 +269,7 @@ export default function ProductCatalogPage({ loadSuppliers, reloadKey = '', cart
               ))}
             </div>
           )}
+          <DisclaimerNote kind="prices" className="mt-3" />
         </div>
       )}
     </section>

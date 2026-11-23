@@ -12,6 +12,7 @@
  * charged against it.
  */
 
+import { DisclaimerNote } from './DisclaimerNote.jsx'
 import { useEffect, useRef, useState } from 'react'
 import { imageUrl } from '../api/apiClient.js'
 import { fetchPlacementAds, recordAdEvent } from '../../features/public-site/adsApi.js'
@@ -158,10 +159,10 @@ export default function AdSlot({ placement, country, position = 'footer', classN
             data-advert-id={advert.id}
             className={`relative ${WIDTH_CLASS[advert.display_width] || WIDTH_CLASS.FULL}`}
           >
-            {/* Named, quietly, because a picture that is an advert should say so
-                rather than be mistaken for the site's own content. */}
-            <span className="absolute right-2 top-2 rounded bg-black/45 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
-              {t('ui.shared.ad')}
+            {/* Named, because a picture that is an advert should say so rather than be
+                mistaken for the site's own content (Disclaimer 6.4: a paid placement). */}
+            <span data-testid="advert-sponsored" className="absolute right-2 top-2 rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+              {t('ui.shared.sponsored')}
             </span>
             {advert.link_url ? (
               <a
@@ -176,6 +177,7 @@ export default function AdSlot({ placement, country, position = 'footer', classN
             ) : (
               image
             )}
+            <DisclaimerNote kind="sponsored" className="mt-1.5" />
           </div>
         )
       })}

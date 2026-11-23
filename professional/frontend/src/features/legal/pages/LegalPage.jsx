@@ -1,5 +1,6 @@
 /**
- * The public Terms (/terms) and Privacy Policy (/privacy) pages, one section at a time.
+ * The public Terms (/terms), Privacy Policy (/privacy) and Disclaimer (/disclaimer) pages,
+ * one section at a time.
  *
  * The section shown is the one in the address (/terms#section-id; a short form such as
  * #cancellations reaches "cancellations-and-refunds"); without one, the first. Choosing a
@@ -12,7 +13,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { useLanguage } from '../../../i18n/LanguageContext.jsx'
 import { LegalDocument, sectionFor } from '../components/LegalDocument.jsx'
 import { LegalShell } from '../components/LegalShell.jsx'
-import { LEGAL_TITLE_KEYS, privacy, terms } from '../legalDocuments.js'
+import { LEGAL_TITLE_KEYS, disclaimer, privacy, terms } from '../legalDocuments.js'
 
 function LegalPage({ doc }) {
   const { t } = useLanguage()
@@ -45,4 +46,8 @@ export function TermsPage() {
 
 export function PrivacyPage() {
   return <LegalPage doc={privacy} />
+}
+
+export function DisclaimerPage() {
+  return <LegalPage doc={disclaimer} />
 }

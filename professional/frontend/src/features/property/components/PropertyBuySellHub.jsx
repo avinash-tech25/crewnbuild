@@ -12,6 +12,7 @@
  * Every property on screen comes from the API. There is no seed list, no
  * example house and no placeholder price anywhere in this file.
  */
+import { DisclaimerNote } from '../../../shared/ui/DisclaimerNote.jsx'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { Loader2, Pencil, Plus, Search, Send, Store } from 'lucide-react'
@@ -376,11 +377,14 @@ export default function PropertyBuySellHub({
           ) : feed.listings.length ? (
             /* The same card as Sell, so a property reads the same whether you
                are browsing the market or managing your own. */
+            <>
             <CardGrid testId="property-feed-cards">
               {feed.listings.map((listing) => (
                 <SellListingCard key={listing.id} listing={listing} browse onOpen={() => openDetail(listing)} />
               ))}
             </CardGrid>
+            <DisclaimerNote kind="property" className="mt-3" />
+            </>
           ) : (
             <EmptyState icon={Search} title={t('property.empty.noneTitle')} message={t('property.empty.noneMessage')} />
           )}
@@ -422,11 +426,14 @@ export default function PropertyBuySellHub({
             /* The seller's own listings: photo cards with the status on the
                photo and one "View & manage" button, which opens the same
                panel the card always opened. */
+            <>
             <CardGrid testId="property-my-cards">
               {myListings.map((listing) => (
                 <SellListingCard key={listing.id} listing={listing} onOpen={() => openDetail(listing)} />
               ))}
             </CardGrid>
+            <DisclaimerNote kind="property" className="mt-3" />
+            </>
           ) : (
             <EmptyState icon={Store} title={t('property.empty.mineTitle')} message={t('property.empty.mineMessage')} />
           )}

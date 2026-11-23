@@ -2,6 +2,7 @@
 // date of the Site Engineer calendar. Everything comes from the existing supply
 // flows; writes go to their existing endpoints, which enforce the same rules
 // (own request, ACCEPTED, inside the request period, not in the future).
+import { DisclaimerNote } from '../../../shared/ui/DisclaimerNote.jsx'
 import { useEffect, useMemo, useState } from 'react'
 import { Loader2, PackageCheck, Truck, Wallet } from 'lucide-react'
 import { useLanguage } from '../../../i18n/LanguageContext.jsx'
@@ -109,8 +110,11 @@ const normalize = (form) => ({
 export function LabourCards({ requests, date, recordsById, canRecord, onSaved, onDirtyChange, resetSignal }) {
   const { t } = useLanguage()
   if (!requests.length) return <p className="rounded-lg border border-dashed border-slate-200 px-3 py-4 text-center text-xs font-bold text-slate-400">{t('se.res.noLabour')}</p>
-  return <div className="grid gap-3 xl:grid-cols-2">
-    {requests.map((request) => <LabourCard key={request.id} request={request} date={date} records={recordsById[request.id] || []} editable={canRecord(request)} onSaved={onSaved} onDirtyChange={onDirtyChange} resetSignal={resetSignal} />)}
+  return <div className="grid gap-3">
+    <div className="grid gap-3 xl:grid-cols-2">
+      {requests.map((request) => <LabourCard key={request.id} request={request} date={date} records={recordsById[request.id] || []} editable={canRecord(request)} onSaved={onSaved} onDirtyChange={onDirtyChange} resetSignal={resetSignal} />)}
+    </div>
+    <DisclaimerNote kind="labour" />
   </div>
 }
 
@@ -213,6 +217,7 @@ export function PaymentsList({ payments = [], country }) {
       </ul> : <p className="px-3 py-3 text-center text-xs font-bold text-slate-400">{t('se.res.noPayments')}</p>}
       {(paidOutTotal > 0 || receivedInTotal > 0) && <p className="px-3 pt-2 text-xs font-bold text-slate-600">{t('se.res.paidOutTotal', { amount: formatMoney(paidOutTotal, country) })}{receivedInTotal > 0 ? ` · ${t('se.res.receivedInTotal', { amount: formatMoney(receivedInTotal, country) })}` : ''}</p>}
       <p className="px-3 pb-2 text-[11px] font-semibold text-slate-500">{t('se.res.paymentsHint')}</p>
+      <DisclaimerNote kind="payments" className="px-3 pb-2" />
     </div>
   </details>
 }

@@ -3,8 +3,9 @@
     python scripts/convert_legal_docs.py      (needs python-docx: pip install python-docx)
 
 Run it after replacing a Word file; it rewrites professional/ and partner/ frontend
-src/features/legal/content/{terms,privacy}.js. The sources are the one .docx in docs/legal
-whose name contains "Terms" and the one whose name contains "Privacy".
+src/features/legal/content/{terms,privacy}.js, and professional/frontend's disclaimer.js
+(the Disclaimer is shown on Professional only). The sources are the one .docx in docs/legal
+whose name contains "Terms", the one with "Privacy" and the one with "Disclaimer".
 
 The wording is copied exactly. The only change is the brand (BRAND below): any
 @gharbanao.in address becomes support@crewnbuild.com, gharbanao.in becomes crewnbuild.com
@@ -43,12 +44,19 @@ def source(word: str) -> Path:
     return found[0]
 
 
-SOURCES = {'terms': source('Terms'), 'privacy': source('Privacy')}
+SOURCES = {'terms': source('Terms'), 'privacy': source('Privacy'), 'disclaimer': source('Disclaimer')}
+NAMES = {'terms': 'Terms', 'privacy': 'Privacy Policy', 'disclaimer': 'Disclaimer'}
+# Which frontends show each document. The Disclaimer is not accepted at sign-up, so it has
+# no version in app/core/legal.py.
+APPS = {'terms': ['professional', 'partner'], 'privacy': ['professional', 'partner'], 'disclaimer': ['professional']}
 # Used when a document does not print its own title / version / dates (the 20 Nov 2026
 # files do not). Raise DEFAULT_VERSION with any change of wording, together with
 # TERMS_VERSION / PRIVACY_VERSION in both backends' app/core/legal.py.
-TITLES = {'terms': 'Terms and Conditions (Terms of Use)', 'privacy': 'Privacy Policy'}
+TITLES = {'terms': 'Terms and Conditions (Terms of Use)', 'privacy': 'Privacy Policy', 'disclaimer': 'Disclaimer'}
 DEFAULT_COMPANY, DEFAULT_SITE = 'CREWNBUILD', 'crewnbuild.com'
+# Sections left out of the published text (the Word file keeps them). The Disclaimer's last
+# section lists the short notes for developers and designers; the notes are on the screens.
+SKIP_SECTIONS = {'disclaimer': {'short-form-disclaimers-for-use-on-the-website'}}
 DEFAULT_VERSION = '1.1'
 DEFAULT_DATE = '20 November 2026'
 BRAND = [
@@ -134,7 +142,8 @@ def convert(key: str, path: Path) -> dict:
                 'title': match.group(2) if match else text,
                 'blocks': [],
             }
-            result['sections'].append(section)
+            if section['id'] not in SKIP_SECTIONS.get(key, set()):
+                result['sections'].append(section)
             continue
         if section is None:
             header.append(text)
@@ -180,8 +189,8 @@ if __name__ == '__main__':
     for key, path in SOURCES.items():
         content = convert(key, path)
         body = json.dumps(content, ensure_ascii=False, indent=2)
-        module = HEADER.format(name={'terms': 'Terms', 'privacy': 'Privacy Policy'}[key]) + f'const {key} = {body}\n\nexport default {key}\n'
-        for app in ['professional', 'partner']:
+        module = HEADER.format(name=NAMES[key]) + f'const {key} = {body}\n\nexport default {key}\n'
+        for app in APPS[key]:
             target = ROOT / app / 'frontend/src/features/legal/content' / f'{key}.js'
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_text(module, encoding='utf-8', newline='\n')

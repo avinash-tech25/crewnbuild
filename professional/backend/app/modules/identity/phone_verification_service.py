@@ -253,18 +253,17 @@ class PhoneVerificationService:
         if test_account:
             logger.info("WhatsApp login code for %s: fixed test account, not sent to WhatsApp", mask_phone(phone))
             self.store_code(phone, phone_key, code_hash, claim, purpose, OTP_TEST_CODE_TTL_MINUTES)
-            return self.sent_reply(OTP_TEST_CODE_TTL_MINUTES)
+            # The same development preview as every other code: in development, the code goes
+            # back to a request from this machine (it used to be shown for sign-up only, so a
+            # test account's sign-in showed nothing and sent nothing).
+            return self.preview_reply(self.sent_reply(OTP_TEST_CODE_TTL_MINUTES), code, client_address)
 
         if self.dev_otp_preview():
             logger.info(
                 "WhatsApp %s code for %s: development preview, not sent to WhatsApp", purpose.lower(), mask_phone(phone)
             )
             self.store_code(phone, phone_key, code_hash, claim, purpose)
-            reply = self.sent_reply()
-            reply["dev_preview"] = True
-            if is_loopback(client_address):
-                reply["dev_otp"] = code
-            return reply
+            return self.preview_reply(self.sent_reply(), code, client_address)
 
         logger.info("WhatsApp %s code requested for %s", purpose.lower(), mask_phone(phone))
         try:
@@ -285,6 +284,15 @@ class PhoneVerificationService:
             raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=NOT_SENT)
         self.store_code(phone, phone_key, code_hash, claim, purpose)
         return self.sent_reply()
+
+    def preview_reply(self, reply: dict[str, Any], code: str, client_address: str | None) -> dict[str, Any]:
+        """WHATSAPP_DEV_OTP_PREVIEW, for sign-up and sign-in alike: only on a development
+        server, and the code itself only to a request from this machine (never logged)."""
+        if self.dev_otp_preview():
+            reply["dev_preview"] = True
+            if is_loopback(client_address):
+                reply["dev_otp"] = code
+        return reply
 
     @staticmethod
     def sent_reply(ttl_minutes: int = CODE_TTL_MINUTES) -> dict[str, Any]:

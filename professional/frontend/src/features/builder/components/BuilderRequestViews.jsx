@@ -1,3 +1,4 @@
+import { DisclaimerNote } from '../../../shared/ui/DisclaimerNote.jsx'
 import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
@@ -846,7 +847,7 @@ export function ContractorRequestsBoard({ requestList, onAccept, onReject, onWit
                       hasQuote && { key: 'quote', label: t('request.flow.builderQuotation'), value: inr(request.quotation_amount) },
                     ]}
                     chips={[
-                      party && request.profile_verified && <CardChip key="verified" tone="green">{t('req.party.verifiedYes')}</CardChip>,
+                      party && request.profile_verified && <CardChip key="verified" tone="green" title={t('disclaimer.note.verified')}>{t('req.party.verifiedYes')}</CardChip>,
                       party && rowNote && <CardChip key="note">{rowNote}</CardChip>,
                       dateLine && <CardChip key="date" icon={CalendarDays}>{dateLine}</CardChip>,
                     ]}
@@ -919,6 +920,7 @@ export function ContractorRequestsBoard({ requestList, onAccept, onReject, onWit
               })}
             </CardGrid>
           )}
+          {variant === 'owner' && <DisclaimerNote kind="leads" className="mt-3" />}
         </motion.div>
       </AnimatePresence>
 

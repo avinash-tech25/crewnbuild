@@ -485,7 +485,7 @@ export default function ContractorProfileDetails({ variant = 'page', contractorI
             )}
             <h1 className="truncate font-display text-base font-extrabold text-graphite">{td(profile.company_name)}</h1>
             {profile.is_verified === true ? (
-              <span data-testid="verified-partner-badge" className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-brand-50 px-2 py-0.5 text-[10px] font-bold text-brand-700">
+              <span data-testid="verified-partner-badge" title={t('disclaimer.note.verified')} className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-brand-50 px-2 py-0.5 text-[10px] font-bold text-brand-700">
                 <BadgeCheck className="h-3 w-3" /> {t('dash.common.verified')}
               </span>
             ) : !profile.profile_complete && (
@@ -563,7 +563,7 @@ export default function ContractorProfileDetails({ variant = 'page', contractorI
                 {/* "Verified" comes only from a live verification decision; a
                     complete profile is not the same thing. */}
                 {profile.is_verified === true ? (
-                  <span data-testid="verified-partner-badge" className="mt-3 inline-flex items-center gap-1 rounded-full bg-brand-50 px-3 py-1 text-xs font-bold text-brand-700">
+                  <span data-testid="verified-partner-badge" title={t('disclaimer.note.verified')} className="mt-3 inline-flex items-center gap-1 rounded-full bg-brand-50 px-3 py-1 text-xs font-bold text-brand-700">
                     <BadgeCheck className="h-3.5 w-3.5" /> {t('dash.common.verified')}
                   </span>
                 ) : !profile.profile_complete && (

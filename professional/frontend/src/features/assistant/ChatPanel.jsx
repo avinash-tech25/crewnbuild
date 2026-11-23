@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { useLanguage } from '../../i18n/LanguageContext.jsx'
 import { AssistantError, clearHistory, fetchHistory, fetchWelcome, streamChat, voteOnAnswer } from './assistantApi.js'
 import { Helmet } from './Helmet.jsx'
+import { DisclaimerNote } from '../../shared/ui/DisclaimerNote.jsx'
 
 /**
  * Viswa's chat window, ported from Kuwait-Version's ChatWidget (same look: the green
@@ -322,7 +323,7 @@ export default function ChatPanel({ open, user, onClose }) {
           </svg>
         </button>
       </form>
-      <p className="-mt-2 pb-2.5 text-center text-[11px] text-oc-muted">{t('assistant.disclaimer')}</p>
+      <DisclaimerNote kind="assistant" className="-mt-2 justify-center px-4 pb-2.5" />
     </section>
   )
 }

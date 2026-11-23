@@ -519,7 +519,7 @@ export default function ContractorProfileSettings({
               <h2 className="font-display text-lg font-extrabold text-slate-950">{td(displayName(profile.company_name, profile.name)) || t('role.builder')}</h2>
               {/* Only a live verification decision from the backend earns the badge. */}
               {profile.is_verified === true && (
-                <span data-testid="verified-partner-badge" className="inline-flex rounded-full border border-brand-200 bg-brand-50 px-2.5 py-0.5 text-xs font-extrabold text-brand-800">{t('cps.verifiedPartner')}</span>
+                <span data-testid="verified-partner-badge" title={t('disclaimer.note.verified')} className="inline-flex rounded-full border border-brand-200 bg-brand-50 px-2.5 py-0.5 text-xs font-extrabold text-brand-800">{t('cps.verifiedPartner')}</span>
               )}
             </div>
             <p className="mt-1 text-[13px] font-medium text-slate-500">{td(profile.name || user?.name)} · {profile.license_number ? t('cps.licenseNumberValue', { number: profile.license_number }) : t('cps.licenseNotSet')}</p>

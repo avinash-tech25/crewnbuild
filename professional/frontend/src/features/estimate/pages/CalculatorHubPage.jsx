@@ -16,6 +16,7 @@
  * figures, which live with their sources in `calculators/constants.js`. They
  * quote no price and name no product: they are arithmetic, not catalogue.
  */
+import { DisclaimerNote } from '../../../shared/ui/DisclaimerNote.jsx'
 import { Calculator, Compass, FileCheck, Landmark, Layers, Paintbrush, Receipt, Scale, ReceiptIndianRupee, Stamp, TrendingUp, Truck, Wallet } from 'lucide-react'
 import EstimateCalculator from '../components/EstimateCalculator.jsx'
 import PaintCalculator from '../calculators/PaintCalculator.jsx'
@@ -44,6 +45,15 @@ import useUrlState from '../../../shared/hooks/useUrlState.js'
 // `icon` instead. `badgeKey` is the design's marker above a card. `subKey` is
 // kept as the card's tooltip — the design shows the title only.
 const HUB_IMAGES = '/calculator-hub'
+// The Disclaimer's short note under each calculator's results, by the kind of tool.
+const NOTE_FOR = {
+  construction: 'cost', 'raw-material': 'cost', paint: 'cost', 'ready-mix': 'cost',
+  vastu: 'vastu',
+  'home-loan': 'loan', 'construction-finance': 'loan',
+  'stamp-duty': 'tax', 'true-cost': 'tax', 'property-tds': 'tax',
+  'property-roi': 'general', 'rent-vs-buy': 'general',
+  'contractor-quote': 'quote',
+}
 const CALCULATORS = [
   { id: 'construction', labelKey: 'site.calculators.hub.construction', icon: Calculator, image: 'construction', badgeKey: 'site.calculators.hub.badgePopular', embedded: true, Component: EstimateCalculator },
   { id: 'raw-material', labelKey: 'site.calculators.hub.rawMaterial', icon: Layers, image: 'raw-material', Component: RawMaterialCalculator },
@@ -150,6 +160,7 @@ export default function CalculatorHub() {
             {active.embedded
               ? <div className={embeddedPageChrome}><active.Component /></div>
               : <active.Component />}
+            <DisclaimerNote kind={NOTE_FOR[active.id] || 'general'} className="mt-3" />
           </div>
         </div>
       </main>

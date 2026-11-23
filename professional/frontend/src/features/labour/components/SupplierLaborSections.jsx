@@ -9,6 +9,7 @@
  *
  * There is no quotation, negotiation or payment in this flow.
  */
+import { DisclaimerNote } from '../../../shared/ui/DisclaimerNote.jsx'
 import useUrlState from '../../../shared/hooks/useUrlState.js'
 import { useEffect, useMemo, useState } from 'react'
 import {
@@ -563,7 +564,12 @@ function SupplierAttendance({ requestId, refreshKey }) {
   }, [requestId, refreshKey])
   if (state.loading) return <p className="flex items-center gap-2 py-3 text-xs font-semibold text-graphite/50"><Loader2 className="h-3.5 w-3.5 animate-spin" /> {t('labor.attendance.loading')}</p>
   if (state.error) return <p className="rounded-xl bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700">{state.error}</p>
-  return <LaborDailyRecordsTable records={state.records} />
+  return (
+    <>
+      <LaborDailyRecordsTable records={state.records} />
+      <DisclaimerNote kind="labour" className="mt-2" />
+    </>
+  )
 }
 
 export function LaborAssignmentsSection({ requests, services, refreshKey = 0 }) {

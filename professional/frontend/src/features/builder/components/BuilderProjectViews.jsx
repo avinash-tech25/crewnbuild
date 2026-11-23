@@ -1,3 +1,4 @@
+import { DisclaimerNote } from '../../../shared/ui/DisclaimerNote.jsx'
 import { useEffect, useState } from 'react'
 import useUrlState from '../../../shared/hooks/useUrlState.js'
 import {
@@ -472,6 +473,7 @@ export function ContractorProjectDetail({
 
           {activeTab === 'payments' && (
             <div className="space-y-3">
+              <DisclaimerNote kind="payments" />
               {(project.escrow_milestones || []).map((milestone) => (
                 <div key={milestone.id} className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 p-4">
                   <div>

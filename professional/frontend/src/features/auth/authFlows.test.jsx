@@ -145,6 +145,51 @@ describe('WhatsApp sign-in', () => {
   })
 })
 
+describe('WhatsApp sign-in in development', () => {
+  const CONFIG = { 'GET /auth/phone/config': { data: { enabled: true, login: true, dial_code: '+91', digits: 10 } } }
+
+  it("shows the development code on sign-in exactly as on sign-up, with the server's countdown", async () => {
+    const user = userEvent.setup()
+    installFakeServer({
+      ...CONFIG,
+      'POST /auth/phone/login/send-code': {
+        data: { sent: true, expires_in_minutes: 10, resend_after_seconds: 60, dev_preview: true, dev_otp: '246810' },
+      },
+    })
+    renderApp('/login', { auth: signedOut })
+    await user.type(await screen.findByPlaceholderText('10 digit mobile number', {}, { timeout: 15000 }), '9000000001')
+    await user.click(screen.getByRole('button', { name: /Send OTP on WhatsApp/ }))
+    expect(await screen.findByTestId('dev-otp')).toHaveTextContent('246810')
+    expect(screen.getByRole('note')).toHaveTextContent('Development mode — WhatsApp not sent.')
+    expect(screen.getByText('01:00')).toBeInTheDocument() // the server's 60 s, not a guess
+  })
+
+  it("says the code is only shown on the developer's machine when the server keeps it back", async () => {
+    const user = userEvent.setup()
+    installFakeServer({
+      ...CONFIG,
+      'POST /auth/phone/login/send-code': { data: { sent: true, expires_in_minutes: 10, resend_after_seconds: 60, dev_preview: true } },
+    })
+    renderApp('/login', { auth: signedOut })
+    await user.type(await screen.findByPlaceholderText('10 digit mobile number', {}, { timeout: 15000 }), '9876543210')
+    await user.click(screen.getByRole('button', { name: /Send OTP on WhatsApp/ }))
+    expect(await screen.findByRole('note')).toHaveTextContent('only shown on the developer’s own machine')
+    expect(screen.queryByTestId('dev-otp')).not.toBeInTheDocument()
+  })
+
+  it("shows the server's wait when asked again too soon", async () => {
+    const user = userEvent.setup()
+    installFakeServer({
+      ...CONFIG,
+      'POST /auth/phone/login/send-code': { status: 429, data: { detail: 'Please wait 42 seconds before asking for a new code.' } },
+    })
+    renderApp('/login', { auth: signedOut })
+    await user.type(await screen.findByPlaceholderText('10 digit mobile number', {}, { timeout: 15000 }), '9876543210')
+    await user.click(screen.getByRole('button', { name: /Send OTP on WhatsApp/ }))
+    expect(await screen.findByText('Please wait 42 seconds before asking for a new code.')).toBeInTheDocument()
+  })
+})
+
 describe('forgot password', () => {
   it('asks the server to e-mail a reset code', async () => {
     const user = userEvent.setup()

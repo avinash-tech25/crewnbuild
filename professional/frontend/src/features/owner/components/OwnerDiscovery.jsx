@@ -14,6 +14,7 @@
  *                           Quick Action's handler), so ordering, cart and
  *                           checkout stay exactly as they are.
  */
+import { DisclaimerNote } from '../../../shared/ui/DisclaimerNote.jsx'
 import { useEffect, useState } from 'react'
 import { ArrowRight, ChevronRight, Layers, Package, Store, Users } from 'lucide-react'
 import { fetchShopProducts } from '../../catalog/supplierProductsApi.js'
@@ -101,6 +102,7 @@ export function OwnerTechnicianSection({ onBook }) {
           </div>
         ))}
       </div>
+      <DisclaimerNote kind="technician" className="mt-2" />
     </DiscoveryPanel>
   )
 }

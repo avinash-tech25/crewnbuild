@@ -22,6 +22,7 @@ const TestimonialsPage = page(() => import('../../features/public-site/pages/Tes
 const ContactPage = page(() => import('../../features/public-site/pages/ContactPage.jsx'))
 const TermsPage = page(() => import('../../features/legal/pages/LegalPage.jsx').then((module) => ({ default: module.TermsPage })))
 const PrivacyPage = page(() => import('../../features/legal/pages/LegalPage.jsx').then((module) => ({ default: module.PrivacyPage })))
+const DisclaimerPage = page(() => import('../../features/legal/pages/LegalPage.jsx').then((module) => ({ default: module.DisclaimerPage })))
 const LegalHubPage = page(() => import('../../features/legal/pages/LegalHubPage.jsx'))
 const ComingSoonPage = page(() => import('../../features/public-site/pages/ComingSoonPage.jsx'))
 const NotFoundPage = page(() => import('../../features/public-site/pages/NotFoundPage.jsx'))
@@ -76,6 +77,7 @@ export const routes = [
   { path: '/legal', Component: LegalHubPage, access: 'public' },
   { path: '/terms', Component: TermsPage, access: 'public' },
   { path: '/privacy', Component: PrivacyPage, access: 'public' },
+  { path: '/disclaimer', Component: DisclaimerPage, access: 'public' },
   // My Support Tickets asks for sign-in itself, so a visitor from an acknowledgement e-mail is not bounced.
   { path: '/contact-us/tickets', Component: SupportTicketsPage, access: 'public' },
   { path: '/contact-us/tickets/:reference', Component: SupportTicketsPage, access: 'public' },

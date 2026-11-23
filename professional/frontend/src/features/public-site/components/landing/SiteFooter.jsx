@@ -13,6 +13,7 @@ import { useEffect, useState } from "react";
 import { useLanguage } from "../../../../i18n/LanguageContext.jsx";
 import { Link } from "react-router-dom";
 import { AppLink } from "../../../../shared/navigation/AppLink.jsx";
+import { DisclaimerNote } from "../../../../shared/ui/DisclaimerNote.jsx";
 import { useAccountLinks } from "../../../../shared/auth/sessionLinks.js";
 import { fetchSupportConfig } from "../../../support/supportApi.js";
 import { SUPPORT_PHONE, phoneHref } from "../../../../shared/constants/support.js";
@@ -111,6 +112,7 @@ export function SiteFooter({ text, language, onSelectLanguage }) {
               <li><Link className={columnLink} to="/legal">{t("legal.hub.title")}</Link></li>
               <li><Link className={columnLink} to="/terms">{text.footer.terms}</Link></li>
               <li><Link className={columnLink} to="/privacy">{text.footer.privacy}</Link></li>
+              <li><Link className={columnLink} to="/disclaimer">{t("site.footer.link.disclaimer")}</Link></li>
             </ul>
           </div>
 
@@ -169,6 +171,7 @@ export function SiteFooter({ text, language, onSelectLanguage }) {
             ))}
           </div>
         </div>
+        <DisclaimerNote kind="language" tone="dark" className="mt-3" />
       </div>
     </footer>
   );

@@ -207,6 +207,33 @@ the repository; PB = `partner/backend/app`, PrB = `professional/backend/app`.
 31. The DPDP timeline ("core obligations from May 2027"), staff MFA, encryption at rest
     beyond Aadhaar / bank / face / camera credentials, PCI-DSS and penetration testing.
 
+## Disclaimer
+
+`CREWNBUILD_Disclaimer.docx` (the one `.docx` with "Disclaimer" in its name) is converted by
+the same script into `professional/frontend/src/features/legal/content/disclaimer.js`
+(Professional only), word for word with the same brand rule; the document already says
+CREWNBUILD and crewnbuild.com, so nothing was replaced. It prints its own title, version
+**1.0** and dates (effective and last updated 23 November 2026). It is published at
+`/disclaimer` (sidebar of sections, as /terms), listed on the `/legal` hub and in the
+footer's Legal column. It is not accepted at sign-up, so it has no version constant in
+`app/core/legal.py`.
+
+**Placeholders remaining in the Disclaimer: none.** (The script prints "placeholders: none".)
+
+**The last section, "Short-Form Disclaimers for Use on the Website", is not published** (it is
+for developers and designers; its lines are the short notes on the screens). The Word file
+keeps it; the script skips it (`SKIP_SECTIONS`), so /disclaimer shows 16 sections.
+
+**Short notes in the app** (`shared/ui/DisclaimerNote.jsx`; one grey line, an info icon and
+"Read disclaimer" linking to the section; keys `disclaimer.note.*`): the document's short
+forms, brand already CREWNBUILD. Where the document has no short form, the line quotes the
+section it links to: property prices (9.2), Book Technician ("Read This First", third
+point), adverts (6.4, with a visible "Sponsored" label), the language switcher (12.1, as the
+switcher's tooltip and screen-reader description, so the header keeps its size), and Viswa
+("Viswa can make mistakes. Not professional advice.", wording given by the product owner,
+linked to section 3). For legal review: the document has no short form for Book Technician,
+property prices or Viswa.
+
 ## Versions
 
 Both texts are version **1.1** (20 November 2026); 1.0 was the 17 November text. The

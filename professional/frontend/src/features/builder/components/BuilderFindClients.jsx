@@ -1,3 +1,4 @@
+import { DisclaimerNote } from '../../../shared/ui/DisclaimerNote.jsx'
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { ArrowRight, BrickWall, Check, CheckCircle2, HardHat, Home, IndianRupee, Send, Tractor, Truck, X } from 'lucide-react'
@@ -238,6 +239,7 @@ function HomeownerLeadList({ clientList, clientRequestState, findClientRequest, 
         })}
       </CardGrid>
       {!clientList.length && <EmptyState title={t('dash.contractor.noClientsTitle')} message={t('dash.contractor.noClientsSub')} />}
+      <DisclaimerNote kind="leads" className="mt-3" />
     </>
   )
 }

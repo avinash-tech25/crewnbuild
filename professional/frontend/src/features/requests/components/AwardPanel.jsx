@@ -1,3 +1,4 @@
+import { DisclaimerNote } from '../../../shared/ui/DisclaimerNote.jsx'
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AlertCircle, CheckCircle2, Clock, FileSignature, Lock, MessageSquare, XCircle } from 'lucide-react'
@@ -513,6 +514,7 @@ export default function AwardPanel({ projectId, requestId = null, onChanged, onL
           </div>
         )
       })()}
+      <DisclaimerNote kind="payments" className="mt-3" />
     </div>
   )
 }

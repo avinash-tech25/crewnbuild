@@ -24,9 +24,9 @@ const dotTones = {
   info: 'bg-blue-500',
 }
 
-export function EntityPill({ tone = 'neutral', dot = false, icon: Icon, children }) {
+export function EntityPill({ tone = 'neutral', dot = false, icon: Icon, title, children }) {
   return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold leading-normal ${tones[tone] || tones.neutral}`}>
+    <span title={title} className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold leading-normal ${tones[tone] || tones.neutral}`}>
       {dot && <span aria-hidden="true" className={`h-1.5 w-1.5 rounded-full ${dotTones[tone] || dotTones.neutral}`} />}
       {Icon && <Icon aria-hidden="true" className="h-3.5 w-3.5" strokeWidth={2} />}
       {children}

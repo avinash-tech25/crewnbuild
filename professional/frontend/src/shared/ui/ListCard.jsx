@@ -88,13 +88,13 @@ export function CardStatus({ status, tone, icon: Icon, children }) {
  * A chip in the card body (a size, a category, a trade, a count). `outline` draws only
  * the border on white (the type / floors chip).
  */
-export function CardChip({ tone = 'grey', icon: Icon, outline = false, children }) {
+export function CardChip({ tone = 'grey', icon: Icon, outline = false, title, children }) {
   const classes = TONE_CLASSES[tone] || TONE_CLASSES.grey
   const shown = outline ? `${classes.split(' ').filter((name) => !name.startsWith('bg-')).join(' ')} bg-white` : classes
   return (
     <span
       className={`inline-flex max-w-full items-center gap-1 truncate rounded-full border px-2.5 py-0.5 text-[11px] font-bold ${shown}`}
-      title={textOfChildren(children)}
+      title={title || textOfChildren(children)}
     >
       {Icon && <Icon aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />}
       <span className="truncate">{children}</span>

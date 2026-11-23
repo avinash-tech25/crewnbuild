@@ -1,3 +1,4 @@
+import { DisclaimerNote } from '../../../shared/ui/DisclaimerNote.jsx'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
@@ -777,6 +778,7 @@ export default function EngineerDashboard() {
                       <QuickActionCard key={action.id} action={action} compact />
                     ))}
                   </div>
+                  {bookTechnician && <DisclaimerNote kind="technician" className="mt-2" />}
                 </section>
               )}
               // Site Activity Overview: the dashboard's four existing counts,

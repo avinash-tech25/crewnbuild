@@ -1,3 +1,4 @@
+import { DisclaimerNote } from '../../../shared/ui/DisclaimerNote.jsx'
 import useUrlState from '../../../shared/hooks/useUrlState.js'
 import {
   Briefcase, Building2, CheckCircle2, ChevronRight, Clock, Eye, FileText, Home, Package, Search, Send, Tags, Users,
@@ -502,6 +503,7 @@ export function SupplierFindClientsSection({ clientList, requestList = [], reque
         })}
       </div>
       {renderTabContent()}
+      <DisclaimerNote kind="leads" className="mt-3" />
     </Card>
   )
 }
