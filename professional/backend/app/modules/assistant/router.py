@@ -1,6 +1,8 @@
 """Viswa, the help assistant, under /api/v1/assistant.
 
     GET    /assistant/welcome               the opening message (no AI call; guests too)
+    GET    /assistant/health                is the AI configured and reachable (key-free;
+                                            the status and the provider's reason for admins)
     POST   /assistant/chat                  one question; the answer is streamed back as
                                             Server-Sent Events (guests too)
     GET    /assistant/history               the signed-in user's stored chat (30 days)
@@ -12,6 +14,7 @@ browser never sends a user id or a role. Writes with a session carry X-CSRF-Toke
 CSRF middleware). The AI key stays on this server (provider.py).
 """
 
+import time
 import uuid
 from collections.abc import Iterator
 from typing import Any, Literal
@@ -26,7 +29,8 @@ from app.core.client_address import visitor_address
 from app.core.config import Settings
 from app.database.session import SessionLocal, get_db
 from app.modules.assistant import service
-from app.modules.assistant.provider import OpenAICompatibleProvider, Provider
+from app.modules.assistant.provider import OpenAICompatibleProvider, Provider, configured_key
+from app.modules.assistant.tools import ADMIN
 from app.modules.identity.models import User
 
 router = APIRouter(prefix="/assistant", tags=["Assistant"])
@@ -34,6 +38,25 @@ router = APIRouter(prefix="/assistant", tags=["Assistant"])
 
 def get_provider(settings: Settings = Depends(app_settings)) -> Provider:
     return OpenAICompatibleProvider(settings)
+
+
+# One reachability check per base URL and model per minute, so the endpoint cannot be used
+# to hammer the provider.
+HEALTH_CACHE_SECONDS = 60.0
+_health_cache: dict[tuple[str, str], tuple[float, dict[str, Any]]] = {}
+
+
+def provider_check(settings: Settings, provider: Provider) -> dict[str, Any]:
+    check = getattr(provider, "check", None)
+    if check is None:
+        return {"reachable": True, "status": None, "reason": ""}
+    cache_key = (settings.openai_base_url, settings.assistant_model)
+    cached = _health_cache.get(cache_key)
+    if cached and time.monotonic() - cached[0] < HEALTH_CACHE_SECONDS:
+        return cached[1]
+    result: dict[str, Any] = check()
+    _health_cache[cache_key] = (time.monotonic(), result)
+    return result
 
 
 class GuestTurn(BaseModel):
@@ -56,6 +79,22 @@ class VotePayload(BaseModel):
 @router.get("/welcome")
 def assistant_welcome(user: User | None = Depends(optional_user)) -> dict[str, Any]:
     return service.welcome(user)
+
+
+@router.get("/health")
+def assistant_health(
+    user: User | None = Depends(optional_user),
+    settings: Settings = Depends(app_settings),
+    provider: Provider = Depends(get_provider),
+) -> dict[str, Any]:
+    configured = bool(configured_key(settings))
+    report: dict[str, Any] = {"enabled": settings.assistant_enabled, "configured": configured, "reachable": False}
+    if settings.assistant_enabled and configured:
+        check = provider_check(settings, provider)
+        report["reachable"] = bool(check["reachable"])
+        if service.role_for(user) == ADMIN:
+            report.update(model=settings.assistant_model, status=check["status"], reason=check["reason"])
+    return report
 
 
 @router.post("/chat")

@@ -401,6 +401,8 @@ def run_turn(turn: Turn, settings: Settings, provider: Provider, database: Sessi
                             "id": call.id,
                             "type": "function",
                             "function": {"name": call.name, "arguments": call.arguments},
+                            # Gemini's thought_signature must come back with its call.
+                            **({"extra_content": call.extra_content} if call.extra_content else {}),
                         }
                         for call in requested
                     ],
@@ -417,6 +419,7 @@ def run_turn(turn: Turn, settings: Settings, provider: Provider, database: Sessi
         buttons, suggestions = buttons_and_suggestions(knowledge, role, context)
         yield finish(cleaned, "answered", context.tools_used, buttons, suggestions)
     except ProviderError as error:
+        # The status and the provider's own message, key-free (see provider.ProviderError).
         logger.warning("assistant provider failed: %s", error)
         database.rollback()
         yield sse("error", {"message": BUSY})

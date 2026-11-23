@@ -235,7 +235,8 @@ class Settings(BaseSettings):
     assistant_daily_limit: int = 200
     assistant_guest_rate_limit_messages: int = 10
     assistant_max_message_chars: int = 1000
-    assistant_timeout_seconds: float = 30.0
+    # Gemini 3 "thinks" before its first byte (measured over 30 s); the whole turn has its own 60 s.
+    assistant_timeout_seconds: float = 60.0
     assistant_max_tool_calls: int = 4
     assistant_history_days: int = 30
     vastu_analysis_max_attempts: int = 2

@@ -109,13 +109,13 @@ def stored(database: Session) -> int:
 # ------------------------------------------------------------------ routes and availability
 
 
-def test_routes_welcome_and_chat_are_open_the_rest_needs_a_session(client: TestClient) -> None:
+def test_routes_welcome_health_and_chat_are_open_the_rest_needs_a_session(client: TestClient) -> None:
     routes = [
         r
         for r in app_routes(client.app)
         if isinstance(r, APIRoute) and r.endpoint.__module__ == assistant_router.__name__
     ]
-    assert len(routes) == 5
+    assert len(routes) == 6
     assert client.get("/api/v1/assistant/welcome").json()["suggestions"]
     for method, path in [("GET", "/assistant/history"), ("DELETE", "/assistant/history"),
                          ("PUT", f"/assistant/messages/{uuid.uuid4()}/vote")]:  # fmt: skip
