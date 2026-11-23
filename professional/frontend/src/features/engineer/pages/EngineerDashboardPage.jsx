@@ -11,7 +11,8 @@ import useVisibleInterval from '../../../shared/hooks/useVisibleInterval.js'
 import NotFoundPanel from '../../../shared/dashboard/NotFoundPanel.jsx'
 import { canBookPartner, openPartnerBooking } from '../../partner-booking/partnerBooking.js'
 import { accessRole } from '../../../shared/auth/roles.js'
-import { EngineerPurchaseOrders, EngineerStore } from '../../shop/components/MarketplacePurchaseViews.jsx'
+import { EngineerPurchaseOrders } from '../../shop/components/MarketplacePurchaseViews.jsx'
+import EngineerMaterialStore from '../../shop/components/EngineerMaterialStore.jsx'
 import DashboardShell from '../../../shared/dashboard/DashboardShell.jsx'
 
 /**
@@ -932,7 +933,7 @@ export default function EngineerDashboard() {
           <EngineerSupplierHub projects={projectList} activeTab={supplierTab} onTabChange={setSupplierTab} hasSupplierOrders={hasSupplierOrders} />
         )}
 
-        {hasSupplierOrders && activeId === 'store' && <EngineerStore />}
+        {hasSupplierOrders && activeId === 'store' && <EngineerMaterialStore projects={projectList} projectsLoaded={projectLoad.settled} />}
         {hasSupplierOrders && activeId === 'orders' && <EngineerPurchaseOrders />}
 
         {activeId === 'notifications' && (

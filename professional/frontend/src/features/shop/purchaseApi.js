@@ -11,11 +11,10 @@ const purchaseApi = baseApi.injectEndpoints({
     }),
     engineerPurchases: build.query({ query: () => ({ url: `${url}/orders` }) }),
     engineerPurchase: build.query({ query: (id) => ({ url: orderUrl(id) }) }),
-    engineerStore: build.query({ query: () => ({ url: `${url}/store` }) }),
   }),
 })
 
 const { endpoints } = purchaseApi
 export const receivePurchaseItem = (id, lineId) => runMutation(endpoints.receivePurchaseItem, { id, lineId })
 
-export const { useEngineerPurchasesQuery, useEngineerPurchaseQuery, useEngineerStoreQuery } = purchaseApi
+export const { useEngineerPurchasesQuery, useEngineerPurchaseQuery } = purchaseApi

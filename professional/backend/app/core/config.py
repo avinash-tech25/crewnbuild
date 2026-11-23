@@ -224,6 +224,20 @@ class Settings(BaseSettings):
     vastu_vision_model: str = ""
     vastu_gemini_base_url: str = ""
     vastu_analysis_timeout_seconds: float = 120.0
+
+    # ---- Viswa, the help assistant (app/modules/assistant) ----
+    # Same OpenAI-compatible API and key as translation (OPENAI_API_KEY, OPENAI_BASE_URL;
+    # Gemini's OpenAI-compatible endpoint works). No key = the chat answers 503.
+    assistant_enabled: bool = True
+    assistant_model: str = "gemini-3.5-flash"
+    assistant_rate_limit_messages: int = 30
+    assistant_rate_limit_window_seconds: int = 600
+    assistant_daily_limit: int = 200
+    assistant_guest_rate_limit_messages: int = 10
+    assistant_max_message_chars: int = 1000
+    assistant_timeout_seconds: float = 30.0
+    assistant_max_tool_calls: int = 4
+    assistant_history_days: int = 30
     vastu_analysis_max_attempts: int = 2
     vastu_analysis_deadline_seconds: float = 180.0
     vastu_min_confidence: float = 0.8

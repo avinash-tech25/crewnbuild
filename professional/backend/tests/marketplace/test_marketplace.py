@@ -507,18 +507,15 @@ def test_an_assigned_site_engineer_orders_from_an_assigned_supplier(
     (order,) = site.engineer.get("/marketplace/orders").json()
     assert order["id"] == placed["id"]
     assert order["estimated_amount"] == 720
-    assert site.engineer.get("/marketplace/store").json() == []
     (line,) = seller.get("/supplier/material-requests").json()
     decision = f"/supplier/purchase-requests/{placed['request_code']}/respond"
     assert rival.post(decision, json={"action": "ACCEPT"}).status_code == 404
     assert seller.post(decision, json={"action": "ACCEPT"}).status_code == 200
-    assert len(site.engineer.get("/marketplace/store").json()) == 1
 
     line_id = line["id"]
     receipt = f"/marketplace/orders/{placed['id']}/items/{line_id}/receive"
     stranger = engineer(client, database, "stranger.engineer@example.in", "9876500110")
     assert stranger.get("/marketplace/orders").json() == []
-    assert stranger.get("/marketplace/store").json() == []
     assert stranger.post(receipt).status_code == 404
     assert site.engineer.post(receipt).status_code == 409
     fulfilled = seller.post(f"/supplier/material-requests/{line_id}/respond", json={"action": "FULFILL"})
@@ -531,7 +528,6 @@ def test_an_assigned_site_engineer_orders_from_an_assigned_supplier(
     database.expire_all()
     stock = database.scalars(select(CostMaterialInventory)).one()
     assert (str(stock.project_id), stock.current_stock, str(stock.product_id)) == (site.project_id, 2, listing_id)
-    assert len(site.engineer.get("/marketplace/store").json()) == 1
 
 
 def test_an_unassigned_engineer_cannot_order_or_shop_for_the_project(
@@ -632,7 +628,6 @@ def test_a_purchase_request_is_only_its_engineers(
         client, database, "structural@example.in", "9876500018", ROLE_ENGINEER, specialization="Structural Engineer"
     )
     for actor in (site.owner, site.builder, seller, specialist):
-        assert actor.get("/marketplace/store").status_code == 403
         assert actor.get(path).status_code == 403
         assert actor.post(receipt).status_code == 403
     assert client.get("/api/v1/marketplace/orders").status_code == 401
@@ -640,7 +635,6 @@ def test_a_purchase_request_is_only_its_engineers(
     assert other.get(path).status_code == 404
     assert other.post(receipt).status_code == 404
     assert other.get("/marketplace/orders").json() == []
-    assert other.get("/marketplace/store").json() == []
     # Only the supplier answers it, and only its own supplier.
     respond = f"/supplier/purchase-requests/{placed['request_code']}/respond"
     assert site.engineer.post(respond, json={"action": "ACCEPT"}).status_code == 403

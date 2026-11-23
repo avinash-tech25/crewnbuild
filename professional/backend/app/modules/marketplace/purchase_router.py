@@ -1,10 +1,9 @@
-"""A Site Engineer's purchase requests (no payment step): history, one request, receiving a
-delivered line, and the project stock that accepted or delivered lines make up.
+"""A Site Engineer's purchase requests (no payment step): history, one request, and receiving
+a delivered line. The project's stock is the Store (site_operations, /projects/{id}/material-store).
 
     GET  /marketplace/orders                               the engineer's requests
     GET  /marketplace/orders/{order_id}                    one of them
     POST /marketplace/orders/{order_id}/items/{line}/receive   confirm a delivered line
-    GET  /marketplace/store                                accepted / delivered lines
 
 Requests are placed from the cart (POST /cart/checkout) and answered by the supplier
 (/supplier/purchase-requests/{code}/respond, /supplier/material-requests/{id}/respond).
@@ -125,19 +124,3 @@ def receive(
         line.received_at = naive_utc_now()
     database.commit()
     return operational_payload(database, order)
-
-
-@router.get("/marketplace/store")
-def store(principal: Principal = Depends(site_engineer), database: Session = Depends(get_db)) -> list[dict[str, Any]]:
-    statement = (
-        operational_orders()
-        .where(
-            PurchaseOrder.buyer_id == principal.user.id,
-            PurchaseOrder.items.any(PurchaseOrderItem.status.in_(("ACCEPTED", "FULFILLED"))),
-        )
-        .order_by(PurchaseOrder.created_at.desc(), PurchaseOrder.id.desc())
-    )
-    rows = [operational_payload(database, order) for order in database.scalars(statement)]
-    for row in rows:
-        row["items"] = [line for line in row["items"] if line["status"] in ("ACCEPTED", "FULFILLED")]
-    return rows

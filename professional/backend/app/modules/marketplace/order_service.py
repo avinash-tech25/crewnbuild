@@ -38,6 +38,7 @@ from app.modules.projects.models import Project, ProjectTimeline
 from app.modules.projects.notices import create_notification, create_request_notification
 from app.modules.site_operations.models import MaterialLog
 from app.modules.site_operations.service import get_or_create_inventory
+from app.modules.site_operations.store_service import find_stock_for_line
 
 # How a buyer is named to the supplier and the builder.
 BUYER_ROLE_LABELS = {ROLE_OWNER: "House Owner", ROLE_ENGINEER: "Site Engineer"}
@@ -356,9 +357,15 @@ class MaterialRequestService:
         next_state = supplier_product_stock_state(product.quantity, product.low_stock_threshold)
         product.stock_alert_state = next_state
         row.status, row.fulfilled_at = STATUS_FULFILLED, naive_utc_now()
-        inventory = get_or_create_inventory(self.database, project.id, contractor_id, row.material_name, row.unit, 0)
+        # Stock grows on delivery (fulfilment), never on acceptance: one row per product and
+        # variant per project, so buying it again adds to the same balance (10 + 2 = 12). The
+        # row's low-stock threshold is kept (it used to be reset to 0 on every delivery).
+        inventory, stock_name = find_stock_for_line(self.database, project.id, product, row)
+        if inventory is None:
+            inventory = get_or_create_inventory(self.database, project.id, contractor_id, stock_name, row.unit, 0)
         inventory.product_id = row.product_id
         inventory.current_stock += row.quantity
+        inventory.updated_at = naive_utc_now()
         self.database.add(
             MaterialLog(
                 project_id=project.id,

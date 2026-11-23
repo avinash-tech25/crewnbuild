@@ -109,15 +109,14 @@ class DailyCostRepository(BaseRepository[DailyCostRegister]):
         )
 
     # ------------------------------------------------------------------ materials
-    def find_inventory(self, project_id: uuid.UUID, material: str) -> CostMaterialInventory | None:
-        return (
-            self.database.query(CostMaterialInventory)
-            .filter(
-                CostMaterialInventory.project_id == project_id,
-                CostMaterialInventory.material == material,
-            )
-            .first()
+    def find_inventory(self, project_id: uuid.UUID, material: str, lock: bool = False) -> CostMaterialInventory | None:
+        """`lock`: hold the row until commit, so a daily record and a Store usage saved at the
+        same moment cannot both spend the same stock."""
+        query = self.database.query(CostMaterialInventory).filter(
+            CostMaterialInventory.project_id == project_id,
+            CostMaterialInventory.material == material,
         )
+        return (query.with_for_update() if lock else query).first()
 
     def list_project_inventory(self, project_id: uuid.UUID) -> list[CostMaterialInventory]:
         return (

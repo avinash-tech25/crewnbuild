@@ -8,6 +8,7 @@ import RequireAccess from './guards/RequireAccess.jsx'
 import RouteErrorBoundary from './RouteErrorBoundary.jsx'
 import { PROTECTED_PATH_PREFIXES, routes } from './routes.jsx'
 import { useScrollMemory } from '../../shared/navigation/scrollMemory.js'
+import AssistantMount from '../../features/assistant/AssistantMount.jsx'
 
 /** The session's life in this tab (section 8.1). */
 // A tab coming back into view asks the server again at most this often.
@@ -75,6 +76,7 @@ export function AppRoutes() {
   // Each page's scroll position, for the Back buttons that return to it (legal pages).
   useScrollMemory()
   return (
+    <>
     <Suspense fallback={<FullPageLoader />}>
       <Routes>
         {routes.map(({ path, Component, access }) => {
@@ -93,6 +95,10 @@ export function AppRoutes() {
         })}
       </Routes>
     </Suspense>
+    {/* Viswa's bubble (guests and House Owners), outside the page's Suspense so an open chat
+        stays open while the next page loads; the chat itself loads on the first click. */}
+    <AssistantMount />
+    </>
   )
 }
 

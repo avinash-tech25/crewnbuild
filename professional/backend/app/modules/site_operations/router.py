@@ -7,6 +7,9 @@ paths and answers unchanged, ids are UUIDs).
                                             payments, and the summary
     /owners/projects/{id}/analysis          the House Owner's project analysis
     /materials/create, /labour/create       deprecated builder logs
+    /projects/{id}/material-store/...       the Site Engineer's Store: the project's
+                                            materials, usage recorded there, and each
+                                            material's movements
 """
 
 import uuid
@@ -30,8 +33,16 @@ from app.modules.site_operations.schemas import (
     DailyCostRegisterCreate,
     LabourCreate,
     MaterialCreate,
+    StoreThresholdUpdate,
+    StoreUsageCreate,
 )
 from app.modules.site_operations.service import DailyCostService
+from app.modules.site_operations.store_service import (
+    record_store_usage,
+    set_stock_threshold,
+    stock_movements,
+    store_payload,
+)
 
 router = APIRouter()
 
@@ -197,4 +208,44 @@ def save_daily_workflow(
         videos=videos,
         user=user,
         uploads=uploads,
+    )
+
+
+@router.get("/projects/{project_id}/material-store", tags=["Projects"])
+def material_store(project_id: uuid.UUID, user: User = Depends(current_user), database: Session = Depends(get_db)):
+    """One card per product and variant: in stock, received and used totals."""
+    return store_payload(database, project_id, user)
+
+
+@router.post("/projects/{project_id}/material-store/{stock_id}/usage", tags=["Projects"])
+def record_material_store_usage(
+    project_id: uuid.UUID,
+    stock_id: uuid.UUID,
+    payload: StoreUsageCreate,
+    user: User = Depends(current_user),
+    database: Session = Depends(get_db),
+):
+    return record_store_usage(
+        database, project_id, stock_id, user,
+        quantity=payload.quantity, unit=payload.unit, used_on=payload.used_on, note=payload.note,
+    )  # fmt: skip
+
+
+@router.get("/projects/{project_id}/material-store/{stock_id}/movements", tags=["Projects"])
+def material_store_movements(
+    project_id: uuid.UUID, stock_id: uuid.UUID, user: User = Depends(current_user), database: Session = Depends(get_db)
+):
+    return stock_movements(database, project_id, stock_id, user)
+
+
+@router.put("/projects/{project_id}/material-store/{stock_id}/threshold", tags=["Projects"])
+def set_material_store_threshold(
+    project_id: uuid.UUID,
+    stock_id: uuid.UUID,
+    payload: StoreThresholdUpdate,
+    user: User = Depends(current_user),
+    database: Session = Depends(get_db),
+):
+    return set_stock_threshold(
+        database, project_id, stock_id, user, minimum_stock=payload.minimum_stock, unit=payload.unit
     )

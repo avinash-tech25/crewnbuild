@@ -1389,3 +1389,9 @@ html.dark .dash-canvas .list-card.list-card:is(:hover, :focus-within) :is(.text-
     margin-inline: 2px;
   }
 }
+
+/* Viswa's bubble sits bottom-right on every dashboard page: the page keeps room below its
+   last buttons so they can always be scrolled clear of it (AssistantMount sets the flag). */
+html[data-assistant='on'] .dashboard-main {
+  padding-bottom: max(1.25rem, var(--assistant-offset, 0px));
+}

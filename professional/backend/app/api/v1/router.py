@@ -16,6 +16,7 @@ from app.auth.dependencies import enforce_route_access
 from app.modules.accounts.router import router as accounts_router
 from app.modules.admin.router import router as admin_router
 from app.modules.admin.router import staff_router as admin_staff_router
+from app.modules.assistant.router import router as assistant_router
 from app.modules.billing.router import router as billing_router
 from app.modules.catalog.router import admin_router as admin_catalog_router
 from app.modules.catalog.router import router as catalog_router
@@ -90,6 +91,8 @@ MODULE_ROUTERS: list[APIRouter] = [
     weather_router,
     # The builder's portfolio, CSV exports and cost adjustments.
     billing_router,
+    # Viswa, the help assistant: every /assistant path is new.
+    assistant_router,
 ]
 
 for module_router in MODULE_ROUTERS:

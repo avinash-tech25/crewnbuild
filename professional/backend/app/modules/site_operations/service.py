@@ -63,6 +63,7 @@ from app.modules.site_operations.schemas import (
     LabourCreate,
     MaterialCreate,
 )
+from app.modules.site_operations.store_service import project_usages
 
 __all__ = ["daily_record_is_open", "ensure_daily_record_open"]
 
@@ -217,10 +218,11 @@ def get_or_create_inventory(
 
 
 def project_material_stock(database: Session, project_id: uuid.UUID) -> list[dict]:
-    """Per-material project stock: received = remaining + total usage across all daily records."""
+    """Per-material project stock: received = remaining + total usage, from the daily records
+    and the Site Engineer's Store alike (one balance, counted once)."""
     inventory_rows = DailyCostRepository(database).list_project_inventory(project_id)
     all_register_ids = [row.id for row in DailyCostRepository(database).list_project_register_ids(project_id)]
-    usages = DailyCostRepository(database).list_material_usages(all_register_ids) if all_register_ids else []
+    usages = project_usages(database, project_id, all_register_ids)
     by_material: dict[str, dict] = {}
     for usage in usages:
         aggregate = by_material.setdefault(usage.material, {"total_used": 0.0, "daily": []})
@@ -578,7 +580,7 @@ def apply_daily_material_usage(
                 raise HTTPException(status_code=400, detail=f"Unknown product for {material_name}.")
             product_id = product.id
             product_rate = money(product.price)
-        inventory = DailyCostRepository(database).find_inventory(project.id, material_name)
+        inventory = DailyCostRepository(database).find_inventory(project.id, material_name, lock=True)
         if not inventory:
             inventory = CostMaterialInventory(
                 project_id=project.id,

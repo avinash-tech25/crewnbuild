@@ -8,6 +8,7 @@ Runs, in one active copy across every server (app/jobs/scheduler.py):
                                 interval, whichever is shorter (off with
                                 WEATHER_MONITORING_ENABLED=false)
     rate_limit_purge            hourly: rate-limit rows older than a day
+    assistant_history_purge     daily: Viswa's chat messages older than ASSISTANT_HISTORY_DAYS
 
 The API processes run none of these (R6; porting-todo #39, #64).
 """
@@ -20,6 +21,7 @@ from app.core.logging import configure_logging
 from app.database.session import SessionLocal, engine
 from app.jobs import weather_alert_monitor
 from app.jobs.scheduler import Job, Scheduler
+from app.modules.assistant.service import purge_old_history
 from app.modules.rate_limits.service import purge_expired
 from app.modules.weather.weather_settings import get_weather_settings
 
@@ -32,6 +34,11 @@ def purge_rate_limits() -> int:
         return purge_expired(database)
 
 
+def purge_assistant_history() -> int:
+    with SessionLocal() as database:
+        return purge_old_history(database, get_settings().assistant_history_days)
+
+
 def build_jobs() -> list[Job]:
     weather = get_weather_settings()
     weather_minutes = (
@@ -42,6 +49,7 @@ def build_jobs() -> list[Job]:
     return [
         Job("weather_alert_monitor", weather_minutes * 60, weather_alert_monitor.run),
         Job("rate_limit_purge", 3600, purge_rate_limits),
+        Job("assistant_history_purge", 86400, purge_assistant_history),
     ]
 
 

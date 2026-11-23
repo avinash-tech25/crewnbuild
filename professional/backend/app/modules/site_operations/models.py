@@ -183,12 +183,18 @@ class CostLabourEntry(UuidPrimaryKeyMixin, Base):
 
 
 class CostMaterialUsage(UuidPrimaryKeyMixin, Base):
+    """Material used on site: from a daily record (register_id set), or recorded from the
+    Site Engineer's Store (register_id NULL; project_id, engineer_id and work_date say where,
+    who and when). Both lower the same project_material_stock row."""
+
     __tablename__ = "site_material_usages"
     __table_args__ = (
         Index("ix_site_material_usages__project_id_material_work_on", "project_id", "material", "work_on"),
     )
 
-    register_id: Mapped[uuid.UUID] = record_fk()
+    register_id: Mapped[uuid.UUID | None] = mapped_column(
+        "daily_record_id", ForeignKey("site_daily_records.id", ondelete="CASCADE"), index=True
+    )
     product_id: Mapped[uuid.UUID | None] = listing_fk()
     project_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("projects.id", ondelete="CASCADE"), index=True)
     engineer_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), index=True)
@@ -200,6 +206,7 @@ class CostMaterialUsage(UuidPrimaryKeyMixin, Base):
     total_cost: Mapped[Decimal] = money("total_cost_amount")
     closing_stock: Mapped[float] = mapped_column(Float, nullable=False)
     work_date: Mapped[date | None] = mapped_column("work_on", Date, index=True)
+    note: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = created_at_column()
 
 

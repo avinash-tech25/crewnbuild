@@ -176,6 +176,32 @@ the repository; PB = `partner/backend/app`, PrB = `professional/backend/app`.
     abuse reports; weather alerts on project locations; site photo and video uploads;
     third-party ads; the supplier shop, purchase orders, labour and equipment supply.
 
+### Viswa, the in-app help assistant (new; for legal review)
+
+31. **An AI help chat ("Viswa")** for visitors and every signed-in role (House Owners, Builders,
+    Engineers, Suppliers, administrators) (PrB/modules/assistant).
+    *Not in the texts.* Suggested Privacy Policy wording, for legal review:
+    - **What is sent to the AI provider:** the question typed, the earlier messages of the
+      same chat, the user's role and first name, and only the information a question needs
+      from the user's own records (project titles, status and amounts; requests and
+      quotations; orders, listings and stock; daily-record dates; cost totals; notification
+      titles; names of the builders, suppliers, engineers or clients the user deals with;
+      for administrators, overview counts only, never a person). The provider is the same OpenAI-compatible service
+      already used for translation (Google Gemini's OpenAI-compatible API), a processor.
+    - **Never sent:** phone numbers, e-mail addresses, street addresses, Aadhaar, PAN,
+      GSTIN, bank details, documents, passwords or codes, camera / CCTV data, and other
+      people's message texts (removed by field and by pattern before anything leaves).
+    - **Who can see what:** the assistant sees only what the user's own screens show; it
+      cannot read other users' records.
+    - **Storage and retention:** a signed-in user's chat is kept for 30 days
+      (ASSISTANT_HISTORY_DAYS) and then deleted automatically; **Clear chat** deletes it at
+      once; deleting the account deletes it. Visitors' chats are not stored on the server
+      (only in their own browser tab). Thumbs up / down are stored with the answer.
+    - **Limits:** messages are rate-limited per account and per visitor address; answers
+      may be wrong and the widget says so ("Viswa can make mistakes").
+    - To confirm with the provider: where it processes data, whether it keeps prompts,
+      and whether they are used for training (the paid Gemini API terms say no).
+
 ### Not checked against code
 
 31. The DPDP timeline ("core obligations from May 2027"), staff MFA, encryption at rest

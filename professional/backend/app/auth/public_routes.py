@@ -51,6 +51,10 @@ PUBLIC_ROUTES: frozenset[tuple[str, str]] = frozenset(
         ("GET", "/weather/public"),
         ("GET", "/weather/public/places"),
         ("GET", "/weather/public/describe"),
+        # Viswa, the help assistant: visitors get help and the cost estimate (no account data);
+        # a signed-in person is recognised from the session and gets their own data
+        ("GET", "/assistant/welcome"),
+        ("POST", "/assistant/chat"),
         # The media gateway's own authentication callback: called by the gateway on this
         # machine, not by browsers, so it has no session; it answers 404 to any caller
         # that is not loopback and checks the playback token or gateway secret itself.

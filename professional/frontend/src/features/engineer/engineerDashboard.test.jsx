@@ -264,18 +264,12 @@ describe('Site Engineer orders material from the project suppliers', () => {
     expect(JSON.parse(retry.data).request_key).toBe(JSON.parse(first.data).request_key)
   })
 
-  it('opens an accepted purchase from Store', async () => {
-    const user = userEvent.setup()
-    openShop('/engineer/store', { 'GET /marketplace/store': { data: [{ ...purchase, status: 'ACCEPTED' }] } })
-    const result = await screen.findByRole('heading', { name: product.name }, FIND)
-    const search = screen.getByRole('searchbox', { name: 'Search purchased products' })
-    await user.type(search, 'missing')
-    expect(result).not.toBeInTheDocument()
-    await user.clear(search)
-    await user.click(screen.getByRole('link', { name: 'Order details' }))
-    expect(await screen.findByRole('dialog', { name: 'Order details' }, FIND)).toBeInTheDocument()
-    expect(location.current.pathname).toBe('/engineer/orders')
-    expect(new URLSearchParams(location.current.search).get('order')).toBe(purchase.id)
+  it('shows the project store as material cards, not orders', async () => {
+    openShop('/engineer/store', {
+      [`GET /projects/${PROJECT_ID}/material-store`]: { data: { project_id: PROJECT_ID, can_record_usage: true, items: [] } },
+    })
+    await waitFor(() => expect(screen.getByText('No materials in store yet')).toBeInTheDocument(), FIND)
+    expect(screen.queryByText(/Estimated Amount/)).not.toBeInTheDocument()
   })
 
   it('moves direct nested order links to the top-level legacy history view', async () => {

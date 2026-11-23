@@ -62,7 +62,7 @@ def test_every_site_route_needs_a_session(client: TestClient) -> None:
     routes = [
         r for r in app_routes(client.app) if isinstance(r, APIRoute) and r.endpoint.__module__ == site_router.__name__
     ]  # type: ignore[attr-defined]
-    assert len(routes) == 12
+    assert len(routes) == 16  # 12, and the Store: its materials, usage, low-stock level, movements
     for route in routes:
         path = route.path
         for name in route.param_convertors:

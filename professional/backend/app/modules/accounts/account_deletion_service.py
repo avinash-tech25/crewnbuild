@@ -37,6 +37,7 @@ from app.modules.accounts.models import (
 from app.modules.accounts.policies import ensure_may_delete_own_account
 from app.modules.accounts.repository import AccountRepository
 from app.modules.accounts.schemas import AccountDeletionCreate
+from app.modules.assistant.service import delete_user_conversations
 from app.modules.files.file_ownership import file_ids_in, release_unreferenced_files
 from app.modules.identity.models import (
     ROLE_BUILDER,
@@ -285,6 +286,8 @@ class AccountDeletionService:
             user.deleted_at = now
             SessionRepository(self.database).revoke_all_for_user(user.id, REVOKED_ACCOUNT_DELETED, now)
             self.database.execute(delete(UserOAuthIdentity).where(UserOAuthIdentity.user_id == user.id))
+            # Viswa's stored chat goes too (a soft delete does not fire the CASCADE).
+            delete_user_conversations(self.database, user.id)
             self.database.commit()
         except Exception:
             self.database.rollback()

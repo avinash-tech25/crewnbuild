@@ -91,3 +91,20 @@ class LabourCreate(BaseModel):
     labour_count: int
     labour_cost: float
     work_date: datetime
+
+
+class StoreUsageCreate(BaseModel):
+    """Material used on site, recorded from the Site Engineer's Store. The quantity is checked
+    in the service (above zero, at most what is in stock, in the stock's unit)."""
+
+    quantity: float = Field(allow_inf_nan=False)
+    unit: str = Field(min_length=1, max_length=40)
+    used_on: date | None = None
+    note: str | None = Field(default=None, max_length=500)
+
+
+class StoreThresholdUpdate(BaseModel):
+    """A material's low-stock level, in the stock's unit (0 turns the warning off)."""
+
+    minimum_stock: float = Field(allow_inf_nan=False)
+    unit: str = Field(min_length=1, max_length=40)
