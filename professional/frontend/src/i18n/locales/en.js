@@ -3616,7 +3616,7 @@ const base = {
   'help.q.verifyDocuments': 'How do I verify my documents?',
   'help.stillNeedHelp': 'Still need help?',
   'help.contactSupport': 'Contact support',
-  'help.supportContact': 'Write to support@octabuild.com with your registered email and a short description. Our team responds within 24 hours on business days.',
+  'help.supportContact': 'Write to {email} with your registered email and a short description. Our team responds within 24 hours on business days.',
   'help.subtitle': 'Answers to common questions about your builder workspace.',
   'feedback.type.general': 'General Feedback',
   'feedback.type.bug': 'Bug Report',

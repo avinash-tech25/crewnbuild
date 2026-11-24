@@ -3176,7 +3176,7 @@ const base = {
   'help.q.verifyDocuments': 'నా పత్రాలను ఎలా ధృవీకరించాలి?',
   'help.stillNeedHelp': 'ఇంకా సహాయం కావాలా?',
   'help.contactSupport': 'సహాయాన్ని సంప్రదించండి',
-  'help.supportContact': 'మీ నమోదిత ఈమెయిల్ మరియు చిన్న వివరణతో support@octabuild.comకు రాయండి. మా టీమ్ పని దినాలలో 24 గంటలలోపు స్పందిస్తుంది.',
+  'help.supportContact': 'మీ నమోదిత ఈమెయిల్ మరియు చిన్న వివరణతో {email}కు రాయండి. మా టీమ్ పని దినాలలో 24 గంటలలోపు స్పందిస్తుంది.',
   'help.subtitle': 'మీ నిర్మాణదారు వర్క్‌స్పేస్ గురించి సాధారణ ప్రశ్నలకు సమాధానాలు.',
   'feedback.type.general': 'సాధారణ అభిప్రాయం',
   'feedback.type.bug': 'బగ్ నివేదిక',

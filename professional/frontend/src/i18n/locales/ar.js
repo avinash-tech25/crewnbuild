@@ -3053,7 +3053,7 @@ const base = {
   'help.q.verifyDocuments': 'كيف أوثّق مستنداتي؟',
   'help.stillNeedHelp': 'هل ما زلت بحاجة إلى مساعدة؟',
   'help.contactSupport': 'اتصل بالدعم',
-  'help.supportContact': 'راسلنا على support@octabuild.com من بريدك المسجّل مع وصف مختصر. يرد فريقنا خلال 24 ساعة في أيام العمل.',
+  'help.supportContact': 'راسلنا على {email} من بريدك المسجّل مع وصف مختصر. يرد فريقنا خلال 24 ساعة في أيام العمل.',
   'help.subtitle': 'إجابات عن الأسئلة الشائعة حول مساحة عمل المقاول.',
   'feedback.type.general': 'ملاحظات عامة',
   'feedback.type.bug': 'الإبلاغ عن خلل',
