@@ -3284,6 +3284,8 @@ const base = {
   'property.type': 'प्रॉपर्टी का प्रकार',
   'property.bedrooms': 'बेडरूम',
   'property.bathrooms': 'बाथरूम',
+  'property.bathShort': '{count} बाथ',
+  'property.addPhotos': 'फ़ोटो जोड़ें',
   'property.builtUpArea': 'बिल्ट-अप एरिया',
   'property.carpetArea': 'कारपेट एरिया',
   'property.landArea': 'ज़मीन का क्षेत्रफल',

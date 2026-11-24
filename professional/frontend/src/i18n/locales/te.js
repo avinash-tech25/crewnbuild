@@ -3284,6 +3284,8 @@ const base = {
   'property.type': 'ప్రాపర్టీ రకం',
   'property.bedrooms': 'బెడ్‌రూమ్‌లు',
   'property.bathrooms': 'బాత్‌రూమ్‌లు',
+  'property.bathShort': '{count} బాత్',
+  'property.addPhotos': 'ఫోటోలు జోడించండి',
   'property.builtUpArea': 'బిల్ట్-అప్ ఏరియా',
   'property.carpetArea': 'కార్పెట్ ఏరియా',
   'property.landArea': 'స్థల విస్తీర్ణం',

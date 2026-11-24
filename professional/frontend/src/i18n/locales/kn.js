@@ -3284,6 +3284,8 @@ const base = {
   'property.type': 'ಆಸ್ತಿಯ ಪ್ರಕಾರ',
   'property.bedrooms': 'ಬೆಡ್‌ರೂಮ್‌ಗಳು',
   'property.bathrooms': 'ಬಾತ್‌ರೂಮ್‌ಗಳು',
+  'property.bathShort': '{count} ಬಾತ್',
+  'property.addPhotos': 'ಫೋಟೋಗಳನ್ನು ಸೇರಿಸಿ',
   'property.builtUpArea': 'ಬಿಲ್ಟ್-ಅಪ್ ಏರಿಯಾ',
   'property.carpetArea': 'ಕಾರ್ಪೆಟ್ ಏರಿಯಾ',
   'property.landArea': 'ಭೂಮಿಯ ವಿಸ್ತೀರ್ಣ',

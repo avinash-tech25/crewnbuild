@@ -3642,6 +3642,8 @@ const base = {
   'property.type': 'نوع العقار',
   'property.bedrooms': 'غرف النوم',
   'property.bathrooms': 'الحمامات',
+  'property.bathShort': '{count} حمام',
+  'property.addPhotos': 'أضف صورًا',
   'property.builtUpArea': 'المساحة المبنية',
   'property.carpetArea': 'المساحة الصافية',
   'property.landArea': 'مساحة الأرض',

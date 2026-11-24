@@ -3284,6 +3284,8 @@ const base = {
   'property.type': 'പ്രോപ്പർട്ടി തരം',
   'property.bedrooms': 'കിടപ്പുമുറികൾ',
   'property.bathrooms': 'കുളിമുറികൾ',
+  'property.bathShort': '{count} ബാത്ത്',
+  'property.addPhotos': 'ഫോട്ടോകൾ ചേർക്കുക',
   'property.builtUpArea': 'ബിൽറ്റ്-അപ്പ് ഏരിയ',
   'property.carpetArea': 'കാർപെറ്റ് ഏരിയ',
   'property.landArea': 'ഭൂമിയുടെ വിസ്തീർണ്ണം',

@@ -3284,6 +3284,8 @@ const base = {
   'property.type': 'சொத்து வகை',
   'property.bedrooms': 'படுக்கையறைகள்',
   'property.bathrooms': 'குளியலறைகள்',
+  'property.bathShort': '{count} குளியலறை',
+  'property.addPhotos': 'புகைப்படங்களைச் சேர்',
   'property.builtUpArea': 'கட்டப்பட்ட பரப்பு',
   'property.carpetArea': 'கார்பெட் பரப்பு',
   'property.landArea': 'நிலப் பரப்பு',
