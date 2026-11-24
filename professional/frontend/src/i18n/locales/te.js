@@ -1515,6 +1515,7 @@ const base = {
   'dash.common.projectName': 'ప్రాజెక్టు పేరు',
   'dash.common.description': 'వివరణ',
   'dash.common.notifications': 'నోటిఫికేషన్లు',
+  'dash.notif.unread': 'చదవనిది',
   'dash.common.markAllRead': 'అన్నీ చదివినట్లు గుర్తించండి',
   'dash.common.noNotifications': 'నోటిఫికేషన్లు లేవు',
   'dash.common.noNotificationsSub': 'అభ్యర్థన, సరఫరాదారు, బిల్డర్, ప్రాజెక్టు హెచ్చరికలు ఇక్కడ కనిపిస్తాయి.',

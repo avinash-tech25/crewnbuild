@@ -1365,6 +1365,7 @@ const base = {
   'dash.notif.back': 'All notifications',
   'dash.notif.markRead': 'Mark as read',
   'dash.notif.read': 'Read',
+  'dash.notif.unread': 'Unread',
   'dash.notif.open': 'Open related page',
   'dash.common.noNotifications': 'No notifications',
   'dash.common.noNotificationsSub': 'Request, supplier, builder, and project alerts appear here.',

@@ -1515,6 +1515,7 @@ const base = {
   'dash.common.projectName': 'திட்டப் பெயர்',
   'dash.common.description': 'விளக்கம்',
   'dash.common.notifications': 'அறிவிப்புகள்',
+  'dash.notif.unread': 'படிக்காதது',
   'dash.common.markAllRead': 'அனைத்தையும் படித்ததாகக் குறி',
   'dash.common.noNotifications': 'அறிவிப்புகள் இல்லை',
   'dash.common.noNotificationsSub': 'கோரிக்கை, வழங்குநர், கட்டுநர் மற்றும் திட்ட அறிவிப்புகள் இங்கே தோன்றும்.',

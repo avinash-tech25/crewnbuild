@@ -1082,6 +1082,7 @@ const base = {
   'dash.notif.back': 'كل الإشعارات',
   'dash.notif.markRead': 'تحديد كمقروء',
   'dash.notif.read': 'مقروء',
+  'dash.notif.unread': 'غير مقروء',
   'dash.notif.open': 'فتح الصفحة المرتبطة',
   'dash.common.noNotifications': 'لا توجد إشعارات',
   'dash.common.noNotificationsSub': 'ستظهر هنا تنبيهات الطلبات والموردين والمقاولين والمشاريع.',

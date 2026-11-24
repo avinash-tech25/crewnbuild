@@ -1515,6 +1515,7 @@ const base = {
   'dash.common.projectName': 'परियोजना का नाम',
   'dash.common.description': 'विवरण',
   'dash.common.notifications': 'सूचनाएँ',
+  'dash.notif.unread': 'अपठित',
   'dash.common.markAllRead': 'सभी को पढ़ा हुआ चिह्नित करें',
   'dash.common.noNotifications': 'कोई सूचना नहीं',
   'dash.common.noNotificationsSub': 'अनुरोध, आपूर्तिकर्ता, बिल्डर और परियोजना से जुड़ी सूचनाएँ यहाँ दिखेंगी।',

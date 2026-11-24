@@ -5,6 +5,7 @@ import { ArrowLeft, Bell, Check, ExternalLink } from 'lucide-react'
 import { fetchNotifications, markNotificationRead, markNotificationsRead } from '../notificationsApi.js'
 import { playGatedNotificationSound, unlockNotificationAudio } from '../../../shared/utils/notificationSounds.js'
 import { useLanguage } from '../../../i18n/LanguageContext.jsx'
+import { plainRequestText } from '../../../shared/utils/requestText.js'
 import { formatDateTime } from '../../../shared/utils/formatters.js'
 
 // Display names for the module codes the API infers for each notification.
@@ -47,7 +48,7 @@ const notificationLabel = (notification, t, td) => {
 // is translated the same way: the backend writes both in English.
 function showBrowserNotification(notification, td) {
   if (!('Notification' in window) || Notification.permission !== 'granted') return
-  new Notification(td(notification.title), { body: td(notification.body) })
+  new Notification(td(notification.title), { body: td(plainRequestText(notification.body)) })
 }
 
 export default function NotificationBell({ onOpen = null }) {
@@ -197,7 +198,12 @@ export default function NotificationBell({ onOpen = null }) {
     }
     if (user?.role === 'BUILDER') {
       if (category === 'NEGOTIATION' || category === 'SUPPLIER') {
-        // The Requests page opens the request this notification names.
+        // A supplier's request is on the Supplier tab; the House Owner tab opens the
+        // request this notification names.
+        if (category === 'SUPPLIER') {
+          go('/contractor/requests?tab=supplier')
+          return
+        }
         remember('crewnbuild_open_request_hint', `${notification.title || ''} ${notification.body || ''}`)
         go('/contractor/requests')
         return
@@ -320,7 +326,7 @@ export default function NotificationBell({ onOpen = null }) {
                     {notificationLabel(selected, t, td)}
                   </span>
                 </div>
-                <p className="mt-2 whitespace-pre-line text-xs leading-relaxed text-graphite/75">{td(selected.body)}</p>
+                <p className="mt-2 whitespace-pre-line text-xs leading-relaxed text-graphite/75">{td(plainRequestText(selected.body))}</p>
                 <p className="mt-2 text-[10px] font-semibold text-graphite/40">{formatDateTime(selected.created_at, selected.created_at)}</p>
                 <div className="mt-3 flex flex-wrap items-center gap-2">
                   <button type="button" onClick={() => setSelectedId(null)} className="inline-flex items-center gap-1 rounded-lg border border-brand-100 px-2.5 py-1.5 text-xs font-bold text-graphite">
@@ -339,19 +345,23 @@ export default function NotificationBell({ onOpen = null }) {
                 </div>
               </div>
             ) : (
-            <div className="max-h-96 overflow-y-auto">
+            <div className="max-h-[min(24rem,calc(100dvh-9rem))] overflow-y-auto pb-3">
               {notificationList.map((notification) => (
                 <button key={notification.id} onClick={() => setSelectedId(notification.id)} className={`block w-full border-b border-brand-50 px-4 py-3 text-left ${notification.is_read ? 'bg-white' : 'bg-brand-50/70'} hover:bg-brand-50`}>
                   <div className="flex items-start justify-between gap-3">
                     {/* Title, body and — for a module nobody has named — the
                         module code itself are all written by the backend in
                         English, so they are translated for display here. */}
-                    <p className="text-sm font-bold text-graphite">{td(notification.title)}</p>
+                    <p className="flex min-w-0 items-center gap-2 text-sm font-bold text-graphite">
+                      {!notification.is_read && <span aria-hidden="true" className="h-2 w-2 shrink-0 rounded-full bg-red-600" />}
+                      {td(notification.title)}
+                      {!notification.is_read && <span className="sr-only">({t('dash.notif.unread')})</span>}
+                    </p>
                     <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-bold uppercase text-brand-700 ring-1 ring-brand-100">
                       {notificationLabel(notification, t, td)}
                     </span>
                   </div>
-                  <p className="mt-1 text-xs leading-relaxed text-graphite/60">{td(notification.body)}</p>
+                  <p className="mt-1 text-xs leading-relaxed text-graphite/60">{td(plainRequestText(notification.body))}</p>
                   {/* A timestamp, in the reader's language. Anything the
                       formatter cannot read as a date is left exactly as it
                       arrived rather than dropped. */}
