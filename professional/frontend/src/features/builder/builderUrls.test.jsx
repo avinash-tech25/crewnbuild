@@ -119,7 +119,7 @@ describe('Builder section tabs in the address', () => {
   it.each([
     ['/contractor/requests?tab=supplier', /^Supplier Requests/],
     ['/contractor/my-site-engineers?tab=suppliers', /^My Suppliers/],
-    ['/contractor/find-clients?tab=suppliers', /^Supplier Requests/],
+    ['/contractor/find-clients?tab=suppliers', /^Suppliers/],
   ])('%s opens on its tab', async (path, label) => {
     open(path)
     const button = await screen.findByRole('button', { name: label }, FIND)
@@ -149,7 +149,7 @@ describe('Builder location prompt hand-off', () => {
     await user.click(save)
     await waitFor(() => expect(location.current.search).toBe(''), FIND)
     expect(location.current.pathname).toBe('/contractor/find-clients')
-    expect(await screen.findByRole('button', { name: /^House Owner Request/, pressed: true }, FIND)).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: /^House Owners/, pressed: true }, FIND)).toBeInTheDocument()
     act(() => history.back())
     await waitFor(() => expect(location.current.search).toBe('?tab=suppliers'))
   })

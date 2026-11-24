@@ -1729,7 +1729,7 @@ const base = {
   'dash.contractor.submitFeedback': 'கருத்தைச் சமர்ப்பி',
   'dash.contractor.supplierProfile': 'வழங்குநர் சுயவிவரம்',
   'dash.contractor.suppliersEmpty': 'உங்கள் பின்கோடில் வழங்குநர்கள் பொருட்களைப் பட்டியலிட்டதும் அவர்கள் இங்கே தோன்றுவார்கள்.',
-  'dash.contractor.tab.houseownerProjects': 'வீட்டு உரிமையாளர் கோரிக்கை',
+  'dash.contractor.tab.houseownerProjects': 'வீட்டு உரிமையாளர்கள்',
   'dash.contractor.tab.houseOwnerRequests': 'வீட்டு உரிமையாளர் கோரிக்கைகள்',
   'dash.contractor.tab.supplierRequests': 'வழங்குநர் கோரிக்கைகள்',
   'dash.contractor.teamSize': 'குழு அளவு',

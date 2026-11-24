@@ -1729,7 +1729,7 @@ const base = {
   'dash.contractor.submitFeedback': 'అభిప్రాయం సమర్పించండి',
   'dash.contractor.supplierProfile': 'సరఫరాదారు ప్రొఫైల్',
   'dash.contractor.suppliersEmpty': 'మీ పిన్‌కోడ్‌లో సరఫరాదారులు ఉత్పత్తులను జాబితా చేసిన తర్వాత వారు ఇక్కడ కనిపిస్తారు.',
-  'dash.contractor.tab.houseownerProjects': 'ఇంటి యజమాని అభ్యర్థన',
+  'dash.contractor.tab.houseownerProjects': 'ఇంటి యజమానులు',
   'dash.contractor.tab.houseOwnerRequests': 'ఇంటి యజమానుల అభ్యర్థనలు',
   'dash.contractor.tab.supplierRequests': 'సరఫరాదారుల అభ్యర్థనలు',
   'dash.contractor.teamSize': 'బృందం పరిమాణం',

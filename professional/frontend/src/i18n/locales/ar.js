@@ -1301,7 +1301,7 @@ const base = {
   'dash.contractor.submitFeedback': 'إرسال الملاحظات',
   'dash.contractor.supplierProfile': 'ملف المورد',
   'dash.contractor.suppliersEmpty': 'سيظهر الموردون هنا بمجرد إدراج منتجاتهم في رمزك البريدي.',
-  'dash.contractor.tab.houseownerProjects': 'مشاريع مالكي المنازل',
+  'dash.contractor.tab.houseownerProjects': 'مالكو المنازل',
   'dash.contractor.tab.supplierRequests': 'طلبات الموردين',
   'dash.contractor.teamSize': 'حجم الفريق',
   'dash.contractor.thisClient': 'هذا العميل',

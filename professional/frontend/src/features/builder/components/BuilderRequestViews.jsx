@@ -747,7 +747,7 @@ export function ContractorRequestsBoard({ requestList, onAccept, onReject, onWit
                                 </button>
                                 <button
                                   type="button"
-                                  onClick={() => onReject(request.id)}
+                                  onClick={() => confirmReject(request)}
                                   className="inline-flex h-7 items-center justify-center rounded-lg border border-slate-200 bg-white px-2 text-[11px] font-extrabold text-slate-600 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600"
                                 >
                                   {t('dash.contractor.notInterested')}
@@ -867,7 +867,7 @@ export function ContractorRequestsBoard({ requestList, onAccept, onReject, onWit
                             <X className="h-3.5 w-3.5" /> {t('dash.common.cancel')}
                           </button>
                         ) : (
-                          <button type="button" onClick={() => onReject(request.id)} className={cardButtonClass('danger')}>
+                          <button type="button" onClick={() => confirmReject(request)} className={cardButtonClass('danger')}>
                             {t('dash.contractor.notInterested')}
                           </button>
                         )}

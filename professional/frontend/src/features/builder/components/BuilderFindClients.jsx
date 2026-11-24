@@ -45,7 +45,7 @@ export function ContractorFindClientsSection({
       <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 bg-white px-5">
         {[
           { id: 'houseowners', label: t('dash.contractor.tab.houseownerProjects'), count: openOwnerClientList.length, icon: Home },
-          { id: 'suppliers', label: t('dash.contractor.tab.supplierRequests'), count: openSupplierClientList.length, icon: Truck },
+          { id: 'suppliers', label: t('ui.suppliers'), count: openSupplierClientList.length, icon: Truck },
         ].map((tab) => (
           <button
             key={tab.id}
@@ -152,7 +152,7 @@ function HomeownerLeadList({ clientList, clientRequestState, findClientRequest, 
                     <X className="h-3 w-3" /> {t('dash.common.cancel')}
                   </button>
                 ) : (
-                  <button type="button" onClick={() => onRejectRequest(matchedRequest.id)} className={cardButtonClass('danger')}>
+                  <button type="button" onClick={() => { if (window.confirm(t('dash.contractor.confirmReject'))) onRejectRequest(matchedRequest.id) }} className={cardButtonClass('danger')}>
                     {t('dash.contractor.notInterested')}
                   </button>
                 )

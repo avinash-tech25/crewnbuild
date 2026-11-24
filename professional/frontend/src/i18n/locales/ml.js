@@ -1729,7 +1729,7 @@ const base = {
   'dash.contractor.submitFeedback': 'ഫീഡ്‌ബാക്ക് സമർപ്പിക്കുക',
   'dash.contractor.supplierProfile': 'വിതരണക്കാരന്റെ പ്രൊഫൈൽ',
   'dash.contractor.suppliersEmpty': 'നിങ്ങളുടെ പിൻകോഡിൽ വിതരണക്കാർ ഉൽപ്പന്നങ്ങൾ ലിസ്റ്റ് ചെയ്യുമ്പോൾ അവർ ഇവിടെ കാണാം.',
-  'dash.contractor.tab.houseownerProjects': 'വീട്ടുടമയുടെ അഭ്യർത്ഥന',
+  'dash.contractor.tab.houseownerProjects': 'വീട്ടുടമകൾ',
   'dash.contractor.tab.houseOwnerRequests': 'വീട്ടുടമകളുടെ അഭ്യർത്ഥനകൾ',
   'dash.contractor.tab.supplierRequests': 'വിതരണക്കാരുടെ അഭ്യർത്ഥനകൾ',
   'dash.contractor.teamSize': 'ടീം വലുപ്പം',

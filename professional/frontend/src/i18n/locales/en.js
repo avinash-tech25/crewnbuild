@@ -1616,7 +1616,7 @@ const base = {
   'dash.contractor.submitFeedback': 'Submit Feedback',
   'dash.contractor.supplierProfile': 'Supplier Profile',
   'dash.contractor.suppliersEmpty': 'Suppliers will appear here once they list products in your pincode.',
-  'dash.contractor.tab.houseownerProjects': 'House Owner Request',
+  'dash.contractor.tab.houseownerProjects': 'House Owners',
   'dash.contractor.tab.houseOwnerRequests': 'House Owner Requests',
   'dash.contractor.tab.supplierRequests': 'Supplier Requests',
   'dash.contractor.teamSize': 'Team Size',

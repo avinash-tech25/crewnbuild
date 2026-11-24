@@ -1729,7 +1729,7 @@ const base = {
   'dash.contractor.submitFeedback': 'फ़ीडबैक भेजें',
   'dash.contractor.supplierProfile': 'आपूर्तिकर्ता प्रोफ़ाइल',
   'dash.contractor.suppliersEmpty': 'आपके पिनकोड में उत्पाद सूचीबद्ध करने पर आपूर्तिकर्ता यहाँ दिखेंगे।',
-  'dash.contractor.tab.houseownerProjects': 'घर मालिक का अनुरोध',
+  'dash.contractor.tab.houseownerProjects': 'घर मालिक',
   'dash.contractor.tab.houseOwnerRequests': 'घर मालिकों के अनुरोध',
   'dash.contractor.tab.supplierRequests': 'आपूर्तिकर्ता अनुरोध',
   'dash.contractor.teamSize': 'टीम का आकार',

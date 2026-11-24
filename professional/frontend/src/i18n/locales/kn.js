@@ -1729,7 +1729,7 @@ const base = {
   'dash.contractor.submitFeedback': 'ಪ್ರತಿಕ್ರಿಯೆ ಸಲ್ಲಿಸಿ',
   'dash.contractor.supplierProfile': 'ಪೂರೈಕೆದಾರ ಪ್ರೊಫೈಲ್',
   'dash.contractor.suppliersEmpty': 'ನಿಮ್ಮ ಪಿನ್‌ಕೋಡ್‌ನಲ್ಲಿ ಪೂರೈಕೆದಾರರು ಉತ್ಪನ್ನಗಳನ್ನು ಪಟ್ಟಿ ಮಾಡಿದ ನಂತರ ಇಲ್ಲಿ ಕಾಣಿಸುತ್ತಾರೆ.',
-  'dash.contractor.tab.houseownerProjects': 'ಮನೆಮಾಲೀಕರ ವಿನಂತಿ',
+  'dash.contractor.tab.houseownerProjects': 'ಮನೆಮಾಲೀಕರು',
   'dash.contractor.tab.houseOwnerRequests': 'ಮನೆಮಾಲೀಕರ ವಿನಂತಿಗಳು',
   'dash.contractor.tab.supplierRequests': 'ಪೂರೈಕೆದಾರರ ವಿನಂತಿಗಳು',
   'dash.contractor.teamSize': 'ತಂಡದ ಗಾತ್ರ',

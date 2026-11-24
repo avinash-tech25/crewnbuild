@@ -76,6 +76,7 @@ describe('Builder dashboard: requests', () => {
       'GET /project-requests/incoming': { data: [anOwnerRequest()] },
       'POST /project-requests/reject': { data: { message: 'Request rejected' } },
     })
+    window.confirm = () => true // the rejection asks first
     await user.click(await screen.findByRole('button', { name: 'Not interested' }, FIND))
     await waitFor(() => expect(server.calls('POST /project-requests/reject')).toHaveLength(1))
     expect(JSON.parse(server.calls('POST /project-requests/reject')[0].data)).toEqual({ request_id: REQUEST_ID })
