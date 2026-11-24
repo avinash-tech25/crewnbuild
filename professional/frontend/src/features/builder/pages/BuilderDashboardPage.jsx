@@ -1428,7 +1428,7 @@ export default function ContractorDashboard() {
         {activeId === 'productCatalog' && (
           // Browse-only: a Builder has no cart. Suppliers are the nearby ones,
           // found by the same /suppliers/nearby rules as elsewhere.
-          <ProductCatalogPage title={null} loadSuppliers={() => fetchNearbySuppliers()} />
+          <ProductCatalogPage title={t('ui.productCatalog')} spreadCategories loadSuppliers={() => fetchNearbySuppliers()} />
         )}
         {activeId === 'messages' && <ContractorMessagesSection />}
 
