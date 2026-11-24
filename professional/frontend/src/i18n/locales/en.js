@@ -4189,6 +4189,7 @@ const base = {
   'landing.solution.highlight': 'Every construction need.',
   'landing.solution.body': 'Connect with house owners, builders, engineers, suppliers, and equipment providers — all in one location-based construction ecosystem.',
   'landing.solution.explore': 'Explore CREWNBUILD',
+  'landing.solution.dayNight': 'Day / Night',
   'landing.solution.nodes.0': 'House owners',
   'landing.solution.nodes.1': 'Skilled people',
   'landing.solution.nodes.2': 'Materials + equipment',

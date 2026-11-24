@@ -3421,6 +3421,7 @@ const base = {
   'landing.solution.highlight': 'എല്ലാ നിർമ്മാണ ആവശ്യങ്ങളും.',
   'landing.solution.body': 'വീട്ടുടമകൾ, ബിൽഡർമാർ, എൻജിനീയർമാർ, വിതരണക്കാർ, ഉപകരണ ദാതാക്കൾ എന്നിവരുമായി ബന്ധപ്പെടുക — എല്ലാം ഒരൊറ്റ സ്ഥലാധിഷ്ഠിത നിർമ്മാണ ആവാസവ്യവസ്ഥയിൽ.',
   'landing.solution.explore': 'CREWNBUILD പര്യവേക്ഷണം ചെയ്യുക',
+  'landing.solution.dayNight': 'പകൽ / രാത്രി',
   'landing.solution.nodes.0': 'വീട്ടുടമകൾ',
   'landing.solution.nodes.1': 'വിദഗ്ധരായ ആളുകൾ',
   'landing.solution.nodes.2': 'സാമഗ്രികൾ + ഉപകരണങ്ങൾ',

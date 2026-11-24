@@ -18,7 +18,6 @@ export function HeroBackdrop({ isArabic, children }) {
       style={{ backgroundImage: `linear-gradient(${angle}, ${scrimStops}), url(${townUrl})` }}
     >
       <div className="absolute rounded-full blur-[2px] pointer-events-none opacity-40 w-[340px] h-[340px] end-[6%] top-[8%] bg-[rgba(244,183,64,.14)]" />
-      <div className="absolute rounded-full blur-[2px] pointer-events-none opacity-40 w-[260px] h-[260px] start-[4%] bottom-[10%] bg-[rgba(18,107,69,.08)]" />
       {children}
     </div>
   );

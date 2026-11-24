@@ -117,7 +117,7 @@ export function SolutionPanel({ text }) {
           ))}
         </motion.div>
 
-        <h2 className="mt-7 font-extrabold tracking-tight leading-[.96] text-[clamp(2.5rem,4.6vw,4.9rem)] rtl:tracking-normal rtl:leading-[1.18] max-wide:text-[2.6rem]">
+        <h2 className="mt-7 font-extrabold tracking-tight leading-[1.12] text-[2.5rem] mid:text-[clamp(1.8rem,2.9vw,2.5rem)] rtl:tracking-normal rtl:leading-[1.18] max-wide:text-[clamp(1.3rem,6.4vw,2.5rem)]">
           {text.solution.headline}
           <br />
           <span style={{ color: tone.highlight, transition: "color 900ms linear" }}>{text.solution.highlight}</span>
@@ -140,7 +140,7 @@ export function SolutionPanel({ text }) {
           two-column layout the villa is pushed down to start below it instead of
           sitting over its last letters. Narrower screens stack the two already. */}
       <div className="max-mid:w-full max-mid:max-w-[640px] max-mid:mx-auto max-wide:mt-[38px] mid:mt-32">
-        <ConstructionVilla isNight={isNight} onModeChange={setIsNight} />
+        <ConstructionVilla isNight={isNight} onModeChange={setIsNight} modeLabel={text.solution.dayNight} />
       </div>
     </div>
   );

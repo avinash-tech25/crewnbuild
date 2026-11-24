@@ -3421,6 +3421,7 @@ const base = {
   'landing.solution.highlight': 'हर निर्माण ज़रूरत।',
   'landing.solution.body': 'घर मालिकों, बिल्डरों, इंजीनियरों, आपूर्तिकर्ताओं और उपकरण प्रदाताओं से जुड़ें — सब कुछ एक ही स्थान-आधारित निर्माण पारिस्थितिकी तंत्र में।',
   'landing.solution.explore': 'CREWNBUILD देखें',
+  'landing.solution.dayNight': 'दिन / रात',
   'landing.solution.nodes.0': 'घर मालिक',
   'landing.solution.nodes.1': 'कुशल लोग',
   'landing.solution.nodes.2': 'सामग्री + उपकरण',

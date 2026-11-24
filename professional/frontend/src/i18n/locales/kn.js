@@ -3421,6 +3421,7 @@ const base = {
   'landing.solution.highlight': 'ಎಲ್ಲಾ ನಿರ್ಮಾಣ ಅಗತ್ಯಗಳು.',
   'landing.solution.body': 'ಮನೆ ಮಾಲೀಕರು, ಬಿಲ್ಡರ್‌ಗಳು, ಎಂಜಿನಿಯರ್‌ಗಳು, ಪೂರೈಕೆದಾರರು ಮತ್ತು ಉಪಕರಣ ಒದಗಿಸುವವರೊಂದಿಗೆ ಸಂಪರ್ಕ ಸಾಧಿಸಿ — ಎಲ್ಲವೂ ಒಂದೇ ಸ್ಥಳ ಆಧಾರಿತ ನಿರ್ಮಾಣ ಪರಿಸರ ವ್ಯವಸ್ಥೆಯಲ್ಲಿ.',
   'landing.solution.explore': 'CREWNBUILD ಅನ್ನು ಅನ್ವೇಷಿಸಿ',
+  'landing.solution.dayNight': 'ಹಗಲು / ರಾತ್ರಿ',
   'landing.solution.nodes.0': 'ಮನೆ ಮಾಲೀಕರು',
   'landing.solution.nodes.1': 'ನುರಿತ ಜನರು',
   'landing.solution.nodes.2': 'ಸಾಮಗ್ರಿ + ಉಪಕರಣ',

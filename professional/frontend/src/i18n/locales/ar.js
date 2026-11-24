@@ -3779,6 +3779,7 @@ const base = {
   'landing.solution.highlight': 'لكل احتياجات البناء.',
   'landing.solution.body': 'تواصل مع أصحاب المنازل والمقاولين والمهندسين والموردين ومزوّدي المعدات — في منظومة بناء واحدة قائمة على الموقع.',
   'landing.solution.explore': 'اكتشف أوكتابيلد',
+  'landing.solution.dayNight': 'نهار / ليل',
   'landing.solution.nodes.0': 'أصحاب المنازل',
   'landing.solution.nodes.1': 'كفاءات مهنية',
   'landing.solution.nodes.2': 'مواد ومعدات',

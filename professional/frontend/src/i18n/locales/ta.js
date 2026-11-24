@@ -3421,6 +3421,7 @@ const base = {
   'landing.solution.highlight': 'அனைத்து கட்டுமான தேவைகளும்.',
   'landing.solution.body': 'வீட்டு உரிமையாளர்கள், கட்டுநர்கள், பொறியாளர்கள், சப்ளையர்கள் மற்றும் உபகரண வழங்குநர்களுடன் இணையுங்கள் — அனைத்தும் ஒரே இடம் சார்ந்த கட்டுமான சூழல் அமைப்பில்.',
   'landing.solution.explore': 'CREWNBUILD ஐ ஆராயுங்கள்',
+  'landing.solution.dayNight': 'பகல் / இரவு',
   'landing.solution.nodes.0': 'வீட்டு உரிமையாளர்கள்',
   'landing.solution.nodes.1': 'திறமையான நபர்கள்',
   'landing.solution.nodes.2': 'பொருட்கள் + உபகரணங்கள்',

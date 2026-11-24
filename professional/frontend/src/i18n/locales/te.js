@@ -3421,6 +3421,7 @@ const base = {
   'landing.solution.highlight': 'ప్రతి నిర్మాణ అవసరం.',
   'landing.solution.body': 'ఇంటి యజమానులు, బిల్డర్లు, ఇంజనీర్లు, సరఫరాదారులు మరియు పరికరాల ప్రదాతలతో కనెక్ట్ అవ్వండి — అన్నీ ఒకే ప్రాంత ఆధారిత నిర్మాణ వ్యవస్థలో.',
   'landing.solution.explore': 'CREWNBUILD ను అన్వేషించండి',
+  'landing.solution.dayNight': 'పగలు / రాత్రి',
   'landing.solution.nodes.0': 'ఇంటి యజమానులు',
   'landing.solution.nodes.1': 'నైపుణ్యం గల వ్యక్తులు',
   'landing.solution.nodes.2': 'సామగ్రి + పరికరాలు',
