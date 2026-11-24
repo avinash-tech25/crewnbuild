@@ -2555,6 +2555,8 @@ const base = {
   'cps.portfolio.titleRequired': 'ಪ್ರತಿ ಯೋಜನೆಗೆ ಶೀರ್ಷಿಕೆ ಸೇರಿಸಿ.',
   'cps.portfolio.addPhotos': 'ಫೋಟೋಗಳನ್ನು ಸೇರಿಸಿ',
   'cps.portfolio.empty': 'ಇನ್ನೂ ಪೋರ್ಟ್‌ಫೋಲಿಯೋ ಯೋಜನೆಗಳಿಲ್ಲ. ಮನೆ ಮಾಲೀಕರು ನೋಡಲು ನಿಮ್ಮ ಹಿಂದಿನ ಕೆಲಸವನ್ನು ಸೇರಿಸಿ.',
+  'cps.aboutHint': 'ನಿಮ್ಮ ಕಂಪನಿಯ ಬಗ್ಗೆ 1-2 ವಾಕ್ಯಗಳನ್ನು ಬರೆಯಿರಿ.',
+  'emailVerify.verifiedNote': 'ನಿಮ್ಮ ಇಮೇಲ್ ಪರಿಶೀಲಿಸಲಾಗಿದೆ.',
   'cps.documentType': 'ದಾಖಲೆಯ ಪ್ರಕಾರ',
   'cps.uploadSomeFailed': '{total} ಫೈಲ್‌ಗಳಲ್ಲಿ {failed} ಅಪ್‌ಲೋಡ್ ಆಗಲಿಲ್ಲ. {reason}',
   'cps.portfolio.title': 'ಪೋರ್ಟ್‌ಫೋಲಿಯೋ',

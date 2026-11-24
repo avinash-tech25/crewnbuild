@@ -2555,6 +2555,8 @@ const base = {
   'cps.portfolio.titleRequired': 'ஒவ்வொரு திட்டத்திற்கும் தலைப்பைச் சேர்க்கவும்.',
   'cps.portfolio.addPhotos': 'புகைப்படங்களைச் சேர்',
   'cps.portfolio.empty': 'இன்னும் போர்ட்ஃபோலியோ திட்டங்கள் இல்லை. வீட்டு உரிமையாளர்கள் பார்க்க உங்கள் முந்தைய பணியைச் சேர்க்கவும்.',
+  'cps.aboutHint': 'உங்கள் நிறுவனத்தைப் பற்றி 1-2 வாக்கியங்கள் எழுதுங்கள்.',
+  'emailVerify.verifiedNote': 'உங்கள் மின்னஞ்சல் சரிபார்க்கப்பட்டது.',
   'cps.documentType': 'ஆவண வகை',
   'cps.uploadSomeFailed': '{total} கோப்புகளில் {failed} பதிவேற்றப்படவில்லை. {reason}',
   'cps.portfolio.title': 'போர்ட்ஃபோலியோ',

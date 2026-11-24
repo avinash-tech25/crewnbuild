@@ -2555,6 +2555,8 @@ const base = {
   'cps.portfolio.titleRequired': 'ప్రతి ప్రాజెక్ట్‌కు శీర్షిక జోడించండి.',
   'cps.portfolio.addPhotos': 'ఫోటోలు జోడించండి',
   'cps.portfolio.empty': 'ఇంకా పోర్ట్‌ఫోలియో ప్రాజెక్ట్‌లు లేవు. ఇంటి యజమానులు చూడగలిగేలా మీ గత పనిని జోడించండి.',
+  'cps.aboutHint': 'మీ కంపెనీ గురించి 1-2 వాక్యాలు రాయండి.',
+  'emailVerify.verifiedNote': 'మీ ఇమెయిల్ ధృవీకరించబడింది.',
   'cps.documentType': 'పత్రం రకం',
   'cps.uploadSomeFailed': '{total} ఫైళ్లలో {failed} అప్‌లోడ్ కాలేదు. {reason}',
   'cps.portfolio.title': 'పోర్ట్‌ఫోలియో',

@@ -2555,6 +2555,8 @@ const base = {
   'cps.portfolio.titleRequired': 'हर प्रोजेक्ट का शीर्षक जोड़ें।',
   'cps.portfolio.addPhotos': 'फ़ोटो जोड़ें',
   'cps.portfolio.empty': 'अभी कोई पोर्टफ़ोलियो प्रोजेक्ट नहीं है। अपना पिछला काम जोड़ें ताकि मकान मालिक उसे देख सकें।',
+  'cps.aboutHint': 'अपनी कंपनी के बारे में 1-2 वाक्य लिखें।',
+  'emailVerify.verifiedNote': 'आपका ईमेल सत्यापित है।',
   'cps.documentType': 'दस्तावेज़ का प्रकार',
   'cps.uploadSomeFailed': '{total} में से {failed} फ़ाइलें अपलोड नहीं हो सकीं। {reason}',
   'cps.portfolio.title': 'पोर्टफ़ोलियो',

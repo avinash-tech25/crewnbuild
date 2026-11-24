@@ -2555,6 +2555,8 @@ const base = {
   'cps.portfolio.titleRequired': 'ഓരോ പ്രോജക്റ്റിനും ഒരു തലക്കെട്ട് ചേർക്കുക.',
   'cps.portfolio.addPhotos': 'ഫോട്ടോകൾ ചേർക്കുക',
   'cps.portfolio.empty': 'ഇതുവരെ പോർട്ട്ഫോളിയോ പ്രോജക്റ്റുകളില്ല. വീട്ടുടമകൾക്ക് കാണാൻ നിങ്ങളുടെ മുൻ ജോലികൾ ചേർക്കുക.',
+  'cps.aboutHint': 'നിങ്ങളുടെ കമ്പനിയെക്കുറിച്ച് 1-2 വാക്യങ്ങൾ എഴുതുക.',
+  'emailVerify.verifiedNote': 'നിങ്ങളുടെ ഇമെയിൽ പരിശോധിച്ചു.',
   'cps.documentType': 'രേഖയുടെ തരം',
   'cps.uploadSomeFailed': '{total} ഫയലുകളിൽ {failed} എണ്ണം അപ്‌ലോഡ് ചെയ്യാനായില്ല. {reason}',
   'cps.portfolio.title': 'പോർട്ട്ഫോളിയോ',

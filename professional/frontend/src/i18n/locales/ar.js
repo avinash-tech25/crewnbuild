@@ -2440,6 +2440,8 @@ const base = {
   'cps.portfolio.titleRequired': 'أضف عنوانًا لكل مشروع.',
   'cps.portfolio.addPhotos': 'إضافة صور',
   'cps.portfolio.empty': 'لا توجد مشاريع في المعرض بعد. أضف أعمالك السابقة ليراها أصحاب المنازل.',
+  'cps.aboutHint': 'اكتب جملة أو جملتين عن شركتك.',
+  'emailVerify.verifiedNote': 'تم التحقق من بريدك الإلكتروني.',
   'cps.documentType': 'نوع المستند',
   'cps.uploadSomeFailed': 'تعذّر رفع {failed} من {total} ملفات. {reason}',
   'cps.portfolio.title': 'معرض الأعمال',
