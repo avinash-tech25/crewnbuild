@@ -2886,7 +2886,7 @@ const base = {
   'ce.action': 'कार्रवाई',
   'ce.pendingJoinRequests': 'लंबित जुड़ने के अनुरोध',
   'ce.pendingInvitations': 'लंबित आमंत्रण',
-  'ce.pendingRequests': 'लंबित अनुरोध',
+  'ce.pendingRequests': 'इंजीनियर अनुरोध',
   'ce.sentRequests': 'भेजे गए अनुरोध',
   'ce.noPendingRequests': 'अभी कोई लंबित अनुरोध नहीं है।',
   'ce.mySuppliers': 'मेरे आपूर्तिकर्ता',

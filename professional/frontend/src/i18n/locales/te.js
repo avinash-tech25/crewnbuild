@@ -2886,7 +2886,7 @@ const base = {
   'ce.action': 'చర్య',
   'ce.pendingJoinRequests': 'పెండింగ్ చేరిక అభ్యర్థనలు',
   'ce.pendingInvitations': 'పెండింగ్ ఆహ్వానాలు',
-  'ce.pendingRequests': 'పెండింగ్ అభ్యర్థనలు',
+  'ce.pendingRequests': 'ఇంజనీర్ అభ్యర్థనలు',
   'ce.sentRequests': 'పంపిన అభ్యర్థనలు',
   'ce.noPendingRequests': 'ప్రస్తుతం పెండింగ్ అభ్యర్థనలు లేవు.',
   'ce.mySuppliers': 'నా సరఫరాదారులు',

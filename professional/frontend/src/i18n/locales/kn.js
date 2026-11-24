@@ -2886,7 +2886,7 @@ const base = {
   'ce.action': 'ಕ್ರಮ',
   'ce.pendingJoinRequests': 'ಬಾಕಿ ಇರುವ ಸೇರ್ಪಡೆ ವಿನಂತಿಗಳು',
   'ce.pendingInvitations': 'ಬಾಕಿ ಇರುವ ಆಹ್ವಾನಗಳು',
-  'ce.pendingRequests': 'ಬಾಕಿ ಇರುವ ವಿನಂತಿಗಳು',
+  'ce.pendingRequests': 'ಎಂಜಿನಿಯರ್ ವಿನಂತಿಗಳು',
   'ce.sentRequests': 'ಕಳುಹಿಸಿದ ವಿನಂತಿಗಳು',
   'ce.noPendingRequests': 'ಸದ್ಯಕ್ಕೆ ಬಾಕಿ ಇರುವ ವಿನಂತಿಗಳಿಲ್ಲ.',
   'ce.mySuppliers': 'ನನ್ನ ಪೂರೈಕೆದಾರರು',

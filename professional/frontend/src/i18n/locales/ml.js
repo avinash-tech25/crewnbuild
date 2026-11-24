@@ -2886,7 +2886,7 @@ const base = {
   'ce.action': 'നടപടി',
   'ce.pendingJoinRequests': 'തീർപ്പാക്കാത്ത ചേരൽ അഭ്യർത്ഥനകൾ',
   'ce.pendingInvitations': 'തീർപ്പാക്കാത്ത ക്ഷണങ്ങൾ',
-  'ce.pendingRequests': 'തീർപ്പാക്കാത്ത അഭ്യർത്ഥനകൾ',
+  'ce.pendingRequests': 'എഞ്ചിനീയർ അഭ്യർത്ഥനകൾ',
   'ce.sentRequests': 'അയച്ച അഭ്യർത്ഥനകൾ',
   'ce.noPendingRequests': 'ഇപ്പോൾ തീർപ്പാക്കാത്ത അഭ്യർത്ഥനകളൊന്നുമില്ല.',
   'ce.mySuppliers': 'എന്റെ വിതരണക്കാർ',

@@ -3324,7 +3324,7 @@ const base = {
   'ce.action': 'Action',
   'ce.pendingJoinRequests': 'Pending Join Requests',
   'ce.pendingInvitations': 'Pending Invitations',
-  'ce.pendingRequests': 'Pending Requests',
+  'ce.pendingRequests': 'Engineer Requests',
   'ce.sentRequests': 'Sent Requests',
   'ce.noPendingRequests': 'No pending requests at the moment.',
   'ce.mySuppliers': 'My Suppliers',

@@ -2886,7 +2886,7 @@ const base = {
   'ce.action': 'செயல்',
   'ce.pendingJoinRequests': 'நிலுவையிலுள்ள இணைவுக் கோரிக்கைகள்',
   'ce.pendingInvitations': 'நிலுவையிலுள்ள அழைப்புகள்',
-  'ce.pendingRequests': 'நிலுவையிலுள்ள கோரிக்கைகள்',
+  'ce.pendingRequests': 'பொறியாளர் கோரிக்கைகள்',
   'ce.sentRequests': 'அனுப்பிய கோரிக்கைகள்',
   'ce.noPendingRequests': 'தற்போது நிலுவையிலுள்ள கோரிக்கைகள் இல்லை.',
   'ce.mySuppliers': 'எனது வழங்குநர்கள்',

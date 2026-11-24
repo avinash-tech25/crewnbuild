@@ -2769,7 +2769,7 @@ const base = {
   'ce.action': 'إجراء',
   'ce.pendingJoinRequests': 'طلبات الانضمام المعلقة',
   'ce.pendingInvitations': 'الدعوات المعلقة',
-  'ce.pendingRequests': ' الطلبات المعلقة',
+  'ce.pendingRequests': 'طلبات المهندسين',
   'ce.sentRequests': 'الطلبات المرسلة',
   'ce.noPendingRequests': 'لا توجد طلبات معلقة في الوقت الحالي.',
   'ce.mySuppliers': 'الموردون',
