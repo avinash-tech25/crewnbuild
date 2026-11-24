@@ -16,6 +16,7 @@ import { Link } from "react-router-dom";
 import { AppLink } from "../../../../shared/navigation/AppLink.jsx";
 import { DisclaimerNote } from "../../../../shared/ui/DisclaimerNote.jsx";
 import { useAccountLinks } from "../../../../shared/auth/sessionLinks.js";
+import { WhatsAppGlyph } from "../../../auth/components/WhatsAppGlyph.jsx";
 import { fetchSupportConfig } from "../../../support/supportApi.js";
 import { SUPPORT_PHONE, phoneHref } from "../../../../shared/constants/support.js";
 
@@ -131,6 +132,13 @@ export function SiteFooter({ text, language, onSelectLanguage }) {
               <ContactRow icon={Phone}>
                 <a className={columnLink} href={contact?.phone_href || phoneHref(SUPPORT_PHONE)} dir="ltr">{contact?.phone || SUPPORT_PHONE}</a>
               </ContactRow>
+              {/* Only when the server has a WhatsApp number, as on the Contact us page. */}
+              {contact?.whatsapp && contact?.whatsapp_href && (
+                <li className="flex items-start gap-[10px] [&_svg]:mt-px [&_svg]:h-[15px] [&_svg]:w-[15px]">
+                  <WhatsAppGlyph />
+                  <a className={columnLink} href={contact.whatsapp_href} target="_blank" rel="noopener noreferrer" aria-label={`WhatsApp ${contact.whatsapp}`} dir="ltr">{contact.whatsapp}</a>
+                </li>
+              )}
               {contact?.hours && <ContactRow icon={Clock}><span>{contact.hours}</span></ContactRow>}
             </ul>
           </div>
