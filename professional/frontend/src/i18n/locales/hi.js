@@ -2718,6 +2718,7 @@ const base = {
   'progress.scheduleDays': '{total} में से दिन {elapsed}',
   'progress.scheduleEnded': 'नियोजित {total} दिन बीत चुके हैं',
   'progress.scheduleNotStarted': 'अभी शुरू नहीं हुआ',
+  'dash.bld.noWorkStarted': 'अभी काम शुरू नहीं हुआ',
   'progress.scheduleInvalid': 'परियोजना की तिथियाँ अमान्य हैं',
   'progress.scheduleNoDates': 'परियोजना की तिथियाँ सेट नहीं हैं',
   'progress.autoHint': 'यह अपने आप गणना होता है। निर्माण पूर्णता के लिए सत्यापित BOQ मात्राएँ चाहिए, इसलिए उनके दर्ज होने तक यह "उपलब्ध नहीं" दिखाता है। शेड्यूल केवल यह दिखाता है कि नियोजित समय में से कितना बीत चुका है।',

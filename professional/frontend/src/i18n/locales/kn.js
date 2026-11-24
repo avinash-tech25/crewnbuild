@@ -2718,6 +2718,7 @@ const base = {
   'progress.scheduleDays': '{total} ದಿನಗಳಲ್ಲಿ {elapsed}ನೇ ದಿನ',
   'progress.scheduleEnded': 'ಯೋಜಿತ {total} ದಿನಗಳು ಕಳೆದಿವೆ',
   'progress.scheduleNotStarted': 'ಇನ್ನೂ ಪ್ರಾರಂಭವಾಗಿಲ್ಲ',
+  'dash.bld.noWorkStarted': 'ಇನ್ನೂ ಕೆಲಸ ಪ್ರಾರಂಭವಾಗಿಲ್ಲ',
   'progress.scheduleInvalid': 'ಯೋಜನೆಯ ದಿನಾಂಕಗಳು ಅಮಾನ್ಯ',
   'progress.scheduleNoDates': 'ಯೋಜನೆಯ ದಿನಾಂಕಗಳನ್ನು ಹೊಂದಿಸಿಲ್ಲ',
   'progress.autoHint': 'ಇದು ಸ್ವಯಂಚಾಲಿತವಾಗಿ ಲೆಕ್ಕ ಹಾಕಲಾಗುತ್ತದೆ. ನಿರ್ಮಾಣ ಪೂರ್ಣತೆಗೆ ಪರಿಶೀಲಿಸಿದ BOQ ಪ್ರಮಾಣಗಳು ಬೇಕು; ಅವು ದಾಖಲಾಗುವವರೆಗೆ "ಲಭ್ಯವಿಲ್ಲ" ಎಂದು ತೋರಿಸುತ್ತದೆ. ವೇಳಾಪಟ್ಟಿ ಯೋಜಿತ ಸಮಯದಲ್ಲಿ ಎಷ್ಟು ಕಳೆದಿದೆ ಎಂಬುದನ್ನು ಮಾತ್ರ ತೋರಿಸುತ್ತದೆ.',

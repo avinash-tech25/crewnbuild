@@ -2718,6 +2718,7 @@ const base = {
   'progress.scheduleDays': '{total} రోజులలో {elapsed}వ రోజు',
   'progress.scheduleEnded': 'ప్రణాళిక చేసిన {total} రోజులు గడిచాయి',
   'progress.scheduleNotStarted': 'ఇంకా ప్రారంభం కాలేదు',
+  'dash.bld.noWorkStarted': 'ఇంకా పని ప్రారంభం కాలేదు',
   'progress.scheduleInvalid': 'ప్రాజెక్ట్ తేదీలు చెల్లవు',
   'progress.scheduleNoDates': 'ప్రాజెక్ట్ తేదీలు సెట్ చేయలేదు',
   'progress.autoHint': 'ఇది ఆటోమేటిక్‌గా లెక్కించబడుతుంది. నిర్మాణ పూర్తికి ధృవీకరించిన BOQ పరిమాణాలు అవసరం, అవి నమోదయ్యే వరకు "అందుబాటులో లేదు" అని చూపిస్తుంది. షెడ్యూల్ ప్రణాళిక సమయంలో ఎంత గడిచిందో మాత్రమే చూపిస్తుంది.',

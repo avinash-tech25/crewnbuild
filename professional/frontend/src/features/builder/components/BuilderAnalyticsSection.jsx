@@ -14,12 +14,13 @@
  */
 import { useEffect, useMemo, useState } from 'react'
 import {
-  BarChart3, Building2, ChevronRight, ClipboardList, FileText, HardHat, Home, Layers, LineChart, Monitor, MoreHorizontal, Send,
+  BarChart3, Building2, ChevronRight, ClipboardList, FileText, Home, Layers, LineChart, Monitor, MoreHorizontal, Package, Send,
   ShoppingCart, UserSearch, Users, Wallet, Wrench, Zap,
 } from 'lucide-react'
 import { EmptyState } from '../../../shared/dashboard/RoleDashboardUi.jsx'
 import { groupProjectsByCategory } from '../builderHelpers.js'
 import { defaultProjectImage } from '../builderConstants.js'
+import { partyHeading } from '../../requests/counterparty.js'
 import { requestTypeLabel } from '../../owner/components/OwnerSections.jsx'
 import { imageUrl } from '../../../shared/api/apiClient.js'
 import { fetchCostToolSummary } from '../../projects/costToolApi.js'
@@ -73,7 +74,7 @@ function StatCard({ icon: Icon, label, value, sub, tone, onClick }) {
 function PanelHeader({ icon: Icon, title, onViewAll, action }) {
   const { t } = useLanguage()
   return (
-    <div className="mb-3 flex items-center justify-between gap-3">
+    <div className="mb-3 flex min-h-8 items-center justify-between gap-3">
       <h2 className="flex items-center gap-2 font-display text-[15px] font-extrabold text-graphite">
         <Icon className="h-[18px] w-[18px] text-brand-700" /> {title}
       </h2>
@@ -121,7 +122,7 @@ function Donut({ slices, total, centreLabel, centreValue, showPercent = true }) 
         <div className="absolute inset-0 grid place-items-center text-center">
           <div>
             <p className="font-display text-3xl font-extrabold leading-none text-graphite">{centreValue ?? total}</p>
-            <p className="mt-1 text-xs leading-tight text-graphite/60">{centreLabel}</p>
+            <p className="mx-auto mt-1 max-w-[4.25rem] text-[11px] leading-tight text-graphite/60">{centreLabel}</p>
           </div>
         </div>
       </div>
@@ -130,7 +131,7 @@ function Donut({ slices, total, centreLabel, centreValue, showPercent = true }) 
           <li key={slice.id} className="flex items-center gap-2.5 text-[13px] text-graphite/80">
             <i className="h-3 w-3 shrink-0 rounded-full" style={{ background: slice.color }} />
             <span className="truncate">{slice.label}</span>
-            <span className="ml-auto pl-2 font-semibold tabular-nums text-graphite">
+            <span className="ml-auto whitespace-nowrap pl-2 font-semibold tabular-nums text-graphite">
               {slice.value}{showPercent ? ` (${total > 0 ? Math.round((slice.value / total) * 100) : 0}%)` : ''}
             </span>
           </li>
@@ -176,7 +177,7 @@ function CategoryBars({ projects }) {
             <span className="h-2 min-w-0 flex-1 overflow-hidden rounded-full bg-slate-100">
               <span className={`block h-full rounded-full ${row.bar}`} style={{ width: `${share}%` }} />
             </span>
-            <span className="w-14 shrink-0 text-right text-[13px] font-semibold tabular-nums text-graphite">{row.count} ({share}%)</span>
+            <span className="w-[4.5rem] shrink-0 whitespace-nowrap text-right text-[13px] font-semibold tabular-nums text-graphite">{row.count} ({share}%)</span>
           </li>
         )
       })}
@@ -297,13 +298,17 @@ export default function ContractorAnalyticsSection({ projectList = [], requestLi
   const spentShare = budget?.budget > 0 ? Math.round((budget.spent / budget.budget) * 100) : 0
 
   const hasProjects = projectStats.total > 0
+  const workStarted = projectList.some((project) => project.work_started === true)
+  const projectsNotStarted = hasProjects && !workStarted && projectStats.groups.upcoming.length === projectStats.total
   const hasRequests = totalRequests > 0
+  // One number style across the panel; the full amount is in each figure's tooltip.
+  const compactMoney = (value) => formatMoney(value, country, { notation: 'compact', maximumFractionDigits: 2 })
 
   const quickActions = [
     // The same soft tints as the House Owner's and Site Engineer's service
     // cards: a 60% tint of the hue, its 200 border (300 on hover), a 100 chip.
-    { id: 'order', label: t('owner.quick.order'), icon: HardHat, tone: 'border border-emerald-200 bg-emerald-100/60 text-emerald-700 hover:border-emerald-300', chip: 'bg-emerald-100 ring-1 ring-emerald-200', onClick: go('productCatalog') },
-    { id: 'partners', label: t('dash.bld.findPartners'), icon: Users, tone: 'border border-orange-200 bg-orange-100/60 text-orange-600 hover:border-orange-300', chip: 'bg-orange-100 ring-1 ring-orange-200', onClick: go('engineers') },
+    { id: 'order', label: t('owner.quick.order'), icon: Package, tone: 'border border-emerald-200 bg-emerald-100/60 text-emerald-700 hover:border-emerald-300', chip: 'bg-emerald-100 ring-1 ring-emerald-200', onClick: go('productCatalog') },
+    { id: 'partners', label: t('ui.myPartners'), icon: Users, tone: 'border border-orange-200 bg-orange-100/60 text-orange-600 hover:border-orange-300', chip: 'bg-orange-100 ring-1 ring-orange-200', onClick: go('engineers') },
     { id: 'clients', label: t('ui.findClients'), icon: UserSearch, tone: 'border border-sky-200 bg-sky-100/60 text-sky-700 hover:border-sky-300', chip: 'bg-sky-100 ring-1 ring-sky-200', onClick: go('findClients') },
     { id: 'buySell', label: t('dash.bld.buySellMaterials'), icon: ShoppingCart, tone: 'border border-violet-200 bg-violet-100/60 text-violet-700 hover:border-violet-300', chip: 'bg-violet-100 ring-1 ring-violet-200', onClick: go('buySell') },
   ]
@@ -315,13 +320,13 @@ export default function ContractorAnalyticsSection({ projectList = [], requestLi
           labels were cut to a few letters and a worded value such as "Not
           available" spilled out of the card and the page). */}
       <div className="grid grid-cols-1 gap-3 min-[480px]:grid-cols-2 xl:grid-cols-4">
-        <StatCard icon={Layers} label={t('dash.bld.totalProjects')} value={projectStats.total} sub={t('dash.bld.currentProjectsSub', { count: projectStats.groups.current.length })}
+        <StatCard icon={Layers} label={t('dash.bld.totalProjects')} value={projectStats.total} sub={projectsNotStarted ? t('progress.scheduleNotStarted') : t('dash.bld.currentProjectsSub', { count: projectStats.groups.current.length })}
           tone={{ card: 'border-blue-200 bg-blue-50', chip: 'bg-blue-100 text-blue-700', arrow: 'bg-blue-100 text-blue-700' }} onClick={go('projects')} />
         <StatCard icon={ClipboardList} label={t('dash.bld.acceptedRequests')} value={requestStats.accepted} sub={t('dash.contractor.analytics.pendingSub', { count: requestStats.pending })}
           tone={{ card: 'border-purple-200 bg-purple-50', chip: 'bg-purple-100 text-purple-700', arrow: 'bg-purple-100 text-purple-700' }} onClick={go('requestsBoard')} />
         <StatCard icon={Send} label={t('dash.bld.proposalsSent')} value={requestStats.sent} sub={t('dash.contractor.analytics.rejectedSub', { count: requestStats.rejected })}
           tone={{ card: 'border-green-200 bg-green-50', chip: 'bg-green-100 text-green-700', arrow: 'bg-green-100 text-green-700' }} onClick={go('requestsBoard')} />
-        <StatCard icon={BarChart3} label={t('dash.bld.averageProgress')} value={projectStats.averageProgress === null ? t('progress.notAvailable') : formatPercent(projectStats.averageProgress)} sub={t('dash.contractor.analytics.upcomingSub', { count: projectStats.groups.upcoming.length })}
+        <StatCard icon={BarChart3} label={t('dash.bld.averageProgress')} value={projectStats.averageProgress === null ? '–' : formatPercent(projectStats.averageProgress)} sub={projectStats.averageProgress !== null ? t('dash.contractor.analytics.upcomingSub', { count: projectStats.groups.upcoming.length }) : workStarted ? t('progress.notAvailable') : t('dash.bld.noWorkStarted')}
           tone={{ card: 'border-orange-200 bg-orange-50', chip: 'bg-orange-100 text-orange-600', arrow: 'bg-orange-100 text-orange-600' }} onClick={go('projects')} />
       </div>
 
@@ -343,14 +348,17 @@ export default function ContractorAnalyticsSection({ projectList = [], requestLi
               {recentRequests.map((request) => {
                 const state = requestState(request)
                 const other = request.is_sender ? request.receiver_name : request.sender_name
+                const typeLabel = requestTypeLabel(request.request_type, t, td)
+                const heading = partyHeading(request, td) || td(other || '') || typeLabel
+                const detail = request.project_id && request.project_title ? td(request.project_title) : typeLabel
                 return (
                   <li key={request.id} className="flex items-center gap-3 py-2.5 first:pt-0 last:pb-0">
                     <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${STATUS_PILLS[state]}`}>
                       {state === 'sent' ? <Send className="h-4 w-4" /> : <ClipboardList className="h-4 w-4" />}
                     </span>
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate text-[13px] font-bold text-graphite">{requestTypeLabel(request.request_type, t, td)}</span>
-                      <span className="block truncate text-xs text-graphite/55">{td(request.project_title || other || '')}</span>
+                      <span className="block truncate text-[13px] font-bold text-graphite">{heading}</span>
+                      <span className="block truncate text-xs text-graphite/55">{detail === heading ? '' : detail}</span>
                     </span>
                     <span className={`shrink-0 rounded-lg px-2.5 py-1 text-[11px] font-semibold ${STATUS_PILLS[state]}`}>{statusLabel[state]}</span>
                     <span className="hidden min-w-20 shrink-0 whitespace-nowrap text-right text-[11px] text-graphite/50 sm:block">{requestAgeLabel(request.created_at)}</span>
@@ -361,9 +369,9 @@ export default function ContractorAnalyticsSection({ projectList = [], requestLi
           ) : <EmptyState title={t('dash.contractor.empty.allTitle')} message={t('dash.contractor.analytics.noRequestData')} />}
         </div>
 
-        <div className={panel}>
+        <div className={`${panel} flex flex-col`}>
           <PanelHeader icon={Zap} title={t('dash.engineer.quickActions')} />
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid flex-1 grid-cols-2 gap-2">
             {quickActions.map((action) => (
               <button
                 key={action.id}
@@ -406,7 +414,7 @@ export default function ContractorAnalyticsSection({ projectList = [], requestLi
                 </svg>
                 <div className="absolute inset-0 grid place-items-center text-center">
                   <div>
-                    <p className="font-display text-lg font-extrabold leading-none text-graphite">{formatMoney(budget.budget, country, { notation: 'compact', maximumFractionDigits: 2 })}</p>
+                    <p className="font-display text-lg font-extrabold leading-none text-graphite">{compactMoney(budget.budget)}</p>
                     <p className="mt-1 text-[11px] text-graphite/60">{t('dash.bld.totalBudget')}</p>
                   </div>
                 </div>
@@ -415,16 +423,18 @@ export default function ContractorAnalyticsSection({ projectList = [], requestLi
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <dt className="flex items-center gap-2 text-[13px] text-graphite/70"><i className="h-3 w-3 rounded-full bg-[#1f7a4d]" />{t('dash.engineer.analytics.spent')}</dt>
-                    <dd className="font-display text-lg font-extrabold text-graphite">{formatMoney(budget.spent, country)}</dd>
+                    <dd className="font-display text-lg font-extrabold text-graphite" title={formatMoney(budget.spent, country)}>
+                      {compactMoney(budget.spent)} <span className="font-sans text-[13px] font-normal text-graphite/60">({spentShare}%)</span>
+                    </dd>
                   </div>
-                  <span className="text-[13px] text-graphite/60">{spentShare}%</span>
                 </div>
                 <div className="flex items-center justify-between gap-3 border-t border-slate-100 pt-3">
                   <div>
                     <dt className="flex items-center gap-2 text-[13px] text-graphite/70"><i className="h-3 w-3 rounded-full bg-[#f5b31b]" />{t('dash.engineer.analytics.remaining')}</dt>
-                    <dd className="font-display text-lg font-extrabold text-graphite">{formatMoney(remaining, country)}</dd>
+                    <dd className="font-display text-lg font-extrabold text-graphite" title={formatMoney(remaining, country)}>
+                      {compactMoney(remaining)} <span className="font-sans text-[13px] font-normal text-graphite/60">({Math.max(0, 100 - spentShare)}%)</span>
+                    </dd>
                   </div>
-                  <span className="text-[13px] text-graphite/60">{Math.max(0, 100 - spentShare)}%</span>
                 </div>
               </dl>
             </div>

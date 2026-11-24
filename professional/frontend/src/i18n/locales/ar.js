@@ -2601,6 +2601,7 @@ const base = {
   'progress.scheduleDays': 'اليوم {elapsed} من {total}',
   'progress.scheduleEnded': 'انقضت الأيام المخططة البالغة {total} يومًا',
   'progress.scheduleNotStarted': 'لم يبدأ بعد',
+  'dash.bld.noWorkStarted': 'لم يبدأ العمل بعد',
   'progress.scheduleInvalid': 'تواريخ المشروع غير صالحة',
   'progress.scheduleNoDates': 'لم يتم تحديد تواريخ المشروع',
   'progress.autoHint': 'يُحسب تلقائيًا. تتطلب نسبة إنجاز البناء كميات BOQ موثقة، لذا تظهر "غير متاح" حتى يتم تسجيلها. يوضح الجدول الزمني فقط مقدار ما انقضى من الوقت المخطط.',

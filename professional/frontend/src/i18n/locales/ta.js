@@ -2718,6 +2718,7 @@ const base = {
   'progress.scheduleDays': '{total} நாட்களில் {elapsed}வது நாள்',
   'progress.scheduleEnded': 'திட்டமிட்ட {total} நாட்கள் கடந்துவிட்டன',
   'progress.scheduleNotStarted': 'இன்னும் தொடங்கவில்லை',
+  'dash.bld.noWorkStarted': 'இன்னும் வேலை தொடங்கவில்லை',
   'progress.scheduleInvalid': 'திட்டத் தேதிகள் செல்லாதவை',
   'progress.scheduleNoDates': 'திட்டத் தேதிகள் அமைக்கப்படவில்லை',
   'progress.autoHint': 'இது தானாகக் கணக்கிடப்படுகிறது. கட்டுமான நிறைவுக்கு சரிபார்க்கப்பட்ட BOQ அளவுகள் தேவை; அவை பதிவாகும் வரை "கிடைக்கவில்லை" எனக் காட்டும். அட்டவணை திட்டமிட்ட நேரத்தில் எவ்வளவு கடந்தது என்பதை மட்டுமே காட்டும்.',
