@@ -1,5 +1,6 @@
 import { DisclaimerNote } from '../../../shared/ui/DisclaimerNote.jsx'
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ArrowRight, BrickWall, Check, CheckCircle2, HardHat, Home, IndianRupee, Send, Tractor, Truck, X } from 'lucide-react'
 import { EmptyState } from '../../../shared/dashboard/RoleDashboardUi.jsx'
@@ -82,6 +83,7 @@ export function ContractorFindClientsSection({
           <SupplierLeadList
             supplierList={openSupplierClientList}
             clientRequestState={clientRequestState}
+            findClientRequest={findClientRequest}
             sendingReceiverId={sendingReceiverId}
             openSupplierProfile={openSupplierProfile}
             onSendRequest={(supplier) => onSendRequest(supplier, 'CONTRACTOR_TO_SUPPLIER')}
@@ -133,11 +135,11 @@ function HomeownerLeadList({ clientList, clientRequestState, findClientRequest, 
               highlighted={accepted}
               avatar={<CardAvatar src={avatarFromPath(project.owner_profile_image_url, 'OWNER')} alt={displayOwnerName} />}
               title={displayOwnerName}
-              subtitle={displayProjectTitle}
+              subtitle={displayProjectTitle === displayOwnerName ? null : displayProjectTitle}
               status={accepted ? <CardStatus status="accepted">{t('ui.status.accepted')}</CardStatus> : null}
               rows={[
-                { key: 'area', label: t('dash.contractor.sqftUnit'), value: area ? formatNumber(area) : '—' },
-                { key: 'budget', label: t('dash.contractor.budgetAmount'), value: budget > 0 ? inr(budget, project.project_country) : '—' },
+                { key: 'area', label: t('dash.contractor.sqftUnit'), value: area ? formatNumber(area) : t('dash.contractor.notShared') },
+                { key: 'budget', label: t('dash.contractor.budgetAmount'), value: budget > 0 ? inr(budget, project.project_country) : t('dash.contractor.notShared') },
                 { key: 'location', label: t('ce.col.location'), value: location },
               ]}
               // The building type the owner gave.
@@ -252,8 +254,9 @@ const SUPPLIER_CARD_THEMES = {
   'Labor Supplier': { icon: HardHat, tone: 'blue' },
 }
 const OTHER_SUPPLIER_CARD_THEME = { icon: Truck, tone: 'grey' }
+const SHOWN_OFFERINGS = 2
 
-function SupplierLeadList({ supplierList, clientRequestState, sendingReceiverId, openSupplierProfile, onSendRequest }) {
+function SupplierLeadList({ supplierList, clientRequestState, findClientRequest, sendingReceiverId, openSupplierProfile, onSendRequest }) {
   const { t, td } = useLanguage()
   // Already filtered by the caller, which counts this very same list on the tab.
   return (
@@ -265,6 +268,8 @@ function SupplierLeadList({ supplierList, clientRequestState, sendingReceiverId,
           const requestState = clientRequestState(supplier, 'CONTRACTOR_TO_SUPPLIER')
           const requestSent = requestState !== 'none'
           const accepted = requestState === 'accepted'
+          // The supplier asked this builder: answered on the Requests board.
+          const incomingPending = requestState === 'pending' && findClientRequest?.(supplier, 'CONTRACTOR_TO_SUPPLIER')?.is_sender === false
           // The supplier's own name leads and their store name sits under it.
           // Both come from the discovery payload: `name` is the user's name and
           // `store_name` their supplier profile's store. The store line is
@@ -281,7 +286,7 @@ function SupplierLeadList({ supplierList, clientRequestState, sendingReceiverId,
           // The products/services list the supplier offers.
           const offerings = (Array.isArray(supplier.categories) ? supplier.categories : String(supplier.categories || '').split(','))
             .map((category) => String(category).trim()).filter(Boolean)
-            .map((category) => optionLabel(t, SUPPLIER_CATEGORY_KEYS, category)).join(', ')
+            .map((category) => optionLabel(t, SUPPLIER_CATEGORY_KEYS, category))
           return (
             <ListCard
               key={supplier.id}
@@ -297,9 +302,21 @@ function SupplierLeadList({ supplierList, clientRequestState, sendingReceiverId,
               subtitle={storeName && storeName !== supplierName ? storeName : null}
               rows={[
                 { key: 'location', label: t('ce.col.location'), value: supplier.pincode || t('dash.owner.estimates.locationNotSet') },
-                // Products / services — one line; the full list shows on hover.
-                offerings && { key: 'offerings', label: t('ui.products'), value: offerings },
+                // Products / services — the first ones and how many more; the full list
+                // shows on hover and in the profile the card opens.
+                {
+                  key: 'offerings',
+                  label: t('ui.products'),
+                  title: offerings.join(', ') || undefined,
+                  value: offerings.length === 0 ? t('dash.contractor.servicesNotListed') : offerings.length <= SHOWN_OFFERINGS ? offerings.join(', ') : (
+                    <span className="flex min-w-0 justify-end gap-1">
+                      <span className="truncate">{offerings.slice(0, SHOWN_OFFERINGS).join(', ')}</span>
+                      <span className="shrink-0">{t('dash.contractor.moreCount', { count: offerings.length - SHOWN_OFFERINGS })}</span>
+                    </span>
+                  ),
+                },
               ]}
+              status={incomingPending ? <CardStatus status="pending">{t('dash.contractor.wantsToWork')}</CardStatus> : null}
               // The supplier's category, in its own colour.
               chips={[<CardChip key="category" tone={theme.tone} icon={theme.icon}>{categoryLabel}</CardChip>]}
               primary={accepted ? (
@@ -307,6 +324,10 @@ function SupplierLeadList({ supplierList, clientRequestState, sendingReceiverId,
                 <span className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-emerald-50 px-3.5 text-xs font-extrabold text-emerald-800 ring-1 ring-emerald-200">
                   <CheckCircle2 className="h-3.5 w-3.5" /> {t('ui.status.accepted')}
                 </span>
+              ) : incomingPending ? (
+                <Link to="/contractor/requests?tab=supplier" className={cardButtonClass('primary')}>
+                  {t('dash.contractor.respond')} <ArrowRight className="h-3.5 w-3.5 rtl:-scale-x-100" />
+                </Link>
               ) : (
                 <button
                   type="button"
