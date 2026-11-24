@@ -12,7 +12,7 @@ export function WorldSection({ text, isArabic }) {
   return (
     <section
       id="world"
-      className="relative bg-oc-amber pt-[135px] pb-[142px] max-wide:pt-[84px] max-wide:pb-[90px]
+      className="relative bg-oc-amber pt-24 pb-16 max-wide:pt-16 max-wide:pb-14
                  before:content-[''] before:absolute before:inset-x-0 before:top-0 before:h-px
                  before:bg-[linear-gradient(90deg,rgba(8,62,43,.45),transparent_35%)]"
     >
