@@ -4,6 +4,7 @@ import {
   Linkedin,
   Mail,
   MapPin,
+  MessageCircle,
   Phone,
   Clock,
 } from "lucide-react";
@@ -59,7 +60,7 @@ export function SiteFooter({ text, language, onSelectLanguage }) {
       <div className={containerClass}>
         <div className="grid grid-cols-[1.6fr_1fr_1fr_.8fr_1.15fr] gap-[46px] max-wide:grid-cols-2 max-wide:gap-[34px]">
           <div className="max-w-[340px] max-wide:col-span-full max-wide:max-w-none">
-            <Brand href="#top" />
+            <Brand href="#top" logoOnly />
             <p className="mt-5 text-xs leading-[1.8] text-[#98a19a]">{text.footer.tagline}</p>
             <div className="flex gap-[10px] mt-[26px]">
               <a className={socialLink} href="https://www.instagram.com/crewnbuild" target="_blank" rel="noopener noreferrer" aria-label="CREWNBUILD on Instagram"><Instagram size={17} /></a>
@@ -121,7 +122,7 @@ export function SiteFooter({ text, language, onSelectLanguage }) {
             <ul className={columnList}>
               {/* Contact details live on the Contact Us page, which shows only the
                   channels configured on the server (GET /support/config). */}
-              <ContactRow icon={Mail}><AppLink className={columnLink} href="/contact-us">{text.nav.contactUs}</AppLink></ContactRow>
+              <ContactRow icon={MessageCircle}><AppLink className={columnLink} href="/contact-us">{text.nav.contactUs}</AppLink></ContactRow>
               <ContactRow icon={MapPin}><span>{text.footer.city}</span></ContactRow>
               {contact?.email && (
                 <ContactRow icon={Mail}><a className={`${columnLink} min-w-0 [overflow-wrap:anywhere]`} href={`mailto:${contact.email}`} dir="ltr">{contact.email}</a></ContactRow>
@@ -139,36 +140,38 @@ export function SiteFooter({ text, language, onSelectLanguage }) {
                         rtl:bg-[linear-gradient(270deg,var(--color-amber),rgba(244,183,64,.14)_42%,rgba(255,255,255,.06))]
                         max-wide:mt-[38px] max-wide:mb-[18px]" />
 
-        <div className="flex flex-wrap items-center justify-between gap-5 text-[11px] text-[#7b847d] max-wide:block">
+        <div className="flex flex-wrap items-center justify-between gap-5 text-[11px] text-[#a8b1aa] max-wide:block">
           <span>© {new Date().getFullYear()} CREWNBUILD. {text.footer.rights}</span>
 
-          {/* Powered by Trysol: the supplied image (logo + name) as is, only sized down. */}
-          <div className="flex items-center gap-2 max-wide:mt-[13px]" dir="ltr">
-            <span className="font-semibold">Powered by</span>
-            <a href="https://trysol.com/" target="_blank" rel="noopener noreferrer" aria-label="Trysol (opens in a new tab)" className="inline-flex">
-              <img src="/trysol-brand.jpg" alt="Trysol" className="h-[28px] w-auto object-contain" />
-            </a>
-          </div>
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-3 max-wide:block">
+            {/* Powered by Trysol: the supplied image (logo + name) as is, only sized down. */}
+            <div className="flex items-center gap-2 max-wide:mt-[13px]" dir="ltr">
+              <span className="font-semibold">Powered by</span>
+              <a href="https://trysol.com/" target="_blank" rel="noopener noreferrer" aria-label="Trysol (opens in a new tab)" className="inline-flex">
+                <img src="/trysol-brand.jpg" alt="Trysol" className="h-[28px] w-auto object-contain" />
+              </a>
+            </div>
 
-          {/* All seven languages. This row offered only English and Arabic
-              while the app shipped five more, so a Telugu or Tamil reader had
-              no way back to their own language from the footer. Wraps rather
-              than overflowing, since seven endonyms are wider than two. */}
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 max-wide:mt-[13px]" aria-label={text.footer.language}>
-            {languages.map(({ code, name }, index) => (
-              <span key={code} className="inline-flex items-center">
-                {index > 0 && <b className="me-2 text-oc-amber" aria-hidden="true">|</b>}
-                <button
-                  type="button"
-                  lang={code}
-                  className={languageButton(code)}
-                  onClick={() => onSelectLanguage(code)}
-                  aria-pressed={language === code}
-                >
-                  {name}
-                </button>
-              </span>
-            ))}
+            {/* All seven languages. This row offered only English and Arabic
+                while the app shipped five more, so a Telugu or Tamil reader had
+                no way back to their own language from the footer. Wraps rather
+                than overflowing, since seven endonyms are wider than two. */}
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 max-wide:mt-[13px]" aria-label={text.footer.language}>
+              {languages.map(({ code, name }, index) => (
+                <span key={code} className="inline-flex items-center">
+                  {index > 0 && <b className="me-2 text-oc-amber" aria-hidden="true">|</b>}
+                  <button
+                    type="button"
+                    lang={code}
+                    className={languageButton(code)}
+                    onClick={() => onSelectLanguage(code)}
+                    aria-pressed={language === code}
+                  >
+                    {name}
+                  </button>
+                </span>
+              ))}
+            </div>
           </div>
         </div>
         <DisclaimerNote kind="language" tone="dark" className="mt-3" />
