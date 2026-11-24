@@ -14,7 +14,7 @@ import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ArrowLeft, Check } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { Brand, RoleCharacter, brandBadgeClass, townUrl } from '../../public-site/components/landing/shared.jsx'
+import { Brand, RoleCharacter, townUrl } from '../../public-site/components/landing/shared.jsx'
 import LanguageSelector from '../../../shared/ui/LanguageSelector.jsx'
 import { useLanguage } from '../../../i18n/LanguageContext.jsx'
 import { RequiredMark } from '../../accounts/components/ProfileCompletionMeter.jsx'
@@ -251,8 +251,15 @@ export function AuthShell({ eyebrow, headline, highlight, aside, videoUrl, video
             header, and the row may wrap (language under the logo) rather than
             the language pill sitting on top of the wordmark at 320px. */}
         <div className="flex flex-wrap items-center justify-between gap-3 gap-y-2">
-          <span className="max-[380px]:[&_img]:h-[44px] max-[380px]:[&_img]:w-[71px]">
+          <span className="flex items-center gap-4 max-[380px]:gap-3 max-[380px]:[&_img]:h-[44px] max-[380px]:[&_img]:w-[71px]">
             <Brand logoOnly />
+            <Link
+              className="inline-flex items-center gap-2 text-[11px] font-extrabold text-oc-muted transition-colors duration-200 hover:text-oc-green"
+              to="/"
+            >
+              <ArrowLeft size={14} className="rtl:-scale-x-100" />
+              {t('shared.backHome')}
+            </Link>
           </span>
           {/* The weather indicator sits beside the language selector, as in the
               landing header. */}
@@ -284,24 +291,13 @@ export function AuthShell({ eyebrow, headline, highlight, aside, videoUrl, video
 
           {children}
         </div>
-
-        <Link
-          className="inline-flex items-center gap-2 text-[11px] font-extrabold text-oc-muted transition-colors duration-200 hover:text-oc-green"
-          to="/"
-        >
-          <ArrowLeft size={14} className="rtl:-scale-x-100" />
-          {t('shared.backHome')}
-        </Link>
       </div>
 
       <div className="relative overflow-hidden max-mid:hidden">
         <AuthPanelBackdrop videoUrl={videoUrl} videoScrimOpacity={videoScrimOpacity} />
         <AuthPanelCharacter url={character} />
         <div className="absolute inset-x-0 bottom-0 p-12 text-white">
-          <span className={`${brandBadgeClass} items-center px-5 py-3`}>
-            <Brand logoOnly />
-          </span>
-          <p className="mt-4 max-w-[320px] text-sm leading-[1.7] text-[#d6ecdd]">{aside}</p>
+          <p className="max-w-[320px] text-sm leading-[1.7] text-[#d6ecdd]">{aside}</p>
         </div>
       </div>
     </div>

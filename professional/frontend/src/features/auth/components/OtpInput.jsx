@@ -13,8 +13,9 @@ const boxClass =
 //
 // The grid is capped rather than filling its column: at the sign-up column width
 // full-width boxes grow past 60px each, which is what pushed the form into a
-// scroll. `note` sits on the label row for the same reason.
-export function OtpInput({ code, onChange, disabled, invalid, verified, label, note }) {
+// scroll. `note` sits on the label row for the same reason. `fullWidth` lifts the cap
+// where the form has room (sign-in).
+export function OtpInput({ code, onChange, disabled, invalid, verified, label, note, fullWidth = false }) {
   const boxes = useRef([])
 
   const focusBox = (index) => boxes.current[index]?.focus()
@@ -61,7 +62,7 @@ export function OtpInput({ code, onChange, disabled, invalid, verified, label, n
         <span className="shrink-0 text-[11px] font-extrabold uppercase tracking-[.12em] text-oc-deep rtl:tracking-normal">{label}</span>
         {note && <span className="min-w-0 truncate text-[11px] font-semibold text-oc-muted">{note}</span>}
       </div>
-      <div className="grid max-w-[302px] grid-cols-6 gap-2" dir="ltr">
+      <div className={`grid grid-cols-6 gap-2 ${fullWidth ? '' : 'max-w-[302px]'}`} dir="ltr">
         {code.map((digit, index) => (
           <input
             key={index}
