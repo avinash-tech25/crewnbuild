@@ -2915,6 +2915,7 @@ const base = {
   'ce.available': 'ಲಭ್ಯ',
   'ce.yourBuilder': 'ನಿಮ್ಮ ನಿರ್ಮಾಣಕಾರ',
   'ce.yearsCount': '{years} ವರ್ಷಗಳು',
+  'ce.fresher': 'ಫ್ರೆಶರ್',
   'ce.viewProfile': 'ಪ್ರೊಫೈಲ್ ನೋಡಿ',
   'ce.unassign': 'ನಿಯೋಜನೆ ರದ್ದುಮಾಡಿ',
   'ce.noActiveEngineers': 'ಇನ್ನೂ ಸಕ್ರಿಯ ಎಂಜಿನಿಯರ್‌ಗಳಿಲ್ಲ. ನಿಮ್ಮ ತಂಡ ಕಟ್ಟಲು ಎಂಜಿನಿಯರ್ ಅನ್ನು ಆಹ್ವಾನಿಸಿ ಅಥವಾ ಸೇರ್ಪಡೆ ವಿನಂತಿಯನ್ನು ಸ್ವೀಕರಿಸಿ.',

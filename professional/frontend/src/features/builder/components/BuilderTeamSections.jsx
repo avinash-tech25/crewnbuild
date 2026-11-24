@@ -90,6 +90,24 @@ function FilterSelect({ value, onChange, label, children }) {
   )
 }
 
+// "5 Years", or "Fresher" for none; a dash when it was never given.
+function experienceText(years, t) {
+  if (years === null || years === undefined || years === '') return '—'
+  return Number(years) > 0 ? t('ce.yearsCount', { years }) : t('ce.fresher')
+}
+
+// The one empty state of the four tabs: icon, message, and a button where there is an action.
+function EmptyTab({ icon: Icon, title, message = null, action = null }) {
+  return (
+    <section className="rounded-xl border border-dashed border-brand-200 bg-white p-8 text-center">
+      <Icon className="mx-auto mb-2.5 h-8 w-8 text-brand-400" aria-hidden="true" />
+      <h2 className="font-display text-base font-extrabold text-slate-950">{title}</h2>
+      {message && <p className="mx-auto mt-1 max-w-md text-[13px] font-medium text-slate-500">{message}</p>}
+      {action && <div className="mt-4 flex justify-center">{action}</div>}
+    </section>
+  )
+}
+
 /**
  * The builder's own site engineers: search, filters, and a grid of cards or a
  * list. Busy means the engineer holds at least one project here; Active means
@@ -147,7 +165,7 @@ function MyTeamEngineers({ engineers, onViewEngineer, onAssignProject, onUnassig
 
   const statusPill = (engineer) => (isBusy(engineer)
     ? <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-bold text-amber-700"><span className="h-1.5 w-1.5 rounded-full bg-amber-500" />{t('ce.busy')}</span>
-    : <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-700"><span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />{t('ce.active')}</span>)
+    : <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-700"><span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />{t('ce.available')}</span>)
 
   const actionButton = (engineer, wide = true) => (isWorkingElsewhere(engineer) ? (
     <span
@@ -203,6 +221,7 @@ function MyTeamEngineers({ engineers, onViewEngineer, onAssignProject, onUnassig
   return (
     <div className="space-y-3">
       {/* Search, filters and the grid / list switch */}
+      {engineers.length > 0 && (
       <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
         <label className="flex h-9 min-w-0 flex-1 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3">
           <Search className="h-4 w-4 shrink-0 text-slate-400" />
@@ -235,7 +254,7 @@ function MyTeamEngineers({ engineers, onViewEngineer, onAssignProject, onUnassig
           </FilterSelect>
           <FilterSelect value={status} onChange={setStatus} label={t('ce.filter.status')}>
             <option value="">{t('ce.filter.status')}</option>
-            <option value="active">{t('ce.active')}</option>
+            <option value="active">{t('ce.available')}</option>
             <option value="busy">{t('ce.busy')}</option>
           </FilterSelect>
           <div className="flex h-9 items-center rounded-lg border border-slate-200 bg-white p-0.5" role="group" aria-label={`${t('ce.view.grid')} / ${t('ce.view.list')}`}>
@@ -264,9 +283,22 @@ function MyTeamEngineers({ engineers, onViewEngineer, onAssignProject, onUnassig
           )}
         </div>
       </div>
+      )}
 
       {engineers.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-oc-line bg-oc-sunken p-6 text-center text-sm font-semibold text-oc-faint">{t('ce.noActiveEngineers')}</p>
+        <EmptyTab
+          icon={HardHat}
+          title={t('ce.noActiveEngineers')}
+          action={onInvite && (
+            <button
+              type="button"
+              onClick={() => onInvite({})}
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-brand-600 px-4 text-xs font-extrabold text-white transition hover:bg-brand-700"
+            >
+              <UserRound className="h-3.5 w-3.5" /> {t('ce.inviteEngineer')}
+            </button>
+          )}
+        />
       ) : shown.length === 0 ? (
         <p className="rounded-xl border border-dashed border-slate-200 bg-white p-6 text-center text-sm font-semibold text-slate-500">{t('ce.filter.noMatch')}</p>
       ) : view === 'list' ? (
@@ -292,7 +324,7 @@ function MyTeamEngineers({ engineers, onViewEngineer, onAssignProject, onUnassig
                     </div>
                   </td>
                   <td className="px-3 py-2 text-slate-600"><span className="font-bold text-slate-800">{engineer.pincode || '—'}</span>{engineer.address ? <span className="block max-w-[200px] truncate text-[11px]" title={td(engineer.address)}>{td(engineer.address)}</span> : null}</td>
-                  <td className="px-3 py-2 text-slate-700">{t('ce.yearsCount', { years: engineer.experience_years || 0 })}</td>
+                  <td className="px-3 py-2 text-slate-700">{experienceText(engineer.experience_years, t)}</td>
                   <td className="px-3 py-2 text-slate-700">{engineer.project_count || 0}</td>
                   <td className="px-3 py-2">{statusPill(engineer)}</td>
                   <td className="px-3 py-2 text-right">{actionButton(engineer, false)}</td>
@@ -310,20 +342,25 @@ function MyTeamEngineers({ engineers, onViewEngineer, onAssignProject, onUnassig
               <ListCard
                 key={engineer.user_id}
                 onClick={() => onViewEngineer(engineer)}
-                // Working on another builder's project: shown, details dimmed, as before.
-                dimmed={elsewhere}
                 avatar={<CardAvatar src={userAvatarSrc(engineer, 'ENGINEER')} alt={engineer.name} />}
                 title={td(engineer.name)}
                 subtitle={t('role.engineer')}
                 status={isBusy(engineer)
                   ? <CardStatus status="busy" tone="amber">{t('ce.busy')}</CardStatus>
-                  : <CardStatus status="active" tone="green">{t('ce.active')}</CardStatus>}
+                  : <CardStatus status="active" tone="green">{t('ce.available')}</CardStatus>}
                 rows={[
                   { key: 'location', label: t('ce.col.location'), value: [engineer.pincode, td(cityOf(engineer.address))].filter(Boolean).join(' · ') || '—', title: td(engineer.address || '') || undefined },
-                  { key: 'experience', label: t('ce.filter.experience'), value: t('ce.yearsCount', { years: engineer.experience_years || 0 }) },
+                  { key: 'experience', label: t('ce.filter.experience'), value: experienceText(engineer.experience_years, t) },
                   { key: 'projects', label: t('ce.filter.projects'), value: engineer.project_count || 0 },
                 ]}
-                secondary={cardAction(engineer, 'secondary')}
+                secondary={(
+                  <>
+                    <button type="button" onClick={() => onViewEngineer(engineer)} className={cardButtonClass('secondary')}>
+                      {t('ce.viewProfile')}
+                    </button>
+                    {cardAction(engineer, 'secondary')}
+                  </>
+                )}
                 primary={cardAction(engineer, 'primary')}
               >
                 {/* The project(s) this engineer holds, from the same assigned_projects data. */}
@@ -386,7 +423,7 @@ function FindEngineers({ engineers, pincode, onPincodeChange, onFind, onViewEngi
   return (
     <div className="space-y-3">
       {/* Pincode search, filters and Find */}
-      <div className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-white p-2 lg:flex-row lg:items-center">
+      <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
         <label className="flex h-9 min-w-0 flex-1 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3">
           <Search className="h-4 w-4 shrink-0 text-slate-400" />
           <input
@@ -404,6 +441,8 @@ function FindEngineers({ engineers, pincode, onPincodeChange, onFind, onViewEngi
           )}
         </label>
         <div className="flex flex-wrap items-center gap-2">
+          {list.length > 0 && (
+          <>
           <FilterSelect value={location} onChange={setLocation} label={t('ce.filter.allLocations')}>
             <option value="">{t('ce.filter.allLocations')}</option>
             {pincodes.map((value) => <option key={value} value={value}>{value}</option>)}
@@ -420,6 +459,8 @@ function FindEngineers({ engineers, pincode, onPincodeChange, onFind, onViewEngi
             <option value="">{t('ce.filter.allSkills')}</option>
             {skills.map((value) => <option key={value} value={value}>{skillLabel(value)}</option>)}
           </FilterSelect>
+          </>
+          )}
           <button
             type="button"
             onClick={() => onFind?.()}
@@ -431,11 +472,7 @@ function FindEngineers({ engineers, pincode, onPincodeChange, onFind, onViewEngi
       </div>
 
       {list.length === 0 ? (
-        <section className="rounded-xl border border-dashed border-brand-200 bg-white p-8 text-center shadow-[0_14px_40px_-30px_rgba(15,23,42,0.35)]">
-          <HardHat className="mx-auto mb-2.5 h-8 w-8 text-brand-400" />
-          <h2 className="font-display text-base font-extrabold text-slate-950">{t('ce.noEngineersFound')}</h2>
-          <p className="mx-auto mt-1 max-w-md text-[13px] font-medium text-slate-500">{t('ui.contractor.engineersInPincodeHint')}</p>
-        </section>
+        <EmptyTab icon={HardHat} title={t('ce.noEngineersFound')} message={t('ui.contractor.engineersInPincodeHint')} />
       ) : shown.length === 0 ? (
         <p className="rounded-xl border border-dashed border-slate-200 bg-white p-6 text-center text-sm font-semibold text-slate-500">{t('ce.filter.noMatch')}</p>
       ) : (
@@ -459,7 +496,7 @@ function FindEngineers({ engineers, pincode, onPincodeChange, onFind, onViewEngi
                   : <CardStatus status="available">{t('ce.available')}</CardStatus>}
                 rows={[
                   { key: 'location', label: t('ce.col.location'), value: [engineer.pincode, td(cityOf(engineer.address))].filter(Boolean).join(' · ') || '—', title: td(engineer.address || '') || undefined },
-                  { key: 'experience', label: t('ce.filter.experience'), value: t('ce.yearsCount', { years: engineer.experience_years || 0 }) },
+                  { key: 'experience', label: t('ce.filter.experience'), value: experienceText(engineer.experience_years, t) },
                   { key: 'projects', label: t('ce.filter.projects'), value: projects },
                 ]}
                 // The same Accept / Reject as Pending Requests, on the same membership row.
@@ -590,6 +627,7 @@ function MySuppliers({ suppliers, projectList = [], onOpenSupplierProfile, onAss
   return (
     <div className="space-y-3">
       {/* Search, filters and the grid / list switch */}
+      {list.length > 0 && (
       <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
         <label className="flex h-9 min-w-0 flex-1 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3">
           <Search className="h-4 w-4 shrink-0 text-slate-400" />
@@ -632,13 +670,10 @@ function MySuppliers({ suppliers, projectList = [], onOpenSupplierProfile, onAss
           </div>
         </div>
       </div>
+      )}
 
       {list.length === 0 ? (
-        <section className="rounded-xl border border-dashed border-slate-200 bg-white p-8 text-center shadow-[0_14px_40px_-30px_rgba(15,23,42,0.35)]">
-          <Truck className="mx-auto mb-2.5 h-8 w-8 text-slate-300" />
-          <h2 className="text-base font-extrabold text-slate-950">{t('ce.noAcceptedSuppliers')}</h2>
-          <p className="mx-auto mt-1 max-w-md text-[13px] font-medium text-slate-500">{t('ce.noAcceptedSuppliersSub')}</p>
-        </section>
+        <EmptyTab icon={Truck} title={t('ce.noAcceptedSuppliers')} message={t('ce.noAcceptedSuppliersSub')} />
       ) : shown.length === 0 ? (
         <p className="rounded-xl border border-dashed border-slate-200 bg-white p-6 text-center text-sm font-semibold text-slate-500">{t('ce.filter.noMatch')}</p>
       ) : view === 'list' ? (
@@ -774,7 +809,7 @@ function PendingPartnerRequests({ pendingRequests, invitations, outgoingRequests
       status={status}
       rows={[
         { key: 'location', label: t('ce.col.location'), value: [engineer.pincode, td(cityOf(engineer.address))].filter(Boolean).join(' · ') || '—', title: td(engineer.address || '') || undefined },
-        { key: 'experience', label: t('ce.filter.experience'), value: t('ce.yearsCount', { years: engineer.experience_years || 0 }) },
+        { key: 'experience', label: t('ce.filter.experience'), value: experienceText(engineer.experience_years, t) },
         { key: 'date', label: dateLabel || t('ce.pend.received'), value: formatDate(engineer.created_at, '—') },
       ]}
       secondary={secondary}
@@ -785,6 +820,7 @@ function PendingPartnerRequests({ pendingRequests, invitations, outgoingRequests
   return (
     <div className="space-y-3">
       {/* Search and type */}
+      {!nothingAtAll && (
       <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
         <label className="flex h-9 min-w-0 flex-1 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3">
           <Search className="h-4 w-4 shrink-0 text-slate-400" />
@@ -804,9 +840,10 @@ function PendingPartnerRequests({ pendingRequests, invitations, outgoingRequests
           <option value="sent">{t('ce.sentRequests')} ({outgoingRequests.length})</option>
         </FilterSelect>
       </div>
+      )}
 
       {nothingAtAll ? (
-        <p className="rounded-xl border border-dashed border-oc-line bg-oc-sunken p-6 text-center text-sm font-semibold text-oc-faint">{t('ce.noPendingRequests')}</p>
+        <EmptyTab icon={Clock} title={t('ce.noPendingRequests')} />
       ) : joinShown.length === 0 && inviteShown.length === 0 && sentShown.length === 0 ? (
         <p className="rounded-xl border border-dashed border-slate-200 bg-white p-6 text-center text-sm font-semibold text-slate-500">{t('ce.filter.noMatch')}</p>
       ) : null}
@@ -932,9 +969,9 @@ export function MySiteEngineersSection({
   const shareFrom = contractorName || t('ce.yourBuilder')
   const tabs = [
     { id: 'team', label: t('ui.siteEngineers'), icon: Users, count: active.length },
-    { id: 'find', label: t('ui.findEngineers'), icon: Search },
-    { id: 'suppliers', label: t('ce.mySuppliers'), icon: Truck },
-    { id: 'pending', label: t('ce.pendingRequests'), icon: Clock },
+    { id: 'find', label: t('ui.findEngineers'), icon: Search, count: (engineers || []).length },
+    { id: 'suppliers', label: t('ce.mySuppliers'), icon: Truck, count: (contractorSuppliers || []).length },
+    { id: 'pending', label: t('ce.pendingRequests'), icon: Clock, count: pendingRequests.length + invitations.length + outgoingRequests.length },
   ]
   return (
     <div className="space-y-4">
@@ -1555,7 +1592,7 @@ export function ContractorEngineerProfileDrawer({ engineer, onClose, onSendReque
           </div>
           <div className="grid grid-cols-3 gap-3 text-center">
             <div className="rounded-xl border border-slate-200 bg-white px-2 py-4">
-              <p className="text-base font-extrabold text-slate-900">{t('ui.contractor.yearsShort', { years: data.experience_years || 0 })}</p>
+              <p className="text-base font-extrabold text-slate-900">{Number(data.experience_years) > 0 ? t('ui.contractor.yearsShort', { years: data.experience_years }) : experienceText(data.experience_years, t)}</p>
               <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">{t('ce.experience')}</p>
             </div>
             <div className="rounded-xl border border-slate-200 bg-white px-2 py-4">

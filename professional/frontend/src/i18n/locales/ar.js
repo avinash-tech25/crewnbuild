@@ -2798,6 +2798,7 @@ const base = {
   'ce.available': 'متاح',
   'ce.yourBuilder': 'المقاول الخاص بك',
   'ce.yearsCount': '{years} سنة',
+  'ce.fresher': 'حديث التخرج',
   'ce.viewProfile': 'عرض الملف الشخصي',
   'ce.unassign': 'إلغاء الإسناد',
   'ce.noActiveEngineers': 'لا يوجد مهندسون نشطون بعد. ادعُ مهندسًا أو اقبل طلب انضمام لبناء فريقك.',

@@ -3353,6 +3353,7 @@ const base = {
   'ce.available': 'Available',
   'ce.yourBuilder': 'Your builder',
   'ce.yearsCount': '{years} Years',
+  'ce.fresher': 'Fresher',
   'ce.viewProfile': 'View Profile',
   'ce.unassign': 'Unassign',
   'ce.assignedAllProjects': 'Assigned to all projects',

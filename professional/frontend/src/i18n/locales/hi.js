@@ -2915,6 +2915,7 @@ const base = {
   'ce.available': 'उपलब्ध',
   'ce.yourBuilder': 'आपका बिल्डर',
   'ce.yearsCount': '{years} वर्ष',
+  'ce.fresher': 'फ्रेशर',
   'ce.viewProfile': 'प्रोफ़ाइल देखें',
   'ce.unassign': 'हटाएँ',
   'ce.noActiveEngineers': 'अभी कोई सक्रिय इंजीनियर नहीं। अपनी टीम बनाने के लिए इंजीनियर को आमंत्रित करें या जुड़ने का अनुरोध स्वीकार करें।',
