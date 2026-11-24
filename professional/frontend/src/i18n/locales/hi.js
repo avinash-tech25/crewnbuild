@@ -3172,6 +3172,7 @@ const base = {
   'help.q.escrow': 'एस्क्रो और भुगतान कैसे संभाले जाते हैं?',
   'help.q.verifyDocuments': 'मैं अपने दस्तावेज़ कैसे सत्यापित करूँ?',
   'help.stillNeedHelp': 'अभी भी मदद चाहिए?',
+  'help.contactSupport': 'सहायता से संपर्क करें',
   'help.supportContact': 'अपने पंजीकृत ईमेल और संक्षिप्त विवरण के साथ support@octabuild.com पर लिखें। हमारी टीम कार्यदिवसों में 24 घंटे के भीतर जवाब देती है।',
   'help.subtitle': 'आपके बिल्डर वर्कस्पेस से जुड़े सामान्य प्रश्नों के उत्तर।',
   'feedback.type.general': 'सामान्य प्रतिक्रिया',

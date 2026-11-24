@@ -4,6 +4,7 @@ import {
 } from 'lucide-react'
 
 import { useLanguage } from '../../../i18n/LanguageContext.jsx'
+import { AppLink } from '../../../shared/navigation/AppLink.jsx'
 import { FEEDBACK_STORAGE_KEY } from '../feedbackStorage.js'
 
 function ModalOverlay({ onClose, children, maxWidth = 'max-w-2xl' }) {
@@ -89,10 +90,16 @@ export function HelpCenterModal({ onClose }) {
           )
         })}
       </div>
-      <div className="border-t border-slate-100 bg-slate-50/70 px-5 py-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 bg-slate-50/70 px-5 py-3">
         <p className="text-xs font-semibold text-slate-500">
           {t('ui.contractor.helpFooterBefore')} <span className="font-extrabold text-brand-700">support@octabuild.com</span> {t('ui.contractor.helpFooterAfter')}
         </p>
+        <AppLink
+          href="/contact-us"
+          className="inline-flex h-10 items-center gap-2 rounded-xl bg-brand-700 px-5 text-sm font-extrabold text-white transition hover:bg-brand-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oc-green focus-visible:ring-offset-2"
+        >
+          <LifeBuoy className="h-4 w-4" /> {t('help.contactSupport')}
+        </AppLink>
       </div>
     </ModalOverlay>
   )
