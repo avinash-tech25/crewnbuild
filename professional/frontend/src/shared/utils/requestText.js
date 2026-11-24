@@ -22,3 +22,11 @@ export function plainRequestText(text) {
     .replace(LEADING_CODE, '')
     .replace(CODE_BEFORE_REQUEST, 'request')
 }
+
+// The words the server puts before a chat's workflow notices ("REQUEST: ...").
+const NOTICE_WORD = /^(?:REQUEST|REQUEST ACCEPTED|QUOTATION|QUOTATION ACCEPTED|COUNTER-OFFER|OFFER ACCEPTED|OFFER REJECTED|ASSIGNMENT|ASSIGNMENT CANCELLED|ASSIGNMENT DECLINED|BUILDER CONFIRMED|CONFIRMATION CANCELLED|CONFIRMATION REQUESTED|CONFIRMATION WITHDRAWN|NEGOTIATION CANCELLED|NEGOTIATION DECLINED|PROJECT ASSIGNED|PROJECT UNASSIGNED): /
+
+/** A chat list's last message without the notice word, for display. */
+export function plainChatPreview(text) {
+  return String(text || '').replace(NOTICE_WORD, '')
+}

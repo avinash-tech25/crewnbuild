@@ -15,6 +15,7 @@ import {
   sendConversationMessage,
 } from '../messagesApi.js'
 import { imageUrl, websocketUrl } from '../../../shared/api/apiClient.js'
+import { plainChatPreview } from '../../../shared/utils/requestText.js'
 import { userAvatarSrc } from '../../../shared/ui/avatars.js'
 import { uploadLocalFile } from '../../../shared/api/uploadApi.js'
 import { useLanguage } from '../../../i18n/LanguageContext.jsx'
@@ -32,6 +33,22 @@ import {
 } from '../messageHelpers.jsx'
 import { RequestProfileDashboard } from '../../requests/components/RequestProfileDashboard.jsx'
 import useVisibleInterval from '../../../shared/hooks/useVisibleInterval.js'
+
+const ROLE_KEYS = { OWNER: 'role.owner', BUILDER: 'role.contractor', SUPPLIER: 'role.supplier', ENGINEER: 'role.engineer' }
+
+// The line under a name: the company, store or project; the role when that is the name again.
+function secondLine(participant, t, td) {
+  const same = String(participant?.secondary_name || '').trim().toLowerCase() === String(participant?.primary_name || '').trim().toLowerCase()
+  const roleKey = ROLE_KEYS[String(participant?.role || '').toUpperCase()]
+  if (same && roleKey) return t(roleKey)
+  return td(participant?.secondary_name)
+}
+
+// A chat's last message: its time today, its day before that.
+function chatListTime(conversation, t) {
+  const day = dayLabel(conversation.latest_message_at, t)
+  return !day || day === dayLabel(new Date(), t) ? conversation.latest_message_time : day
+}
 
 function DaySeparator({ label }) {
   return (
@@ -360,13 +377,13 @@ export default function MessageThread() {
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
                         <p className="truncate text-sm font-extrabold text-graphite">{td(participant.primary_name || conversation.title)}</p>
-                        <p className="truncate text-[11px] font-semibold text-graphite/50">{td(participant.secondary_name) || t('dash.msg.crewnbuildChat')}</p>
+                        <p className="truncate text-[11px] font-semibold text-graphite/50">{secondLine(participant, t, td) || t('dash.msg.crewnbuildChat')}</p>
                       </div>
-                      <span className={`shrink-0 text-[10px] font-bold ${conversation.unread_count > 0 ? 'text-brand-700' : 'text-graphite/40'}`}>{conversation.latest_message_time}</span>
+                      <span className={`shrink-0 text-[10px] font-bold ${conversation.unread_count > 0 ? 'text-brand-700' : 'text-graphite/40'}`}>{chatListTime(conversation, t)}</span>
                     </div>
                     <div className="mt-1 flex items-center justify-between gap-2">
                       {/* The last thing either of them typed. */}
-                      <p className={`truncate text-xs ${conversation.unread_count > 0 ? 'font-bold text-graphite/75' : 'text-graphite/55'}`}>{td(conversation.latest_message) || t('dash.msg.noMessagesYet')}</p>
+                      <p className={`truncate text-xs ${conversation.unread_count > 0 ? 'font-bold text-graphite/75' : 'text-graphite/55'}`}>{td(plainChatPreview(conversation.latest_message)) || t('dash.msg.noMessagesYet')}</p>
                       {active && <span className="h-2 w-2 shrink-0 rounded-full bg-brand-600 opacity-0 transition-opacity group-hover:opacity-60" />}
                     </div>
                   </div>
@@ -390,7 +407,7 @@ export default function MessageThread() {
               </div>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-extrabold text-graphite">{filteredTitle}</p>
-                <p className="truncate text-[11px] font-semibold text-graphite/50">{typingNotice ? <span className="font-bold text-brand-600">{t('dash.msg.typing')}</span> : (td(selectedParticipant?.secondary_name) || (participantOnline ? t('dash.msg.online') : ''))}</p>
+                <p className="truncate text-[11px] font-semibold text-graphite/50">{typingNotice ? <span className="font-bold text-brand-600">{t('dash.msg.typing')}</span> : (secondLine(selectedParticipant, t, td) || (participantOnline ? t('dash.msg.online') : ''))}</p>
               </div>
               <div className="hidden min-w-[220px] items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 transition focus-within:border-brand-300 focus-within:bg-white md:flex">
                 <Search className="h-4 w-4 text-brand-700" />
