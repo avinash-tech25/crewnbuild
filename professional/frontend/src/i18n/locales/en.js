@@ -4206,7 +4206,7 @@ const base = {
   'landing.howItWorks.steps.requirement.description': 'Describe what you want to build.',
   'landing.howItWorks.steps.discover.title': 'Find Nearby Professionals',
   'landing.howItWorks.steps.discover.description': 'See who is available around you.',
-  'landing.howItWorks.steps.quote.title': 'Connect & Receive Quotations',
+  'landing.howItWorks.steps.quote.title': 'Get Quotations',
   'landing.howItWorks.steps.quote.description': 'Compare offers side by side.',
   'landing.howItWorks.steps.start.title': 'Start the Project',
   'landing.howItWorks.steps.start.description': 'Award the work and set the plan.',
