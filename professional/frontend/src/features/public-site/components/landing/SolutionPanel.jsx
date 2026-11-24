@@ -110,7 +110,7 @@ export function SolutionPanel({ text }) {
           aria-label={wordmark}
           variants={letterStaggerGroup}
           {...reveal}
-          className="relative mt-[21px] w-fit whitespace-nowrap font-display font-black leading-[.95] tracking-[.1em] text-[clamp(3.6rem,7vw,7.6rem)] max-wide:text-[length:min(calc((100vw_-_48px)/7.9),3.75rem)] mid:max-[1535px]:text-[length:min(calc((100vw_-_35px)/15.3),4.9rem)]"
+          className="relative mt-[21px] w-fit whitespace-nowrap font-display font-black leading-[.95] tracking-[.1em] text-[clamp(3.6rem,7vw,7.6rem)] max-wide:text-[length:min(calc((100vw_-_48px)/7.9),3.75rem)] mid:max-[1535px]:text-[length:min(calc((100vw_-_35px)/15.3),4.9rem)] min-[1536px]:text-[5.5rem]"
         >
           {[...wordmark].map((letter, index) => (
             <WordmarkLetter key={`${letter}-${index}`} letter={letter} />
