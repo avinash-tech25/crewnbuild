@@ -1598,7 +1598,7 @@ const base = {
   'dash.contractor.currentProjects': 'தற்போதைய திட்டங்கள்',
   'dash.contractor.previousProjects': 'முந்தைய திட்டங்கள்',
   'dash.contractor.upcomingProjects': 'வரவிருக்கும் திட்டங்கள்',
-  'dash.contractor.assignmentRequired': 'திட்ட ஒதுக்கீடு தேவை',
+  'dash.contractor.assignmentRequired': 'இன்னும் தளப் பொறியாளர் இல்லை',
   'dash.contractor.backToSuppliers': 'வழங்குநர்களுக்குத் திரும்பு',
   'dash.contractor.builderProfile': 'கட்டுநர் சுயவிவரம்',
   'dash.contractor.chooseEngineer': 'தளப் பொறியாளரைத் தேர்ந்தெடுக்கவும்',

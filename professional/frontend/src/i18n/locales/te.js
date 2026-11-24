@@ -1598,7 +1598,7 @@ const base = {
   'dash.contractor.currentProjects': 'ప్రస్తుత ప్రాజెక్టులు',
   'dash.contractor.previousProjects': 'గత ప్రాజెక్టులు',
   'dash.contractor.upcomingProjects': 'రాబోయే ప్రాజెక్టులు',
-  'dash.contractor.assignmentRequired': 'ప్రాజెక్ట్ కేటాయింపు అవసరం',
+  'dash.contractor.assignmentRequired': 'ఇంకా సైట్ ఇంజనీర్ లేరు',
   'dash.contractor.backToSuppliers': 'సరఫరాదారులకు తిరిగి వెళ్ళండి',
   'dash.contractor.builderProfile': 'నిర్మాణదారు ప్రొఫైల్',
   'dash.contractor.chooseEngineer': 'సైట్ ఇంజనీర్‌ను ఎంచుకోండి',

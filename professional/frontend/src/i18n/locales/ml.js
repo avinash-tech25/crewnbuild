@@ -1598,7 +1598,7 @@ const base = {
   'dash.contractor.currentProjects': 'നിലവിലെ പ്രോജക്ടുകൾ',
   'dash.contractor.previousProjects': 'മുൻ പ്രോജക്ടുകൾ',
   'dash.contractor.upcomingProjects': 'വരാനിരിക്കുന്ന പ്രോജക്ടുകൾ',
-  'dash.contractor.assignmentRequired': 'പ്രോജക്ട് ചുമതല നൽകേണ്ടതുണ്ട്',
+  'dash.contractor.assignmentRequired': 'ഇതുവരെ സൈറ്റ് എഞ്ചിനീയർ ഇല്ല',
   'dash.contractor.backToSuppliers': 'വിതരണക്കാരിലേക്ക് മടങ്ങുക',
   'dash.contractor.builderProfile': 'നിർമ്മാതാവിന്റെ പ്രൊഫൈൽ',
   'dash.contractor.chooseEngineer': 'സൈറ്റ് എഞ്ചിനീയറെ തിരഞ്ഞെടുക്കുക',

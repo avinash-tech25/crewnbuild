@@ -1598,7 +1598,7 @@ const base = {
   'dash.contractor.currentProjects': 'ಪ್ರಸ್ತುತ ಯೋಜನೆಗಳು',
   'dash.contractor.previousProjects': 'ಹಿಂದಿನ ಯೋಜನೆಗಳು',
   'dash.contractor.upcomingProjects': 'ಮುಂಬರುವ ಯೋಜನೆಗಳು',
-  'dash.contractor.assignmentRequired': 'ಯೋಜನೆ ನಿಯೋಜನೆ ಅಗತ್ಯವಿದೆ',
+  'dash.contractor.assignmentRequired': 'ಇನ್ನೂ ಸೈಟ್ ಎಂಜಿನಿಯರ್ ಇಲ್ಲ',
   'dash.contractor.backToSuppliers': 'ಪೂರೈಕೆದಾರರಿಗೆ ಹಿಂತಿರುಗಿ',
   'dash.contractor.builderProfile': 'ನಿರ್ಮಾಣಕಾರ ಪ್ರೊಫೈಲ್',
   'dash.contractor.chooseEngineer': 'ಸೈಟ್ ಎಂಜಿನಿಯರ್ ಆಯ್ಕೆಮಾಡಿ',

@@ -1354,6 +1354,7 @@ export default function ContractorDashboard() {
             onAssignSupplier={assignSupplierToTeam}
             assignSupplierMessage={assignSupplierMessage}
             onManageEngineers={() => setActiveId('engineers')}
+            onFindClients={() => setActiveId('findClients')}
           />
         )}
 

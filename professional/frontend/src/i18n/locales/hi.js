@@ -1598,7 +1598,7 @@ const base = {
   'dash.contractor.currentProjects': 'वर्तमान परियोजनाएँ',
   'dash.contractor.previousProjects': 'पिछली परियोजनाएँ',
   'dash.contractor.upcomingProjects': 'आगामी परियोजनाएँ',
-  'dash.contractor.assignmentRequired': 'परियोजना सौंपना आवश्यक है',
+  'dash.contractor.assignmentRequired': 'अभी कोई साइट इंजीनियर नहीं',
   'dash.contractor.backToSuppliers': 'आपूर्तिकर्ताओं पर वापस जाएँ',
   'dash.contractor.builderProfile': 'बिल्डर प्रोफ़ाइल',
   'dash.contractor.chooseEngineer': 'साइट इंजीनियर चुनें',

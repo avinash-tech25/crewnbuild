@@ -1452,7 +1452,7 @@ const base = {
   'dash.contractor.currentProjects': 'Current projects',
   'dash.contractor.previousProjects': 'Previous projects',
   'dash.contractor.upcomingProjects': 'Upcoming projects',
-  'dash.contractor.assignmentRequired': 'Project assignment required',
+  'dash.contractor.assignmentRequired': 'No site engineer yet',
   'dash.contractor.backToSuppliers': 'Back to suppliers',
   'dash.contractor.builderProfile': 'Builder Profile',
   'dash.contractor.chooseEngineer': 'Choose Site Engineer',

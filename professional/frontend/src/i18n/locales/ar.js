@@ -1170,7 +1170,7 @@ const base = {
   'dash.contractor.currentProjects': 'المشاريع الحالية',
   'dash.contractor.previousProjects': 'المشاريع السابقة',
   'dash.contractor.upcomingProjects': 'المشاريع القادمة',
-  'dash.contractor.assignmentRequired': 'تعيين المشروع مطلوب',
+  'dash.contractor.assignmentRequired': 'لا يوجد مهندس موقع بعد',
   'dash.contractor.backToSuppliers': 'العودة إلى الموردين',
   'dash.contractor.builderProfile': 'ملف المقاول',
   'dash.contractor.chooseEngineer': 'اختر مهندس الموقع',
