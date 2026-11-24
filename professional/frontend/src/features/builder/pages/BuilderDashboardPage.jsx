@@ -1018,10 +1018,10 @@ export default function ContractorDashboard() {
 
   // The standard account menu, identical on every dashboard. Dark Mode and
   // Logout are supplied by DashboardShell, so the four options a user sees are
-  // Profile Settings, Dark Mode, Help & Feedback and Logout.
+  // Profile Settings, Dark Mode, Help Center and Logout.
   const contractorUserMenu = [
     { id: 'profileSettings', label: t('ui.profileSettings'), icon: Settings },
-    { id: 'helpFeedback', label: t('ui.helpFeedback'), icon: LifeBuoy },
+    { id: 'helpFeedback', label: t('ui.helpCenter'), icon: LifeBuoy },
   ]
   const handleUserMenuSelect = (menuId) => {
     if (menuId === 'profileSettings') {
@@ -1354,6 +1354,7 @@ export default function ContractorDashboard() {
             onAssignSupplier={assignSupplierToTeam}
             assignSupplierMessage={assignSupplierMessage}
             onManageEngineers={() => setActiveId('engineers')}
+            onFindClients={() => setActiveId('findClients')}
           />
         )}
 
@@ -1428,7 +1429,7 @@ export default function ContractorDashboard() {
         {activeId === 'productCatalog' && (
           // Browse-only: a Builder has no cart. Suppliers are the nearby ones,
           // found by the same /suppliers/nearby rules as elsewhere.
-          <ProductCatalogPage title={null} loadSuppliers={() => fetchNearbySuppliers()} />
+          <ProductCatalogPage title={t('ui.productCatalog')} spreadCategories loadSuppliers={() => fetchNearbySuppliers()} />
         )}
         {activeId === 'messages' && <ContractorMessagesSection />}
 

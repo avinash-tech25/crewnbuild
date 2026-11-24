@@ -21,7 +21,7 @@ export const resetDoneUrl = "/landing/password-reset-done.png";
 export const containerClass = "w-[calc(100%-48px)] max-w-page mx-auto";
 
 // Vertical rhythm for the sections that sit on paper rather than a coloured band.
-export const sectionPaddingClass = "py-[clamp(4.5rem,3rem+6vw,8rem)]";
+export const sectionPaddingClass = "py-[clamp(3.5rem,2rem+5vw,6rem)]";
 
 // The outline pill the language switch sits in, away from the landing page's amber bar.
 export const languagePillClass =
@@ -53,8 +53,7 @@ export const creamButtonClass = `${buttonBase} min-h-[50px] px-7 bg-white text-o
 // logo scrolls there instead of reloading. `logoOnly` drops the text name: the
 // logo already carries "Crew&Build" and its tagline.
 
-// The white pill the landing header puts the brand on once the page scrolls
-// (SiteHeader's logoBadge), for surfaces where the full-colour wordmark needs a
+// A white pill for the brand, for surfaces where the full-colour wordmark needs a
 // white ground -- the amber dashboard bar, the photo panel on the auth pages.
 export const brandBadgeClass =
   "inline-flex bg-white rounded-full border border-[rgba(8,62,43,.16)] shadow-[0_10px_22px_rgba(23,32,28,.18)]";

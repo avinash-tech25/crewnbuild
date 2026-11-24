@@ -110,14 +110,14 @@ export function SolutionPanel({ text }) {
           aria-label={wordmark}
           variants={letterStaggerGroup}
           {...reveal}
-          className="relative mt-[21px] w-fit whitespace-nowrap font-display font-black leading-[.95] tracking-[.1em] text-[clamp(3.6rem,7vw,7.6rem)] max-wide:text-[length:min(calc((100vw_-_48px)/7.9),3.75rem)] mid:max-[1535px]:text-[length:min(calc((100vw_-_35px)/15.3),4.9rem)]"
+          className="relative mt-[21px] w-fit whitespace-nowrap font-display font-black leading-[.95] tracking-[.1em] text-[clamp(3.6rem,7vw,7.6rem)] max-wide:text-[length:min(calc((100vw_-_48px)/7.9),3.75rem)] mid:max-[1535px]:text-[length:min(calc((100vw_-_35px)/15.3),4.9rem)] min-[1536px]:text-[5.5rem]"
         >
           {[...wordmark].map((letter, index) => (
             <WordmarkLetter key={`${letter}-${index}`} letter={letter} />
           ))}
         </motion.div>
 
-        <h2 className="mt-7 font-extrabold tracking-[-.06em] leading-[.96] text-[clamp(2.5rem,4.6vw,4.9rem)] rtl:tracking-normal rtl:leading-[1.18] max-wide:text-[2.6rem]">
+        <h2 className="mt-7 font-extrabold tracking-tight leading-[1.12] text-[2.5rem] mid:text-[clamp(1.8rem,2.9vw,2.5rem)] rtl:tracking-normal rtl:leading-[1.18] max-wide:text-[clamp(1.3rem,6.4vw,2.5rem)]">
           {text.solution.headline}
           <br />
           <span style={{ color: tone.highlight, transition: "color 900ms linear" }}>{text.solution.highlight}</span>
@@ -140,7 +140,7 @@ export function SolutionPanel({ text }) {
           two-column layout the villa is pushed down to start below it instead of
           sitting over its last letters. Narrower screens stack the two already. */}
       <div className="max-mid:w-full max-mid:max-w-[640px] max-mid:mx-auto max-wide:mt-[38px] mid:mt-32">
-        <ConstructionVilla isNight={isNight} onModeChange={setIsNight} />
+        <ConstructionVilla isNight={isNight} onModeChange={setIsNight} modeLabel={text.solution.dayNight} />
       </div>
     </div>
   );

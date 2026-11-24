@@ -15,7 +15,7 @@
 import { DisclaimerNote } from '../../../shared/ui/DisclaimerNote.jsx'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
-import { Loader2, Pencil, Plus, Search, Send, Store } from 'lucide-react'
+import { ChevronDown, Loader2, Pencil, Plus, Search, Send, Store } from 'lucide-react'
 import SellListingCard from './SellListingCard.jsx'
 import { CardGrid } from '../../../shared/ui/ListCard.jsx'
 import PropertyDetailPanel from './PropertyDetailPanel.jsx'
@@ -37,6 +37,16 @@ import { useLanguage } from '../../../i18n/LanguageContext.jsx'
 import { useProfileGate, useResumeGatedAction } from '../../../shared/hooks/useProfileGate.js'
 
 const FIELD_CLASS = 'h-10 rounded-xl border border-oc-line bg-white px-3 text-sm text-oc-ink outline-none transition placeholder:text-oc-faint focus:border-ocbrand-400 focus:ring-2 focus:ring-ocbrand-100'
+
+// A dropdown in the same style as the other pages' filters.
+function FilterSelect({ children, ...props }) {
+  return (
+    <span className="relative block min-w-0">
+      <select {...props} className={`${FIELD_CLASS} w-full appearance-none pe-9`}>{children}</select>
+      <ChevronDown className="pointer-events-none absolute end-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden="true" />
+    </span>
+  )
+}
 
 // Which lifecycle moves are offered as a button, per status. The server owns the
 // rule; this only decides what is worth showing, and an illegal move it somehow
@@ -326,48 +336,48 @@ export default function PropertyBuySellHub({
             }}
             className="grid gap-2 rounded-2xl border border-oc-line bg-white p-3 sm:grid-cols-2 lg:grid-cols-5"
           >
-            <input
-              type="search"
-              value={searchInput}
-              onChange={(event) => setSearchInput(event.target.value)}
-              placeholder={t('property.searchPh')}
-              aria-label={t('property.searchPh')}
-              className={`${FIELD_CLASS} lg:col-span-2`}
-            />
-            <select
+            <label className="relative lg:col-span-2">
+              <Search className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden="true" />
+              <input
+                type="search"
+                value={searchInput}
+                onChange={(event) => setSearchInput(event.target.value)}
+                placeholder={t('property.searchPh')}
+                aria-label={t('property.searchPh')}
+                className={`${FIELD_CLASS} w-full ps-9`}
+              />
+            </label>
+            <FilterSelect
               value={filters.propertyType}
               onChange={(event) => setFilters((current) => ({ ...current, propertyType: event.target.value }))}
               aria-label={t('property.type')}
-              className={FIELD_CLASS}
             >
               <option value="">{t('property.filter.allTypes')}</option>
               {feed.property_types.map((type) => (
                 <option key={type} value={type}>{t(`property.type.${type}`)}</option>
               ))}
-            </select>
-            <select
+            </FilterSelect>
+            <FilterSelect
               value={filters.city}
               onChange={(event) => setFilters((current) => ({ ...current, city: event.target.value }))}
               aria-label={t('property.form.cityPh')}
-              className={FIELD_CLASS}
             >
               <option value="">{t('property.filter.allCities')}</option>
               {/* City names as the sellers typed them. */}
               {feed.cities.map((city) => (
                 <option key={city} value={city}>{td(city)}</option>
               ))}
-            </select>
-            <select
+            </FilterSelect>
+            <FilterSelect
               value={filters.bedrooms}
               onChange={(event) => setFilters((current) => ({ ...current, bedrooms: event.target.value }))}
               aria-label={t('property.bedrooms')}
-              className={FIELD_CLASS}
             >
               <option value="">{t('property.filter.anyBhk')}</option>
               {[1, 2, 3, 4, 5].map((count) => (
                 <option key={count} value={count}>{t('ui.owner.bhkPlus', { count })}</option>
               ))}
-            </select>
+            </FilterSelect>
           </form>
 
           {loadingFeed ? (

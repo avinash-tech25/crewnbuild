@@ -8,6 +8,7 @@
  * selectedId       the chosen category's id ('' / null = none)
  * onSelect(id)     id as a string, or '' for "All"
  * allLabel         shows an "All" circle first when given
+ * spread           shares the row's whole width between the circles (still scrolls when full)
  * renderBelow(cat) optional extra under a circle (e.g. the admin's upload button)
  *
  * CategoryImage is the one category picture every catalog view uses (this
@@ -44,7 +45,7 @@ function Circle({ src, name, selected }) {
   )
 }
 
-export function CategoryStrip({ categories = [], selectedId = '', onSelect, allLabel, renderBelow, emptyLabel = 'No categories yet.' }) {
+export function CategoryStrip({ categories = [], selectedId = '', onSelect, allLabel, renderBelow, emptyLabel = 'No categories yet.', spread = false }) {
   if (!categories.length && !allLabel) {
     return <p className="text-xs font-semibold text-graphite/45">{emptyLabel}</p>
   }
@@ -67,8 +68,8 @@ export function CategoryStrip({ categories = [], selectedId = '', onSelect, allL
       {categories.map((category) => {
         const selected = String(selectedId) === String(category.id)
         return (
-          <div role="listitem" key={category.id} className="shrink-0 snap-start">
-            <button type="button" onClick={() => onSelect(String(category.id))} aria-pressed={selected} className="group flex w-20 flex-col items-center gap-2 sm:w-24">
+          <div role="listitem" key={category.id} className={`shrink-0 snap-start ${spread ? 'grow' : ''}`}>
+            <button type="button" onClick={() => onSelect(String(category.id))} aria-pressed={selected} className={`group flex w-20 flex-col items-center gap-2 sm:w-24 ${spread ? 'mx-auto' : ''}`}>
               <Circle src={category.image_url} name={category.name} selected={selected} />
               <span className={`line-clamp-2 text-center text-[11px] font-extrabold leading-tight sm:text-xs ${selected ? 'text-brand-800' : 'text-graphite'}`}>
                 {category.name}

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { displayName } from '../../../shared/utils/displayName.js'
 import {
-  AlertTriangle, ArrowLeft, Boxes, BriefcaseBusiness, CheckCircle2, ExternalLink,
+  AlertTriangle, ArrowLeft, Boxes, BriefcaseBusiness, Building2, CheckCircle2, ExternalLink,
   FileText, GalleryVerticalEnd, HardHat, ImagePlus, Images, Info, Loader2, MapPin, Pencil, Plus, Save, ShieldCheck, Trash2, UserRound, X,
 } from 'lucide-react'
 import ProfileImageUpload from '../../../shared/ui/ProfileImageUpload.jsx'
@@ -48,7 +48,7 @@ function SummaryTile({ label, value }) {
   return (
     <div className="min-w-0 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5">
       <p className="truncate text-[11px] font-extrabold uppercase tracking-wide text-slate-400">{label}</p>
-      <p className="mt-0.5 truncate font-display text-lg font-extrabold text-slate-950">{value || '—'}</p>
+      <p className="mt-0.5 truncate font-display text-lg font-extrabold text-slate-950">{value ?? '—'}</p>
     </div>
   )
 }
@@ -61,21 +61,12 @@ function SummaryTile({ label, value }) {
  * Edit and Save. There is now one Save for the whole profile at the bottom of
  * the screen, so this component holds no state and saves nothing on its own.
  */
-// Whether a read-mode row actually shows a saved value. `display` is usually a
-// <ReadValue value={...} />, which renders "Not set" for an empty value, so the
-// element itself is always present; the value it was given is what counts.
-function displayHasValue(display) {
-  const value = display?.props && 'value' in display.props ? display.props.value : display
-  if (Array.isArray(value)) return value.length > 0
-  return value !== null && value !== undefined && value !== false && String(value).trim() !== ''
-}
-
 function FormRow({ label, required = false, hint, error, editing, display, children }) {
   return (
     <div className={`grid grid-cols-1 gap-x-3 sm:grid-cols-[minmax(0,150px)_minmax(0,1fr)] ${
       editing ? 'gap-2 py-2 sm:items-start' : 'py-1.5 sm:items-baseline'
     }`}>
-      <p className={`text-[11px] font-extrabold uppercase tracking-wide text-slate-400 ${editing ? 'pt-2.5' : ''}`}>{label}{required && <RequiredMark satisfied={!editing && displayHasValue(display)} />}</p>
+      <p className={`text-[11px] font-extrabold uppercase tracking-wide text-slate-600 ${editing ? 'pt-2.5' : ''}`}>{label}{required && editing && <RequiredMark />}</p>
       <div className="min-w-0">
         {editing ? (
           <>
@@ -141,9 +132,9 @@ function EditButton({ onClick }) {
     <button
       type="button"
       onClick={onClick}
-      className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg bg-brand-600 px-3.5 text-xs font-extrabold text-white transition hover:-translate-y-0.5 hover:bg-brand-700"
+      className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border border-brand-700 bg-white px-3 text-xs font-bold text-brand-800 transition hover:bg-brand-50"
     >
-      <Pencil className="h-3.5 w-3.5" /> {t('cps.edit')}
+      <Pencil className="h-3 w-3" /> {t('cps.edit')}
     </button>
   )
 }
@@ -531,7 +522,7 @@ export default function ContractorProfileSettings({
       {/* Profile image & logo */}
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <ProfileImageUpload role="BUILDER" imageSource={profile.profile_image_url} title={t('ps.profileImage')} note={t('cps.updateProfilePhoto')} onUpload={onProfileImageUpload} />
-        <ProfileImageUpload imageSource={profile.company_logo_url} title={t('ps.con.companyLogo')} note={t('cps.updateCompanyLogo')} onUpload={onCompanyLogoUpload} />
+        <ProfileImageUpload imageSource={profile.company_logo_url} emptyIcon={Building2} title={t('ps.con.companyLogo')} note={t('cps.updateCompanyLogo')} onUpload={onCompanyLogoUpload} />
       </div>
       {uploadMessage && (
         <p role="status" className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-bold text-slate-700">
@@ -604,7 +595,7 @@ export default function ContractorProfileSettings({
           <FormRow label={t('cps.yearsOfExperience')} required={requiredFields.has('experience_years')} error={fieldErrors.experience_years} editing={editing} display={<ReadValue value={profile.experience_years} />}>
             <input ref={registerField('experience_years')} type="number" min="1" step="1" inputMode="numeric" value={form.experience_years ?? ''} onChange={(event) => updateField('experience_years', event.target.value)} className={fieldClass('experience_years')} />
           </FormRow>
-          <FormRow label={t('ps.eng.about')} required={requiredFields.has('about')} error={fieldErrors.about} editing={editing} display={<ReadValue value={profile.about} />}>
+          <FormRow label={t('ps.eng.about')} required={requiredFields.has('about')} hint={t('cps.aboutHint')} error={fieldErrors.about} editing={editing} display={<ReadValue value={profile.about} />}>
             <textarea ref={registerField('about')} rows={3} value={form.about || ''} onChange={(event) => updateField('about', event.target.value)} className={areaClass('about')} />
           </FormRow>
         </div>
@@ -717,7 +708,8 @@ export default function ContractorProfileSettings({
         // Adds a portfolio project here. The old "Manage in Projects" button
         // opened the construction projects awarded through CREWNBUILD, which
         // are not the portfolio and stay on the Projects page.
-        action={portfolioProjects.length < PORTFOLIO_MAX_PROJECTS && (
+        // While the list is empty the button is inside the empty box.
+        action={portfolioProjects.length > 0 && portfolioProjects.length < PORTFOLIO_MAX_PROJECTS && (
           <button
             type="button"
             onClick={addPortfolioProject}
@@ -816,7 +808,16 @@ export default function ContractorProfileSettings({
                 ))}
               </div>
             ) : (
-              <p className="rounded-lg border border-dashed border-slate-200 bg-slate-50/60 px-3 py-4 text-center text-xs font-semibold text-slate-400">{t('cps.portfolio.empty')}</p>
+              <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50/60 px-3 py-4 text-center">
+                <p className="text-xs font-semibold text-slate-500">{t('cps.portfolio.empty')}</p>
+                <button
+                  type="button"
+                  onClick={addPortfolioProject}
+                  className="mt-3 inline-flex h-9 items-center gap-1.5 rounded-lg bg-brand-600 px-3.5 text-xs font-extrabold text-white transition hover:bg-brand-700"
+                >
+                  <Plus className="h-3.5 w-3.5" /> {t('cps.portfolio.add')}
+                </button>
+              </div>
             )}
           </div>
 

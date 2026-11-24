@@ -1,8 +1,8 @@
 import { amberSurfaceClass } from "../shared.jsx";
 
-// The two grey text tones lose their contrast on amber, so the highlighted card darkens
-// them to the deep green. Declared once here rather than threaded through every card.
-const highlightedText = "[&_.text-oc-muted]:text-oc-deep [&_.text-oc-faint]:text-oc-deep/75";
+// The two grey text tones and the amber pill's text lose their contrast on amber, so the
+// highlighted card darkens them to the deep green. Declared once here rather than threaded through every card.
+const highlightedText = "[&_.text-oc-muted]:text-oc-deep [&_.text-oc-faint]:text-oc-deep [&_.text-ocaccent-600]:text-oc-deep";
 
 // Shared chrome for the product cards. These are deliberately small single-purpose
 // cards rather than one big dashboard screenshot — each carries one beat of the story.

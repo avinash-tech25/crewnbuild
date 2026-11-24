@@ -1,9 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   CheckCircle2, ChevronDown, LifeBuoy, Loader2, MessageSquarePlus, Send, Star, X,
 } from 'lucide-react'
 
 import { useLanguage } from '../../../i18n/LanguageContext.jsx'
+import { AppLink } from '../../../shared/navigation/AppLink.jsx'
+import { fetchSupportConfig } from '../supportApi.js'
 import { FEEDBACK_STORAGE_KEY } from '../feedbackStorage.js'
 
 function ModalOverlay({ onClose, children, maxWidth = 'max-w-2xl' }) {
@@ -58,15 +60,33 @@ export const HELP_FAQ_KEYS = [
   { id: 'verifyDocuments', question: 'help.q.verifyDocuments', answer: 'ui.contractor.helpAnswerVerifyDocuments' },
 ]
 
+// `text` with the address in it as a link.
+function withEmailLink(text, email) {
+  const [before, ...after] = text.split(email)
+  return after.length ? <>{before}<SupportEmail email={email} />{after.join(email)}</> : text
+}
+
+// The support address as a link that opens the mail app.
+function SupportEmail({ email }) {
+  return <a href={`mailto:${email}`} dir="ltr" className="font-extrabold text-brand-700 underline-offset-2 hover:underline [overflow-wrap:anywhere]">{email}</a>
+}
+
 export function HelpCenterModal({ onClose }) {
   const { t } = useLanguage()
+  // GET /support/config, as the footer and the Contact us page: not configured (or not
+  // answered), the lines naming an address are left out.
+  const [supportEmail, setSupportEmail] = useState('')
+  useEffect(() => {
+    let active = true
+    fetchSupportConfig()
+      .then((config) => { if (active) setSupportEmail(config?.contact?.email || '') })
+      .catch(() => {})
+    return () => { active = false }
+  }, [])
   const [openIndex, setOpenIndex] = useState(0)
   const HELP_FAQS = [
     ...HELP_FAQ_KEYS.map((faq) => ({ question: t(faq.question), answer: t(faq.answer) })),
-    {
-      question: t('help.stillNeedHelp'),
-      answer: t('help.supportContact'),
-    },
+    ...(supportEmail ? [{ question: t('help.stillNeedHelp'), answer: withEmailLink(t('help.supportContact', { email: supportEmail }), supportEmail) }] : []),
   ]
   return (
     <ModalOverlay onClose={onClose}>
@@ -89,10 +109,18 @@ export function HelpCenterModal({ onClose }) {
           )
         })}
       </div>
-      <div className="border-t border-slate-100 bg-slate-50/70 px-5 py-3">
-        <p className="text-xs font-semibold text-slate-500">
-          {t('ui.contractor.helpFooterBefore')} <span className="font-extrabold text-brand-700">support@octabuild.com</span> {t('ui.contractor.helpFooterAfter')}
-        </p>
+      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 bg-slate-50/70 px-5 py-3">
+        {supportEmail && (
+          <p className="text-xs font-semibold text-slate-500">
+            {t('ui.contractor.helpFooterBefore')} <SupportEmail email={supportEmail} /> {t('ui.contractor.helpFooterAfter')}
+          </p>
+        )}
+        <AppLink
+          href="/contact-us"
+          className="inline-flex h-10 items-center gap-2 rounded-xl bg-brand-700 px-5 text-sm font-extrabold text-white transition hover:bg-brand-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-oc-green focus-visible:ring-offset-2"
+        >
+          <LifeBuoy className="h-4 w-4" /> {t('help.contactSupport')}
+        </AppLink>
       </div>
     </ModalOverlay>
   )

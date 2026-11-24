@@ -129,7 +129,7 @@ export default function EmailVerificationSection({ className = '' }) {
           <h3 id="email-verification-title" className="flex items-center gap-2 text-sm font-extrabold text-oc-ink">
             <Mail className="h-4 w-4 text-oc-green" /> {t('emailVerify.title')}
           </h3>
-          <p className="mt-0.5 text-xs font-semibold text-graphite/55">{t('emailVerify.subtitle')}</p>
+          <p className="mt-0.5 text-xs font-semibold text-graphite/55">{t(nothingToVerify ? 'emailVerify.verifiedNote' : 'emailVerify.subtitle')}</p>
         </div>
         <span
           role="status"
@@ -154,11 +154,11 @@ export default function EmailVerificationSection({ className = '' }) {
                        focus:border-oc-green focus:ring-4 focus:ring-oc-green/10 disabled:bg-oc-sunken"
           />
         </label>
-        {stage === 'enter' && (
+        {stage === 'enter' && !nothingToVerify && (
           <button
             type="button"
             onClick={requestCode}
-            disabled={busy || !emailUsable || nothingToVerify}
+            disabled={busy || !emailUsable}
             className={`${actionButton} min-h-[44px] sm:w-auto sm:px-5`}
           >
             {busy ? t('emailVerify.sending') : t('emailVerify.send')}

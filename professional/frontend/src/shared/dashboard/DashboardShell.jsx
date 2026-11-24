@@ -368,6 +368,7 @@ export function DashboardTopbar({ searchValue, onSearchChange, searchPlaceholder
                                 fixes it carries the same signal. */}
                             {completionPercent !== null && item.id === 'profileSettings' && (
                               <span
+                                title={profileIncomplete ? t('profile.completeCta') : t('profile.complete')}
                                 className={`ml-auto h-1.5 w-1.5 shrink-0 rounded-full ${
                                   profileIncomplete ? 'bg-rose-500 animate-pulse-dot' : 'bg-emerald-500'
                                 }`}

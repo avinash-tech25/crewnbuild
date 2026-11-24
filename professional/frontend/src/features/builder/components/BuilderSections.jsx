@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 
 import useUrlState from '../../../shared/hooks/useUrlState.js'
 import NotFoundPanel from '../../../shared/dashboard/NotFoundPanel.jsx'
-import { Home, MessageSquare, Plus, Truck } from 'lucide-react'
+import { FolderOpen, Home, MessageSquare, Plus, Truck, UserSearch } from 'lucide-react'
 import MessageThread from '../../messaging/components/MessageThread.jsx'
 import { ContractorRequestsBoard } from './BuilderRequestViews.jsx'
 import { ContractorProjectDetail, ContractorProjectsTable } from './BuilderProjectViews.jsx'
@@ -50,7 +50,7 @@ export function ContractorRequestsSection({
             </button>
           ))}
         </div>
-        {onNewRequest && (
+        {onNewRequest && requestTab !== 'supplier' && (
           <button
             type="button"
             onClick={onNewRequest}
@@ -117,6 +117,8 @@ export function ContractorProjectsSection({
   onAssignSupplier = () => {},
   assignSupplierMessage = '',
   onManageEngineers = null,
+  // Opens Find Clients, from an empty Current or Upcoming tab.
+  onFindClients = null,
   // An address naming a project this builder does not hold / one still loading.
   projectNotFound = false,
   projectLoading = false,
@@ -179,6 +181,8 @@ export function ContractorProjectsSection({
               }`}
             >
               {t(tab.labelKey)}
+              {/* Seen only: the tab's accessible name stays the label. */}
+              <span aria-hidden="true" className={`ms-1.5 rounded-full px-1.5 py-0.5 text-[10px] tabular-nums ${active ? 'bg-white/20' : 'bg-slate-200/70'}`}>{projectGroups[tab.id].length}</span>
             </button>
           )
         })}
@@ -189,9 +193,19 @@ export function ContractorProjectsSection({
         // Each opens the full project view directly, on Site Activity.
         <ContractorProjectsTable projectList={activeCategoryProjects} onSelect={openFullProject} />
       ) : (
-        <p className="rounded-xl border border-dashed border-slate-200 bg-white px-4 py-10 text-center text-sm font-semibold text-slate-400">
-          {t(activeCategoryTab.emptyKey)}
-        </p>
+        <div className="rounded-xl border border-dashed border-brand-200 bg-white p-8 text-center">
+          <FolderOpen className="mx-auto mb-2.5 h-8 w-8 text-brand-400" aria-hidden="true" />
+          <p className="font-display text-base font-extrabold text-slate-950">{t(activeCategoryTab.emptyKey)}</p>
+          {onFindClients && activeCategoryTab.id !== 'previous' && (
+            <button
+              type="button"
+              onClick={onFindClients}
+              className="mt-4 inline-flex h-9 items-center gap-1.5 rounded-lg bg-brand-700 px-4 text-xs font-extrabold text-white transition hover:bg-brand-800"
+            >
+              <UserSearch className="h-3.5 w-3.5" /> {t('ui.findClients')}
+            </button>
+          )}
+        </div>
       )}
     </div>
   )

@@ -54,8 +54,8 @@ export default function SupplierMyProjects({ projectList = [], materialRequestLi
   const [statusFilter, setStatusFilter] = useUrlState('status', 'all', ['all', 'active', 'pending', 'completed'])
   const [dateFilter, setDateFilter] = useUrlState('date', 'all', DATE_FILTER_IDS)
   const [openProjectId, setOpenProjectId] = useUrlState('project', '')
-  const openProject = openProjectId ? allProjects.find((project) => String(project.id) === openProjectId) || null : null
-  const setOpenProject = (project) => setOpenProjectId(project?.id ? String(project.id) : '')
+  const openProject = openProjectId ? allProjects.find((project) => String(project.project_id) === openProjectId) || null : null
+  const setOpenProject = (project) => setOpenProjectId(project?.project_id ? String(project.project_id) : '')
   // A project id that is not one of this supplier's: the not-found panel.
   const openProjectNotFound = Boolean(openProjectId) && loaded && !openProject
 

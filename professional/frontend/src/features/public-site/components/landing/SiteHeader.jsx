@@ -8,15 +8,11 @@ import PublicWeatherIndicator from "../../../weather/components/PublicWeatherInd
 import { AppLink, AppNavLink } from "../../../../shared/navigation/AppLink.jsx";
 
 // A solid white bar across the top of the page. Once the visitor scrolls, the bar itself and
-// everything in it fades out and only the logo stays, on its own white badge in the corner.
+// everything in it, the logo included, fades out.
 const restingSurface =
   "bg-white border-b border-[rgba(8,62,43,.12)] shadow-[0_10px_24px_rgba(23,32,28,.12)]";
 
 const scrolledSurface = "border-b border-transparent bg-transparent shadow-none pointer-events-none";
-
-const logoBadge =
-  `bg-white rounded-full border border-[rgba(8,62,43,.16)] ps-[14px] pe-[18px] py-[7px] pointer-events-auto ` +
-  "shadow-[0_10px_22px_rgba(23,32,28,.18)]";
 
 function useHasScrolled(threshold = 40) {
   const [scrolled, setScrolled] = useState(false);
@@ -123,13 +119,6 @@ function TopStrip() {
             </li>
           ))}
         </ul>
-        {/* The brand's diagonal amber cuts after Supply: three 9px stripes on a
-            17px rhythm (43px = stripe, gap, stripe, gap, stripe). */}
-        <span
-          aria-hidden="true"
-          className="hidden wide:block h-full w-[43px] shrink-0 -skew-x-[30deg] rtl:skew-x-[30deg]
-                     bg-[repeating-linear-gradient(90deg,#f4b740_0_9px,transparent_9px_17px)]"
-        />
         {/* Only where both halves fit on one line; narrower screens keep the
             left-hand group alone, as before. */}
         <ul
@@ -207,7 +196,7 @@ export function SiteHeader({ text, brandHref = "#top" }) {
   // The bar leaves with the menu still open otherwise, and it would be open again on return.
   useEffect(() => { if (scrolled) setMenuOpen(false); }, [scrolled]);
 
-  // Everything except the logo fades out once the visitor scrolls.
+  // Everything in the bar fades out once the visitor scrolls.
   const barItemClass = `transition-opacity duration-300 ease-soft ${scrolled ? "opacity-0 pointer-events-none" : "opacity-100"}`;
 
   return (
@@ -224,9 +213,8 @@ export function SiteHeader({ text, brandHref = "#top" }) {
           the logo or the language pill. */}
       <div ref={rowRef} className={`${headerContainerClass} h-full flex items-center gap-[16px] max-[1365px]:gap-[12px] max-wide:gap-0`}>
         <span
-          className={`flex shrink-0 transition-[background,box-shadow,padding] duration-300 ease-soft
-                      max-[380px]:[&_img]:h-[44px] max-[380px]:[&_img]:w-[71px]
-                      ${scrolled ? logoBadge : ""}`}
+          className={`${barItemClass} flex shrink-0
+                      max-[380px]:[&_img]:h-[44px] max-[380px]:[&_img]:w-[71px]`}
         >
           <Brand href={brandHref} logoOnly />
         </span>

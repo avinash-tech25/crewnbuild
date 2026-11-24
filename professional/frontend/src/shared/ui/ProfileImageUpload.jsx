@@ -9,7 +9,7 @@ import { PROFILE_IMAGE_ACCEPT } from '../utils/profileImageRules.js'
  * generic outline, so the picture in settings is the one the rest of the app
  * shows for them. Callers that pass no role keep the generic outline.
  */
-export default function ProfileImageUpload({ imageSource, previewSource = '', title: titleProp, note: noteProp, onUpload, className = '', role = null }) {
+export default function ProfileImageUpload({ imageSource, previewSource = '', title: titleProp, note: noteProp, onUpload, className = '', role = null, emptyIcon: EmptyIcon = UserRound }) {
   const { t } = useLanguage()
   const title = titleProp === undefined ? t('ps.profileImage') : titleProp
   const note = noteProp === undefined ? t('ui.shared.uploadClearProfileImage') : noteProp
@@ -27,7 +27,7 @@ export default function ProfileImageUpload({ imageSource, previewSource = '', ti
           /* No role given -- this slot is not a person (a company logo, say),
              so it keeps the generic outline it always had. */
           <span className="grid h-16 w-16 place-items-center rounded-xl bg-slate-50 text-forest-700 ring-1 ring-slate-200">
-            <UserRound className="h-7 w-7" />
+            <EmptyIcon className="h-7 w-7" />
           </span>
         )}
         <div className="min-w-0 flex-1">

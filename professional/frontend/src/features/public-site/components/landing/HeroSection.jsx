@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { Check, ChevronLeft, ChevronRight, Calculator } from "lucide-react";
 import { RoleCharacter, containerClass, townUrl } from "./shared.jsx";
-import { roleMeta } from "./content.js";
+import { roleDestination, roleMeta } from "./content.js";
 import { AppLink } from "../../../../shared/navigation/AppLink.jsx";
 
 const scrimStops = "rgba(6,45,31,.9) 0%, rgba(6,45,31,.82) 38%, rgba(6,45,31,.55) 60%, rgba(6,45,31,.2) 80%, rgba(6,45,31,.12) 100%";
@@ -18,7 +18,6 @@ export function HeroBackdrop({ isArabic, children }) {
       style={{ backgroundImage: `linear-gradient(${angle}, ${scrimStops}), url(${townUrl})` }}
     >
       <div className="absolute rounded-full blur-[2px] pointer-events-none opacity-40 w-[340px] h-[340px] end-[6%] top-[8%] bg-[rgba(244,183,64,.14)]" />
-      <div className="absolute rounded-full blur-[2px] pointer-events-none opacity-40 w-[260px] h-[260px] start-[4%] bottom-[10%] bg-[rgba(18,107,69,.08)]" />
       {children}
     </div>
   );
@@ -63,10 +62,11 @@ export function HeroContent({ text, activeIndex, onSelect }) {
       className={`${containerClass} relative block min-h-svh wide:min-h-0 pt-[clamp(88px,11vh,120px)] pb-[72px] max-wide:pt-[92px] max-wide:pb-[56px]`}
     >
       {/* The text column starts at the container's edge, which is the header's logo
-          edge: the hero and the header share the one page width (max-w-page). No
-          negative offset: the section clips overflow, so anything pushed past the
+          edge: the hero and the header share the one page width (max-w-page). Where the
+          slide arrow (16px to 64px from the screen edge) would reach the text, the column
+          starts past it. No negative offset: the section clips overflow, so anything pushed past the
           container's edge would be cut off. */}
-      <div className="relative z-[5] w-[min(58%,760px)] max-mid:w-[min(72%,760px)] max-wide:w-full max-wide:pe-1">
+      <div className="relative z-[5] w-[min(58%,760px)] max-mid:w-[min(60%,760px)] max-wide:w-full max-wide:pe-1 wide:max-[1535px]:ps-14">
         {/* One grid cell holds every step's text: invisible copies size the cell
             to the tallest step at this width, so the tabs, the button, the
             character and the section below stay put whichever step is shown. */}
@@ -83,15 +83,13 @@ export function HeroContent({ text, activeIndex, onSelect }) {
                 {sizerRole.eyebrow}
               </div>
               <div
-                className="max-w-[760px] mt-6 font-extrabold text-balance tracking-[-.065em] leading-[1.15]
+                className="max-w-[760px] mt-6 font-extrabold text-balance tracking-tight leading-[1.15]
                            text-[clamp(2rem,min(4.4vw,6.6vh),5rem)] max-wide:text-[clamp(1.6rem,min(7.4vw,5.4vh),3rem)]
                            rtl:tracking-normal rtl:leading-[1.45]"
               >
                 {sizerRole.questions[0]}
-                <br />
-                <span>{sizerRole.questions[1]}</span>
               </div>
-              <p className="max-w-[520px] mt-6 text-sm leading-[1.55] max-wide:max-w-[310px] max-wide:text-xs max-wide:leading-[1.45]">
+              <p className="max-w-[520px] mt-4 text-sm leading-[1.55] max-wide:max-w-[310px] max-wide:text-xs max-wide:leading-[1.45]">
                 {text.heroHelper}
               </p>
             </div>
@@ -113,46 +111,49 @@ export function HeroContent({ text, activeIndex, onSelect }) {
 
           <h1
             id="hero-title"
-            className="max-w-[760px] mt-6 font-extrabold text-balance tracking-[-.065em] leading-[1.15] [text-shadow:0_4px_25px_rgba(0,0,0,.2)]
+            className="max-w-[760px] mt-6 font-extrabold text-balance tracking-tight leading-[1.15] [text-shadow:0_4px_25px_rgba(0,0,0,.2)]
                        text-[clamp(2rem,min(4.4vw,6.6vh),5rem)] max-wide:text-[clamp(1.6rem,min(7.4vw,5.4vh),3rem)]
                        rtl:tracking-normal rtl:leading-[1.45]"
           >
             {role.questions[0]}
-            <br />
-            <span className="text-[#b9efc9]">{role.questions[1]}</span>
           </h1>
 
-          <p className="max-w-[520px] mt-6 text-sm leading-[1.55] text-[#e3f2e7] max-wide:max-w-[310px] max-wide:text-xs max-wide:leading-[1.45]">
+          <p className="max-w-[520px] mt-4 text-sm leading-[1.55] text-[#e3f2e7] max-wide:max-w-[310px] max-wide:text-xs max-wide:leading-[1.45]">
             {text.heroHelper}
           </p>
         </motion.div>
         </div>
 
-        <div className="flex gap-[7px] mt-6 max-wide:mt-[25px]" role="tablist" aria-label={text.rolesSection.label}>
+        <div className="flex flex-wrap items-center gap-[7px] mt-5" role="tablist" aria-label={text.rolesSection.label}>
           {roleMeta.map((meta, index) => (
             <button
               key={meta.key}
               role="tab"
               aria-selected={activeIndex === index}
               onClick={() => onSelect(index)}
-              className={`w-[34px] h-[34px] rounded-full text-[10px] font-extrabold border transition-[transform,background,color] duration-200 ease-soft
+              className={`min-h-[34px] px-3.5 max-wide:px-2.5 rounded-full text-[11px] font-extrabold border transition-[background,color] duration-200 ease-soft
                           ${activeIndex === index
-                            ? "bg-oc-amber text-oc-deep border-oc-amber -translate-y-[3px]"
-                            : "bg-transparent text-white border-white/45 hover:bg-oc-amber hover:text-oc-deep hover:border-oc-amber hover:-translate-y-[3px]"}`}
+                            ? "bg-oc-amber text-oc-deep border-oc-amber"
+                            : "bg-transparent text-white border-white/45 hover:bg-oc-amber hover:text-oc-deep hover:border-oc-amber"}`}
             >
-              {index + 1}
+              {text.roles[index].title}
             </button>
           ))}
         </div>
 
-        {/* Get Free Estimate — directly below the 1-2-3-4-5 tabs */}
+        {/* The slide's own button: the estimate for a house owner, sign-up for the other roles. */}
         <AppLink
-          href="/estimate"
+          href={role.cta ? roleDestination(roleMeta[activeIndex].key) : "/estimate"}
           className="inline-flex items-center gap-[7px] mt-4 px-4 py-2.5 rounded-full text-[11px] font-extrabold text-oc-deep bg-oc-amber border border-oc-amber backdrop-blur-[10px] transition-[transform,box-shadow] duration-200 ease-soft hover:-translate-y-[2px] hover:shadow-[0_10px_22px_rgba(244,183,64,.28)]"
         >
-          <Calculator size={14} />
-          {text.freeEstimate?.button || "Get Free Estimate"}
+          {role.cta ? <RoleIcon size={14} /> : <Calculator size={14} />}
+          {role.cta || text.freeEstimate?.button || "Get Free Estimate"}
         </AppLink>
+
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 mt-4 text-[11px] font-extrabold text-[#e4f2e8]">
+          <span className="flex items-center gap-1.5"><Check size={13} /> {text.sceneFooter[0]}</span>
+          <span className="flex items-center gap-1.5"><Check size={13} /> {text.sceneFooter[1]}</span>
+        </div>
 
         {/* On a phone the character takes its own row under the text instead of
             floating over it. */}
@@ -206,11 +207,6 @@ export function HeroContent({ text, activeIndex, onSelect }) {
               <RoleCharacter image={roleMeta[activeIndex].image} className="drop-shadow-[0_20px_12px_rgba(0,0,0,.2)]" />
             </div>
           </motion.div>
-
-          <div className="absolute z-[5] inset-x-[5%] bottom-7 flex justify-between text-[10px] font-extrabold text-[#e4f2e8] max-wide:inset-x-[18px] max-wide:bottom-4 max-wide:text-[8px]">
-            <span className="flex items-center gap-1.5"><Check size={13} /> {text.sceneFooter[0]}</span>
-            <span className="flex items-center gap-1.5"><Check size={13} /> {text.sceneFooter[1]}</span>
-          </div>
         </div>
       </div>
     </div>

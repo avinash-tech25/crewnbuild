@@ -115,7 +115,7 @@ describe('Builder card lists share one structure', () => {
     const leads = expectUniformCards(await screen.findByTestId('builder-owner-lead-cards', {}, FIND))
     expect(leads).toHaveLength(2)
     expect(within(leads[0]).getByRole('button', { name: 'Send Request' })).toBeEnabled()
-    await user.click(screen.getByRole('button', { name: /^Supplier Requests/ }))
+    await user.click(screen.getByRole('button', { name: /^Suppliers/ }))
     expect(expectUniformCards(await screen.findByTestId('builder-supplier-lead-cards', {}, FIND))).toHaveLength(2)
   })
 

@@ -11,6 +11,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { setCsrfToken } from '../../shared/api/apiClient.js'
 import { anAccount, installFakeServer } from '../../test/fakeServer.js'
 import { location, renderApp, signedInAs, signedOut } from '../../test/renderApp.jsx'
+import { builderDashboardServer } from '../builder/builderTestData.js'
 
 const FIND = { timeout: 15000 }
 const WELCOME = { 'GET /assistant/welcome': { data: { message: "Hi, I'm Viswa.", suggestions: ['How do I hire a builder?'] } } }
@@ -95,15 +96,15 @@ describe('where Viswa shows', () => {
 
   it.each([
     ['/complete-profile', { role: 'OWNER', profile_complete: false }],
-    ['/supplier-category', { role: 'SUPPLIER', supplier_profile: null, profile_complete: false }],
-    ['/engineer-category', { role: 'ENGINEER', engineer_profile: null, profile_complete: false }],
+    ['/supplier-category', { role: 'SUPPLIER', supplier_profile: null, profile_complete: false, profile_completion: { missing_fields: [{ field: 'supplier_category' }] } }],
+    ['/engineer-category', { role: 'ENGINEER', engineer_profile: null, profile_complete: false, profile_completion: { missing_fields: [{ field: 'specialization' }] } }],
   ])('hides it on the set-up page %s', async (path, account) => {
     installFakeServer({})
     renderApp(path, { auth: signedInAs(anAccount(account)) })
     // Wherever the set-up flow sends this account, it is a sign-in or set-up page: no bubble.
     const hidden = ['/complete-profile', '/supplier-category', '/engineer-category', '/login']
     await waitFor(() => expect(hidden.some((page) => location.current?.pathname.startsWith(page))).toBe(true), FIND)
-    await act(() => new Promise((resolve) => setTimeout(resolve, 100)))
+    await act(() => new Promise((resolve) => setTimeout(resolve, 1500)))
     expect(screen.queryByRole('button', { name: /Open Viswa/ })).not.toBeInTheDocument()
   })
 })
@@ -213,10 +214,10 @@ describe('a House Owner chatting', () => {
 describe('a signed-in Builder chatting', () => {
   it('gets its own stored chat and the welcome the server gives its role', async () => {
     const user = userEvent.setup()
-    installFakeServer({
+    installFakeServer(builderDashboardServer({
       'GET /assistant/history': { data: { messages: [] } },
       'GET /assistant/welcome': { data: { message: "Hi Ravi, I'm Viswa. Ask me about your requests.", suggestions: ['Any new requests for me?'] } },
-    })
+    }))
     renderApp('/contractor', { auth: signedInAs(anAccount({ role: 'BUILDER', name: 'Ravi Builder' })) })
     await user.click(await bubble())
     const dialog = await panel()

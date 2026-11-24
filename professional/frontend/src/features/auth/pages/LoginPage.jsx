@@ -137,7 +137,7 @@ export default function LoginPage() {
         <PhoneConfigWait unreachable={unreachable} onRetry={retry} />
       ) : method === 'whatsapp' ? <PhoneLogin onSignedIn={landSignedIn} /> : passwordForm}
 
-      <p className="mt-5 flex items-center gap-2 rounded-xl border border-oc-line bg-oc-sunken px-3 py-2.5 text-[11px] font-bold text-oc-muted">
+      <p className="mt-5 flex items-center gap-2 text-[11px] font-bold text-oc-muted">
         <ShieldCheck size={15} className="shrink-0 text-oc-green" />
         {t('shared.security')}
       </p>

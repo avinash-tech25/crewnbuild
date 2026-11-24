@@ -44,7 +44,7 @@ import { discountedPrice } from '../../catalog/components/PriceTag.jsx'
 import { useUrlParams } from '../../../shared/hooks/useUrlState.js'
 import useUrlDialog, { isUuid } from '../../../shared/hooks/useUrlDialog.js'
 
-export default function ProductCatalogPage({ loadSuppliers, reloadKey = '', cartProjectId = null, canAddToCart = false, title = 'Product Catalog', onOpenCart, compactHeader = false }) {
+export default function ProductCatalogPage({ loadSuppliers, reloadKey = '', cartProjectId = null, canAddToCart = false, title = 'Product Catalog', onOpenCart, compactHeader = false, spreadCategories = false }) {
   const dispatch = useDispatch()
   const cartCount = useSelector(selectCartCount)
   const {
@@ -216,7 +216,6 @@ export default function ProductCatalogPage({ loadSuppliers, reloadKey = '', cart
         <>
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              {/* A page whose section is already named (the Builder's) passes no title. */}
               {title && <h3 className="font-display text-xl font-extrabold text-graphite">{title}</h3>}
               <p className={`${title ? 'mt-0.5 ' : ''}text-xs font-semibold text-graphite/50`}>
                 Products your suppliers sell, with their prices and discounts.
@@ -230,7 +229,7 @@ export default function ProductCatalogPage({ loadSuppliers, reloadKey = '', cart
 
       {/* The admin's categories, as circles with their pictures. */}
       {categories.length > 0 && (
-        <CategoryStrip categories={categories} selectedId={selectedCategoryId ?? ''} onSelect={chooseCategory} />
+        <CategoryStrip categories={categories} selectedId={selectedCategoryId ?? ''} onSelect={chooseCategory} spread={spreadCategories} />
       )}
 
       {cartMessage && <p className="rounded-lg bg-brand-50 px-3 py-2 text-xs font-bold text-brand-800">{cartMessage}</p>}

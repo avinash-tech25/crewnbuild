@@ -46,7 +46,7 @@ export function PlatformSection({ text, isArabic }) {
 
               <ol className="mt-10 max-mid:hidden" aria-hidden="true">
                 {journeyCards.map((step, index) => {
-                  const active = index === activeIndex;
+                  const active = index === highlightedIndex;
 
                   return (
                     <li

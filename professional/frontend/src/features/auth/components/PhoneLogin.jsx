@@ -159,24 +159,25 @@ export function PhoneLogin({ onSignedIn }) {
             invalid={Boolean(problem || (status === 'failed' && errorMessage))}
             disabled={signingIn}
             label={t('signup.phone.otpLabel')}
-            note={`+91 ${phone}`}
+            fullWidth
           />
           {/* Sent, not delivered: the provider accepting a message is all we know. */}
           <span className="block text-[11px] font-medium text-oc-muted">{t('signup.phone.sent')}</span>
           {devPreview && <DevOtpNotice code={devPreview.code} />}
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <button
               type="button"
               onClick={() => { setStage('enter'); setProblem('') }}
-              aria-label={t('signup.phone.change')}
-              className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-oc-line text-oc-muted
+              className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-oc-line px-3 text-[11px] font-extrabold text-oc-muted
                          transition-colors duration-200 hover:border-oc-green hover:text-oc-green"
             >
               <ArrowLeft size={15} className="rtl:-scale-x-100" />
+              {t('signup.phone.change')}
             </button>
             {secondsLeft > 0 ? (
               <span className="text-[11px] font-semibold tabular-nums text-oc-muted">
-                {String(Math.floor(secondsLeft / 60)).padStart(2, '0')}:{String(secondsLeft % 60).padStart(2, '0')}
+                {t('signup.flow.resendIn')}{' '}
+                <span>{String(Math.floor(secondsLeft / 60)).padStart(2, '0')}:{String(secondsLeft % 60).padStart(2, '0')}</span>
               </span>
             ) : (
               <button type="button" onClick={requestCode} disabled={sending} className="text-[11px] font-extrabold text-oc-green hover:text-oc-deep">

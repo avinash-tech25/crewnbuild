@@ -4,11 +4,11 @@
  * The shared list card (ListCard): the photo as the avatar and, at a fixed
  * height, in the body; the title and place; price and property type; "For
  * sale / For rent", Negotiable, three facts and the photo count as chips; then
- * View Details and View & Manage. Every value is the listing's own. Both buttons
- * (and the card) open the same detail panel as before, where Edit, the status
+ * one button. Every value is the listing's own. The button
+ * (and the card) opens the same detail panel as before, where Edit, the status
  * moves and Delete live -- nothing about what they do has changed.
  */
-import { Bath, BedDouble, Camera, Compass, Eye, Home, Layers, Maximize2, Sofa, SlidersHorizontal } from 'lucide-react'
+import { Bath, BedDouble, Camera, Compass, Eye, Home, Layers, Maximize2, Plus, Sofa, SlidersHorizontal } from 'lucide-react'
 import { SmartImage } from '../../../shared/ui/ui.jsx'
 import { CardAvatar, CardChip, CardStatus, ListCard, cardButtonClass } from '../../../shared/ui/ListCard.jsx'
 import { statusLabel } from '../../../shared/dashboard/StatusPill.jsx'
@@ -39,7 +39,7 @@ export default function SellListingCard({ listing, onOpen, browse = false }) {
   const facts = [
     area ? { key: 'area', icon: Maximize2, text: area } : null,
     bhk ? { key: 'bhk', icon: BedDouble, text: bhk } : null,
-    Number(listing.bathrooms) > 0 ? { key: 'bath', icon: Bath, text: `${listing.bathrooms} ${t('property.bathrooms')}` } : null,
+    Number(listing.bathrooms) > 0 ? { key: 'bath', icon: Bath, text: t('property.bathShort', { count: listing.bathrooms }) } : null,
     listing.facing ? { key: 'facing', icon: Compass, text: facingLabel(t, listing.facing, td) } : null,
     listing.furnishing ? { key: 'furnishing', icon: Sofa, text: codeLabel(t, 'property.furnishing', listing.furnishing, td) } : null,
     Number(listing.floors) > 0 ? { key: 'floors', icon: Layers, text: `${listing.floors} ${t('property.floors')}` } : null,
@@ -71,13 +71,8 @@ export default function SellListingCard({ listing, onOpen, browse = false }) {
         <CardChip key="listing" tone="green">{codeLabel(t, 'property.listing', listing.listing_type, td) || t('property.listing.SALE')}</CardChip>,
         listing.is_negotiable && <CardChip key="negotiable" tone="amber">{t('property.negotiable')}</CardChip>,
         ...facts.map((fact) => <CardChip key={fact.key} icon={fact.icon}>{fact.text}</CardChip>),
-        photoCount > 0 && <CardChip key="photos" icon={Camera}>{t('property.photosCount', { count: photoCount })}</CardChip>,
+        photoCount > 0 && <CardChip key="photos" icon={Camera}>{t(photoCount === 1 ? 'property.photosCountOne' : 'property.photosCount', { count: photoCount })}</CardChip>,
       ]}
-      secondary={browse ? null : (
-        <button type="button" onClick={open} className={cardButtonClass('secondary')}>
-          <Eye className="h-3.5 w-3.5" /> {t('property.viewDetails')}
-        </button>
-      )}
       primary={browse ? (
         <button type="button" onClick={open} className={cardButtonClass('primary')}>
           <Eye className="h-3.5 w-3.5" /> {t('property.viewDetails')}
@@ -92,6 +87,15 @@ export default function SellListingCard({ listing, onOpen, browse = false }) {
       <div className="h-14 w-full overflow-hidden rounded-xl bg-oc-sunken">
         {cover ? (
           <SmartImage src={imageUrl(cover)} alt={title} className="h-14 w-full rounded-xl object-cover" />
+        ) : !browse ? (
+          // The seller's own listing: opens the panel, where Edit adds photos.
+          <button
+            type="button"
+            onClick={open}
+            className="flex h-full w-full items-center justify-center gap-1.5 rounded-xl text-xs font-bold text-oc-green transition hover:bg-oc-mint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-oc-green"
+          >
+            <Plus className="h-4 w-4" aria-hidden="true" /> {t('property.addPhotos')}
+          </button>
         ) : (
           <div className="grid h-full place-items-center text-oc-faint"><Home className="h-8 w-8" strokeWidth={1.5} /></div>
         )}

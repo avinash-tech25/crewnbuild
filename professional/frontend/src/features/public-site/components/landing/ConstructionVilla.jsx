@@ -83,7 +83,7 @@ function usePrefersReducedMotion() {
 }
 
 
-export default function ConstructionVilla({ className = "", isNight: nightFromParent, onModeChange }) {
+export default function ConstructionVilla({ className = "", isNight: nightFromParent, onModeChange, modeLabel = "Day / Night" }) {
   const hostRef = useRef(null);
   const [ownNight, setOwnNight] = useState(false);
   const isNight = nightFromParent === undefined ? ownNight : nightFromParent;
@@ -616,10 +616,11 @@ export default function ConstructionVilla({ className = "", isNight: nightFromPa
       <div ref={hostRef} className="h-[420px] w-full max-wide:h-[330px]" />
 
       <div className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between gap-3 p-4">
-        <div className="pointer-events-auto">
-          <DayNightSwitch night={isNight} onChange={chooseMode} />
+        <div className="pointer-events-auto flex flex-wrap items-center gap-2">
+          <DayNightSwitch night={isNight} onChange={chooseMode} label={modeLabel} />
+          <span aria-hidden="true" className="rounded-full bg-white/80 px-2.5 py-1 text-[11px] font-bold text-oc-ink">{modeLabel}</span>
         </div>
-        <p className="text-[11px] font-semibold" style={{ color: isNight ? "#ffffff" : "#17201c", opacity: 0.6 }}>
+        <p className="rounded-full bg-white/80 px-2.5 py-1 text-[11px] font-bold text-oc-ink">
           Drag to rotate
         </p>
       </div>

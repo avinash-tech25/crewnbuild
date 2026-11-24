@@ -1,5 +1,7 @@
 import { motion, useReducedMotion } from "framer-motion";
-import { SectionLabel, containerClass, sectionPaddingClass } from "./shared.jsx";
+import { ArrowRight } from "lucide-react";
+import { AppLink } from "../../../../shared/navigation/AppLink.jsx";
+import { SectionLabel, buttonClass, containerClass, sectionPaddingClass } from "./shared.jsx";
 import { riseIn, staggerGroup, stepIn, useScrollReveal } from "./scrollReveal.js";
 import { flowSteps } from "./journeyData.js";
 
@@ -58,8 +60,8 @@ export function HowItWorksSection({ text, isArabic }) {
                     <span className="text-xs leading-normal font-bold tracking-[.14em] text-ocbrand-500 rtl:tracking-normal">
                       {String(index + 1).padStart(2, "0")}
                     </span>
-                    <h3 className="mt-1.5 text-base font-bold text-oc-ink">{copy.steps[step.key].title}</h3>
-                    <p className="mt-1.5 text-sm leading-relaxed text-oc-muted mid:mx-auto mid:max-w-[22ch]">
+                    <h3 className="mt-1.5 text-base font-bold text-oc-ink mid:max-[1279px]:min-h-[3rem]">{copy.steps[step.key].title}</h3>
+                    <p className="mt-1.5 text-sm leading-relaxed text-oc-muted text-balance mid:mx-auto mid:max-w-[26ch]">
                       {copy.steps[step.key].description}
                     </p>
                   </div>
@@ -72,6 +74,12 @@ export function HowItWorksSection({ text, isArabic }) {
         <motion.p variants={riseIn} {...reveal} className="mt-4 text-center text-base font-semibold text-oc-ink mid:mt-10">
           {copy.footnote}
         </motion.p>
+
+        <motion.div variants={riseIn} {...reveal} className="mt-6 flex justify-center">
+          <AppLink className={buttonClass} href="/signup">
+            {text.nav.start} <ArrowRight size={16} className="rtl:-scale-x-100" />
+          </AppLink>
+        </motion.div>
       </div>
     </section>
   );

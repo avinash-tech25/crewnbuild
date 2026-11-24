@@ -1,8 +1,9 @@
 import { DisclaimerNote } from '../../../shared/ui/DisclaimerNote.jsx'
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import useUrlState from '../../../shared/hooks/useUrlState.js'
 import {
-  CalendarCheck, CalendarDays, HardHat, Settings, Truck, UserPlus, UserRound, Users, X,
+  ArrowRight, CalendarCheck, CalendarDays, HardHat, Settings, Truck, UserPlus, UserRound, Users, X,
 } from 'lucide-react'
 import SiteEngineerDashboard from '../../site-work/components/SiteEngineerDashboard.jsx'
 import ContractorProjectSpecialistTeam from './BuilderProjectSpecialistTeam.jsx'
@@ -67,7 +68,7 @@ export function ContractorProjectsTable({ projectList, onSelect }) {
               {
                 key: 'engineer',
                 label: t('dash.contractor.siteEngineer'),
-                // The engineer's name once assigned, else "Assignment required".
+                // The engineer's name once assigned, else "No site engineer yet".
                 value: project.assigned_engineer ? td(project.assigned_engineer.name) : t('dash.contractor.assignmentRequired'),
               },
             ]}
@@ -94,6 +95,17 @@ export function ContractorProjectsTable({ projectList, onSelect }) {
               <CardChip key="type" tone="amber" outline>{buildingTypeText(project.building_type, t) || t('dash.common.notSet')}</CardChip>,
               project.assigned_engineer && <CardChip key="assigned" tone="green">{t('dash.contractor.assigned')}</CardChip>,
             ]}
+            // No Site Engineer yet: straight to the project's team, where one is assigned.
+            secondary={project.assigned_engineer ? null : (
+              <Link to={`/contractor/projects/${project.id}/team`} className={cardButtonClass('secondary')}>
+                <HardHat className="h-3.5 w-3.5" /> {t('team.assign')}
+              </Link>
+            )}
+            primary={(
+              <button type="button" onClick={() => onSelect(project)} className={cardButtonClass('primary')}>
+                {t('dash.engineer.openProject')} <ArrowRight className="h-3.5 w-3.5 rtl:-scale-x-100" />
+              </button>
+            )}
           />
         )
       })}
