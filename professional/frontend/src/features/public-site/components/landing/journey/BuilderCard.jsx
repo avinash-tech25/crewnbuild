@@ -1,20 +1,18 @@
 import { ArrowRight, BadgeCheck, Building2, MapPin } from "lucide-react";
 import { CardShell } from "./CardShell.jsx";
 import { Pill } from "./Pill.jsx";
-import { RoleFace, roleAvatarClass } from "../shared.jsx";
-import { roleMeta } from "../content.js";
-
-const builderFace = roleMeta.find((role) => role.key === "builder").face;
+import { roleAvatarClass } from "../shared.jsx";
+import { AppLink } from "../../../../../shared/navigation/AppLink.jsx";
 
 // Step 2 — a nearby builder responds with a price.
 export function BuilderCard({ copy, highlighted }) {
   return (
-    <CardShell icon={Building2} label={copy.label} highlighted={highlighted}>
+    <CardShell icon={Building2} label={copy.cardLabel} highlighted={highlighted}>
       <p className="text-title font-bold text-oc-ink">{copy.title}</p>
 
       <div className="mt-4 flex items-center gap-3">
         <span className={roleAvatarClass}>
-          <RoleFace image={builderFace} className="w-full h-full" />
+          <Building2 aria-hidden="true" className="w-5 h-5 text-oc-green" strokeWidth={2} />
         </span>
         <div className="min-w-0">
           <p className="truncate text-sm leading-normal font-bold text-oc-ink">{copy.company}</p>
@@ -31,14 +29,14 @@ export function BuilderCard({ copy, highlighted }) {
         <p className="mt-1 text-xs leading-normal text-oc-muted">{copy.duration}</p>
       </div>
 
-      <button
-        type="button"
+      <AppLink
+        href="/signup"
         className="mt-4 w-full inline-flex items-center justify-center gap-2 min-h-[44px] rounded-xl border border-oc-line bg-white
                    text-[15px] font-semibold text-oc-ink transition-[background,border-color] duration-200 hover:border-oc-line-strong hover:bg-oc-sunken"
       >
         {copy.cta}
         <ArrowRight aria-hidden="true" className="w-4 h-4 rtl:-scale-x-100" strokeWidth={2.25} />
-      </button>
+      </AppLink>
     </CardShell>
   );
 }
