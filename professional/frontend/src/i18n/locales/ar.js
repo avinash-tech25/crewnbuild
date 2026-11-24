@@ -3889,18 +3889,21 @@ const base = {
   'landing.roles.1.eyebrow': 'مقاول / شركة بناء',
   'landing.roles.1.questions.0': 'تبحث عن مشاريع بناء في منطقتك؟',
   'landing.roles.1.questions.1': 'تحتاج مهندسين مهرة للعمل في مواقعك؟',
+  'landing.roles.1.cta': 'ابحث عن مشاريع بالقرب منك',
   'landing.roles.2.title': 'مهندس',
   'landing.roles.2.short': 'قُد العمل.',
   'landing.roles.2.benefit': 'اعثر على وظائف المواقع وتابع التقدّم.',
   'landing.roles.2.eyebrow': 'خريجو الهندسة المدنية والمهندسون',
   'landing.roles.2.questions.0': 'تبحث عن وظائف هندسية؟',
   'landing.roles.2.questions.1': 'تريد بناء ملف مهني موثّق يثبت خبرتك العملية؟',
+  'landing.roles.2.cta': 'ابحث عن وظائف هندسية',
   'landing.roles.3.title': 'مورّد',
   'landing.roles.3.short': 'أبقِ المواقع تعمل.',
   'landing.roles.3.benefit': 'صِل إلى المقاولين الذين يحتاجون بضاعتك.',
   'landing.roles.3.eyebrow': 'مورّد مواد البناء',
   'landing.roles.3.questions.0': 'تريد بيع مواد البناء لعدد أكبر من العملاء؟',
   'landing.roles.3.questions.1': 'تريد الوصول بمنتجاتك إلى المشاريع المناسبة؟',
+  'landing.roles.3.cta': 'بِع موادك',
   // --- Estimator calculators (hub, raw material, paint, ready mix, vastu) ---
   // The construction estimate keeps its own `site.estimate.*` keys; these
   // cover the hub rail and the four sibling calculators, whose copy was

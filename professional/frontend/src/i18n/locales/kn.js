@@ -3531,18 +3531,21 @@ const base = {
   'landing.roles.1.eyebrow': 'ಬಿಲ್ಡರ್ / ಗುತ್ತಿಗೆದಾರ',
   'landing.roles.1.questions.0': 'ನಿಮ್ಮ ಪ್ರದೇಶದಲ್ಲಿ ನಿರ್ಮಾಣ ಯೋಜನೆಗಳನ್ನು ಹುಡುಕುತ್ತಿದ್ದೀರಾ?',
   'landing.roles.1.questions.1': 'ನಿಮ್ಮ ಸೈಟ್‌ಗಳಲ್ಲಿ ಕೆಲಸ ಮಾಡಲು ನುರಿತ ಎಂಜಿನಿಯರ್‌ಗಳು ಬೇಕೇ?',
+  'landing.roles.1.cta': 'ನಿಮ್ಮ ಹತ್ತಿರದ ಯೋಜನೆಗಳನ್ನು ಹುಡುಕಿ',
   'landing.roles.2.title': 'ಎಂಜಿನಿಯರ್',
   'landing.roles.2.short': 'ಕೆಲಸವನ್ನು ಮುನ್ನಡೆಸಿ.',
   'landing.roles.2.benefit': 'ಸೈಟ್ ಕೆಲಸಗಳನ್ನು ಹುಡುಕಿ ಮತ್ತು ಪ್ರಗತಿಯನ್ನು ಟ್ರ್ಯಾಕ್ ಮಾಡಿ.',
   'landing.roles.2.eyebrow': 'ಸಿವಿಲ್ ಎಂಜಿನಿಯರಿಂಗ್ ಪದವೀಧರರು / ಎಂಜಿನಿಯರ್‌ಗಳು',
   'landing.roles.2.questions.0': 'ಎಂಜಿನಿಯರಿಂಗ್ ಉದ್ಯೋಗಗಳನ್ನು ಹುಡುಕುತ್ತಿದ್ದೀರಾ?',
   'landing.roles.2.questions.1': 'ಪರಿಶೀಲಿತ ನೈಜ ಕೆಲಸದ ಪ್ರೊಫೈಲ್ ರಚಿಸಿ ನಿಮ್ಮ ಅನುಭವವನ್ನು ಸಾಬೀತುಪಡಿಸಲು ಬಯಸುವಿರಾ?',
+  'landing.roles.2.cta': 'ಎಂಜಿನಿಯರಿಂಗ್ ಉದ್ಯೋಗಗಳನ್ನು ಹುಡುಕಿ',
   'landing.roles.3.title': 'ಪೂರೈಕೆದಾರ',
   'landing.roles.3.short': 'ಸೈಟ್‌ಗಳನ್ನು ಚಲಿಸುತ್ತಿರಿಸಿ.',
   'landing.roles.3.benefit': 'ನಿಮ್ಮ ಸರಕು ಬೇಕಾದ ಬಿಲ್ಡರ್‌ಗಳನ್ನು ತಲುಪಿ.',
   'landing.roles.3.eyebrow': 'ನಿರ್ಮಾಣ ಸಾಮಗ್ರಿ ಪೂರೈಕೆದಾರ',
   'landing.roles.3.questions.0': 'ನಿಮ್ಮ ನಿರ್ಮಾಣ ಸಾಮಗ್ರಿಗಳನ್ನು ಹೆಚ್ಚು ಗ್ರಾಹಕರಿಗೆ ಮಾರಲು ಬಯಸುವಿರಾ?',
   'landing.roles.3.questions.1': 'ಸರಿಯಾದ ನಿರ್ಮಾಣ ಯೋಜನೆಗಳಿಗೆ ನಿಮ್ಮ ಉತ್ಪನ್ನಗಳನ್ನು ಪ್ರಚಾರ ಮಾಡಲು ಬಯಸುವಿರಾ?',
+  'landing.roles.3.cta': 'ನಿಮ್ಮ ಸಾಮಗ್ರಿಗಳನ್ನು ಮಾರಾಟ ಮಾಡಿ',
   // --- Estimator calculators (hub, raw material, paint, ready mix, vastu) ---
   // The construction estimate keeps its own `site.estimate.*` keys; these
   // cover the hub rail and the four sibling calculators, whose copy was

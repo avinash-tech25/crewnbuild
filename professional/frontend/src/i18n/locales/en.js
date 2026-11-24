@@ -4299,18 +4299,21 @@ const base = {
   'landing.roles.1.eyebrow': 'Builder / contractor',
   'landing.roles.1.questions.0': 'Looking for construction projects in your location?',
   'landing.roles.1.questions.1': 'Need skilled engineers to work on your sites?',
+  'landing.roles.1.cta': 'Find Projects Near You',
   'landing.roles.2.title': 'Engineer',
   'landing.roles.2.short': 'Lead the work.',
   'landing.roles.2.benefit': 'Find site jobs and track progress.',
   'landing.roles.2.eyebrow': 'Civil engineering graduates / engineers',
   'landing.roles.2.questions.0': 'Looking for engineering jobs?',
   'landing.roles.2.questions.1': 'Want to build a verified real-world work profile and prove your experience?',
+  'landing.roles.2.cta': 'Find Engineering Jobs',
   'landing.roles.3.title': 'Supplier',
   'landing.roles.3.short': 'Keep sites moving.',
   'landing.roles.3.benefit': 'Reach builders who need your stock.',
   'landing.roles.3.eyebrow': 'Construction material supplier',
   'landing.roles.3.questions.0': 'Want to sell your construction materials to more customers?',
   'landing.roles.3.questions.1': 'Want to promote your products to the right construction projects?',
+  'landing.roles.3.cta': 'Sell Your Materials',
   // --- Estimator calculators (hub, raw material, paint, ready mix, vastu) ---
   // The construction estimate keeps its own `site.estimate.*` keys; these
   // cover the hub rail and the four sibling calculators, whose copy was

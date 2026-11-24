@@ -119,13 +119,6 @@ function TopStrip() {
             </li>
           ))}
         </ul>
-        {/* The brand's diagonal amber cuts after Supply: three 9px stripes on a
-            17px rhythm (43px = stripe, gap, stripe, gap, stripe). */}
-        <span
-          aria-hidden="true"
-          className="hidden wide:block h-full w-[43px] shrink-0 -skew-x-[30deg] rtl:skew-x-[30deg]
-                     bg-[repeating-linear-gradient(90deg,#f4b740_0_9px,transparent_9px_17px)]"
-        />
         {/* Only where both halves fit on one line; narrower screens keep the
             left-hand group alone, as before. */}
         <ul

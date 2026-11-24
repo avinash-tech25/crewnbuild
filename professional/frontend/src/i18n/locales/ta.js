@@ -3531,18 +3531,21 @@ const base = {
   'landing.roles.1.eyebrow': 'கட்டுநர் / ஒப்பந்ததாரர்',
   'landing.roles.1.questions.0': 'உங்கள் பகுதியில் கட்டுமானத் திட்டங்களைத் தேடுகிறீர்களா?',
   'landing.roles.1.questions.1': 'உங்கள் தளங்களில் பணியாற்ற திறமையான பொறியாளர்கள் தேவையா?',
+  'landing.roles.1.cta': 'உங்கள் அருகிலுள்ள திட்டங்களைக் கண்டறியுங்கள்',
   'landing.roles.2.title': 'பொறியாளர்',
   'landing.roles.2.short': 'வேலையை வழிநடத்துங்கள்.',
   'landing.roles.2.benefit': 'தள வேலைகளைக் கண்டறிந்து முன்னேற்றத்தைக் கண்காணியுங்கள்.',
   'landing.roles.2.eyebrow': 'சிவில் பொறியியல் பட்டதாரிகள் / பொறியாளர்கள்',
   'landing.roles.2.questions.0': 'பொறியியல் வேலைகளைத் தேடுகிறீர்களா?',
   'landing.roles.2.questions.1': 'சரிபார்க்கப்பட்ட நிஜ உலக பணி சுயவிவரத்தை உருவாக்கி உங்கள் அனுபவத்தை நிரூபிக்க விரும்புகிறீர்களா?',
+  'landing.roles.2.cta': 'பொறியியல் வேலைகளைக் கண்டறியுங்கள்',
   'landing.roles.3.title': 'சப்ளையர்',
   'landing.roles.3.short': 'தளங்களை இயங்க வையுங்கள்.',
   'landing.roles.3.benefit': 'உங்கள் சரக்கு தேவைப்படும் கட்டுநர்களை அடையுங்கள்.',
   'landing.roles.3.eyebrow': 'கட்டுமானப் பொருள் சப்ளையர்',
   'landing.roles.3.questions.0': 'உங்கள் கட்டுமானப் பொருட்களை அதிக வாடிக்கையாளர்களுக்கு விற்க விரும்புகிறீர்களா?',
   'landing.roles.3.questions.1': 'சரியான கட்டுமானத் திட்டங்களுக்கு உங்கள் தயாரிப்புகளை விளம்பரப்படுத்த விரும்புகிறீர்களா?',
+  'landing.roles.3.cta': 'உங்கள் பொருட்களை விற்பனை செய்யுங்கள்',
   // --- Estimator calculators (hub, raw material, paint, ready mix, vastu) ---
   // The construction estimate keeps its own `site.estimate.*` keys; these
   // cover the hub rail and the four sibling calculators, whose copy was

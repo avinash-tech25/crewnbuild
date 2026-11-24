@@ -3531,18 +3531,21 @@ const base = {
   'landing.roles.1.eyebrow': 'ബിൽഡർ / കരാറുകാരൻ',
   'landing.roles.1.questions.0': 'നിങ്ങളുടെ പ്രദേശത്ത് നിർമ്മാണ പ്രോജക്ടുകൾ തിരയുകയാണോ?',
   'landing.roles.1.questions.1': 'നിങ്ങളുടെ സൈറ്റുകളിൽ ജോലി ചെയ്യാൻ വിദഗ്ധരായ എൻജിനീയർമാരെ വേണോ?',
+  'landing.roles.1.cta': 'നിങ്ങളുടെ അടുത്തുള്ള പ്രോജക്ടുകൾ കണ്ടെത്തുക',
   'landing.roles.2.title': 'എൻജിനീയർ',
   'landing.roles.2.short': 'ജോലിക്ക് നേതൃത്വം നൽകുക.',
   'landing.roles.2.benefit': 'സൈറ്റ് ജോലികൾ കണ്ടെത്തി പുരോഗതി ട്രാക്ക് ചെയ്യുക.',
   'landing.roles.2.eyebrow': 'സിവിൽ എൻജിനീയറിംഗ് ബിരുദധാരികൾ / എൻജിനീയർമാർ',
   'landing.roles.2.questions.0': 'എൻജിനീയറിംഗ് ജോലികൾ തിരയുകയാണോ?',
   'landing.roles.2.questions.1': 'പരിശോധിച്ച യഥാർത്ഥ ജോലി പ്രൊഫൈൽ ഉണ്ടാക്കി നിങ്ങളുടെ പരിചയം തെളിയിക്കാൻ ആഗ്രഹിക്കുന്നുണ്ടോ?',
+  'landing.roles.2.cta': 'എൻജിനീയറിംഗ് ജോലികൾ കണ്ടെത്തുക',
   'landing.roles.3.title': 'വിതരണക്കാരൻ',
   'landing.roles.3.short': 'സൈറ്റുകൾ ചലിച്ചുകൊണ്ടിരിക്കട്ടെ.',
   'landing.roles.3.benefit': 'നിങ്ങളുടെ സ്റ്റോക്ക് വേണ്ട ബിൽഡർമാരിലേക്ക് എത്തുക.',
   'landing.roles.3.eyebrow': 'നിർമ്മാണ സാമഗ്രി വിതരണക്കാരൻ',
   'landing.roles.3.questions.0': 'നിങ്ങളുടെ നിർമ്മാണ സാമഗ്രികൾ കൂടുതൽ ഉപഭോക്താക്കൾക്ക് വിൽക്കാൻ ആഗ്രഹിക്കുന്നുണ്ടോ?',
   'landing.roles.3.questions.1': 'ശരിയായ നിർമ്മാണ പ്രോജക്ടുകളിലേക്ക് നിങ്ങളുടെ ഉൽപ്പന്നങ്ങൾ പ്രചരിപ്പിക്കാൻ ആഗ്രഹിക്കുന്നുണ്ടോ?',
+  'landing.roles.3.cta': 'നിങ്ങളുടെ സാമഗ്രികൾ വിൽക്കുക',
   // --- Estimator calculators (hub, raw material, paint, ready mix, vastu) ---
   // The construction estimate keeps its own `site.estimate.*` keys; these
   // cover the hub rail and the four sibling calculators, whose copy was

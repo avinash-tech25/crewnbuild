@@ -3531,18 +3531,21 @@ const base = {
   'landing.roles.1.eyebrow': 'बिल्डर / ठेकेदार',
   'landing.roles.1.questions.0': 'अपने क्षेत्र में निर्माण परियोजनाएँ खोज रहे हैं?',
   'landing.roles.1.questions.1': 'अपनी साइटों के लिए कुशल इंजीनियर चाहिए?',
+  'landing.roles.1.cta': 'अपने आस-पास प्रोजेक्ट खोजें',
   'landing.roles.2.title': 'इंजीनियर',
   'landing.roles.2.short': 'काम का नेतृत्व करें।',
   'landing.roles.2.benefit': 'साइट पर काम पाएँ और प्रगति ट्रैक करें।',
   'landing.roles.2.eyebrow': 'सिविल इंजीनियरिंग स्नातक / इंजीनियर',
   'landing.roles.2.questions.0': 'इंजीनियरिंग नौकरियाँ खोज रहे हैं?',
   'landing.roles.2.questions.1': 'सत्यापित वास्तविक कार्य प्रोफ़ाइल बनाकर अपना अनुभव साबित करना चाहते हैं?',
+  'landing.roles.2.cta': 'इंजीनियरिंग नौकरियाँ खोजें',
   'landing.roles.3.title': 'आपूर्तिकर्ता',
   'landing.roles.3.short': 'साइटों को चलते रखें।',
   'landing.roles.3.benefit': 'उन बिल्डरों तक पहुँचें जिन्हें आपका स्टॉक चाहिए।',
   'landing.roles.3.eyebrow': 'निर्माण सामग्री आपूर्तिकर्ता',
   'landing.roles.3.questions.0': 'अधिक ग्राहकों को अपनी निर्माण सामग्री बेचना चाहते हैं?',
   'landing.roles.3.questions.1': 'सही निर्माण परियोजनाओं के लिए अपने उत्पादों का प्रचार करना चाहते हैं?',
+  'landing.roles.3.cta': 'अपनी सामग्री बेचें',
   // --- Estimator calculators (hub, raw material, paint, ready mix, vastu) ---
   // The construction estimate keeps its own `site.estimate.*` keys; these
   // cover the hub rail and the four sibling calculators, whose copy was
