@@ -1,4 +1,4 @@
-import { act, screen } from '@testing-library/react'
+import { act, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { installFakeServer } from '../../test/fakeServer.js'
 import { renderApp, signedOut } from '../../test/renderApp.jsx'
@@ -67,6 +67,8 @@ describe('the sign-up panel video', () => {
     expect(video).toHaveAttribute('aria-hidden', 'true')
     expect(play).not.toHaveBeenCalled()
 
+    // The panel is watched from an effect, which can run just after the video appears.
+    await waitFor(() => expect(observers.some((observer) => observer.targets.includes(video))).toBe(true), SLOW)
     act(() => observers.forEach((observer) => observer.show()))
     // WebM first, MP4 for browsers without VP9; both from this site (CSP 'self').
     expect(sourcesOf(video)).toEqual([['/landing/signup.webm', 'video/webm'], ['/landing/signup.mp4', 'video/mp4']])

@@ -40,8 +40,8 @@ describe('the landing header', () => {
     const contact = (await header()).getByRole('link', { name: 'Contact us' })
     expect(contact).not.toHaveAttribute('aria-current')
     await user.click(contact)
-    await waitFor(() => expect(location.current.pathname).toBe('/contact-us'))
-    await waitFor(async () => expect((await header()).getByRole('link', { name: 'Contact us' })).toHaveAttribute('aria-current', 'page'))
+    await waitFor(() => expect(location.current.pathname).toBe('/contact-us'), FIND)
+    await waitFor(async () => expect((await header()).getByRole('link', { name: 'Contact us' })).toHaveAttribute('aria-current', 'page'), FIND)
   })
 
   it('keeps the section links as in-page anchors on the landing page', async () => {

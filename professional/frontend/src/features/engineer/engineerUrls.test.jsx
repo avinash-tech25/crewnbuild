@@ -93,7 +93,7 @@ describe('Site Engineer hand-offs land on the tab they name, in one move', () =>
         created_at: '2026-11-15T10:00:00+05:30',
       }],
     })
-    act(() => { window.dispatchEvent(new Event('focus')) })
+    act(() => { document.dispatchEvent(new Event('visibilitychange')) })
     await user.click(await screen.findByRole('button', { name: /View requests/ }, FIND))
     await waitFor(() => expect(location.current.pathname).toBe('/engineer/find-opportunities'))
     expect(location.current.search).toBe('?tab=requests')
