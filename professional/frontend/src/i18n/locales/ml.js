@@ -3430,6 +3430,7 @@ const base = {
   'landing.rolesSection.highlight': 'പങ്ക് എന്താണ്?',
   'landing.rolesSection.body': 'നിങ്ങൾ വീടിന്റെ ഉടമയായാലും, അത് നിർമ്മിക്കുന്നയാളായാലും, കൈകാര്യം ചെയ്യുന്നയാളായാലും, വിതരണം ചെയ്യുന്നയാളായാലും — CREWNBUILD നിങ്ങളുടെ അടുത്ത ചുവട് വയ്ക്കാൻ സഹായിക്കുന്നു.',
   'landing.rolesSection.caption': 'നിങ്ങളുടെ വേഷം തിരഞ്ഞെടുത്ത് ശരിയായ പങ്കാളിയെ കണ്ടെത്തുക',
+  'landing.rolesSection.choose': 'നിങ്ങളുടെ റോൾ തിരഞ്ഞെടുക്കുക',
   'landing.howItWorks.eyebrow': 'പ്രക്രിയ',
   'landing.howItWorks.title': 'CREWNBUILD എങ്ങനെ പ്രവർത്തിക്കുന്നു',
   'landing.howItWorks.footnote': 'ഒരൊറ്റ നിർമ്മാണ യാത്ര. തുടക്കം മുതൽ അവസാനം വരെ ബന്ധിപ്പിച്ചിരിക്കുന്നു.',

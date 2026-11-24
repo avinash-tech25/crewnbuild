@@ -3430,6 +3430,7 @@ const base = {
   'landing.rolesSection.highlight': 'आपकी भूमिका क्या है?',
   'landing.rolesSection.body': 'चाहे आप घर के मालिक हों, उसे बनाते हों, प्रबंधित करते हों या आपूर्ति करते हों — CREWNBUILD आपको अगला कदम उठाने में मदद करता है।',
   'landing.rolesSection.caption': 'अपनी भूमिका चुनें और सही साथी पाएँ',
+  'landing.rolesSection.choose': 'अपनी भूमिका चुनें',
   'landing.howItWorks.eyebrow': 'प्रक्रिया',
   'landing.howItWorks.title': 'CREWNBUILD कैसे काम करता है',
   'landing.howItWorks.footnote': 'एक निर्माण यात्रा। शुरू से अंत तक जुड़ी हुई।',

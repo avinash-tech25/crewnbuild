@@ -3788,6 +3788,7 @@ const base = {
   'landing.rolesSection.highlight': 'في هذه القصة؟',
   'landing.rolesSection.body': 'سواء كنت تملك المنزل أو تبنيه أو تديره أو تورّد له — يساعدك أوكتابيلد على اتخاذ خطوتك التالية.',
   'landing.rolesSection.caption': 'اختر دورك لتجد ما يناسبك',
+  'landing.rolesSection.choose': 'اختر دورك',
   'landing.howItWorks.eyebrow': 'آلية العمل',
   'landing.howItWorks.title': 'كيف تعمل أوكتابيلد',
   'landing.howItWorks.footnote': 'رحلة بناء واحدة. متصلة من البداية إلى النهاية.',

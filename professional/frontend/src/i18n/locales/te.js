@@ -3430,6 +3430,7 @@ const base = {
   'landing.rolesSection.highlight': 'పాత్ర ఏమిటి?',
   'landing.rolesSection.body': 'మీరు ఇంటి యజమాని అయినా, దానిని నిర్మించినా, నిర్వహించినా లేదా సరఫరా చేసినా — CREWNBUILD మీ తదుపరి అడుగు వేయడంలో సహాయపడుతుంది.',
   'landing.rolesSection.caption': 'మీ పాత్రను ఎంచుకుని సరైన జతను కలవండి',
+  'landing.rolesSection.choose': 'మీ పాత్రను ఎంచుకోండి',
   'landing.howItWorks.eyebrow': 'ప్రక్రియ',
   'landing.howItWorks.title': 'CREWNBUILD ఎలా పనిచేస్తుంది',
   'landing.howItWorks.footnote': 'ఒకే నిర్మాణ ప్రయాణం. మొదటి నుండి చివరి వరకు అనుసంధానించబడింది.',

@@ -71,15 +71,16 @@ function RoleTile({ role, index, isActive, onActivate, isArabic, comingSoonLabel
 
       <span className="flex flex-col gap-1">
         <span className="flex items-center gap-2">
-          <b className="text-sm leading-normal">{role.title}</b>
+          <b className="text-base leading-normal">{role.title}</b>
           {roleMeta[index].comingSoon && (
             <span className="rounded-full bg-oc-amber px-2 py-[3px] text-[9px] font-extrabold uppercase tracking-[.08em] text-oc-deep rtl:tracking-normal">
               {comingSoonLabel}
             </span>
           )}
         </span>
-        <small className={`text-[10px] ${isActive ? "text-[#dcf4e3]" : "text-[#b9d8c5]"}`}>{role.short}</small>
-        {isActive && <em className="not-italic text-[10px] font-extrabold text-oc-amber">{role.benefit}</em>}
+        <small className={`text-[15px] leading-snug ${isActive ? "text-white" : "text-[#dcf4e3]"}`}>{role.short}</small>
+        {/* Always laid out, so every card keeps its height whichever role is active. */}
+        <em className={`not-italic text-[15px] leading-snug font-extrabold text-[#ffdc86] ${isActive ? "" : "invisible"}`}>{role.benefit}</em>
       </span>
 
       <ChevronRight size={17} className={`ms-auto rtl:-scale-x-100 ${isActive ? "text-[#c9e4d3]" : "text-[#a9d6bc]"}`} />
@@ -100,7 +101,7 @@ export function RolesSection({ text, isArabic, activeIndex, onSelect }) {
                  before:bg-[linear-gradient(90deg,var(--color-amber),rgba(255,255,255,.35),transparent_70%)]"
     >
       <div className={containerClass}>
-        <motion.div variants={staggerGroup} {...reveal} className="flex items-end justify-between gap-[50px] max-wide:block">
+        <motion.div variants={staggerGroup} {...reveal}>
           <div>
             <motion.div variants={riseIn}>
               <SectionLabel tone="light">{text.rolesSection.label}</SectionLabel>
@@ -114,7 +115,7 @@ export function RolesSection({ text, isArabic, activeIndex, onSelect }) {
               <span className="text-[#a9d6bc]">{text.rolesSection.highlight}</span>
             </motion.h2>
           </div>
-          <motion.p variants={riseIn} className="max-w-[340px] mb-[5px] text-sm leading-[1.75] text-[#b9d8c5] max-wide:mt-[25px]">
+          <motion.p variants={riseIn} className="max-w-[560px] mt-6 text-sm leading-[1.75] text-[#b9d8c5]">
             {text.rolesSection.body}
           </motion.p>
         </motion.div>
@@ -138,12 +139,15 @@ export function RolesSection({ text, isArabic, activeIndex, onSelect }) {
               </div>
             </motion.div>
             <div className="absolute bottom-[43px] w-[180px] h-[25px] rounded-full bg-black/30 blur-[10px]" />
-            <div className="absolute bottom-[15px] flex items-center gap-[7px] text-[10px] font-extrabold text-[#d1ebda]">
-              <Sparkles size={14} className="text-oc-amber" /> {text.rolesSection.caption}
-            </div>
           </div>
 
           <motion.div variants={staggerGroup} {...reveal} className="flex flex-col gap-[10px] max-wide:w-full">
+            <motion.p variants={riseIn} className="flex items-center gap-[7px] text-[13px] font-extrabold text-[#d1ebda]">
+              <Sparkles size={14} className="shrink-0 text-oc-amber" />
+              <span className="max-wide:hidden">{text.rolesSection.choose}</span>
+              <span className="wide:hidden">{text.rolesSection.caption}</span>
+            </motion.p>
+            <div className="grid auto-rows-fr gap-[10px]">
             {text.roles.map((role, index) => (
               <RoleTile
                 key={role.title}
@@ -155,6 +159,7 @@ export function RolesSection({ text, isArabic, activeIndex, onSelect }) {
                 onActivate={() => onSelect(index)}
               />
             ))}
+            </div>
             </motion.div>
           </div>
         </div>
