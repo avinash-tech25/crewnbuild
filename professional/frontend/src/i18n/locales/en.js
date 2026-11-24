@@ -3328,6 +3328,7 @@ const base = {
   'ce.sentRequests': 'Sent Requests',
   'ce.noPendingRequests': 'No pending requests at the moment.',
   'ce.mySuppliers': 'My Suppliers',
+  'ce.findSuppliers': 'Find Suppliers',
   'ce.noAcceptedSuppliers': 'No suppliers yet',
   'ce.noAcceptedSuppliersSub': 'Accepted suppliers will appear here once they approve your request. Send a request from Find Clients to get started.',
   'ce.copyCode': 'Copy Code',

@@ -2773,6 +2773,7 @@ const base = {
   'ce.sentRequests': 'الطلبات المرسلة',
   'ce.noPendingRequests': 'لا توجد طلبات معلقة في الوقت الحالي.',
   'ce.mySuppliers': 'الموردون',
+  'ce.findSuppliers': 'ابحث عن موردين',
   'ce.noAcceptedSuppliers': 'لا يوجد موردون بعد',
   'ce.noAcceptedSuppliersSub': 'سيظهر الموردون المقبولون هنا بمجرد الموافقة على طلبك. أرسل طلبًا من ابحث عن العملاء للبدء.',
   'ce.copyCode': 'نسخ الرمز',

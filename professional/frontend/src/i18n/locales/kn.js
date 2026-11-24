@@ -2890,6 +2890,7 @@ const base = {
   'ce.sentRequests': 'ಕಳುಹಿಸಿದ ವಿನಂತಿಗಳು',
   'ce.noPendingRequests': 'ಸದ್ಯಕ್ಕೆ ಬಾಕಿ ಇರುವ ವಿನಂತಿಗಳಿಲ್ಲ.',
   'ce.mySuppliers': 'ನನ್ನ ಪೂರೈಕೆದಾರರು',
+  'ce.findSuppliers': 'ಪೂರೈಕೆದಾರರನ್ನು ಹುಡುಕಿ',
   'ce.noAcceptedSuppliers': 'ಇನ್ನೂ ಪೂರೈಕೆದಾರರಿಲ್ಲ',
   'ce.noAcceptedSuppliersSub': 'ಪೂರೈಕೆದಾರರು ನಿಮ್ಮ ವಿನಂತಿಯನ್ನು ಅನುಮೋದಿಸಿದ ನಂತರ ಇಲ್ಲಿ ಕಾಣಿಸುತ್ತಾರೆ. ಪ್ರಾರಂಭಿಸಲು ಗ್ರಾಹಕರನ್ನು ಹುಡುಕಿ ವಿಭಾಗದಿಂದ ವಿನಂತಿ ಕಳುಹಿಸಿ.',
   'ce.copyCode': 'ಕೋಡ್ ನಕಲಿಸಿ',

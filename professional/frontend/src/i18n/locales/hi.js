@@ -2890,6 +2890,7 @@ const base = {
   'ce.sentRequests': 'भेजे गए अनुरोध',
   'ce.noPendingRequests': 'अभी कोई लंबित अनुरोध नहीं है।',
   'ce.mySuppliers': 'मेरे आपूर्तिकर्ता',
+  'ce.findSuppliers': 'आपूर्तिकर्ता खोजें',
   'ce.noAcceptedSuppliers': 'अभी कोई आपूर्तिकर्ता नहीं',
   'ce.noAcceptedSuppliersSub': 'आपूर्तिकर्ता आपका अनुरोध स्वीकार करने के बाद यहाँ दिखेंगे। शुरू करने के लिए क्लाइंट खोजें से अनुरोध भेजें।',
   'ce.copyCode': 'कोड कॉपी करें',
