@@ -44,9 +44,13 @@ class FakeAI:
     def __init__(self, *steps: Any) -> None:
         self.steps = list(steps)
         self.calls: list[tuple[list[dict[str, Any]], list[str]]] = []
+        self.models: list[str | None] = []  # the model each call asked for
 
-    def stream(self, messages: list[dict[str, Any]], tools: list[dict[str, Any]]) -> Iterator[Any]:
+    def stream(
+        self, messages: list[dict[str, Any]], tools: list[dict[str, Any]], model: str | None = None
+    ) -> Iterator[Any]:
         self.calls.append((json.loads(json.dumps(messages, default=str)), [t["function"]["name"] for t in tools]))
+        self.models.append(model)
         step = self.steps.pop(0) if self.steps else "All done."
         if isinstance(step, Exception):
             raise step

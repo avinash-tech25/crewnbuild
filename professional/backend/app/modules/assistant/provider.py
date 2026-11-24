@@ -37,6 +37,13 @@ class ProviderError(RuntimeError):
         self.status = status
         self.detail = detail
 
+    @property
+    def retryable(self) -> bool:
+        """Worth trying the next model: out of quota (429), model gone (404), the provider
+        failing (5xx), or not reached / timed out (no status). A 400/401/403 is our request
+        or our key, which another model will not fix."""
+        return self.status is None or self.status in (404, 429) or self.status >= 500
+
     def __str__(self) -> str:
         parts = [super().__str__()]
         if self.status is not None:
@@ -69,7 +76,9 @@ Event = TextDelta | ToolCalls
 
 
 class Provider(Protocol):
-    def stream(self, messages: list[dict[str, Any]], tools: list[dict[str, Any]]) -> Iterator[Event]: ...
+    def stream(
+        self, messages: list[dict[str, Any]], tools: list[dict[str, Any]], model: str | None = None
+    ) -> Iterator[Event]: ...
 
 
 def configured_key(settings: Settings) -> str:
@@ -99,12 +108,15 @@ class OpenAICompatibleProvider:
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
 
-    def stream(self, messages: list[dict[str, Any]], tools: list[dict[str, Any]]) -> Iterator[Event]:
+    def stream(
+        self, messages: list[dict[str, Any]], tools: list[dict[str, Any]], model: str | None = None
+    ) -> Iterator[Event]:
+        """One request to `model` (default ASSISTANT_MODEL)."""
         key = configured_key(self.settings)
         if not key:
             raise ProviderError("The assistant is not configured.")
         body: dict[str, Any] = {
-            "model": self.settings.assistant_model,
+            "model": model or self.settings.assistant_model,
             "messages": messages,
             "stream": True,
             "temperature": 0.2,

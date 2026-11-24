@@ -3,21 +3,27 @@
     check_available    off, or no OPENAI_API_KEY: 503 (the rest of the app is unaffected)
     check_limits       per user (window and day) or per guest address, in rate_limit_events: 429
     run_turn           a generator of Server-Sent Events: "delta" text chunks while the AI
-                       writes, then one "done" event (the cleaned answer, buttons, suggestions)
-                       or one "error" event
+                       writes ("reset" if a model fails part-way and the next one starts over),
+                       then one "done" event (the cleaned answer, buttons, suggestions) or one
+                       "error" event
 
 Order inside a turn: the message is checked for prompt injection (refused without the AI),
-the stored history (signed in) or the guest's own recent turns are added, then the AI may
-call up to ASSISTANT_MAX_TOOL_CALLS tools (tools.py) before it must answer. The answer's
+a plain how-to question that one help card clearly answers gets that card (no AI call, to
+save quota), the stored history (signed in) or the guest's own recent turns are added, then
+the AI may call up to ASSISTANT_MAX_TOOL_CALLS tools (tools.py) before it must answer. When
+the main model is out of quota, gone, failing or slow, each ASSISTANT_FALLBACK_MODELS model
+tries the turn in turn; when all fail, the best help card answers ("Quick answer from the
+help guide"), and only with no matching card does the user see "busy". The answer's
 buttons come only from the help cards the AI looked at. Signed-in turns are stored;
 guests' never are. History older than ASSISTANT_HISTORY_DAYS is purged by the scheduler.
 """
 
 import json
 import logging
+import re
 import time
 import uuid
-from collections.abc import Iterator
+from collections.abc import Generator, Iterator
 from dataclasses import dataclass, field
 from datetime import timedelta
 from typing import Any
@@ -29,10 +35,10 @@ from sqlalchemy.orm import Session
 from app.core.config import Settings
 from app.core.local_time import local_today
 from app.database.types import naive_utc_now
-from app.modules.assistant.knowledge import Knowledge, get_knowledge
+from app.modules.assistant.knowledge import Card, Knowledge, get_knowledge
 from app.modules.assistant.models import ROLE_ASSISTANT, ROLE_USER, AssistantConversation, AssistantMessage
 from app.modules.assistant.prompt import build_system_prompt
-from app.modules.assistant.provider import Provider, ProviderError, TextDelta, ToolCalls, configured_key
+from app.modules.assistant.provider import Provider, ProviderError, TextDelta, ToolCall, ToolCalls, configured_key
 from app.modules.assistant.safety import clean_answer, looks_like_injection
 from app.modules.assistant.tools import (
     ADMIN,
@@ -73,6 +79,7 @@ REFUSED = (
 NOT_FOR_ROLE = "Viswa is not available for this account."
 EMPTY_ANSWER = "Sorry, I couldn't put an answer together. Could you ask in another way?"
 SUPPORT_BUTTON = {"label": "Contact support", "path": "/contact-us"}
+QUICK_ANSWER = "Quick answer from the help guide:\n\n"
 
 
 SUPPLIER_ROLES = {
@@ -325,6 +332,97 @@ def store_turn(
     return reply.id
 
 
+def model_chain(settings: Settings) -> list[str]:
+    """ASSISTANT_MODEL, then ASSISTANT_FALLBACK_MODELS in order; blanks and repeats dropped."""
+    chain: list[str] = []
+    for name in [settings.assistant_model, *settings.assistant_fallback_models.split(",")]:
+        name = name.strip()
+        if name and name not in chain:
+            chain.append(name)
+    return chain
+
+
+# A how-to question: these openings, and none of the words that ask for the user's data.
+HOW_TO = re.compile(
+    r"^\s*(how\s+(do|can|should|would)\s+(i|we|you)|how\s+to|how\s+does|where\s+(do|can|is|are)|"
+    r"can\s+i|what\s+(is|are|does)|steps\s+to|explain)\b",
+    re.IGNORECASE,
+)
+DATA_QUESTION = re.compile(
+    r"\d|\bhow\s+(much|many)\b|\b(status|latest|pending|today|yesterday|cost|costs|price|prices|rate|rates|"
+    r"estimate|amount|total|show\s+me|list|which\s+of\s+my|did\s+my|has\s+my|have\s+i)\b",
+    re.IGNORECASE,
+)
+
+
+def direct_card(knowledge: Knowledge, role: str, message: str) -> Card | None:
+    """The help card that answers a plain how-to question on its own, saving an AI call;
+    None for data questions or when no single card clearly matches."""
+    if not HOW_TO.search(message) or DATA_QUESTION.search(message):
+        return None
+    return knowledge.best_match(role, message)
+
+
+def card_text(knowledge: Knowledge, role: str, card: Card, prefix: str) -> str:
+    """The card as an answer, its links checked like any answer."""
+    text = f"{prefix}**{card.title}**\n\n{card.body}"
+    return clean_answer(text, knowledge.allowed_paths(role)) or EMPTY_ANSWER
+
+
+def card_extras(knowledge: Knowledge, role: str, card: Card) -> tuple[list[dict[str, str]], list[str]]:
+    """The card's own (allow-listed) buttons and its follow-up cards as suggestions."""
+    buttons = [{"label": label, "path": path} for label, path in card.buttons][:MAX_BUTTONS]
+    suggestions = [linked.title for next_id in card.next if (linked := knowledge.card(role, next_id))]
+    return buttons, suggestions[:MAX_SUGGESTIONS]
+
+
+def one_model(
+    model: str, messages: list[dict[str, Any]], context: ToolContext, settings: Settings, provider: Provider
+) -> Generator[str, None, str]:
+    """One model's go at the turn: it may call tools (up to ASSISTANT_MAX_TOOL_CALLS), then
+    answers. Yields the "delta" events and returns the answer text; raises ProviderError."""
+    tool_schemas = [tool.schema() for tool in tools_for(context.role)]
+    deadline = time.monotonic() + TURN_SECONDS
+    calls_made = 0
+    while True:
+        offered = tool_schemas if calls_made < settings.assistant_max_tool_calls else []
+        text = ""
+        requested: list[ToolCall] = []
+        for event in provider.stream(messages, offered, model=model):
+            if time.monotonic() > deadline:
+                raise ProviderError("The turn took too long.")
+            if isinstance(event, TextDelta):
+                text += event.text
+                yield sse("delta", {"text": event.text})
+            elif isinstance(event, ToolCalls):
+                requested = event.calls
+        if not requested or not offered:
+            return text
+        requested = requested[: max(0, settings.assistant_max_tool_calls - calls_made)]
+        calls_made += len(requested)
+        messages.append(
+            {
+                "role": "assistant",
+                "content": text or None,
+                "tool_calls": [
+                    {
+                        "id": call.id,
+                        "type": "function",
+                        "function": {"name": call.name, "arguments": call.arguments},
+                        # Gemini's thought_signature must come back with its call.
+                        **({"extra_content": call.extra_content} if call.extra_content else {}),
+                    }
+                    for call in requested
+                ],
+            }
+        )
+        for call in requested:
+            result = run_tool(context, call.name, call.arguments)
+            messages.append(
+                {"role": "tool", "tool_call_id": call.id, "content": json.dumps({"data": result}, default=str)}
+            )
+
+
 def run_turn(turn: Turn, settings: Settings, provider: Provider, database: Session) -> Iterator[str]:
     """The SSE stream of one turn. `database` is a session owned by the stream (the
     request's own session may already be closed while the response streams)."""
@@ -357,6 +455,15 @@ def run_turn(turn: Turn, settings: Settings, provider: Provider, database: Sessi
             yield finish(REFUSED, "refused", [], [SUPPORT_BUTTON], [])
             return
 
+        # A how-to question one help card clearly answers: the card, without the AI.
+        direct = direct_card(knowledge, role, turn.message)
+        if direct is not None:
+            logger.info("assistant answered from help card %s (no AI call)", direct.id)
+            yield finish(
+                card_text(knowledge, role, direct, prefix=""), "help_card", [], *card_extras(knowledge, role, direct)
+            )
+            return
+
         first_name = (user.name or "").split(" ")[0] if user else ""
         messages: list[dict[str, Any]] = [
             {"role": "system", "content": build_system_prompt(knowledge, role, first_name, turn.page, local_today())}
@@ -370,59 +477,50 @@ def run_turn(turn: Turn, settings: Settings, provider: Provider, database: Sessi
             messages += turn.guest_history
         messages.append({"role": "user", "content": turn.message})
 
-        context = ToolContext(database=database, user=user, role=role, knowledge=knowledge)
-        tool_schemas = [tool.schema() for tool in tools_for(role)]
-        deadline = time.monotonic() + TURN_SECONDS
-        answer = ""
-        calls_made = 0
-        while True:
-            offered = tool_schemas if calls_made < settings.assistant_max_tool_calls else []
-            text = ""
-            requested: list = []
-            for event in provider.stream(messages, offered):
-                if time.monotonic() > deadline:
-                    raise ProviderError("The turn took too long.")
-                if isinstance(event, TextDelta):
-                    text += event.text
-                    yield sse("delta", {"text": event.text})
-                elif isinstance(event, ToolCalls):
-                    requested = event.calls
-            if not requested or not offered:
-                answer = text
+        # The main model, then each fallback, each from the start of the turn (a model's tool
+        # calls and thought signatures are its own). Only quota / missing model / 5xx /
+        # timeout move on; a 400-type refusal will not be fixed by another model.
+        streamed = False
+        for model in model_chain(settings):
+            if streamed:
+                yield sse("reset", {})  # the panel drops the failed model's partial text
+                streamed = False
+            context = ToolContext(database=database, user=user, role=role, knowledge=knowledge)
+            attempt = one_model(model, list(messages), context, settings, provider)
+            try:
+                while True:
+                    event = next(attempt)
+                    streamed = True
+                    yield event
+            except StopIteration as finished:
+                answer = finished.value
+            except ProviderError as error:
+                # The status and the provider's own message, key-free (see provider.ProviderError).
+                logger.warning("assistant provider failed: model=%s %s", model, error)
+                database.rollback()
+                if error.retryable:
+                    continue
                 break
-            requested = requested[: max(0, settings.assistant_max_tool_calls - calls_made)]
-            calls_made += len(requested)
-            messages.append(
-                {
-                    "role": "assistant",
-                    "content": text or None,
-                    "tool_calls": [
-                        {
-                            "id": call.id,
-                            "type": "function",
-                            "function": {"name": call.name, "arguments": call.arguments},
-                            # Gemini's thought_signature must come back with its call.
-                            **({"extra_content": call.extra_content} if call.extra_content else {}),
-                        }
-                        for call in requested
-                    ],
-                }
-            )
-            for call in requested:
-                result = run_tool(context, call.name, call.arguments)
-                messages.append(
-                    {"role": "tool", "tool_call_id": call.id, "content": json.dumps({"data": result}, default=str)}
-                )
+            logger.info("assistant answered: model=%s", model)
+            cleaned = clean_answer(answer, knowledge.allowed_paths(role)) or EMPTY_ANSWER
+            buttons, suggestions = buttons_and_suggestions(knowledge, role, context)
+            yield finish(cleaned, "answered", context.tools_used, buttons, suggestions)
+            return
 
-        allowed_paths = knowledge.allowed_paths(role)
-        cleaned = clean_answer(answer, allowed_paths) or EMPTY_ANSWER
-        buttons, suggestions = buttons_and_suggestions(knowledge, role, context)
-        yield finish(cleaned, "answered", context.tools_used, buttons, suggestions)
-    except ProviderError as error:
-        # The status and the provider's own message, key-free (see provider.ProviderError).
-        logger.warning("assistant provider failed: %s", error)
-        database.rollback()
-        yield sse("error", {"message": BUSY})
+        # Every model failed: the best help card for this role, if any matches.
+        fallback = knowledge.best_match(role, turn.message) or next(iter(knowledge.search(role, turn.message, 1)), None)
+        if streamed:
+            yield sse("reset", {})
+        if fallback is None:
+            yield sse("error", {"message": BUSY})
+            return
+        logger.info("assistant answered from help card %s (every model failed)", fallback.id)
+        yield finish(
+            card_text(knowledge, role, fallback, prefix=QUICK_ANSWER),
+            "help_fallback",
+            [],
+            *card_extras(knowledge, role, fallback),
+        )
     except Exception:
         logger.exception("assistant turn failed")
         database.rollback()

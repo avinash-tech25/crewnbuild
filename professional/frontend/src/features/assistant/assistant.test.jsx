@@ -258,3 +258,21 @@ describe('keyboard and accessibility', () => {
     expect(results.violations.map((violation) => `${violation.id}: ${violation.help}`)).toEqual([])
   })
 })
+
+describe('a model that fails part-way', () => {
+  it('drops the partial text when the backend starts the answer over', async () => {
+    const { streamChat } = await import('./assistantApi.js')
+    fakeChat({
+      body: sse(
+        ['delta', { text: 'Half an answer from the first mod' }],
+        ['reset', {}],
+        ['delta', { text: 'The fallback model answers.' }],
+        ['done', { answer: 'The fallback model answers.', buttons: [], suggestions: [] }],
+      ),
+    })
+    let shown = ''
+    const final = await streamChat({ message: 'hi' }, { onDelta: (chunk) => { shown += chunk }, onReset: () => { shown = '' } })
+    expect(shown).toBe('The fallback model answers.')
+    expect(final.answer).toBe('The fallback model answers.')
+  })
+})

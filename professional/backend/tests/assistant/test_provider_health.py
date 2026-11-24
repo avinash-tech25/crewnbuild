@@ -51,7 +51,7 @@ def test_gemini_tool_calls_keep_their_signature_and_stay_separate(seen: Network)
 
 def test_the_service_sends_the_signature_back_with_its_call(make_client: ClientFactory, database: Session) -> None:
     class SignedAI(FakeAI):
-        def stream(self, messages: list[dict[str, Any]], tools: list[dict[str, Any]]) -> Any:
+        def stream(self, messages: list[dict[str, Any]], tools: list[dict[str, Any]], model: str | None = None) -> Any:
             self.calls.append((json.loads(json.dumps(messages, default=str)), [t["function"]["name"] for t in tools]))
             if len(self.calls) == 1:
                 yield ToolCalls(

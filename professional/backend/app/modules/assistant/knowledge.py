@@ -47,6 +47,10 @@ STOP_WORDS = frozenset(
 )
 
 
+# A direct card answer needs this many of the card's title/keyword words in the question.
+STRONG_WORDS = 2
+
+
 class KnowledgeError(ValueError):
     """A card is broken (bad settings, duplicate id, unknown link or page)."""
 
@@ -111,19 +115,35 @@ class Knowledge:
     def allowed_paths(self, role: str) -> set[str]:
         return {path for card in self.cards_for(role) for _label, path in card.buttons}
 
-    def search(self, role: str, query: str, limit: int = 3) -> list[Card]:
-        """The cards that best match the question (shared words, keywords and title count double)."""
+    def scored(self, role: str, query: str) -> list[tuple[int, int, Card]]:
+        """(score, title/keyword words shared, card), best first. Shared words count once,
+        and twice more when they are in the title or keywords."""
         asked = words(query)
         if not asked:
             return []
         scored = []
         for card in self.cards_for(role):
-            strong = words(" ".join([card.title, *card.keywords]))
-            score = 2 * len(asked & strong) + len(asked & card.words())
+            strong = len(asked & words(" ".join([card.title, *card.keywords])))
+            score = 2 * strong + len(asked & card.words())
             if score:
-                scored.append((score, card.id, card))
-        scored.sort(key=lambda item: (-item[0], item[1]))
-        return [card for _score, _id, card in scored[:limit]]
+                scored.append((score, strong, card))
+        scored.sort(key=lambda item: (-item[0], item[2].id))
+        return scored
+
+    def search(self, role: str, query: str, limit: int = 3) -> list[Card]:
+        """The cards that best match the question."""
+        return [card for _score, _strong, card in self.scored(role, query)[:limit]]
+
+    def best_match(self, role: str, query: str) -> Card | None:
+        """The one card that clearly answers the question: at least STRONG_WORDS of its title
+        or keyword words are in the question, and it scores above every other card (a tie
+        means the question is ambiguous, so the AI should decide)."""
+        scored = self.scored(role, query)
+        if not scored:
+            return None
+        score, strong, card = scored[0]
+        runner_up = scored[1][0] if len(scored) > 1 else 0
+        return card if strong >= STRONG_WORDS and score > runner_up else None
 
 
 def load_knowledge(folder: Path = KNOWLEDGE_DIR) -> Knowledge:

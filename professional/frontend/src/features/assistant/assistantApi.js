@@ -51,8 +51,10 @@ export function parseEvents(text) {
 /**
  * Sends one question and calls onDelta(text) for each chunk of the answer as it arrives,
  * then resolves with the final "done" record (cleaned answer, buttons, suggestions).
+ * onReset() drops the text so far: the backend's model failed part-way and the next one
+ * (or the help guide) starts the answer over.
  */
-export async function streamChat(body, { onDelta, signal } = {}) {
+export async function streamChat(body, { onDelta, onReset, signal } = {}) {
   let response = await postChat(body, signal)
   if (response.status === 403) {
     // After a page reload the CSRF token is gone from memory: read the session once, retry.
@@ -70,6 +72,7 @@ export async function streamChat(body, { onDelta, signal } = {}) {
   let final = null
   const handle = (record) => {
     if (record.event === 'delta') onDelta?.(record.data.text || '')
+    else if (record.event === 'reset') onReset?.()
     else if (record.event === 'done') final = record.data
     else if (record.event === 'error') throw new AssistantError(record.data.message || '', 503)
   }

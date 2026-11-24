@@ -174,7 +174,7 @@ export default function ChatPanel({ open, user, onClose }) {
     try {
       const final = await streamChat(
         { message, current_page: pathname, history: signedIn ? [] : earlier },
-        { onDelta: (chunk) => patchLast((m) => ({ text: m.text + chunk })) },
+        { onDelta: (chunk) => patchLast((m) => ({ text: m.text + chunk })), onReset: () => patchLast(() => ({ text: '' })) },
       )
       patchLast(() => ({
         text: final.answer,

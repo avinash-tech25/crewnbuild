@@ -230,6 +230,9 @@ class Settings(BaseSettings):
     # Gemini's OpenAI-compatible endpoint works). No key = the chat answers 503.
     assistant_enabled: bool = True
     assistant_model: str = "gemini-3.5-flash"
+    # Backup models, comma separated, same key and base URL: tried in order when the main
+    # model answers 429 (quota), 404 (model gone), 5xx or times out. Keys are never rotated.
+    assistant_fallback_models: str = ""
     assistant_rate_limit_messages: int = 30
     assistant_rate_limit_window_seconds: int = 600
     assistant_daily_limit: int = 200
