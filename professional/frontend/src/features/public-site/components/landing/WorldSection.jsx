@@ -19,7 +19,7 @@ export function WorldSection({ text, isArabic }) {
       <div className={`${containerClass} grid grid-cols-[.8fr_1.2fr] items-center gap-[70px] max-mid:gap-10 max-wide:block`}>
         <motion.div variants={slideInFrom("start", isArabic)} {...reveal}>
           <SectionLabel tone="onAmber">{text.world.label}</SectionLabel>
-          <h2 className="mt-[21px] font-extrabold tracking-[-.06em] leading-[.96] text-[clamp(3.3rem,5vw,5.5rem)] rtl:tracking-normal rtl:leading-[1.18]">
+          <h2 className="mt-[21px] font-extrabold tracking-tight leading-[.96] text-[clamp(3.3rem,5vw,5.5rem)] rtl:tracking-normal rtl:leading-[1.18]">
             {text.world.headline}
             <br />
             <span className="text-oc-green">{text.world.highlight}</span>

@@ -83,7 +83,7 @@ export function HeroContent({ text, activeIndex, onSelect }) {
                 {sizerRole.eyebrow}
               </div>
               <div
-                className="max-w-[760px] mt-6 font-extrabold text-balance tracking-[-.065em] leading-[1.15]
+                className="max-w-[760px] mt-6 font-extrabold text-balance tracking-tight leading-[1.15]
                            text-[clamp(2rem,min(4.4vw,6.6vh),5rem)] max-wide:text-[clamp(1.6rem,min(7.4vw,5.4vh),3rem)]
                            rtl:tracking-normal rtl:leading-[1.45]"
               >
@@ -113,7 +113,7 @@ export function HeroContent({ text, activeIndex, onSelect }) {
 
           <h1
             id="hero-title"
-            className="max-w-[760px] mt-6 font-extrabold text-balance tracking-[-.065em] leading-[1.15] [text-shadow:0_4px_25px_rgba(0,0,0,.2)]
+            className="max-w-[760px] mt-6 font-extrabold text-balance tracking-tight leading-[1.15] [text-shadow:0_4px_25px_rgba(0,0,0,.2)]
                        text-[clamp(2rem,min(4.4vw,6.6vh),5rem)] max-wide:text-[clamp(1.6rem,min(7.4vw,5.4vh),3rem)]
                        rtl:tracking-normal rtl:leading-[1.45]"
           >

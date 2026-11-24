@@ -94,7 +94,7 @@ export function RolesSection({ text, isArabic, activeIndex, onSelect }) {
   return (
     <section
       id="roles"
-      className="relative text-white pt-32 pb-[135px] max-wide:pt-[84px] max-wide:pb-[90px] bg-oc-deep
+      className="relative text-white pt-24 pb-24 max-wide:pt-16 max-wide:pb-16 bg-oc-deep
                  bg-[radial-gradient(circle_at_18%_18%,rgba(95,182,130,.22),transparent_34%),radial-gradient(circle_at_88%_78%,rgba(244,183,64,.12),transparent_26%)]
                  before:content-[''] before:absolute before:inset-x-0 before:top-0 before:h-px
                  before:bg-[linear-gradient(90deg,var(--color-amber),rgba(255,255,255,.35),transparent_70%)]"
@@ -107,7 +107,7 @@ export function RolesSection({ text, isArabic, activeIndex, onSelect }) {
             </motion.div>
             <motion.h2
               variants={riseIn}
-              className="mt-[21px] font-extrabold tracking-[-.06em] leading-[.96] text-[clamp(3rem,5vw,5.2rem)] rtl:tracking-normal rtl:leading-[1.18] max-wide:text-[3.3rem]"
+              className="mt-[21px] font-extrabold tracking-tight leading-[.96] text-[clamp(3rem,5vw,5.2rem)] rtl:tracking-normal rtl:leading-[1.18] max-wide:text-[3.3rem]"
             >
               {text.rolesSection.headline}
               <br />

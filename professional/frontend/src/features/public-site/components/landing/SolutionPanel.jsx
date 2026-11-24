@@ -117,7 +117,7 @@ export function SolutionPanel({ text }) {
           ))}
         </motion.div>
 
-        <h2 className="mt-7 font-extrabold tracking-[-.06em] leading-[.96] text-[clamp(2.5rem,4.6vw,4.9rem)] rtl:tracking-normal rtl:leading-[1.18] max-wide:text-[2.6rem]">
+        <h2 className="mt-7 font-extrabold tracking-tight leading-[.96] text-[clamp(2.5rem,4.6vw,4.9rem)] rtl:tracking-normal rtl:leading-[1.18] max-wide:text-[2.6rem]">
           {text.solution.headline}
           <br />
           <span style={{ color: tone.highlight, transition: "color 900ms linear" }}>{text.solution.highlight}</span>
