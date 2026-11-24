@@ -1018,10 +1018,10 @@ export default function ContractorDashboard() {
 
   // The standard account menu, identical on every dashboard. Dark Mode and
   // Logout are supplied by DashboardShell, so the four options a user sees are
-  // Profile Settings, Dark Mode, Help & Feedback and Logout.
+  // Profile Settings, Dark Mode, Help Center and Logout.
   const contractorUserMenu = [
     { id: 'profileSettings', label: t('ui.profileSettings'), icon: Settings },
-    { id: 'helpFeedback', label: t('ui.helpFeedback'), icon: LifeBuoy },
+    { id: 'helpFeedback', label: t('ui.helpCenter'), icon: LifeBuoy },
   ]
   const handleUserMenuSelect = (menuId) => {
     if (menuId === 'profileSettings') {
