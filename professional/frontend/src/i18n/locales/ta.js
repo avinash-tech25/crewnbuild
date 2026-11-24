@@ -1741,6 +1741,7 @@ const base = {
   'dash.contractor.verifiedLead': 'சரிபார்க்கப்பட்ட லீட்',
   'dash.contractor.verifiedPartner': 'சரிபார்க்கப்பட்ட கூட்டாளர்',
   'dash.contractor.viewDetails': 'விவரங்களைக் காண்க',
+  'dash.contractor.confirmReject': 'இந்தக் கோரிக்கையை நிராகரிக்கவா?',
   'dash.contractor.visibleAfterAcceptance': 'கோரிக்கை ஏற்கப்பட்ட பிறகு தொடர்பு விவரங்கள் தெரியும்.',
   'dash.contractor.workProcess': 'பணி செயல்முறை',
   'dash.engineer.aboutPlaceholder': 'சுருக்கமான தொழில்முறை விவரம்…',

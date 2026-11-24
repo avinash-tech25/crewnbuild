@@ -1741,6 +1741,7 @@ const base = {
   'dash.contractor.verifiedLead': 'सत्यापित लीड',
   'dash.contractor.verifiedPartner': 'सत्यापित भागीदार',
   'dash.contractor.viewDetails': 'विवरण देखें',
+  'dash.contractor.confirmReject': 'क्या आप इस अनुरोध को अस्वीकार करना चाहते हैं?',
   'dash.contractor.visibleAfterAcceptance': 'अनुरोध स्वीकार होने के बाद संपर्क विवरण दिखेंगे।',
   'dash.contractor.workProcess': 'कार्य प्रक्रिया',
   'dash.engineer.aboutPlaceholder': 'संक्षिप्त पेशेवर सारांश…',

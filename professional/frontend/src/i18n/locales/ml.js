@@ -1741,6 +1741,7 @@ const base = {
   'dash.contractor.verifiedLead': 'സ്ഥിരീകരിച്ച ലീഡ്',
   'dash.contractor.verifiedPartner': 'സ്ഥിരീകരിച്ച പങ്കാളി',
   'dash.contractor.viewDetails': 'വിവരങ്ങൾ കാണുക',
+  'dash.contractor.confirmReject': 'ഈ അഭ്യർത്ഥന നിരസിക്കണോ?',
   'dash.contractor.visibleAfterAcceptance': 'അഭ്യർത്ഥന സ്വീകരിച്ച ശേഷം ബന്ധപ്പെടാനുള്ള വിവരങ്ങൾ കാണാം.',
   'dash.contractor.workProcess': 'പ്രവർത്തന രീതി',
   'dash.engineer.aboutPlaceholder': 'ചുരുക്കത്തിലുള്ള പ്രൊഫഷണൽ വിവരണം…',

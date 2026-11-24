@@ -1628,6 +1628,7 @@ const base = {
   'dash.contractor.verifiedLead': 'Verified lead',
   'dash.contractor.verifiedPartner': 'Verified partner',
   'dash.contractor.viewDetails': 'View details',
+  'dash.contractor.confirmReject': 'Reject this request?',
   'dash.contractor.visibleAfterAcceptance': 'Contact details are visible after the request is accepted.',
   'dash.contractor.workProcess': 'Work Process',
   'dash.engineer.aboutPlaceholder': 'Brief professional summary…',

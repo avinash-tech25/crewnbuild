@@ -1741,6 +1741,7 @@ const base = {
   'dash.contractor.verifiedLead': 'ధృవీకరించిన లీడ్',
   'dash.contractor.verifiedPartner': 'ధృవీకరించిన భాగస్వామి',
   'dash.contractor.viewDetails': 'వివరాలు చూడండి',
+  'dash.contractor.confirmReject': 'ఈ అభ్యర్థనను తిరస్కరించాలా?',
   'dash.contractor.visibleAfterAcceptance': 'అభ్యర్థన అంగీకరించిన తర్వాత సంప్రదింపు వివరాలు కనిపిస్తాయి.',
   'dash.contractor.workProcess': 'పని విధానం',
   'dash.engineer.aboutPlaceholder': 'సంక్షిప్త వృత్తిపరమైన సారాంశం…',

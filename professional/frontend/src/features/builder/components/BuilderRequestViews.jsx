@@ -22,7 +22,6 @@ function RequestFlowBadge({ flow }) {
   const { t } = useLanguage()
   return (
     <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide ring-1 ${FLOW_TONES[flow.tone]}`}>
-      {flow.actionRequired && <span className="h-1.5 w-1.5 rounded-full bg-current" />}
       {t(flow.key)}
     </span>
   )
@@ -179,7 +178,6 @@ function RequestStatusBadge({ status, labels = STATUS_LABELS }) {
   const tone = STATUS_TONES[status] || STATUS_TONES.pending
   return (
     <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide ring-1 ${tone}`}>
-      {!['accepted', 'sent'].includes(status) && <span className="h-1.5 w-1.5 rounded-full bg-current" />}
       {t(labels[status] || status)}
     </span>
   )
@@ -452,6 +450,9 @@ export function ContractorRequestsBoard({ requestList, onAccept, onReject, onWit
     setQuotingRequestId(requestId)
   }
 
+  const confirmReject = (request) => {
+    if (window.confirm(t('dash.contractor.confirmReject'))) onReject(request.id)
+  }
   const confirmQuote = (request) => {
     const quotationAmount = quotationAmounts[request.id] || ''
     if (Number(quotationAmount || 0) <= 0) {
@@ -599,7 +600,12 @@ export function ContractorRequestsBoard({ requestList, onAccept, onReject, onWit
           ) : viewMode === 'table' ? (
             <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
             <div className="dash-scroll overflow-x-auto">
-              <table className="w-full min-w-[760px] border-collapse text-left text-xs">
+              <table className="w-full min-w-[760px] table-fixed border-collapse text-left text-xs">
+                <colgroup>
+                  {(variant === 'supplier' ? ['22%', '36%', '17%', '25%'] : ['18%', '26%', '18%', '14%', '24%']).map((width, index) => (
+                    <col key={index} style={{ width }} />
+                  ))}
+                </colgroup>
                 <thead>
                   <tr className="border-b border-slate-200 bg-slate-50/90">
                     <th className="px-2.5 py-1.5 text-[9px] font-extrabold uppercase tracking-wide text-slate-400">{t(board.counterpartyLabel)}</th>
@@ -629,7 +635,6 @@ export function ContractorRequestsBoard({ requestList, onAccept, onReject, onWit
                             <HomeownerAvatar name={ownerName} request={request} role={board.role} size="h-7 w-7" />
                             <div className="min-w-0">
                               <p className="truncate font-semibold text-slate-800">{ownerName}</p>
-                              {variant !== 'supplier' && <p className="text-[11px] text-slate-500">{t(board.rowNote[category])}</p>}
                             </div>
                           </div>
                         </td>
@@ -686,7 +691,7 @@ export function ContractorRequestsBoard({ requestList, onAccept, onReject, onWit
                                 </button>
                                 <button
                                   type="button"
-                                  onClick={() => onReject(request.id)}
+                                  onClick={() => confirmReject(request)}
                                   className="inline-flex h-7 items-center justify-center gap-1 rounded-lg border border-slate-200 bg-white px-2 text-[11px] font-extrabold text-slate-600 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600"
                                 >
                                   <X className="h-3 w-3" /> {t('ce.reject')}
@@ -759,13 +764,13 @@ export function ContractorRequestsBoard({ requestList, onAccept, onReject, onWit
                                 {t('property.action.withdraw')}
                               </button>
                             )}
-                            {/* View request and View details: one button, same size and style. */}
+                            {/* View details: one button, same size and style. */}
                             <button
                               type="button"
                               onClick={() => toggleDetails(request)}
                               className="inline-flex h-6 items-center gap-0.5 rounded-md border border-brand-700 bg-white px-1.5 text-[10px] font-bold text-brand-800 transition hover:bg-brand-50"
                             >
-                              {flow ? t('req.board.viewRequest') : t('dash.contractor.viewDetails')}
+                              {t('dash.contractor.viewDetails')}
                               <ArrowRight className="h-2.5 w-2.5" />
                             </button>
                           </div>
@@ -799,8 +804,8 @@ export function ContractorRequestsBoard({ requestList, onAccept, onReject, onWit
                     ? t(request.is_sender ? 'req.board.sentOn' : 'req.board.receivedOn', { date: dateOnly(request.created_at) })
                     : ''
                 const party = isPartyRequest(request)
-                // For a supplier request the status is the badge alone; a House
-                // Owner request also says what the row means for the builder.
+                // The status is the badge alone; a party's request on the House Owner
+                // board also says, in a chip, what it means for the builder.
                 const rowNote = variant !== 'supplier' ? t(board.rowNote[category]) : ''
                 // A supplier's request with no project: headed by its store name,
                 // then who it is and what it supplies. A supplier's company (store)
@@ -809,14 +814,13 @@ export function ContractorRequestsBoard({ requestList, onAccept, onReject, onWit
                 const storeName = variant === 'supplier' && td(request.profile_title) && td(request.profile_title) !== ownerName ? td(request.profile_title) : ''
                 const subtitle = party
                   ? [partyHeading(request, td) !== ownerName ? ownerName : '', supplierCategoryLabel(request, t)].filter(Boolean).join(' · ')
-                  : storeName || rowNote
+                  : storeName
                 const shownLocation = party ? partyLocation(request, td) || location : location
-                const viewLabel = flow ? t('req.board.viewRequest') : t('dash.contractor.viewDetails')
                 // View details is the card's main action unless the request is
                 // waiting on the builder's answer, which then takes that place.
                 const viewDetails = (kind) => (
                   <button type="button" onClick={() => toggleDetails(request)} className={cardButtonClass(kind)}>
-                    {pendingIncoming ? t('dash.contractor.viewDetails') : viewLabel} <ArrowRight className="h-3.5 w-3.5" />
+                    {t('dash.contractor.viewDetails')} <ArrowRight className="h-3.5 w-3.5" />
                   </button>
                 )
                 const withdraw = canWithdraw && (
@@ -855,7 +859,7 @@ export function ContractorRequestsBoard({ requestList, onAccept, onReject, onWit
                       // A new request's answer -- the same handlers the table uses.
                       <>
                         {!board.quoteOnAccept ? (
-                          <button type="button" onClick={() => onReject(request.id)} className={cardButtonClass('danger')}>
+                          <button type="button" onClick={() => confirmReject(request)} className={cardButtonClass('danger')}>
                             <X className="h-3.5 w-3.5" /> {t('ce.reject')}
                           </button>
                         ) : isQuoting ? (

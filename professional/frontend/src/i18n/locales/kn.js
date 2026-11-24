@@ -1741,6 +1741,7 @@ const base = {
   'dash.contractor.verifiedLead': 'ಪರಿಶೀಲಿತ ಲೀಡ್',
   'dash.contractor.verifiedPartner': 'ಪರಿಶೀಲಿತ ಪಾಲುದಾರ',
   'dash.contractor.viewDetails': 'ವಿವರಗಳನ್ನು ನೋಡಿ',
+  'dash.contractor.confirmReject': 'ಈ ವಿನಂತಿಯನ್ನು ತಿರಸ್ಕರಿಸಬೇಕೇ?',
   'dash.contractor.visibleAfterAcceptance': 'ವಿನಂತಿ ಒಪ್ಪಿಕೊಂಡ ನಂತರ ಸಂಪರ್ಕ ವಿವರಗಳು ಕಾಣಿಸುತ್ತವೆ.',
   'dash.contractor.workProcess': 'ಕೆಲಸದ ಪ್ರಕ್ರಿಯೆ',
   'dash.engineer.aboutPlaceholder': 'ಸಂಕ್ಷಿಪ್ತ ವೃತ್ತಿಪರ ಸಾರಾಂಶ…',

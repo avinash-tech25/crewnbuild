@@ -50,7 +50,7 @@ export function ContractorRequestsSection({
             </button>
           ))}
         </div>
-        {onNewRequest && (
+        {onNewRequest && requestTab !== 'supplier' && (
           <button
             type="button"
             onClick={onNewRequest}

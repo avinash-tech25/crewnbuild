@@ -1312,6 +1312,7 @@ const base = {
   'dash.contractor.verifiedLead': 'عميل موثوق',
   'dash.contractor.verifiedPartner': 'شريك موثوق',
   'dash.contractor.viewDetails': 'عرض التفاصيل',
+  'dash.contractor.confirmReject': 'هل تريد رفض هذا الطلب؟',
   'dash.contractor.visibleAfterAcceptance': 'تظهر بيانات التواصل بعد قبول الطلب.',
   'dash.contractor.workProcess': 'سير العمل',
   'dash.engineer.aboutPlaceholder': 'ملخص مهني مختصر…',
