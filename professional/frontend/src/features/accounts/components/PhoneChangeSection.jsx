@@ -3,7 +3,8 @@ import { useDispatch, useSelector } from 'react-redux'
 import { Smartphone } from 'lucide-react'
 import { PhoneVerification } from '../../auth/components/PhoneVerification.jsx'
 import { StatusLine } from '../../auth/components/PasswordFields.jsx'
-import { changeAccountPhone, readPhoneVerificationConfig } from '../../auth/phoneCodeApi.js'
+import { changeAccountPhone } from '../../auth/phoneCodeApi.js'
+import { usePhoneChangeShown } from '../usePhoneChangeShown.js'
 import { setAuthenticatedUser } from '../../../shared/auth/authSlice.js'
 import { useLanguage } from '../../../i18n/LanguageContext.jsx'
 
@@ -34,7 +35,7 @@ export default function PhoneChangeSection({ className = '', currentPhone: phone
   const dispatch = useDispatch()
   const user = useSelector((state) => state.auth.user)
   const currentPhone = (phoneOverride ?? user?.phone) || ''
-  const [enabled, setEnabled] = useState(false)
+  const shown = usePhoneChangeShown(user)
   const [open, setOpen] = useState(false)
   const [phone, setPhone] = useState('')
   const [saving, setSaving] = useState(false)
@@ -54,17 +55,8 @@ export default function PhoneChangeSection({ className = '', currentPhone: phone
     }
   }, [])
 
-  useEffect(() => {
-    let active = true
-    readPhoneVerificationConfig()
-      .then((config) => { if (active) setEnabled(config?.enabled === true) })
-      .catch(() => {})
-    return () => { active = false }
-  }, [])
-
-  // The check only reaches Indian numbers; another country keeps its own form.
-  const india = !user?.country_of_residence || user.country_of_residence === 'India'
-  if (!enabled || !india) return null
+  // Not where the API has no check or for another country, which keeps its own form.
+  if (!shown) return null
 
   const close = () => {
     setOpen(false)

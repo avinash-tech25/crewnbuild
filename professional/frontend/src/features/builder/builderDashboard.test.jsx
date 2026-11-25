@@ -148,7 +148,7 @@ describe('Builder dashboard: team, projects and profile', () => {
   it("shows the builder's own profile settings", async () => {
     openBuilder('/contractor/profile-settings', { 'GET /auth/phone/config': { data: { enabled: false } } })
     expect(await screen.findByText('Profile Settings', {}, FIND)).toBeInTheDocument()
-    expect(screen.getAllByText('ravi@example.in').length).toBeGreaterThan(0)
+    expect(screen.getByDisplayValue('ravi@example.in')).toBeInTheDocument()
   })
 })
 
