@@ -184,8 +184,8 @@ export default function ContractorDashboard() {
   // setActiveId(...) call site keeps its meaning; it now records the move in
   // the browser instead of only in React.
   const activeId = useMemo(() => parseContractorLocation(location.pathname), [location.pathname])
-  const setActiveId = useCallback((sectionId) => {
-    navigate(NAV_PATHS[sectionId] || NAV_PATHS.requests)
+  const setActiveId = useCallback((sectionId, search = '') => {
+    navigate(`${NAV_PATHS[sectionId] || NAV_PATHS.requests}${search}`)
   }, [navigate])
   // Buy & Sell opens on SELL for a Builder; the tab is in the address (?tab=buy).
   const [buySellTab, setBuySellTab] = useUrlState('tab', 'sell', BUY_SELL_TABS)
@@ -738,7 +738,8 @@ export default function ContractorDashboard() {
     selectDashboardSection('findClients')
   }
 
-  const selectDashboardSection = (sectionId) => {
+  // `search`: the section's own tab or filter words ("?status=accepted"), from a dashboard card.
+  const selectDashboardSection = (sectionId, search) => {
     // Another section is another address, which closes an open profile by itself.
     if (sectionId !== 'findClients') {
       setSendRequestTarget(null)
@@ -746,7 +747,7 @@ export default function ContractorDashboard() {
     if (sectionId === 'findClients') {
       markNearbyClientsSeen()
     }
-    setActiveId(sectionId)
+    setActiveId(sectionId, typeof search === 'string' ? search : '')
     if (sectionId !== 'projects') setAssignEngineerMessage('')
     const tabNotificationModules = {
       requests: ['request'],
@@ -1403,6 +1404,7 @@ export default function ContractorDashboard() {
             sendingReceiverId={sendingReceiverId}
             onAcceptRequest={acceptContractorRequest}
             onRejectRequest={rejectContractorRequest}
+            onWithdrawRequest={withdrawContractorRequest}
             openSupplierProfile={openSupplierProfile}
             requestMessage={requestMessage}
             activeFindClientTab={activeFindClientTab}
@@ -1430,7 +1432,7 @@ export default function ContractorDashboard() {
         {activeId === 'productCatalog' && (
           // Browse-only: a Builder has no cart. Suppliers are the nearby ones,
           // found by the same /suppliers/nearby rules as elsewhere.
-          <ProductCatalogPage title={t('ui.productCatalog')} spreadCategories loadSuppliers={() => fetchNearbySuppliers()} />
+          <ProductCatalogPage title={t('ui.productCatalog')} spreadCategories showFeatured loadSuppliers={() => fetchNearbySuppliers()} />
         )}
         {activeId === 'messages' && <ContractorMessagesSection />}
 

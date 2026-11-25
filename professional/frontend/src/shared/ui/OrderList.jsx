@@ -178,7 +178,7 @@ export default function OrderList({
             )
           })}
         </div>
-        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+        <div className="flex min-w-0 flex-1 basis-[22rem] flex-wrap items-center gap-2">
           <label className="relative min-w-[12rem] flex-1">
             <span className="sr-only">{searchPlaceholder}</span>
             <Search aria-hidden="true" className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />

@@ -890,7 +890,7 @@ export default function SupplierDashboard() {
             })()}
             {/* Recent Activity, Top Products and Quick Actions, then Recent
                 Requests beside Sales Overview. The same panels, laid out here. */}
-            <section className="grid gap-4 lg:grid-cols-2 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)_minmax(0,0.85fr)]">
+            <section className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)_minmax(0,0.85fr)]">
               <div className="lg:col-span-2 xl:col-span-1 [&>div]:h-full">
                 <SupplierRecentSection
                   parts={['activity']}

@@ -711,7 +711,7 @@ export default function EngineerDashboard() {
             className="live-camera-blink inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-red-700 bg-red-600 px-3 text-xs font-black text-white transition hover:bg-red-700"
           >
             <Camera className="h-4 w-4" />
-            <span className="hidden sm:inline">{t('dash.engineer.hero.liveCamera')}</span>
+            <span className="hidden truncate sm:inline-block sm:max-lg:max-w-[4.75rem]">{t('dash.engineer.hero.liveCamera')}</span>
           </button>
           </>
         }

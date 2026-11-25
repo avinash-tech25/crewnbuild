@@ -16,7 +16,7 @@ import {
 } from '../messagesApi.js'
 import { imageUrl, websocketUrl } from '../../../shared/api/apiClient.js'
 import { plainChatPreview } from '../../../shared/utils/requestText.js'
-import { userAvatarSrc } from '../../../shared/ui/avatars.js'
+import { InitialsAvatar } from '../../../shared/ui/EntityPill.jsx'
 import { uploadLocalFile } from '../../../shared/api/uploadApi.js'
 import { useLanguage } from '../../../i18n/LanguageContext.jsx'
 import { useProfileGate, useResumeGatedAction } from '../../../shared/hooks/useProfileGate.js'
@@ -67,7 +67,7 @@ function DaySeparator({ label }) {
   * shows Devipriya whether she is reading the thread or Jogindar is.
   */
 function Avatar({ participant, name, className = '' }) {
-  return <img src={userAvatarSrc(participant)} alt={name || ''} className={`shrink-0 rounded-full object-cover ${className}`} />
+  return <InitialsAvatar user={participant} name={name || ''} className={`rounded-full ${className}`} />
 }
 
 export default function MessageThread() {
@@ -449,12 +449,12 @@ export default function MessageThread() {
                         {!message.is_mine && !isRich && (
                           <Avatar participant={selectedParticipant} name={filteredTitle} className="mb-1 h-7 w-7" />
                         )}
-                        <div className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm shadow-sm sm:max-w-[70%] ${
+                        <div className={`text-sm ${
                           isRich
-                            ? 'w-full max-w-[88%] bg-transparent p-0 shadow-none sm:max-w-sm'
-                            : message.is_mine
+                            ? 'w-full max-w-[88%] sm:max-w-sm'
+                            : `max-w-[85%] rounded-2xl px-4 py-2.5 shadow-sm sm:max-w-[70%] ${message.is_mine
                               ? 'rounded-br-md bg-gradient-to-br from-brand-700 to-brand-600 text-white'
-                              : 'rounded-bl-md border border-slate-200 bg-white text-graphite'
+                              : 'rounded-bl-md border border-slate-200 bg-white text-graphite'}`
                         }`}>
                           {message.attachment_url && message.messageType === 'IMAGE' && <img src={imageUrl(message.attachment_url)} alt="" className="mb-2 max-h-56 rounded-xl object-cover" />}
                           {message.attachment_url && message.messageType !== 'IMAGE' && (
@@ -526,7 +526,7 @@ export default function MessageThread() {
               {!messageList.length && <EmptyState title={t('dash.msg.noMessages')} message={messageSearch ? t('dash.msg.noMessagesSearch') : t('dash.msg.startConversation')} />}
             </div>
 
-            <form onSubmit={sendMessage} className="flex items-center gap-2 border-t border-slate-200 bg-white p-3">
+            <form onSubmit={sendMessage} className="flex items-center gap-2 border-t border-slate-200 bg-white p-3 max-[1560px]:pe-20">
               <label className="grid h-11 w-11 shrink-0 cursor-pointer place-items-center rounded-xl bg-brand-50 text-brand-700 ring-1 ring-brand-100 transition hover:bg-brand-100">
                 <ImagePlus className="h-5 w-5" />
                 <input type="file" accept="image/jpeg,image/png,image/webp,application/pdf" onChange={(event) => uploadAttachment(event.target.files?.[0]).catch(() => setUploadMessage(t('dash.msg.uploadFailed')))} className="sr-only" />

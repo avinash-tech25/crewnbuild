@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import {
-  CheckCircle2, ChevronDown, LifeBuoy, Loader2, MessageSquarePlus, Send, Star, X,
+  CheckCircle2, ChevronDown, LifeBuoy, Loader2, MessageSquarePlus, Search, Send, Star, X,
 } from 'lucide-react'
 
 import { useLanguage } from '../../../i18n/LanguageContext.jsx'
@@ -56,7 +56,6 @@ export const HELP_FAQ_KEYS = [
   { id: 'findClients', question: 'help.q.findClients', answer: 'ui.contractor.helpAnswerFindClients' },
   { id: 'requests', question: 'help.q.requests', answer: 'ui.contractor.helpAnswerRequests' },
   { id: 'trackSites', question: 'help.q.trackSites', answer: 'ui.contractor.helpAnswerTrackSites' },
-  { id: 'escrow', question: 'help.q.escrow', answer: 'ui.contractor.helpAnswerEscrow' },
   { id: 'verifyDocuments', question: 'help.q.verifyDocuments', answer: 'ui.contractor.helpAnswerVerifyDocuments' },
 ]
 
@@ -84,14 +83,28 @@ export function HelpCenterModal({ onClose }) {
     return () => { active = false }
   }, [])
   const [openIndex, setOpenIndex] = useState(0)
+  const [search, setSearch] = useState('')
+  const needle = search.trim().toLowerCase()
   const HELP_FAQS = [
-    ...HELP_FAQ_KEYS.map((faq) => ({ question: t(faq.question), answer: t(faq.answer) })),
+    ...HELP_FAQ_KEYS.map((faq) => ({ question: t(faq.question), answer: t(faq.answer) }))
+      .filter((faq) => !needle || `${faq.question} ${faq.answer}`.toLowerCase().includes(needle)),
     ...(supportEmail ? [{ question: t('help.stillNeedHelp'), answer: withEmailLink(t('help.supportContact', { email: supportEmail }), supportEmail) }] : []),
   ]
   return (
     <ModalOverlay onClose={onClose}>
       <ModalHeader icon={LifeBuoy} title={t('ui.helpCenter')} subtitle={t('help.subtitle')} onClose={onClose} />
       <div className="max-h-[62vh] space-y-2 overflow-y-auto px-5 py-4">
+        <label className="flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 focus-within:border-brand-400">
+          <Search className="h-4 w-4 shrink-0 text-slate-400" aria-hidden="true" />
+          <input
+            type="search"
+            value={search}
+            onChange={(event) => { setSearch(event.target.value); setOpenIndex(event.target.value.trim() ? -1 : 0) }}
+            placeholder={t('help.searchPh')}
+            aria-label={t('help.searchPh')}
+            className="min-w-0 flex-1 bg-transparent text-sm text-slate-800 outline-none placeholder:text-slate-400"
+          />
+        </label>
         {HELP_FAQS.map((faq, index) => {
           const open = openIndex === index
           return (

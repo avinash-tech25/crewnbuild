@@ -67,6 +67,11 @@ export function inr(value, country) {
   return formatMoney(value, country)
 }
 
+// Under half of the owner's budget: likely a typing slip ("200" for a 2.3 crore house).
+export function quoteFarBelowBudget(amount, budget) {
+  return Number(amount) > 0 && Number(budget) > 0 && Number(amount) < Number(budget) / 2
+}
+
 export function formatProjectDate(value, t) {
   // The month name follows the selected language; "Not set" comes from the key
   // table rather than an English literal.

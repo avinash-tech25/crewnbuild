@@ -7,6 +7,7 @@ import BudgetInWords from '../../../shared/ui/BudgetInWords.jsx'
 import { fetchProjectAward } from '../../requests/requestsApi.js'
 import { useLiveVersion } from '../../../shared/hooks/useLiveRefresh.js'
 import { requestFlowStatus } from '../../requests/requestAwards.js'
+import { offerSummary, supplierCategoryLabel } from '../../requests/counterparty.js'
 
 // Chat cards stay small: what the event is, which project, one amount and a
 // status. Everything else -- the full project, the profiles, the decisions --
@@ -120,8 +121,10 @@ export function RequestMessageCard({
   const label = details.sender_role ? t('dash.msg.roleRequest', { role: senderRoleLabel(details.sender_role, t) }) : t('dash.common.request')
   const projectTitle = details.project_title && details.project_title !== 'General request' ? td(details.project_title) : null
   const quoted = Number(details.quotation_amount || 0) > 0
+  // What a supplier offers, when the request names no project.
+  const offers = projectTitle ? '' : [supplierCategoryLabel(details, t), offerSummary(details, t)].filter(Boolean).join(' · ')
   return (
-    <EventFrame label={label} title={projectTitle || t('dash.common.request')}>
+    <EventFrame label={label} title={projectTitle || offers || t('dash.common.request')}>
       <AmountLine
         label={quoted ? t('dash.common.quotation') : t('dash.common.budget')}
         amount={quoted ? details.quotation_amount : details.budget}

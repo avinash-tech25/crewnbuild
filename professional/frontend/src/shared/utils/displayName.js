@@ -13,6 +13,25 @@ export function looksLikePhone(value) {
   return stripped.length >= MIN_DIGITS && /^\d+$/.test(stripped)
 }
 
+const LOWER_WORD = /(^|[\s,.(/-])([a-z])(?=[a-z]+(?![a-zA-Z]*[A-Z]))/g
+const CAPITAL_WORD = /(?<![A-Za-z])[A-Z]{5,}(?![A-Za-z])/g
+
+/** A place with each word's first letter in capital ("gachibowli" -> "Gachibowli"). */
+export function properPlace(value) {
+  return String(value ?? '').replace(LOWER_WORD, (_, before, letter) => before + letter.toUpperCase())
+}
+
+/** A person's name the same way, an all-capitals word of five letters or more included. */
+export function properName(value) {
+  return properPlace(value).replace(CAPITAL_WORD, (word) => word[0] + word.slice(1).toLowerCase())
+}
+
+/** Text written wholly in capitals, in normal letters ("TRUSTED COMPANY" -> "Trusted company"). */
+export function normalLetters(value) {
+  const text = String(value ?? '')
+  return /[A-Z]/.test(text) && !/[a-z]/.test(text) && text.trim().length > 4 ? text.trim()[0] + text.trim().slice(1).toLowerCase() : text
+}
+
 /** displayName(company_name, name) -> the company name, else the person's name. */
 export function displayName(...candidates) {
   for (const candidate of candidates) {

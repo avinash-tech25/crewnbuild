@@ -17,17 +17,18 @@ export default function LanguageSelector({ compact = false, variant = 'dark' }) 
 
   return (
     <label title={note} className={`group relative inline-flex items-center rounded-full border font-semibold backdrop-blur transition ${containerClass} ${compact ? 'h-9 gap-1.5 px-2 text-[12px]' : 'h-11 gap-2.5 px-3 text-sm'}`}>
-      <span aria-hidden="true" className={`relative grid shrink-0 place-items-center ${compact ? 'h-4 w-4' : 'h-5 w-5'}`}>
+      <span aria-hidden="true" className={`relative grid shrink-0 place-items-center ${compact ? 'h-4 w-4 max-[374px]:hidden' : 'h-5 w-5'}`}>
         <Globe className={`h-full w-full ${light ? 'text-brand-700' : 'text-white'}`} strokeWidth={2.25} />
       </span>
       <span className="sr-only">{t('language.label')}</span>
       <span id={noteId} className="sr-only">{note}</span>
+      {/* Without the Noto fonts: the list shows every script, so all of them would load. */}
       <select
         value={language}
         onChange={(event) => setLanguage(event.target.value)}
         aria-label={t('language.label')}
         aria-describedby={noteId}
-        className={`cursor-pointer appearance-none bg-transparent font-semibold outline-none [&_option]:text-graphite ${light ? 'text-graphite' : 'text-white'} ${compact ? 'max-w-20 pr-4' : 'max-w-32 pr-5'}`}
+        className={`cursor-pointer appearance-none bg-transparent [font-family:Inter,system-ui] font-semibold outline-none [&_option]:text-graphite ${light ? 'text-graphite' : 'text-white'} ${compact ? 'max-w-20 pr-4' : 'max-w-32 pr-5'}`}
       >
         {languages.map(({ code, name }) => <option key={code} value={code}>{name}</option>)}
       </select>

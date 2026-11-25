@@ -1,8 +1,8 @@
 import { DisclaimerNote } from '../../../shared/ui/DisclaimerNote.jsx'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ArrowRight, BrickWall, Check, CheckCircle2, HardHat, Home, IndianRupee, Send, Tractor, Truck, X } from 'lucide-react'
+import { ArrowRight, BrickWall, Check, CheckCircle2, HardHat, Home, IndianRupee, Search, Send, Tractor, Truck, X } from 'lucide-react'
 import { EmptyState } from '../../../shared/dashboard/RoleDashboardUi.jsx'
 import { avatarFromPath } from '../../../shared/ui/avatars.js'
 import { CardAvatar, CardChip, CardGrid, CardStatus, ListCard, cardButtonClass } from '../../../shared/ui/ListCard.jsx'
@@ -10,6 +10,10 @@ import { DETAIL_DIALOG_SIZE } from '../../../shared/ui/DetailDialog.jsx'
 import BudgetInWords from '../../../shared/ui/BudgetInWords.jsx'
 import { buildingTypeText, inr, OWNER_REQUEST_TYPES } from '../builderHelpers.js'
 import { ClientProfilePanel, SupplierProfilePanel } from './BuilderProfilePanels.jsx'
+import { QuoteBelowBudgetNote } from './BuilderPanels.jsx'
+import { FilterSelect } from './BuilderTeamSections.jsx'
+import { properName, properPlace } from '../../../shared/utils/displayName.js'
+import { requestAgeLabel } from '../../../shared/utils/requestTimes.js'
 import { useLanguage } from '../../../i18n/LanguageContext.jsx'
 import { formatNumber } from '../../../shared/utils/formatters.js'
 import { optionLabel, SUPPLIER_CATEGORY_KEYS, SUPPLIER_TYPE_KEYS } from '../../../i18n/optionKeys.js'
@@ -21,6 +25,7 @@ export function ContractorFindClientsSection({
   sendingReceiverId,
   onAcceptRequest,
   onRejectRequest,
+  onWithdrawRequest = null,
   openSupplierProfile,
   requestMessage,
   activeFindClientTab,
@@ -85,6 +90,7 @@ export function ContractorFindClientsSection({
             clientRequestState={clientRequestState}
             findClientRequest={findClientRequest}
             sendingReceiverId={sendingReceiverId}
+            onWithdrawRequest={onWithdrawRequest}
             openSupplierProfile={openSupplierProfile}
             onSendRequest={(supplier) => onSendRequest(supplier, 'CONTRACTOR_TO_SUPPLIER')}
           />
@@ -94,8 +100,46 @@ export function ContractorFindClientsSection({
   )
 }
 
+// The search box and filters of a lead list, in the My Partners style.
+function LeadFilters({ search, onSearch, children }) {
+  const { t } = useLanguage()
+  return (
+    <div className="mb-3 flex flex-col gap-2 lg:flex-row lg:items-center">
+      <label className="flex h-9 min-w-0 shrink-0 items-center gap-2 rounded-lg border lg:flex-1 lg:shrink border-slate-200 bg-white px-3">
+        <Search className="h-4 w-4 shrink-0 text-slate-400" />
+        <input
+          type="search"
+          value={search}
+          onChange={(event) => onSearch(event.target.value)}
+          placeholder={t('dash.contractor.leadSearchPh')}
+          aria-label={t('dash.contractor.leadSearchPh')}
+          className="min-w-0 flex-1 bg-transparent text-xs text-slate-800 outline-none placeholder:text-slate-400"
+        />
+      </label>
+      <div className="flex flex-wrap items-center gap-2">{children}</div>
+    </div>
+  )
+}
+
+// A request this builder sent and is still waiting on: the one it may take back.
+const canWithdraw = (request) => Boolean(request?.is_sender) && request.status === 'pending' && !String(request.id).startsWith('sent-')
+
 function HomeownerLeadList({ clientList, clientRequestState, findClientRequest, sendingReceiverId, onAcceptRequest, onRejectRequest, onSelectClient, onSendRequest }) {
   const { t, td } = useLanguage()
+  const [search, setSearch] = useState('')
+  const [type, setType] = useState('')
+  const [order, setOrder] = useState('')
+  const types = useMemo(() => [...new Set(clientList.map((project) => project.building_type).filter(Boolean))].sort(), [clientList])
+  // Leads that share both size and budget come first, otherwise in the server's order.
+  const shownClients = useMemo(() => {
+    const needle = search.trim().toLowerCase()
+    const full = (project) => Number(Number(project.land_area) > 0 && Number(project.budget) > 0)
+    const list = clientList.filter((project) => (!type || project.building_type === type)
+      && (!needle || [project.owner_name, project.project_title, project.title, project.address, project.pincode].some((value) => String(value || '').toLowerCase().includes(needle))))
+    const field = order.startsWith('size') ? 'land_area' : 'budget'
+    if (order) return list.sort((a, b) => (order.endsWith('High') ? 1 : -1) * (Number(b[field] || 0) - Number(a[field] || 0)))
+    return list.sort((a, b) => full(b) - full(a))
+  }, [clientList, search, type, order])
   const [quotingClientId, setQuotingClientId] = useState(null)
   const [quotationAmount, setQuotationAmount] = useState('')
   const [quoteError, setQuoteError] = useState('')
@@ -106,9 +150,24 @@ function HomeownerLeadList({ clientList, clientRequestState, findClientRequest, 
   }
   return (
     <>
+      {clientList.length > 0 && (
+        <LeadFilters search={search} onSearch={setSearch}>
+          <FilterSelect value={type} onChange={setType} label={t('property.filter.allTypes')}>
+            <option value="">{t('property.filter.allTypes')}</option>
+            {types.map((value) => <option key={value} value={value}>{buildingTypeText(value, t)}</option>)}
+          </FilterSelect>
+          <FilterSelect value={order} onChange={setOrder} label={t('shop.eo.sortBy')}>
+            <option value="">{t('shop.eo.sortBy')}</option>
+            <option value="budgetHigh">{t('dash.contractor.leadBudgetHigh')}</option>
+            <option value="budgetLow">{t('dash.contractor.leadBudgetLow')}</option>
+            <option value="sizeHigh">{t('dash.contractor.leadSizeHigh')}</option>
+            <option value="sizeLow">{t('dash.contractor.leadSizeLow')}</option>
+          </FilterSelect>
+        </LeadFilters>
+      )}
       {/* No height cap: the page is the only scroller. */}
       <CardGrid testId="builder-owner-lead-cards">
-        {clientList.map((project) => {
+        {shownClients.map((project) => {
           // Both owner↔builder directions: an incoming OWNER_TO_CONTRACTOR
           // request (owner contacted the builder) and an outgoing
           // CONTRACTOR_TO_OWNER request describe the same lead, and either one
@@ -120,11 +179,11 @@ function HomeownerLeadList({ clientList, clientRequestState, findClientRequest, 
           const matchedRequest = findClientRequest ? findClientRequest(project, OWNER_REQUEST_TYPES) : null
           const incomingPending = requestState === 'pending' && matchedRequest && !matchedRequest.is_sender
           const displayProjectTitle = td(project.project_title || project.title) || t('dash.contractor.homeownerProject')
-          const displayOwnerName = td(project.owner_name || project.profile_title) || t('dash.contractor.homeowner')
+          const displayOwnerName = properName(td(project.owner_name || project.profile_title)) || t('dash.contractor.homeowner')
           const accepted = requestState === 'accepted'
           const area = Number(project.land_area || 0)
           const budget = Number(project.budget || 0)
-          const location = `${td(project.address) || t('dash.owner.estimates.locationNotSet')}${project.pincode ? ` - ${project.pincode}` : ''}`
+          const location = `${properPlace(td(project.address)) || t('dash.owner.estimates.locationNotSet')}${project.pincode ? ` - ${project.pincode}` : ''}`
           const quoting = quotingClientId === project.id
           return (
             <ListCard
@@ -232,6 +291,7 @@ function HomeownerLeadList({ clientList, clientRequestState, findClientRequest, 
                         className="h-8 w-full min-w-0 rounded-lg border border-brand-300 bg-white px-2.5 text-xs font-bold text-slate-800 outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-brand-50"
                       />
                       <BudgetInWords value={quotationAmount} country={project.project_country} />
+                      <QuoteBelowBudgetNote amount={quotationAmount} budget={project.budget} country={project.project_country} />
                     </div>
                   )}
                 </div>
@@ -240,6 +300,7 @@ function HomeownerLeadList({ clientList, clientRequestState, findClientRequest, 
           )
         })}
       </CardGrid>
+      {clientList.length > 0 && shownClients.length === 0 && <p className="rounded-xl border border-dashed border-slate-200 bg-white p-6 text-center text-sm font-semibold text-slate-500">{t('ce.filter.noMatch')}</p>}
       {!clientList.length && <EmptyState title={t('dash.contractor.noClientsTitle')} message={t('dash.contractor.noClientsSub')} />}
       <DisclaimerNote kind="leads" className="mt-3" />
     </>
@@ -256,26 +317,42 @@ const SUPPLIER_CARD_THEMES = {
 const OTHER_SUPPLIER_CARD_THEME = { icon: Truck, tone: 'grey' }
 const SHOWN_OFFERINGS = 2
 
-function SupplierLeadList({ supplierList, clientRequestState, findClientRequest, sendingReceiverId, openSupplierProfile, onSendRequest }) {
+function SupplierLeadList({ supplierList, clientRequestState, findClientRequest, sendingReceiverId, onWithdrawRequest, openSupplierProfile, onSendRequest }) {
   const { t, td } = useLanguage()
+  const [search, setSearch] = useState('')
+  const [category, setCategory] = useState('')
+  const shownSuppliers = useMemo(() => {
+    const needle = search.trim().toLowerCase()
+    return supplierList.filter((supplier) => (!category || supplier.supplier_category === category)
+      && (!needle || [supplier.name, supplier.store_name, supplier.title, supplier.pincode, String(supplier.categories || '')].some((value) => String(value || '').toLowerCase().includes(needle))))
+  }, [supplierList, search, category])
   // Already filtered by the caller, which counts this very same list on the tab.
   return (
     <>
+      {supplierList.length > 0 && (
+        <LeadFilters search={search} onSearch={setSearch}>
+          <FilterSelect value={category} onChange={setCategory} label={t('ui.suppliers')}>
+            <option value="">{t('ui.suppliers')}</option>
+            {Object.keys(SUPPLIER_CARD_THEMES).map((value) => <option key={value} value={value}>{optionLabel(t, SUPPLIER_TYPE_KEYS, value)}</option>)}
+          </FilterSelect>
+        </LeadFilters>
+      )}
       {/* The same grid as the House Owner list, so cards on both tabs are the
           same size; the page is the only scroller. */}
       <CardGrid testId="builder-supplier-lead-cards">
-        {supplierList.map((supplier) => {
+        {shownSuppliers.map((supplier) => {
           const requestState = clientRequestState(supplier, 'CONTRACTOR_TO_SUPPLIER')
           const requestSent = requestState !== 'none'
           const accepted = requestState === 'accepted'
           // The supplier asked this builder: answered on the Requests board.
-          const incomingPending = requestState === 'pending' && findClientRequest?.(supplier, 'CONTRACTOR_TO_SUPPLIER')?.is_sender === false
+          const matchedRequest = findClientRequest?.(supplier, 'CONTRACTOR_TO_SUPPLIER')
+          const incomingPending = requestState === 'pending' && matchedRequest?.is_sender === false
           // The supplier's own name leads and their store name sits under it.
           // Both come from the discovery payload: `name` is the user's name and
           // `store_name` their supplier profile's store. The store line is
           // dropped when a supplier never named their store apart from
           // themselves, the same guard the supplier browser uses.
-          const supplierName = td(supplier.name || supplier.store_name || supplier.title)
+          const supplierName = properName(td(supplier.name || supplier.store_name || supplier.title))
           const storeName = td(supplier.store_name || supplier.title || '')
           // The supplier's own category off their profile — "Material
           // Supplier", "Equipment Supplier", "Labor Supplier" — instead of
@@ -301,7 +378,7 @@ function SupplierLeadList({ supplierList, clientRequestState, findClientRequest,
               title={supplierName}
               subtitle={storeName && storeName !== supplierName ? storeName : null}
               rows={[
-                { key: 'location', label: t('ce.col.location'), value: supplier.pincode || t('dash.owner.estimates.locationNotSet') },
+                { key: 'location', label: t('ce.col.location'), value: [properPlace(td(supplier.address)), supplier.pincode].filter(Boolean).join(' - ') || t('dash.owner.estimates.locationNotSet') },
                 // Products / services — the first ones and how many more; the full list
                 // shows on hover and in the profile the card opens.
                 {
@@ -319,6 +396,14 @@ function SupplierLeadList({ supplierList, clientRequestState, findClientRequest,
               status={incomingPending ? <CardStatus status="pending">{t('dash.contractor.wantsToWork')}</CardStatus> : null}
               // The supplier's category, in its own colour.
               chips={[<CardChip key="category" tone={theme.tone} icon={theme.icon}>{categoryLabel}</CardChip>]}
+              meta={canWithdraw(matchedRequest) && requestAgeLabel(matchedRequest.created_at_iso || matchedRequest.created_at)
+                ? { text: t('dash.contractor.sentAge', { age: requestAgeLabel(matchedRequest.created_at_iso || matchedRequest.created_at) }) }
+                : null}
+              secondary={onWithdrawRequest && canWithdraw(matchedRequest) ? (
+                <button type="button" onClick={() => onWithdrawRequest(matchedRequest.id)} className={cardButtonClass('danger')}>
+                  {t('property.action.withdraw')}
+                </button>
+              ) : null}
               primary={accepted ? (
                 // Where Send Request was: the request is accepted.
                 <span className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-emerald-50 px-3.5 text-xs font-extrabold text-emerald-800 ring-1 ring-emerald-200">
@@ -351,6 +436,7 @@ function SupplierLeadList({ supplierList, clientRequestState, findClientRequest,
           )
         })}
       </CardGrid>
+      {supplierList.length > 0 && shownSuppliers.length === 0 && <p className="rounded-xl border border-dashed border-slate-200 bg-white p-6 text-center text-sm font-semibold text-slate-500">{t('ce.filter.noMatch')}</p>}
       {!supplierList.length && <EmptyState title={t('dash.owner.suppliers.emptyTitle')} message={t('dash.contractor.suppliersEmpty')} />}
     </>
   )
@@ -562,6 +648,7 @@ export function SendRequestDrawer({ client, requestType, onClose, onSend, busy, 
                   {/* The client's own project country when the feed carries it,
                       otherwise the builder's — never a silent rupee default. */}
                   <BudgetInWords value={amount} country={client?.project_country || country} />
+                  <QuoteBelowBudgetNote amount={amount} budget={client?.budget} country={client?.project_country || country} />
                   <p className="mt-1.5 text-xs font-medium text-slate-500">{t('dash.contractor.quotationHint')}</p>
                 </div>
               )}

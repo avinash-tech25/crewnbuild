@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { displayName } from '../../../shared/utils/displayName.js'
+import { plainRequestText } from '../../../shared/utils/requestText.js'
 import {
   ArrowRight,
   ArrowUpRight,
@@ -470,7 +471,7 @@ export function EngineerNotificationsSection({ notifications, onMarkAllRead }) {
                 </span>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-extrabold text-slate-950">{td(notification.title)}</p>
-                  <p className="mt-0.5 text-xs font-medium leading-relaxed text-slate-500">{td(notification.body)}</p>
+                  <p className="mt-0.5 text-xs font-medium leading-relaxed text-slate-500">{td(plainRequestText(notification.body))}</p>
                 </div>
                 <span className="shrink-0 text-[10px] font-bold text-slate-400">{formatDateTime(notification.created_at, notification.created_at || '')}</span>
               </div>

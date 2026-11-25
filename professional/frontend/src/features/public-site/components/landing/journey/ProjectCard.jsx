@@ -25,12 +25,12 @@ export function ProjectCard({ copy, isArabic, highlighted }) {
           const current = index === activeMilestone;
 
           return (
-            <li key={milestone} className="flex flex-col items-center gap-1.5">
+            <li key={milestone} className="flex min-w-0 flex-col items-center gap-1.5">
               <span
                 aria-hidden="true"
                 className={`w-2 h-2 rounded-full ${current ? "bg-ocbrand-500 ring-4 ring-ocbrand-100" : done ? "bg-ocbrand-500" : "bg-oc-line-strong"}`}
               />
-              <span className={`w-full truncate text-center text-[10px] leading-tight ${current ? "font-semibold text-oc-ink" : "text-oc-faint"}`}>
+              <span className={`w-full truncate text-center text-[10px] max-[374px]:text-[8.5px] leading-tight ${current ? "font-semibold text-oc-ink" : "text-oc-faint"}`}>
                 {copy.milestones[milestone]}
               </span>
             </li>

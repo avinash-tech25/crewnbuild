@@ -251,7 +251,7 @@ export function DashboardTopbar({ searchValue, onSearchChange, searchPlaceholder
         {/* Shrinkable so that, when the bar is crowded (tablets, long names, the
             Site Engineer's Live Camera button), the account name truncates
             instead of the group running off the right edge of the screen. */}
-        <div className="ml-auto flex min-w-0 items-center gap-2.5 max-sm:flex-wrap max-sm:justify-end max-sm:gap-1.5 sm:gap-3">
+        <div className="ml-auto flex min-w-0 items-center gap-2.5 max-sm:flex-wrap max-sm:justify-end max-sm:gap-1.5 max-[374px]:gap-1 sm:gap-3">
           {/* Optional control placed just left of the language selector (the
               Site Engineer's Live Camera button). Absent on every other console. */}
           {beforeLanguage}
@@ -297,7 +297,7 @@ export function DashboardTopbar({ searchValue, onSearchChange, searchPlaceholder
                 alt={td(user.name)}
                 className="h-8 w-8 shrink-0 rounded-full object-cover object-top"
               />
-              <span className="hidden min-w-0 text-left sm:block">
+              <span className="hidden min-w-0 overflow-hidden text-left sm:block">
                 <span className="flex min-w-0 items-center gap-1.5">
                   {/* The name this person entered for themselves. */}
                   <span className="max-w-[180px] truncate text-[13px] font-extrabold leading-tight text-oc-ink">{td(user.name) || t('ui.shared.user')}</span>

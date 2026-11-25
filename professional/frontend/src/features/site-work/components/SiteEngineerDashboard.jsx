@@ -738,7 +738,7 @@ export default function SiteEngineerDashboard({ projectList = [], viewMode = 'ca
     {projectList.length > 1 && (
       <div className="flex flex-wrap items-center justify-end gap-2">
         <label className="sr-only" htmlFor="se-project-picker">{t('se.selectProject')}</label>
-        <select id="se-project-picker" value={projectId} onChange={(event) => selectProject(event.target.value)} className="h-10 rounded-lg border px-3 text-sm font-bold">
+        <select id="se-project-picker" value={projectId} onChange={(event) => selectProject(event.target.value)} className="h-10 min-w-0 max-w-full rounded-lg border px-3 text-sm font-bold">
           <option value="">{t('se.selectProject')}</option>
           {projectList.map((item) => <option key={item.id} value={item.id}>{td(item.title)}</option>)}
         </select>

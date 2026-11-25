@@ -111,7 +111,7 @@ function TopStrip() {
       <div className={`top-strip ${headerContainerClass} flex h-[36px] items-center gap-[18px] overflow-hidden whitespace-nowrap text-[12px] font-bold leading-none max-wide:h-[32px] max-wide:gap-3 max-wide:text-[10.5px] max-[400px]:gap-2 max-[400px]:text-[10px] max-[380px]:gap-[6px]`}>
         <span className="font-extrabold tracking-[.01em] text-oc-amber">India&apos;s Construction Network</span>
         <span aria-hidden="true" className="h-[14px] w-px shrink-0 bg-white/35 max-[350px]:hidden" />
-        <ul className="m-0 flex list-none items-center p-0 text-white/85 max-[350px]:hidden" aria-label="What you can do on Crew&Build">
+        <ul className="m-0 flex list-none items-center p-0 text-white/85 max-[350px]:hidden" aria-label="What you can do on CREWNBUILD">
           {topStripActions.map((action, index) => (
             <li key={action} className="flex items-center">
               {index > 0 && <span aria-hidden="true" className="top-strip-sep mx-[12px] h-[12px] w-px bg-white/30 max-wide:mx-2 max-[400px]:mx-[5px] max-[380px]:mx-[4px]" />}
@@ -124,7 +124,7 @@ function TopStrip() {
         <ul
           data-trust
           className="m-0 ms-auto hidden list-none items-center p-0 text-white/90 min-[900px]:flex"
-          aria-label="Crew&Build trust indicators"
+          aria-label="CREWNBUILD trust indicators"
         >
           {trustIndicators.map(({ label, Icon }, index) => (
             <li key={label} className="flex items-center">
@@ -269,9 +269,10 @@ export function SiteHeader({ text, brandHref = "#top" }) {
         {!menuMode && <span aria-hidden="true" className={`${navEdgeRuleClass} ${barItemClass}`}><NavRule /></span>}
 
         {/* The weather where the visitor is (or chooses), beside the language
-            switch; its detail opens in a popover. Fades with the bar on scroll. */}
+            switch; its detail opens in a popover. Fades with the bar on scroll.
+            Not on the landing page, whose bar stays short. */}
         <span ref={weatherRef} className={`${barItemClass} shrink-0 me-[10px] max-[1365px]:me-2 max-[380px]:me-1.5 ${menuMode ? "ms-auto" : ""}`}>
-          <PublicWeatherIndicator concealed={scrolled} />
+          {brandHref !== "#top" && <PublicWeatherIndicator concealed={scrolled} />}
         </span>
 
         {/* Every language the app offers, not a two-way English/Arabic flip.
@@ -295,12 +296,13 @@ export function SiteHeader({ text, brandHref = "#top" }) {
             onChange={(event) => setLanguage(event.target.value)}
             aria-label={languageLabel}
             aria-describedby={languageNoteId}
-            /* The focus ring lives on the label above, not here: a ring on this
+            /* Without the Noto fonts: the list shows every script, so all of them would load.
+               The focus ring lives on the label above, not here: a ring on this
                square-cornered <select> painted a rectangle inside the rounded
                pill, and a <select> matches :focus-visible on a plain mouse
                click, so it appeared as a second, nested control the moment the
                language was clicked. */
-            className="cursor-pointer appearance-none border-0 bg-transparent p-0 pe-1 text-[11px] font-extrabold text-oc-deep focus:outline-none max-wide:text-[10px]"
+            className="cursor-pointer appearance-none border-0 bg-transparent [font-family:Manrope,system-ui] p-0 pe-1 text-[11px] font-extrabold text-oc-deep focus:outline-none max-wide:text-[10px]"
           >
             {languages.map(({ code, name }) => (
               <option key={code} value={code} className="text-oc-ink">
@@ -325,7 +327,7 @@ export function SiteHeader({ text, brandHref = "#top" }) {
           )}
         </div>
 
-        <button className={`${menuMode ? "" : "hidden"} ${barItemClass} ms-2 wide:ms-4 text-oc-ink`} onClick={() => setMenuOpen(!menuOpen)} aria-label="Toggle menu">
+        <button className={`${menuMode ? "" : "hidden"} ${barItemClass} ms-1 wide:ms-2 grid h-11 w-11 items-center justify-items-end text-oc-ink`} onClick={() => setMenuOpen(!menuOpen)} aria-label="Toggle menu">
           {menuOpen ? <X className="w-[22px]" /> : <Menu className="w-[22px]" />}
         </button>
       </div>

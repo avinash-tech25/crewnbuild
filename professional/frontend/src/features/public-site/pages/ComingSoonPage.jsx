@@ -19,7 +19,7 @@ export default function ComingSoon() {
 
   return (
     <div className="min-h-svh flex flex-col bg-oc-paper px-[8%] py-5 max-wide:px-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <Brand />
         <button
           onClick={() => setLanguage(isArabic ? "en" : "ar")}
