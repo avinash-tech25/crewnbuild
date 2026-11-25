@@ -182,6 +182,8 @@ export default function ContractorProfileSettings({
   // The phone is shown and changed in the Mobile number section below when that is on
   // screen; here only where it is not, or when the server refuses the number.
   const phoneChangeShown = usePhoneChangeShown(account)
+  // { savedPhone, message } of the last refusal, until saved or cancelled.
+  const [phoneRefusal, setPhoneRefusal] = useState(null)
   const { t, td } = useLanguage()
   const [notice, setNotice] = useState(null)
   const [listBusy, setListBusy] = useState('')
@@ -366,7 +368,10 @@ export default function ContractorProfileSettings({
     }
   }
 
-  const phoneRowShown = phoneChangeShown === false || Boolean(fieldErrors.phone)
+  const savedPhone = profile?.phone || ''
+  // Refused for this saved number: typing a correction keeps the row, and a number
+  // changed in the Mobile number section ends the refusal.
+  const phoneRowShown = phoneChangeShown === false || phoneRefusal?.savedPhone === savedPhone
 
   const saveProfile = async () => {
     if (saving) return
@@ -385,16 +390,23 @@ export default function ContractorProfileSettings({
       return
     }
     setSaving(true)
+    const phone = phoneRowShown ? form.phone : savedPhone
     try {
       // The complete profile in one request, through the existing API.
-      await onSaveField(phoneRowShown ? form : { ...form, phone: profile.phone || '' })
+      await onSaveField({ ...form, phone })
       hasUnsavedEdits.current = false
+      setPhoneRefusal(null)
       setEditing(false)
       showNotice('success', t('dash.msg.profileSaved'))
     } catch (error) {
       // Nothing is closed, reset or reverted: the builder keeps everything they
       // entered and is taken to the first field the backend refused.
-      applyError(error, t('cps.errSaveChanges'), CONTRACTOR_FIELD_ORDER)
+      const refused = applyError(error, t('cps.errSaveChanges'), CONTRACTOR_FIELD_ORDER)
+      if (refused.phone) {
+        // The row comes back with the number that was sent.
+        setForm((current) => ({ ...current, phone }))
+        setPhoneRefusal({ savedPhone, message: refused.phone })
+      }
     } finally {
       setSaving(false)
     }
@@ -404,6 +416,7 @@ export default function ContractorProfileSettings({
     hasUnsavedEdits.current = false
     seedForm(profileRef.current)
     clearErrors()
+    setPhoneRefusal(null)
     setNotice(null)
     setEditing(false)
   }
@@ -923,7 +936,8 @@ export default function ContractorProfileSettings({
           only while editing. No field saves on its own. */}
       {editing && (
         <div className="flex flex-wrap items-center justify-end gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-[0_14px_40px_-30px_rgba(15,23,42,0.35)]">
-          {formError && (
+          {/* The phone's own message is already under its row. */}
+          {formError && formError !== phoneRefusal?.message && (
             <p className="mr-auto flex min-w-0 items-center gap-2 text-sm font-bold text-red-700">
               <AlertTriangle className="h-4 w-4 shrink-0" /> {formError}
             </p>
