@@ -20,6 +20,7 @@ import { normalizePortfolioProjects, PORTFOLIO_MAX_IMAGES, PORTFOLIO_MAX_PROJECT
 import { assertProfileImage, PROFILE_IMAGE_ACCEPT } from '../../../shared/utils/profileImageRules.js'
 import { useSelector } from 'react-redux'
 import { useLanguage } from '../../../i18n/LanguageContext.jsx'
+import { usePhoneChangeShown } from '../../accounts/usePhoneChangeShown.js'
 import { RequiredMark, requiredProfileFields } from '../../accounts/components/ProfileCompletionMeter.jsx'
 import { optionLabel, BUSINESS_TYPE_KEYS, DOCUMENT_TYPE_KEYS, EQUIPMENT_OPTION_KEYS, SERVICE_OPTION_KEYS } from '../../../i18n/optionKeys.js'
 import FieldError from '../../../shared/ui/FieldError.jsx'
@@ -178,6 +179,11 @@ export default function ContractorProfileSettings({
   // Mandatory labels follow the API's profile_completion definition; this file
   // keeps no required-field list of its own.
   const requiredFields = requiredProfileFields(account)
+  // The phone is shown and changed in the Mobile number section below when that is on
+  // screen; here only where it is not, or when the server refuses the number.
+  const phoneChangeShown = usePhoneChangeShown(account)
+  // { savedPhone, message } of the last refusal, until saved or cancelled.
+  const [phoneRefusal, setPhoneRefusal] = useState(null)
   const { t, td } = useLanguage()
   const [notice, setNotice] = useState(null)
   const [listBusy, setListBusy] = useState('')
@@ -362,6 +368,11 @@ export default function ContractorProfileSettings({
     }
   }
 
+  const savedPhone = profile?.phone || ''
+  // Refused for this saved number: typing a correction keeps the row, and a number
+  // changed in the Mobile number section ends the refusal.
+  const phoneRowShown = phoneChangeShown === false || phoneRefusal?.savedPhone === savedPhone
+
   const saveProfile = async () => {
     if (saving) return
     clearErrors()
@@ -379,16 +390,23 @@ export default function ContractorProfileSettings({
       return
     }
     setSaving(true)
+    const phone = phoneRowShown ? form.phone : savedPhone
     try {
       // The complete profile in one request, through the existing API.
-      await onSaveField(form)
+      await onSaveField({ ...form, phone })
       hasUnsavedEdits.current = false
+      setPhoneRefusal(null)
       setEditing(false)
       showNotice('success', t('dash.msg.profileSaved'))
     } catch (error) {
       // Nothing is closed, reset or reverted: the builder keeps everything they
       // entered and is taken to the first field the backend refused.
-      applyError(error, t('cps.errSaveChanges'), CONTRACTOR_FIELD_ORDER)
+      const refused = applyError(error, t('cps.errSaveChanges'), CONTRACTOR_FIELD_ORDER)
+      if (refused.phone) {
+        // The row comes back with the number that was sent.
+        setForm((current) => ({ ...current, phone }))
+        setPhoneRefusal({ savedPhone, message: refused.phone })
+      }
     } finally {
       setSaving(false)
     }
@@ -398,6 +416,7 @@ export default function ContractorProfileSettings({
     hasUnsavedEdits.current = false
     seedForm(profileRef.current)
     clearErrors()
+    setPhoneRefusal(null)
     setNotice(null)
     setEditing(false)
   }
@@ -540,14 +559,12 @@ export default function ContractorProfileSettings({
           <FormRow label={t('ps.name')} required={requiredFields.has('name')} error={fieldErrors.name} editing={editing} display={<ReadValue value={profile.name} />}>
             <input ref={registerField('name')} value={form.name || ''} onChange={(event) => updateField('name', event.target.value)} className={fieldClass('name')} />
           </FormRow>
-          <FormRow label={t('ps.email')} required={requiredFields.has('email')} editing={editing} display={<ReadValue value={profile.email} />}>
-            {/* The account's email. It is not editable in any profile screen, so
-                it stays out of the form state and out of the save payload. */}
-            <input value={profile.email || ''} disabled className={`${inputClasses} cursor-not-allowed text-slate-500`} />
-          </FormRow>
+          {/* The e-mail address has its own section below. */}
+          {phoneRowShown && (
           <FormRow label={t('ps.phoneShort')} required={requiredFields.has('phone')} error={fieldErrors.phone} editing={editing} display={<ReadValue value={profile.phone} />}>
             <input ref={registerField('phone')} type="tel" value={form.phone || ''} onChange={(event) => updateField('phone', event.target.value)} className={fieldClass('phone')} />
           </FormRow>
+          )}
           <FormRow label={t('ps.address')} required={requiredFields.has('address')} error={fieldErrors.address} editing={editing} display={<ReadValue value={profile.address} />}>
             <input ref={registerField('address')} value={form.address || ''} onChange={(event) => updateField('address', event.target.value)} className={fieldClass('address')} />
           </FormRow>
@@ -919,7 +936,8 @@ export default function ContractorProfileSettings({
           only while editing. No field saves on its own. */}
       {editing && (
         <div className="flex flex-wrap items-center justify-end gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-[0_14px_40px_-30px_rgba(15,23,42,0.35)]">
-          {formError && (
+          {/* The phone's own message is already under its row. */}
+          {formError && formError !== phoneRefusal?.message && (
             <p className="mr-auto flex min-w-0 items-center gap-2 text-sm font-bold text-red-700">
               <AlertTriangle className="h-4 w-4 shrink-0" /> {formError}
             </p>

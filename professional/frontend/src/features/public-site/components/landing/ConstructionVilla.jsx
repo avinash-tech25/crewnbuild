@@ -31,7 +31,7 @@ import {
 const DAY = {
   sky: "#8fbadf",
   skyTop: "#3f7cbb",
-  ground: "#9aa383",
+  ground: "#7fa65a",
   sun: "#fff3d8",
   sunIntensity: 2.6,
   hemisphere: 1.05,

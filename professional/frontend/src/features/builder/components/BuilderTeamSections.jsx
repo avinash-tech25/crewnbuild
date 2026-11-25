@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
   Check,
@@ -539,7 +540,7 @@ const SUPPLIER_TYPE_TONES = {
  * as cards or a list. Assign Project and Unassign are the same actions the old
  * cards used; a click on the card opens the supplier's profile.
  */
-function MySuppliers({ suppliers, projectList = [], onOpenSupplierProfile, onAssignSupplier, onUnassignSupplier, search: sharedSearch, onSearchChange }) {
+function MySuppliers({ suppliers, projectList = [], onFindSuppliers, onOpenSupplierProfile, onAssignSupplier, onUnassignSupplier, search: sharedSearch, onSearchChange }) {
   const { t, td } = useLanguage()
   const [localSearch, setLocalSearch] = useState('')
   const search = sharedSearch ?? localSearch
@@ -620,6 +621,17 @@ function MySuppliers({ suppliers, projectList = [], onOpenSupplierProfile, onAss
     )
   }
 
+  // Suppliers are found on the Suppliers tab of Find Clients.
+  const findSuppliers = (
+    <Link
+      to="/contractor/find-clients?tab=suppliers"
+      onClick={onFindSuppliers}
+      className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-brand-600 px-4 text-xs font-extrabold text-white transition hover:bg-brand-700"
+    >
+      <Search className="h-3.5 w-3.5" /> {t('ce.findSuppliers')}
+    </Link>
+  )
+
   const acceptedPill = (
     <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-700"><span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />{t('ui.status.accepted')}</span>
   )
@@ -668,12 +680,13 @@ function MySuppliers({ suppliers, projectList = [], onOpenSupplierProfile, onAss
               </button>
             ))}
           </div>
+          {findSuppliers}
         </div>
       </div>
       )}
 
       {list.length === 0 ? (
-        <EmptyTab icon={Truck} title={t('ce.noAcceptedSuppliers')} message={t('ce.noAcceptedSuppliersSub')} />
+        <EmptyTab icon={Truck} title={t('ce.noAcceptedSuppliers')} message={t('ce.noAcceptedSuppliersSub')} action={findSuppliers} />
       ) : shown.length === 0 ? (
         <p className="rounded-xl border border-dashed border-slate-200 bg-white p-6 text-center text-sm font-semibold text-slate-500">{t('ce.filter.noMatch')}</p>
       ) : view === 'list' ? (
@@ -957,6 +970,8 @@ export function MySiteEngineersSection({
   onOpenSupplierProfile,
   onAssignSupplier,
   onUnassignSupplier,
+  // Opening Find Clients from My Suppliers clears its new-leads dot, as the menu item does.
+  onFindSuppliers,
   // The dashboard header's search box, shared with every tab's own search.
   searchQuery,
   onSearchChange,
@@ -1041,6 +1056,7 @@ export function MySiteEngineersSection({
         <MySuppliers
           suppliers={contractorSuppliers}
           projectList={projectList}
+          onFindSuppliers={onFindSuppliers}
           onOpenSupplierProfile={onOpenSupplierProfile}
           onAssignSupplier={onAssignSupplier}
           onUnassignSupplier={onUnassignSupplier}

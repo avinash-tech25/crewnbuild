@@ -1387,6 +1387,7 @@ export default function ContractorDashboard() {
             onOpenSupplierProfile={openSupplierProfile}
             onAssignSupplier={openAssignSupplier}
             onUnassignSupplier={openUnassignSupplier}
+            onFindSuppliers={markNearbyClientsSeen}
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
           />

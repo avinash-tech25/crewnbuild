@@ -18,7 +18,6 @@ import { Brand, RoleCharacter, townUrl } from '../../public-site/components/land
 import LanguageSelector from '../../../shared/ui/LanguageSelector.jsx'
 import { useLanguage } from '../../../i18n/LanguageContext.jsx'
 import { RequiredMark } from '../../accounts/components/ProfileCompletionMeter.jsx'
-import PublicWeatherIndicator from '../../weather/components/PublicWeatherIndicator.jsx'
 
 const scrim =
   'linear-gradient(180deg, rgba(6,45,31,.72) 0%, rgba(6,45,31,.55) 45%, rgba(6,45,31,.8) 100%)'
@@ -261,10 +260,7 @@ export function AuthShell({ eyebrow, headline, highlight, aside, videoUrl, video
               {t('shared.backHome')}
             </Link>
           </span>
-          {/* The weather indicator sits beside the language selector, as in the
-              landing header. */}
           <span className="ms-auto flex items-center gap-2">
-            <PublicWeatherIndicator />
             <LanguageSelector compact variant="light" />
           </span>
         </div>
