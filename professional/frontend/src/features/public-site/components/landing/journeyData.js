@@ -12,6 +12,9 @@ export const flowSteps = [
 // The four product cards, in the order a project actually moves through them.
 export const journeyCards = ["requirement", "builder", "project", "materials"];
 
+// The How it works step each card belongs to, so both sections use the same names.
+export const journeyCardSteps = { requirement: "requirement", builder: "quote", project: "start", materials: "track" };
+
 // Sample project behind the cards. Numbers live here, copy lives in content.js,
 // so wiring this section to a real API only changes this file.
 export const sampleProject = {

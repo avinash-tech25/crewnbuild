@@ -44,7 +44,7 @@ import { discountedPrice } from '../../catalog/components/PriceTag.jsx'
 import { useUrlParams } from '../../../shared/hooks/useUrlState.js'
 import useUrlDialog, { isUuid } from '../../../shared/hooks/useUrlDialog.js'
 
-export default function ProductCatalogPage({ loadSuppliers, reloadKey = '', cartProjectId = null, canAddToCart = false, title = 'Product Catalog', onOpenCart, compactHeader = false, spreadCategories = false }) {
+export default function ProductCatalogPage({ loadSuppliers, reloadKey = '', cartProjectId = null, canAddToCart = false, title = 'Product Catalog', onOpenCart, compactHeader = false, spreadCategories = false, showFeatured = false }) {
   const dispatch = useDispatch()
   const cartCount = useSelector(selectCartCount)
   const {
@@ -131,6 +131,11 @@ export default function ProductCatalogPage({ loadSuppliers, reloadKey = '', cart
   }, [offers])
   const offered = (product) => Boolean(offersByProduct[product.id]?.length)
   const cheapest = (product) => bestOffer(offersByProduct[product.id] || [])
+  // Before a category is chosen: the discounted products first, each as its supplier lists it.
+  const featured = useMemo(() => Object.entries(offersByProduct)
+    .map(([id, list]) => ({ id, offer: bestOffer(list) }))
+    .sort((a, b) => Number(b.offer.discount_percentage || 0) - Number(a.offer.discount_percentage || 0))
+    .slice(0, 10), [offersByProduct])
 
   const categoryList = categoryProducts.filter(offered)
   const searchList = searchResults.filter(offered)
@@ -236,7 +241,23 @@ export default function ProductCatalogPage({ loadSuppliers, reloadKey = '', cart
 
       {error && <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs font-bold text-amber-700">{error}</p>}
 
-      {!selectedCategoryId ? (
+      {showFeatured && !selectedCategoryId && featured.length > 0 ? (
+        <div>
+          <h4 className="mb-3 text-sm font-extrabold uppercase tracking-wide text-graphite">Best discounts</h4>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+            {featured.map(({ id, offer }) => (
+              <ProductTile
+                key={id}
+                product={{ ...offer, id }}
+                offer={offer}
+                onOpen={() => openProduct(id)}
+                footer={canAddToCart ? <CartStepper offer={offer} projectId={cartProjectId} onMessage={setCartMessage} size="sm" full /> : null}
+              />
+            ))}
+          </div>
+          <DisclaimerNote kind="prices" className="mt-3" />
+        </div>
+      ) : !selectedCategoryId ? (
         <p className="flex items-center gap-2 rounded-lg bg-slate-50 px-3 py-3 text-xs font-semibold text-graphite/55">
           <PackageSearch className="h-4 w-4 text-graphite/30" />
           Choose a category, or search, to see products.

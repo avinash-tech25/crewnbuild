@@ -20,7 +20,8 @@ import { SmartImage } from '../../../shared/ui/ui.jsx'
 import ProjectCameraPanel from '../../cameras/components/ProjectCameraPanel.jsx'
 import OwnerProjectAnalysisView from '../../owner/components/OwnerProjectAnalysisView.jsx'
 import { SITE_ENGINEER_CATEGORY, projectDetailTabs } from '../builderConstants.js'
-import { buildingTypeText, formatProjectDate, inr, projectStatusText } from '../builderHelpers.js'
+import { buildingTypeText, formatProjectDate, inr, projectCategory, projectStatusText } from '../builderHelpers.js'
+import { properPlace } from '../../../shared/utils/displayName.js'
 import { useLanguage } from '../../../i18n/LanguageContext.jsx'
 import { supplierTypeOptions } from '../../onboarding/profileConstants.js'
 import { optionLabel, SUPPLIER_TYPE_KEYS } from '../../../i18n/optionKeys.js'
@@ -46,7 +47,11 @@ export function ContractorProjectsTable({ projectList, onSelect }) {
           : project.work_started !== true
             ? t('progress.scheduleNotStarted')
             : ['in_progress', 'end_date_passed'].includes(project.schedule_status) ? formatPercent(elapsed) : ''
-        const status = project.status || 'active'
+        // An active project in the Upcoming tab reads Upcoming, as its tab and its progress do.
+        const stored = project.status || 'active'
+        const status = stored === 'active' && projectCategory(project) === 'upcoming' ? 'upcoming' : stored
+        const place = [project.address, project.project_city].map((part) => properPlace(td(part))).filter(Boolean)
+        const shownPlace = place.length > 1 && place[0].toLowerCase().includes(place[1].toLowerCase()) ? place[0] : place.join(', ')
         return (
           <ListCard
             key={project.id}
@@ -60,8 +65,8 @@ export function ContractorProjectsTable({ projectList, onSelect }) {
             )}
             title={cardTitle}
             // The address and pincode, as on the House Owner's project card.
-            subtitle={`${td(project.address) || t('dash.owner.estimates.locationNotSet')} ${project.pincode || ''}`.trim()}
-            status={<CardStatus status={status}>{statusLabel(status, t)}</CardStatus>}
+            subtitle={[shownPlace || t('dash.owner.estimates.locationNotSet'), project.pincode].filter(Boolean).join(' - ')}
+            status={<CardStatus status={status}>{status === 'upcoming' ? t('ui.status.upcoming') : statusLabel(status, t)}</CardStatus>}
             rows={[
               { key: 'start', label: t('dash.owner.projectDetails.startDate'), value: formatProjectDate(project.start_date, t) },
               { key: 'end', label: t('dash.owner.projectDetails.endDate'), value: formatProjectDate(project.end_date, t) },

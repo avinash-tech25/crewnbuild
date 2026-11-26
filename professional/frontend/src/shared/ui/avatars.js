@@ -100,6 +100,12 @@ function uploadedImageOf(user) {
   return ''
 }
 
+/** The picture this person uploaded, or '' -- for the places that show initials instead. */
+export function uploadedAvatarSrc(user) {
+  const stored = uploadedImageOf(user)
+  return stored ? imageUrl(stored) : ''
+}
+
 /** The first field on `user` that holds a role this app recognises. */
 function roleOf(user) {
   for (const field of ROLE_FIELDS) {

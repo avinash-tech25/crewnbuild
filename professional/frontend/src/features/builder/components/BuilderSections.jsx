@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 
-import useUrlState from '../../../shared/hooks/useUrlState.js'
+import useUrlState, { useUrlParams } from '../../../shared/hooks/useUrlState.js'
 import NotFoundPanel from '../../../shared/dashboard/NotFoundPanel.jsx'
 import { FolderOpen, Home, MessageSquare, Plus, Truck, UserSearch } from 'lucide-react'
 import MessageThread from '../../messaging/components/MessageThread.jsx'
@@ -23,7 +23,10 @@ export function ContractorRequestsSection({
   // House Owner and Supplier requests are the same stored rows, told apart by
   // request_type. Two tabs rather than one mixed list; each renders the board
   // that already existed for it.
-  const [requestTab, setRequestTab] = useUrlState('tab', 'houseOwner', ['houseOwner', 'supplier'])
+  const [requestTab] = useUrlState('tab', 'houseOwner', ['houseOwner', 'supplier'])
+  // Another tab starts on its own full list.
+  const [, patchUrl] = useUrlParams()
+  const setRequestTab = (id) => patchUrl({ tab: id === 'houseOwner' ? null : id, status: null })
   const requestTabs = [
     { id: 'houseOwner', label: t('dash.contractor.tab.houseOwnerRequests'), count: filteredRequestBoardList.length, icon: Home },
     { id: 'supplier', label: t('dash.contractor.tab.supplierRequests'), count: supplierRequestBoardList.length, icon: Truck },

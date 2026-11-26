@@ -4,6 +4,9 @@ import { useSearchParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ArrowRight, Building2, CalendarDays, Check, ChevronDown, FileText, HardHat, Home, Inbox, LayoutGrid, LayoutList, MapPin, Maximize2, Search, SlidersHorizontal, Sparkles, User, X } from 'lucide-react'
 import { buildingTypeText, inr } from '../builderHelpers.js'
+import { QuoteBelowBudgetNote } from './BuilderPanels.jsx'
+import useUrlState from '../../../shared/hooks/useUrlState.js'
+import { properName, properPlace } from '../../../shared/utils/displayName.js'
 import { constructionTypeLabel } from '../../../shared/utils/roleLabels.js'
 import BudgetInWords from '../../../shared/ui/BudgetInWords.jsx'
 import { defaultAvatarFor, userAvatarSrc } from '../../../shared/ui/avatars.js'
@@ -146,6 +149,8 @@ const FILTERS = [
   { id: 'withdrawn', label: 'ui.shared.statusWithdrawn', dot: 'bg-slate-400' },
 ]
 
+const FILTER_IDS = FILTERS.map((filter) => filter.id)
+
 /**
  * The requester's own avatar: their uploaded picture, else the default for
  * the role the request itself records. A picture that fails to load falls
@@ -216,8 +221,8 @@ function RequestDetailsDrawer({ request, onClose, variant = 'owner', award = nul
   // name, with the supplier's own details instead of the project fields.
   const party = isPartyRequest(request)
   const title = party ? partyHeading(request, td) : td(request.project_title) || t('dash.contractor.homeownerProject')
-  const ownerName = td(request.sender_name || request.profile_title) || t(board.fallbackName)
-  const location = td(request.project_address || request.sender_address) || request.project_pincode || t('dash.owner.estimates.locationNotSet')
+  const ownerName = properName(td(request.sender_name || request.profile_title)) || t(board.fallbackName)
+  const location = properPlace(td(request.project_address || request.sender_address)) || request.project_pincode || t('dash.owner.estimates.locationNotSet')
   const flow = variant === 'owner' ? requestFlowStatus(request, award, 'builder') : null
   // A request with an assignment / negotiation opens as a full workspace; every
   // other request keeps the compact window. Layout only -- same data, same panel.
@@ -269,7 +274,7 @@ function RequestDetailsDrawer({ request, onClose, variant = 'owner', award = nul
                   {loadedAward && <span>{t(loadedAward.assigned === false ? 'award.titleNegotiation' : 'award.title')}</span>}
                   {loadedAward && receivedLine && <span className="hidden text-slate-300 sm:inline" aria-hidden="true">|</span>}
                   {receivedLine && <span>{receivedLine}</span>}
-                  {flow ? <RequestFlowBadge flow={flow} /> : <RequestStatusBadge status={category} labels={board.statusLabels} />}
+                  <RequestStatusBadge status={category} labels={board.statusLabels} />{flow && <RequestFlowBadge flow={flow} />}
                 </div>
               </div>
               <button
@@ -335,7 +340,7 @@ function RequestDetailsDrawer({ request, onClose, variant = 'owner', award = nul
             <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">{t('dash.contractor.requestDetails')}</p>
             <h3 className="truncate text-slate-950">{title}</h3>
             <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-slate-500">
-              {flow ? <RequestFlowBadge flow={flow} /> : <RequestStatusBadge status={category} labels={board.statusLabels} />}
+              <RequestStatusBadge status={category} labels={board.statusLabels} />{flow && <RequestFlowBadge flow={flow} />}
             </div>
           </div>
           <button
@@ -392,7 +397,8 @@ function RequestDetailsDrawer({ request, onClose, variant = 'owner', award = nul
 export function ContractorRequestsBoard({ requestList, onAccept, onReject, onWithdraw, variant = 'owner' }) {
   const { t, td, country } = useLanguage()
   const board = BOARD_VARIANTS[variant] || BOARD_VARIANTS.owner
-  const [activeFilter, setActiveFilter] = useState('all')
+  // The status filter, in the address (?status=accepted): a dashboard card opens the board on its own.
+  const [activeFilter, setActiveFilter] = useUrlState('status', 'all', FILTER_IDS)
   const [quotationAmounts, setQuotationAmounts] = useState({})
   const [actionError, setActionError] = useState('')
   const [detailsRequest, setDetailsRequest] = useState(null)
@@ -504,7 +510,7 @@ export function ContractorRequestsBoard({ requestList, onAccept, onReject, onWit
                 type="button"
                 aria-pressed={on}
                 onClick={() => {
-                  setActiveFilter(filter.id)
+                  setActiveFilter(filter.id, { replace: true })
                   setQuotingRequestId(null)
                   setActionError('')
                 }}
@@ -521,7 +527,7 @@ export function ContractorRequestsBoard({ requestList, onAccept, onReject, onWit
         {/* shrink-0 on the wide row: the status chips scroll, so they are what
             gives way -- these controls were squeezed past their own content (and
             the page) at 1024px in the longer languages. */}
-        <div className="flex items-center gap-2 lg:ml-auto lg:shrink-0">
+        <div className="flex flex-wrap items-center gap-2 lg:ml-auto lg:shrink-0 lg:flex-nowrap">
           <div className="flex h-10 shrink-0 items-center rounded-xl border border-slate-200 bg-white p-1" role="group" aria-label={`${t('dash.supplier.table')} / ${t('dash.supplier.cards')}`}>
             {[
               { id: 'cards', icon: LayoutGrid, label: t('dash.supplier.cards') },
@@ -540,7 +546,7 @@ export function ContractorRequestsBoard({ requestList, onAccept, onReject, onWit
               </button>
             ))}
           </div>
-          <label className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 lg:w-72 lg:flex-none">
+          <label className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 max-sm:order-last max-sm:basis-full lg:w-72 lg:flex-none">
             <Search className="h-4 w-4 shrink-0 text-slate-400" />
             <input
               type="search"
@@ -551,7 +557,7 @@ export function ContractorRequestsBoard({ requestList, onAccept, onReject, onWit
               className="min-w-0 flex-1 bg-transparent text-[13px] text-slate-800 outline-none placeholder:text-slate-400"
             />
           </label>
-          <div className="relative shrink-0">
+          <div className="relative shrink-0 max-sm:ms-auto">
             <button
               type="button"
               onClick={() => setSortMenuOpen((open) => !open)}
@@ -623,8 +629,8 @@ export function ContractorRequestsBoard({ requestList, onAccept, onReject, onWit
                     const quotationAmount = quotationAmounts[request.id] || ''
                     const isQuoting = quotingRequestId === request.id
                     const title = td(request.project_title) || t('dash.contractor.homeownerProject')
-                    const ownerName = td(request.sender_name || request.profile_title) || t(board.fallbackName)
-                    const location = td(request.project_address || request.sender_address) || request.project_pincode || t('dash.owner.estimates.locationNotSet')
+                    const ownerName = properName(td(request.sender_name || request.profile_title)) || t(board.fallbackName)
+                    const location = properPlace(td(request.project_address || request.sender_address)) || request.project_pincode || t('dash.owner.estimates.locationNotSet')
                     const rowTone = ROW_TONES[category] || ROW_TONES.pending
                     const flow = variant === 'owner' ? requestFlowStatus(request, awards[request.id], 'builder') : null
                     return (
@@ -669,13 +675,13 @@ export function ContractorRequestsBoard({ requestList, onAccept, onReject, onWit
                           <p className="font-extrabold text-slate-900">{request.budget ? inr(request.budget) : '—'}</p>
                           {request.land_area ? <p className="text-[11px] text-slate-500">{request.land_area} {t('dash.contractor.sqft')}</p> : null}
                           {Number(request.quotation_amount || 0) > 0 && (
-                            <p className="mt-0.5 whitespace-nowrap text-[11px] font-bold text-slate-700">{t('request.flow.builderQuotation')}: {inr(request.quotation_amount)}</p>
+                            <p className="mt-0.5 text-[11px] font-bold text-slate-700">{t('request.flow.builderQuotation')}: {inr(request.quotation_amount)}</p>
                           )}
                         </td>
                         )}
                         {/* Status */}
-                        <td className="px-2.5 py-2 align-middle">
-                          {flow ? <RequestFlowBadge flow={flow} /> : <RequestStatusBadge status={category} labels={board.statusLabels} />}
+                        <td className="space-y-1 px-2.5 py-2 align-middle">
+                          <RequestStatusBadge status={category} labels={board.statusLabels} />{flow && <RequestFlowBadge flow={flow} />}
                         </td>
                         {/* Actions */}
                         <td className="px-2.5 py-2 text-right align-middle">
@@ -720,6 +726,7 @@ export function ContractorRequestsBoard({ requestList, onAccept, onReject, onWit
                                     so the builder's own market is used rather
                                     than defaulting silently to rupees. */}
                                 <BudgetInWords value={quotationAmount} country={country} className="w-28 text-end" />
+                                <QuoteBelowBudgetNote amount={quotationAmount} budget={request.budget} country={country} className="w-28 text-end" />
                                 </div>
                                 <button
                                   type="button"
@@ -793,8 +800,8 @@ export function ContractorRequestsBoard({ requestList, onAccept, onReject, onWit
                 const quotationAmount = quotationAmounts[request.id] || ''
                 const isQuoting = quotingRequestId === request.id
                 const title = td(request.project_title) || t('dash.contractor.homeownerProject')
-                const ownerName = td(request.sender_name || request.profile_title) || t(board.fallbackName)
-                const location = td(request.project_address || request.sender_address) || request.project_pincode || t('dash.owner.estimates.locationNotSet')
+                const ownerName = properName(td(request.sender_name || request.profile_title)) || t(board.fallbackName)
+                const location = properPlace(td(request.project_address || request.sender_address)) || request.project_pincode || t('dash.owner.estimates.locationNotSet')
                 const flow = variant === 'owner' ? requestFlowStatus(request, awards[request.id], 'builder') : null
                 const canWithdraw = onWithdraw && request.is_sender && request.status === 'pending' && !String(request.id).startsWith('sent-')
                 const hasQuote = Number(request.quotation_amount || 0) > 0
@@ -834,9 +841,7 @@ export function ContractorRequestsBoard({ requestList, onAccept, onReject, onWit
                     avatar={<CardAvatar fallback={<HomeownerAvatar name={ownerName} request={request} role={board.role} size="h-full w-full" />} />}
                     title={cardTitle}
                     subtitle={subtitle || null}
-                    status={flow
-                      ? <CardStatus tone={FLOW_CARD_TONES[flow.tone]}>{t(flow.key)}</CardStatus>
-                      : <CardStatus status={category} tone={category === 'sent' ? 'blue' : undefined}>{t(board.statusLabels[category] || category)}</CardStatus>}
+                    status={<CardStatus status={category} tone={category === 'sent' ? 'blue' : undefined}>{t(board.statusLabels[category] || category)}</CardStatus>}
                     rows={variant === 'supplier' ? [
                       // The project, if the request has one (a request with no
                       // project shows no title: the server's "General" stand-in).
@@ -851,6 +856,8 @@ export function ContractorRequestsBoard({ requestList, onAccept, onReject, onWit
                       hasQuote && { key: 'quote', label: t('request.flow.builderQuotation'), value: inr(request.quotation_amount) },
                     ]}
                     chips={[
+                      // Where the assignment of an accepted request stands.
+                      flow && <CardChip key="flow" tone={FLOW_CARD_TONES[flow.tone]}>{t(flow.key)}</CardChip>,
                       party && request.profile_verified && <CardChip key="verified" tone="green" title={t('disclaimer.note.verified')}>{t('req.party.verifiedYes')}</CardChip>,
                       party && rowNote && <CardChip key="note">{rowNote}</CardChip>,
                       dateLine && <CardChip key="date" icon={CalendarDays}>{dateLine}</CardChip>,
@@ -915,6 +922,7 @@ export function ContractorRequestsBoard({ requestList, onAccept, onReject, onWit
                               so the builder's own market is used rather
                               than defaulting silently to rupees. */}
                           <BudgetInWords value={quotationAmount} country={country} />
+                          <QuoteBelowBudgetNote amount={quotationAmount} budget={request.budget} country={country} />
                         </div>
                         {actionError && <p className="text-[11px] font-bold text-red-600">{actionError}</p>}
                       </div>

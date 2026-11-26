@@ -84,7 +84,7 @@ export default function AuthLayout({ title, subtitle, children, footer, dense = 
         </div>
       </aside>
       <main className={`flex min-w-0 flex-col px-5 sm:px-10 ${dense ? 'py-6' : 'py-8'}`}>
-        <div className="flex items-center justify-between lg:justify-end">
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 lg:justify-end">
           <span className="lg:hidden"><Logo /></span>
           {/* The weather indicator sits beside Back to home, as in the landing header. */}
           <span className="flex items-center gap-3">

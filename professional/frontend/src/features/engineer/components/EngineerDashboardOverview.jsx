@@ -16,6 +16,7 @@ import {
 import { fetchCostToolSummary } from '../../projects/costToolApi.js'
 import { useLanguage } from '../../../i18n/LanguageContext.jsx'
 import { formatRelativeTime } from '../../../shared/utils/formatters.js'
+import { plainRequestText } from '../../../shared/utils/requestText.js'
 import { DailyLine, axisDateLabel, formatQty, money, unitLabelFrom } from '../../site-work/components/EngineerAnalyticsSection.jsx'
 
 const panel = 'rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_14px_40px_-30px_rgba(15,23,42,0.35)] sm:p-5'
@@ -327,7 +328,7 @@ export default function EngineerDashboardOverview({
                       <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-emerald-50 text-emerald-700"><Icon className="h-4 w-4" /></span>
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-[13px] font-semibold text-slate-900">{td(notification.title)}</span>
-                        {notification.body && <span className="block truncate text-xs text-slate-500">{td(notification.body)}</span>}
+                        {notification.body && <span className="block truncate text-xs text-slate-500">{td(plainRequestText(notification.body))}</span>}
                       </span>
                       <span className="shrink-0 whitespace-nowrap text-[11px] text-slate-400">{formatRelativeTime(notification.created_at)}</span>
                     </li>

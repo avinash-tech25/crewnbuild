@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { displayName } from '../../../shared/utils/displayName.js'
+import { displayName, normalLetters } from '../../../shared/utils/displayName.js'
 import {
   AlertTriangle, ArrowLeft, Boxes, BriefcaseBusiness, Building2, CheckCircle2, ExternalLink,
   FileText, GalleryVerticalEnd, HardHat, ImagePlus, Images, Info, Loader2, MapPin, Pencil, Plus, Save, ShieldCheck, Trash2, UserRound, X,
@@ -43,6 +43,10 @@ const CONTRACTOR_FIELD_ORDER = [
   'registration_year', 'team_size', 'experience_years', 'about',
   'services_offered', 'service_locations', 'equipment_owned', 'insurance_available', 'completed_project_details',
 ]
+
+// 15 characters (state code, PAN, entity, Z, check) and ABCDE1234F.
+const GSTIN_PATTERN = /^\d{2}[A-Z]{5}\d{4}[A-Z][A-Z\d]Z[A-Z\d]$/
+const PAN_PATTERN = /^[A-Z]{5}\d{4}[A-Z]$/
 
 /** A small counter block, as the portfolio section has always shown them. */
 function SummaryTile({ label, value }) {
@@ -384,6 +388,11 @@ export default function ContractorProfileSettings({
     const experienceText = String(form.experience_years ?? '').trim()
     if (!experienceText) localErrors.experience_years = t('cp.val.experienceYears')
     else if (!/^\d+$/.test(experienceText) || Number(experienceText) < 1) localErrors.experience_years = t('cp.val.experienceWhole')
+    // Only a value typed now is checked: an older one never blocks another change.
+    const gstin = String(form.gstin || '').trim().toUpperCase()
+    const pan = String(form.pan || '').trim().toUpperCase()
+    if (gstin && form.gstin !== profile.gstin && !GSTIN_PATTERN.test(gstin)) localErrors.gstin = t('cp.val.gstinFormat')
+    if (pan && form.pan !== profile.pan && !PAN_PATTERN.test(pan)) localErrors.pan = t('cp.val.panFormat')
     if (portfolio.some((project) => !String(project.title || '').trim())) localErrors.completed_project_details = t('cps.portfolio.titleRequired')
     if (Object.keys(localErrors).length) {
       applyError(localFieldError(t('cp.val.completeFields'), localErrors), t('cps.errSaveChanges'), CONTRACTOR_FIELD_ORDER)
@@ -533,7 +542,7 @@ export default function ContractorProfileSettings({
               )}
             </div>
             <p className="mt-1 text-[13px] font-medium text-slate-500">{td(profile.name || user?.name)} · {profile.license_number ? t('cps.licenseNumberValue', { number: profile.license_number }) : t('cps.licenseNotSet')}</p>
-            <p className="mt-1.5 max-w-3xl text-[13px] leading-6 text-slate-600">{td(profile.about) || t('cps.noCompanyDescription')}</p>
+            <p className="mt-1.5 max-w-3xl text-[13px] leading-6 text-slate-600">{normalLetters(td(profile.about)) || t('cps.noCompanyDescription')}</p>
           </div>
         </div>
       </section>
@@ -612,7 +621,7 @@ export default function ContractorProfileSettings({
           <FormRow label={t('cps.yearsOfExperience')} required={requiredFields.has('experience_years')} error={fieldErrors.experience_years} editing={editing} display={<ReadValue value={profile.experience_years} />}>
             <input ref={registerField('experience_years')} type="number" min="1" step="1" inputMode="numeric" value={form.experience_years ?? ''} onChange={(event) => updateField('experience_years', event.target.value)} className={fieldClass('experience_years')} />
           </FormRow>
-          <FormRow label={t('ps.eng.about')} required={requiredFields.has('about')} hint={t('cps.aboutHint')} error={fieldErrors.about} editing={editing} display={<ReadValue value={profile.about} />}>
+          <FormRow label={t('ps.eng.about')} required={requiredFields.has('about')} hint={t('cps.aboutHint')} error={fieldErrors.about} editing={editing} display={<ReadValue value={normalLetters(profile.about)} />}>
             <textarea ref={registerField('about')} rows={3} value={form.about || ''} onChange={(event) => updateField('about', event.target.value)} className={areaClass('about')} />
           </FormRow>
         </div>

@@ -25,7 +25,8 @@ import {
   X,
 } from 'lucide-react'
 import { SmartImage } from '../../../shared/ui/ui.jsx'
-import { EntityAvatar } from '../../../shared/ui/EntityPill.jsx'
+import { EntityAvatar, InitialsAvatar } from '../../../shared/ui/EntityPill.jsx'
+import { properName, properPlace } from '../../../shared/utils/displayName.js'
 import { CardAvatar, CardChip, CardGrid, CardStatus, ListCard, cardButtonClass } from '../../../shared/ui/ListCard.jsx'
 import { DETAIL_DIALOG_SIZE } from '../../../shared/ui/DetailDialog.jsx'
 import { userAvatarSrc } from '../../../shared/ui/avatars.js'
@@ -37,7 +38,7 @@ import { projectStatusText } from '../builderHelpers.js'
 import { assignmentCoverage } from '../supplierAssignment.js'
 
 // The city of an address: its last comma-separated part.
-const cityOf = (address) => String(address || '').split(',').map((part) => part.trim()).filter(Boolean).pop() || ''
+const cityOf = (address) => properPlace(String(address || '').split(',').map((part) => part.trim()).filter(Boolean).pop() || '')
 
 function CopyButton({ text, label, className = 'inline-flex h-9 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-xs font-extrabold text-slate-700 transition hover:border-brand-300 hover:bg-brand-50 hover:text-brand-800' }) {
   const { t } = useLanguage()
@@ -74,7 +75,7 @@ const EXPERIENCE_BANDS = [
 // One filter dropdown. Module level, so a change never rebuilds it.
 // On a phone each filter keeps a usable width and the (wrapping) row puts them
 // two to a line; they were squeezed to ~27px each on one line and overlapped.
-function FilterSelect({ value, onChange, label, children }) {
+export function FilterSelect({ value, onChange, label, children }) {
   return (
     <label className="relative min-w-[min(100%,8.5rem)] flex-1 sm:min-w-0 sm:flex-none">
       <span className="sr-only">{label}</span>
@@ -224,7 +225,7 @@ function MyTeamEngineers({ engineers, onViewEngineer, onAssignProject, onUnassig
       {/* Search, filters and the grid / list switch */}
       {engineers.length > 0 && (
       <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
-        <label className="flex h-9 min-w-0 flex-1 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3">
+        <label className="flex h-9 min-w-0 shrink-0 items-center gap-2 rounded-lg border lg:flex-1 lg:shrink border-slate-200 bg-white px-3">
           <Search className="h-4 w-4 shrink-0 text-slate-400" />
           <input
             type="search"
@@ -320,8 +321,8 @@ function MyTeamEngineers({ engineers, onViewEngineer, onAssignProject, onUnassig
                 <tr key={engineer.user_id} onClick={() => onViewEngineer(engineer)} className="cursor-pointer border-b border-slate-100 last:border-b-0 hover:bg-slate-50/70">
                   <td className="px-3 py-2">
                     <div className="flex items-center gap-2">
-                      <EntityAvatar user={engineer} role="ENGINEER" alt={engineer.name} className="!h-7 !w-7" />
-                      <span className="font-bold text-slate-900">{td(engineer.name)}</span>
+                      <span className="grid h-7 w-7 shrink-0 overflow-hidden rounded-full [&_span]:text-[10px]"><InitialsAvatar user={engineer} name={properName(engineer.name)} /></span>
+                      <span className="font-bold text-slate-900">{properName(td(engineer.name))}</span>
                     </div>
                   </td>
                   <td className="px-3 py-2 text-slate-600"><span className="font-bold text-slate-800">{engineer.pincode || '—'}</span>{engineer.address ? <span className="block max-w-[200px] truncate text-[11px]" title={td(engineer.address)}>{td(engineer.address)}</span> : null}</td>
@@ -343,8 +344,8 @@ function MyTeamEngineers({ engineers, onViewEngineer, onAssignProject, onUnassig
               <ListCard
                 key={engineer.user_id}
                 onClick={() => onViewEngineer(engineer)}
-                avatar={<CardAvatar src={userAvatarSrc(engineer, 'ENGINEER')} alt={engineer.name} />}
-                title={td(engineer.name)}
+                avatar={<CardAvatar fallback={<InitialsAvatar user={engineer} name={properName(engineer.name)} />} />}
+                title={properName(td(engineer.name))}
                 subtitle={t('role.engineer')}
                 status={isBusy(engineer)
                   ? <CardStatus status="busy" tone="amber">{t('ce.busy')}</CardStatus>
@@ -425,7 +426,7 @@ function FindEngineers({ engineers, pincode, onPincodeChange, onFind, onViewEngi
     <div className="space-y-3">
       {/* Pincode search, filters and Find */}
       <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
-        <label className="flex h-9 min-w-0 flex-1 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3">
+        <label className="flex h-9 min-w-0 shrink-0 items-center gap-2 rounded-lg border lg:flex-1 lg:shrink border-slate-200 bg-white px-3">
           <Search className="h-4 w-4 shrink-0 text-slate-400" />
           <input
             value={boxValue}
@@ -489,8 +490,8 @@ function FindEngineers({ engineers, pincode, onPincodeChange, onFind, onViewEngi
               <ListCard
                 key={engineer.user_id}
                 onClick={() => onViewEngineer(engineer)}
-                avatar={<CardAvatar src={userAvatarSrc(engineer, 'ENGINEER')} alt={engineer.name} />}
-                title={td(engineer.name)}
+                avatar={<CardAvatar fallback={<InitialsAvatar user={engineer} name={properName(engineer.name)} />} />}
+                title={properName(td(engineer.name))}
                 subtitle={engineer.specialization ? skillLabel(engineer.specialization) : t('role.engineer')}
                 status={incoming
                   ? <CardStatus status="pending">{t('ui.status.pending')}</CardStatus>
@@ -559,7 +560,7 @@ function MySuppliers({ suppliers, projectList = [], onFindSuppliers, onOpenSuppl
   const pincodes = useMemo(() => [...new Set(list.map((supplier) => supplier.pincode).filter(Boolean))].sort(), [list])
   const services = useMemo(() => [...new Set(list.flatMap((supplier) => supplier.categories || []).filter(Boolean))].sort(), [list])
   const serviceLabel = (value) => optionLabel(t, SUPPLIER_CATEGORY_KEYS, value)
-  const nameOf = (supplier) => td(supplier.store_name || supplier.name) || t('role.supplier')
+  const nameOf = (supplier) => properName(td(supplier.store_name || supplier.name)) || t('role.supplier')
 
   const shown = useMemo(() => {
     const needle = search.trim().toLowerCase()
@@ -641,7 +642,7 @@ function MySuppliers({ suppliers, projectList = [], onFindSuppliers, onOpenSuppl
       {/* Search, filters and the grid / list switch */}
       {list.length > 0 && (
       <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
-        <label className="flex h-9 min-w-0 flex-1 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3">
+        <label className="flex h-9 min-w-0 shrink-0 items-center gap-2 rounded-lg border lg:flex-1 lg:shrink border-slate-200 bg-white px-3">
           <Search className="h-4 w-4 shrink-0 text-slate-400" />
           <input
             type="search"
@@ -816,8 +817,8 @@ function PendingPartnerRequests({ pendingRequests, invitations, outgoingRequests
     <ListCard
       key={engineer.relationship_id || engineer.user_id}
       onClick={() => onViewEngineer(engineer)}
-      avatar={<CardAvatar src={userAvatarSrc(engineer, 'ENGINEER')} alt={engineer.name} />}
-      title={td(engineer.name)}
+      avatar={<CardAvatar fallback={<InitialsAvatar user={engineer} name={properName(engineer.name)} />} />}
+      title={properName(td(engineer.name))}
       subtitle={t('role.engineer')}
       status={status}
       rows={[
@@ -835,7 +836,7 @@ function PendingPartnerRequests({ pendingRequests, invitations, outgoingRequests
       {/* Search and type */}
       {!nothingAtAll && (
       <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
-        <label className="flex h-9 min-w-0 flex-1 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3">
+        <label className="flex h-9 min-w-0 shrink-0 items-center gap-2 rounded-lg border lg:flex-1 lg:shrink border-slate-200 bg-white px-3">
           <Search className="h-4 w-4 shrink-0 text-slate-400" />
           <input
             type="search"
@@ -1606,18 +1607,18 @@ export function ContractorEngineerProfileDrawer({ engineer, onClose, onSendReque
               {data.specialization && <p className="mt-0.5 text-xs font-bold text-brand-700">{optionLabel(t, ENGINEER_CATEGORY_LABEL_KEYS, data.specialization)}</p>}
             </div>
           </div>
-          <div className="grid grid-cols-3 gap-3 text-center">
-            <div className="rounded-xl border border-slate-200 bg-white px-2 py-4">
+          <div className="grid grid-cols-3 gap-3 max-[374px]:gap-1.5 text-center">
+            <div className="rounded-xl border border-slate-200 bg-white px-2 py-4 max-[374px]:px-0.5">
               <p className="text-base font-extrabold text-slate-900">{Number(data.experience_years) > 0 ? t('ui.contractor.yearsShort', { years: data.experience_years }) : experienceText(data.experience_years, t)}</p>
-              <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">{t('ce.experience')}</p>
+              <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400 max-[374px]:text-[8.5px] max-[374px]:tracking-normal">{t('ce.experience')}</p>
             </div>
-            <div className="rounded-xl border border-slate-200 bg-white px-2 py-4">
+            <div className="rounded-xl border border-slate-200 bg-white px-2 py-4 max-[374px]:px-0.5">
               <p className="text-base font-extrabold text-slate-900">{td(data.qualification) || '—'}</p>
-              <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">{t('ps.eng.qualification')}</p>
+              <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400 max-[374px]:text-[8.5px] max-[374px]:tracking-normal">{t('ps.eng.qualification')}</p>
             </div>
-            <div className="rounded-xl border border-slate-200 bg-white px-2 py-4">
+            <div className="rounded-xl border border-slate-200 bg-white px-2 py-4 max-[374px]:px-0.5">
               <p className="text-base font-extrabold text-slate-900">{data.project_count || 0}</p>
-              <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">{t('ui.projects')}</p>
+              <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400 max-[374px]:text-[8.5px] max-[374px]:tracking-normal">{t('ui.projects')}</p>
             </div>
           </div>
           {(data.email || data.phone) && (

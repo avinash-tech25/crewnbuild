@@ -138,7 +138,7 @@ export default function SupplierRecentSection({ requestList = [], materialReques
       {/* Recent Requests — the same records the Requests page lists. */}
       {parts.includes('requests') && (
         <div className="flex flex-col rounded-2xl border border-slate-200 bg-white px-4 py-3.5 shadow-[0_14px_40px_-30px_rgba(15,23,42,0.35)]">
-          <div className="mb-2 flex items-center justify-between gap-3">
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
             <p className="flex items-center gap-2 font-display text-[15px] font-extrabold text-graphite">
               <span className="grid h-8 w-8 place-items-center rounded-lg bg-brand-50 text-brand-700 ring-1 ring-brand-100">
                 <ClipboardList className="h-4 w-4" />
@@ -185,7 +185,7 @@ export default function SupplierRecentSection({ requestList = [], materialReques
       {/* Recent Activity — newest real orders, products and project assignments, as a timeline. */}
       {parts.includes('activity') && (
         <div className="flex flex-col rounded-2xl border border-slate-200 bg-white px-4 py-3.5 shadow-[0_14px_40px_-30px_rgba(15,23,42,0.35)]">
-          <div className="mb-2 flex items-center justify-between gap-3">
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
             <p className="flex items-center gap-2 font-display text-[15px] font-extrabold text-graphite">
               <span className="grid h-8 w-8 place-items-center rounded-lg bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100">
                 <Activity className="h-4 w-4" />

@@ -92,7 +92,7 @@ export function SolutionPanel({ text }) {
 
   return (
     <div
-            className="grid grid-cols-2 items-center gap-[60px] px-[max(24px,calc((100%-1400px)/2))] py-[110px] max-mid:grid-cols-1 max-mid:py-[82px] max-wide:block max-wide:px-[18px] max-wide:py-[70px]"
+            className="grid grid-cols-2 items-center gap-[60px] px-[max(24px,calc((100%-1400px)/2))] py-[80px] max-mid:grid-cols-1 max-mid:py-[70px] max-wide:block max-wide:px-[18px] max-wide:py-[56px]"
             style={{ background: tone.background, color: tone.heading, transition: "background 900ms linear, color 900ms linear" }}
           >
       <div className="max-w-[560px]">
@@ -136,11 +136,10 @@ export function SolutionPanel({ text }) {
         </div>
       </div>
 
-      {/* The wordmark is set on one line and runs wider than its column, so on the
-          two-column layout the villa is pushed down to start below it instead of
-          sitting over its last letters. Narrower screens stack the two already. */}
-      <div className="max-mid:w-full max-mid:max-w-[640px] max-mid:mx-auto max-wide:mt-[38px] mid:mt-32">
-        <ConstructionVilla isNight={isNight} onModeChange={setIsNight} modeLabel={text.solution.dayNight} />
+      {/* Centred on the text beside it: the wordmark is sized to end before the villa.
+          Narrower screens stack the two. */}
+      <div className="max-mid:w-full max-mid:max-w-[640px] max-mid:mx-auto max-wide:mt-[38px]">
+        <ConstructionVilla isNight={isNight} onModeChange={setIsNight} modeLabel={text.solution.dayNight} viewLabel={text.solution.view3d} />
       </div>
     </div>
   );

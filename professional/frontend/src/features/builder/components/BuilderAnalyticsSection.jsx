@@ -248,7 +248,7 @@ function useBudgetTotals(projectList) {
 
 export default function ContractorAnalyticsSection({ projectList = [], requestList = [], onNavigate }) {
   const { t, td } = useLanguage()
-  const go = (sectionId) => () => onNavigate?.(sectionId)
+  const go = (sectionId, search) => () => onNavigate?.(sectionId, search)
 
   const projectStats = useMemo(() => {
     const groups = groupProjectsByCategory(projectList)
@@ -269,6 +269,9 @@ export default function ContractorAnalyticsSection({ projectList = [], requestLi
   }, [requestList])
 
   const totalRequests = requestList.length
+  // All projects open on the first tab that holds any (Current is the Projects page's own default).
+  const firstProjectsTab = ['current', 'upcoming', 'previous'].find((id) => projectStats.groups[id].length > 0) || 'current'
+  const projectsTab = (id) => (id === 'current' ? '' : `?tab=${id}`)
   const requestSlices = [
     { id: 'accepted', label: t('ui.status.accepted'), value: requestStats.accepted, color: REQUEST_COLORS.accepted },
     { id: 'sent', label: t('dash.contractor.status.proposalSent'), value: requestStats.sent, color: REQUEST_COLORS.sent },
@@ -321,11 +324,11 @@ export default function ContractorAnalyticsSection({ projectList = [], requestLi
           available" spilled out of the card and the page). */}
       <div className="grid grid-cols-1 gap-3 min-[480px]:grid-cols-2 xl:grid-cols-4">
         <StatCard icon={Layers} label={t('dash.bld.totalProjects')} value={projectStats.total} sub={projectsNotStarted ? t('progress.scheduleNotStarted') : t('dash.bld.currentProjectsSub', { count: projectStats.groups.current.length })}
-          tone={{ card: 'border-blue-200 bg-blue-50', chip: 'bg-blue-100 text-blue-700', arrow: 'bg-blue-100 text-blue-700' }} onClick={go('projects')} />
+          tone={{ card: 'border-blue-200 bg-blue-50', chip: 'bg-blue-100 text-blue-700', arrow: 'bg-blue-100 text-blue-700' }} onClick={go('projects', projectsTab(firstProjectsTab))} />
         <StatCard icon={ClipboardList} label={t('dash.bld.acceptedRequests')} value={requestStats.accepted} sub={t('dash.contractor.analytics.pendingSub', { count: requestStats.pending })}
-          tone={{ card: 'border-purple-200 bg-purple-50', chip: 'bg-purple-100 text-purple-700', arrow: 'bg-purple-100 text-purple-700' }} onClick={go('requestsBoard')} />
+          tone={{ card: 'border-purple-200 bg-purple-50', chip: 'bg-purple-100 text-purple-700', arrow: 'bg-purple-100 text-purple-700' }} onClick={go('requestsBoard', '?status=accepted')} />
         <StatCard icon={Send} label={t('dash.bld.proposalsSent')} value={requestStats.sent} sub={t('dash.contractor.analytics.rejectedSub', { count: requestStats.rejected })}
-          tone={{ card: 'border-green-200 bg-green-50', chip: 'bg-green-100 text-green-700', arrow: 'bg-green-100 text-green-700' }} onClick={go('requestsBoard')} />
+          tone={{ card: 'border-green-200 bg-green-50', chip: 'bg-green-100 text-green-700', arrow: 'bg-green-100 text-green-700' }} onClick={go('requestsBoard', '?status=sent')} />
         <StatCard icon={BarChart3} label={t('dash.bld.averageProgress')} value={projectStats.averageProgress === null ? '–' : formatPercent(projectStats.averageProgress)} sub={projectStats.averageProgress !== null ? t('dash.contractor.analytics.upcomingSub', { count: projectStats.groups.upcoming.length }) : workStarted ? t('progress.notAvailable') : t('dash.bld.noWorkStarted')}
           tone={{ card: 'border-orange-200 bg-orange-50', chip: 'bg-orange-100 text-orange-600', arrow: 'bg-orange-100 text-orange-600' }} onClick={go('projects')} />
       </div>

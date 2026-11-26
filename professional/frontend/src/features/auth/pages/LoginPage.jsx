@@ -104,7 +104,7 @@ export default function LoginPage() {
           <input type="checkbox" className="h-4 w-4 rounded border-oc-line accent-oc-green" />
           {t('login.remember')}
         </label>
-        <Link to="/forgot-password" className="font-extrabold text-oc-green transition-colors duration-200 hover:text-oc-deep">
+        <Link to="/forgot-password" className="py-2 font-extrabold text-oc-green transition-colors duration-200 hover:text-oc-deep">
           {t('login.forgot')}
         </Link>
       </div>
@@ -124,7 +124,7 @@ export default function LoginPage() {
 
   return (
     <AuthShell
-      eyebrow={t('login.eyebrow')}
+      eyebrow={`${t('landing.solution.headline')} ${t('landing.solution.highlight')}`}
       headline={t('login.welcome')}
       highlight={t('login.highlight')}
       aside={t('auth.aside.login')}
@@ -142,9 +142,9 @@ export default function LoginPage() {
         {t('shared.security')}
       </p>
 
-      <p className="mt-3 text-xs text-oc-muted">
+      <p className="mt-3 text-xs leading-6 text-oc-muted">
         {t('login.new')}{' '}
-        <Link to="/signup" className="font-extrabold text-oc-green transition-colors duration-200 hover:text-oc-deep">
+        <Link to="/signup" className="py-1 font-extrabold text-oc-green transition-colors duration-200 hover:text-oc-deep">
           {t('login.create')}
         </Link>
       </p>

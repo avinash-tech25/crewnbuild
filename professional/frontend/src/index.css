@@ -38,7 +38,7 @@
     @apply mx-auto w-full max-w-page px-5 sm:px-8;
   }
   .h-display {
-    @apply font-display font-extrabold tracking-tighter text-graphite;
+    @apply font-display font-extrabold tracking-tight text-graphite;
   }
   .eyebrow {
     @apply inline-flex items-center gap-2 rounded-full border border-brand-200 bg-brand-50/80 px-3 py-1 text-xs font-bold uppercase tracking-[0.14em] text-brand-700;
@@ -462,6 +462,10 @@
   line-height: 1.5;
 }
 
+.dash-canvas :is(a, button, summary, [tabindex]):focus-visible {
+  outline: 2px solid theme('colors.oc.green');
+  outline-offset: 2px;
+}
 .dashboard-main button,
 .dashboard-main input,
 .dashboard-main select,

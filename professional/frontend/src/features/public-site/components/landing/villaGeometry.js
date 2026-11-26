@@ -207,18 +207,6 @@ function addDownlights(parent, materials, count, spacing, x, y, z, store) {
 }
 
 
-// A round column, registered like any box so the build sequence raises it the same way.
-function addColumn(parent, material, radius, height, x, y, z, store) {
-  const geometry = new CylinderGeometry(radius, radius, height, 20);
-  const column = new Mesh(geometry, material);
-  column.position.set(x, y, z);
-  column.castShadow = true;
-  column.receiveShadow = true;
-  parent.add(column);
-  store.geometries.push(geometry);
-  store.parts.push({ mesh: column, baseY: y - height / 2, height, anchored: false });
-}
-
 // Sliding glass doors onto the back garden: two full-height panes in a bronze surround
 // with a meeting stile between them. The rear wall faces the other way, so every piece
 // stands proud on the negative side of it.
@@ -448,11 +436,11 @@ export function buildVilla(materials, store) {
   }
   addBox(villa, materials.foliage, 5.5, 0.5, 1.2, -5.5, 0.75, 5.6, store);
 
-  // Entrance portico: the two stone columns now run the full height of the house and carry
+  // Entrance portico: two square piers in the wall's finish run the full height of the house and carry
   // the roof forward over the door, so the front reads as one tall opening rather than a
   // porch stuck on the ground floor.
-  addColumn(villa, materials.stone, 0.4, 7.0, -0.4, 3.995, 5.8, store);
-  addColumn(villa, materials.stone, 0.4, 7.0, 4.3, 3.995, 5.8, store);
+  addBox(villa, materials.wall, 0.9, 7.0, 0.9, -0.4, 3.995, 5.6, store);
+  addBox(villa, materials.wall, 0.9, 7.0, 0.9, 4.3, 3.995, 5.6, store);
   addBox(villa, materials.charcoal, 6.0, 0.46, 3.3, 2.0, 7.63, 4.55, store);
   addSoffit(villa, materials, 5.6, 2.9, 2.0, 7.4, 4.55, store);
   addBox(villa, materials.accent, 6.1, 0.07, 0.08, 2.0, 7.44, 6.21, store);

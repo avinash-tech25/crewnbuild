@@ -124,14 +124,14 @@ export function HeroContent({ text, activeIndex, onSelect }) {
         </motion.div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-[7px] mt-5" role="tablist" aria-label={text.rolesSection.label}>
+        <div className="flex flex-wrap items-center gap-[7px] max-[374px]:gap-1 mt-5" role="tablist" aria-label={text.rolesSection.label}>
           {roleMeta.map((meta, index) => (
             <button
               key={meta.key}
               role="tab"
               aria-selected={activeIndex === index}
               onClick={() => onSelect(index)}
-              className={`min-h-[34px] px-3.5 max-wide:px-2.5 rounded-full text-[11px] font-extrabold border transition-[background,color] duration-200 ease-soft
+              className={`min-h-[34px] px-3.5 max-wide:px-2.5 max-[374px]:px-[7px] rounded-full text-[11px] max-[374px]:text-[10px] font-extrabold border transition-[background,color] duration-200 ease-soft
                           ${activeIndex === index
                             ? "bg-oc-amber text-oc-deep border-oc-amber"
                             : "bg-transparent text-white border-white/45 hover:bg-oc-amber hover:text-oc-deep hover:border-oc-amber"}`}

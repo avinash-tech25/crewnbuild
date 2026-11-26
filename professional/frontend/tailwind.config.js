@@ -1,3 +1,6 @@
+// The scripts Manrope and Inter do not carry, the same on every device.
+const notoSans = ['Devanagari', 'Telugu', 'Tamil', 'Kannada', 'Malayalam', 'Arabic'].map((script) => `"Noto Sans ${script}"`)
+
 /** @type {import('tailwindcss').Config} */
 export default {
   darkMode: 'class',
@@ -152,12 +155,12 @@ export default {
         'dialog-top': '80',
       },
       fontFamily: {
-        display: ['"Manrope"', 'system-ui', 'sans-serif'],
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        display: ['"Manrope"', ...notoSans, 'system-ui', 'sans-serif'],
+        sans: ['Inter', ...notoSans, 'system-ui', 'sans-serif'],
       },
       fontSize: {
         // Landing-page display sizes (additive).
-        headline: ['clamp(1.875rem, 1.1rem + 2.6vw, 3rem)', { lineHeight: '1.1', letterSpacing: '-0.03em' }],
+        headline: ['clamp(1.875rem, 1.1rem + 2.6vw, 3rem)', { lineHeight: '1.1', letterSpacing: '-0.025em' }],
         title: ['clamp(1.25rem, 1rem + 0.8vw, 1.625rem)', { lineHeight: '1.25', letterSpacing: '-0.02em' }],
       },
       transitionTimingFunction: {

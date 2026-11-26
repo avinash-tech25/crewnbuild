@@ -1,5 +1,7 @@
 import {
+  ChevronDown,
   Facebook,
+  Globe,
   Instagram,
   Linkedin,
   Mail,
@@ -51,17 +53,14 @@ export function SiteFooter({ text, language, onSelectLanguage }) {
       .catch(() => {});
     return () => { active = false; };
   }, []);
-  const languageButton = (code) =>
-    `p-0 border-0 bg-transparent text-[11px] transition-colors duration-200 hover:text-oc-amber ${
-      language === code ? "text-oc-amber font-extrabold" : "text-[#98a19a] font-semibold"
-    }`;
 
   return (
     <footer className="bg-oc-night text-[#f2f5f2] pt-[78px] pb-[26px] max-wide:pt-14 max-wide:pb-[22px]">
       <div className={containerClass}>
-        <div className="grid grid-cols-[1.6fr_1fr_1fr_.8fr_1.15fr] gap-[46px] max-wide:grid-cols-2 max-wide:gap-[34px]">
+        <div className="grid grid-cols-[1.6fr_1fr_1fr_.8fr_1.15fr] gap-[46px] max-mid:grid-cols-[1.3fr_.9fr_.8fr_.8fr_1.4fr] max-mid:gap-6 max-wide:grid-cols-2 max-wide:gap-[34px]">
           <div className="max-w-[340px] max-wide:col-span-full max-wide:max-w-none">
-            <Brand href="#top" logoOnly />
+            {/* Cut off below the logo's name, without its small tagline line. */}
+            <span className="block h-[52px] overflow-hidden max-md:h-[43px]"><Brand href="#top" logoOnly /></span>
             <p className="mt-5 text-xs leading-[1.8] text-[#98a19a]">{text.footer.tagline}</p>
             <div className="flex gap-[10px] mt-[26px]">
               <a className={socialLink} href="https://www.instagram.com/crewnbuild" target="_blank" rel="noopener noreferrer" aria-label="CREWNBUILD on Instagram"><Instagram size={17} /></a>
@@ -130,13 +129,13 @@ export function SiteFooter({ text, language, onSelectLanguage }) {
               )}
               {/* SUPPORT_PHONE from the server; the company line until it answers. */}
               <ContactRow icon={Phone}>
-                <a className={columnLink} href={contact?.phone_href || phoneHref(SUPPORT_PHONE)} dir="ltr">{contact?.phone || SUPPORT_PHONE}</a>
+                <a className={`${columnLink} whitespace-nowrap`} href={contact?.phone_href || phoneHref(SUPPORT_PHONE)} dir="ltr">{contact?.phone || SUPPORT_PHONE}</a>
               </ContactRow>
               {/* Only when the server has a WhatsApp number, as on the Contact us page. */}
               {contact?.whatsapp && contact?.whatsapp_href && (
                 <li className="flex items-start gap-[10px] [&_svg]:mt-px [&_svg]:h-[15px] [&_svg]:w-[15px]">
                   <WhatsAppGlyph />
-                  <a className={columnLink} href={contact.whatsapp_href} target="_blank" rel="noopener noreferrer" aria-label={`WhatsApp ${contact.whatsapp}`} dir="ltr">{contact.whatsapp}</a>
+                  <a className={`${columnLink} whitespace-nowrap`} href={contact.whatsapp_href} target="_blank" rel="noopener noreferrer" aria-label={`WhatsApp ${contact.whatsapp}`} dir="ltr">{contact.whatsapp}</a>
                 </li>
               )}
               {contact?.hours && <ContactRow icon={Clock}><span>{contact.hours}</span></ContactRow>}
@@ -148,41 +147,38 @@ export function SiteFooter({ text, language, onSelectLanguage }) {
                         rtl:bg-[linear-gradient(270deg,var(--color-amber),rgba(244,183,64,.14)_42%,rgba(255,255,255,.06))]
                         max-wide:mt-[38px] max-wide:mb-[18px]" />
 
-        <div className="flex flex-wrap items-center justify-between gap-5 text-[11px] text-[#a8b1aa] max-wide:block">
+        {/* Room at the end for the assistant button, which stays over this corner. */}
+        <div className="flex flex-wrap items-center justify-between gap-5 text-[11px] text-[#a8b1aa] max-[1560px]:pe-20 max-wide:block">
           <span>© {new Date().getFullYear()} CREWNBUILD. {text.footer.rights}</span>
 
           <div className="flex flex-wrap items-center gap-x-6 gap-y-3 max-wide:block">
-            {/* Powered by Trysol: the supplied image (logo + name) as is, only sized down. */}
+            {/* Powered by Trysol: the supplied image in light grey, its white ground dropped. */}
             <div className="flex items-center gap-2 max-wide:mt-[13px]" dir="ltr">
               <span className="font-semibold">Powered by</span>
               <a href="https://trysol.com/" target="_blank" rel="noopener noreferrer" aria-label="Trysol (opens in a new tab)" className="inline-flex">
-                <img src="/trysol-brand.jpg" alt="Trysol" className="h-[28px] w-auto object-contain" />
+                <img src="/trysol-brand.jpg" alt="Trysol" className="h-[22px] w-auto object-contain mix-blend-screen [filter:invert(1)_grayscale(1)_brightness(1.4)]" />
               </a>
             </div>
 
-            {/* All seven languages. This row offered only English and Arabic
-                while the app shipped five more, so a Telugu or Tamil reader had
-                no way back to their own language from the footer. Wraps rather
-                than overflowing, since seven endonyms are wider than two. */}
-            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 max-wide:mt-[13px]" aria-label={text.footer.language}>
-              {languages.map(({ code, name }, index) => (
-                <span key={code} className="inline-flex items-center">
-                  {index > 0 && <b className="me-2 text-oc-amber" aria-hidden="true">|</b>}
-                  <button
-                    type="button"
-                    lang={code}
-                    className={languageButton(code)}
-                    onClick={() => onSelectLanguage(code)}
-                    aria-pressed={language === code}
-                  >
-                    {name}
-                  </button>
-                </span>
-              ))}
-            </div>
+            {/* All seven languages, each named in itself, in one list that opens. The list keeps to
+                Manrope and the system font: it shows every script, so the Noto fonts would all load. */}
+            <label className="relative inline-flex min-h-[38px] items-center gap-[7px] rounded-full border border-white/25 px-[14px] transition-colors duration-200 hover:border-oc-amber focus-within:ring-2 focus-within:ring-oc-amber max-wide:mt-[13px]">
+              <Globe size={14} className="shrink-0 text-oc-amber" aria-hidden="true" />
+              <select
+                value={language}
+                onChange={(event) => onSelectLanguage(event.target.value)}
+                aria-label={text.footer.language}
+                className="cursor-pointer appearance-none border-0 bg-transparent [font-family:Manrope,system-ui] p-0 pe-5 text-[11px] font-extrabold text-[#f2f5f2] focus:outline-none"
+              >
+                {languages.map(({ code, name }) => (
+                  <option key={code} value={code} lang={code} className="text-oc-ink">{name}</option>
+                ))}
+              </select>
+              <ChevronDown size={13} className="pointer-events-none absolute end-[12px]" aria-hidden="true" />
+            </label>
           </div>
         </div>
-        <DisclaimerNote kind="language" tone="dark" className="mt-3" />
+        <DisclaimerNote kind="language" tone="dark" className="mt-3 max-[1560px]:pe-20 max-wide:pe-16" />
       </div>
     </footer>
   );

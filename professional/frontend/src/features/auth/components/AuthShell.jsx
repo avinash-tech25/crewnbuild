@@ -253,7 +253,7 @@ export function AuthShell({ eyebrow, headline, highlight, aside, videoUrl, video
           <span className="flex items-center gap-4 max-[380px]:gap-3 max-[380px]:[&_img]:h-[44px] max-[380px]:[&_img]:w-[71px]">
             <Brand logoOnly />
             <Link
-              className="inline-flex items-center gap-2 text-[11px] font-extrabold text-oc-muted transition-colors duration-200 hover:text-oc-green"
+              className="inline-flex min-h-[40px] items-center gap-2 text-[11px] font-extrabold text-oc-muted transition-colors duration-200 hover:text-oc-green"
               to="/"
             >
               <ArrowLeft size={14} className="rtl:-scale-x-100" />
@@ -270,12 +270,12 @@ export function AuthShell({ eyebrow, headline, highlight, aside, videoUrl, video
         <div className="mx-auto my-auto flex w-full max-w-[420px] flex-col py-6">
           {eyebrow && (
             <div className="flex items-center gap-[9px] text-[10px] font-extrabold uppercase tracking-[.14em] text-oc-green rtl:tracking-normal">
-              <span className="h-2 w-2 rounded-full bg-oc-amber shadow-[0_0_0_5px_rgba(244,183,64,.14)]" />
+              <span className="h-2 w-2 shrink-0 rounded-full bg-oc-amber shadow-[0_0_0_5px_rgba(244,183,64,.14)]" />
               {eyebrow}
             </div>
           )}
 
-          <h1 className="mt-2 text-[clamp(1.8rem,2.9vw,2.3rem)] font-extrabold leading-[1.05] tracking-[-.05em] rtl:leading-[1.3] rtl:tracking-normal">
+          <h1 className="mt-2 text-[clamp(1.8rem,2.9vw,2.3rem)] font-extrabold leading-[1.05] tracking-tight rtl:leading-[1.3] rtl:tracking-normal">
             {headline}
             {highlight && (
               <>

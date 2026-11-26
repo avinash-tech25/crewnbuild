@@ -372,11 +372,12 @@ export default function TechnicianDashboard() {
         />
       )}
       <header className="sticky top-0 z-header border-b border-oc-line bg-white/90 backdrop-blur-md">
-        <div className={`${SHELL} flex h-16 items-center gap-4`}>
-          <Logo to="/dashboard" />
+        <div className={`${SHELL} flex h-16 items-center gap-4 max-[374px]:gap-1.5`}>
+          {/* The smallest phones have room for the mark alone, which reads the name. */}
+          <span className="flex shrink-0 max-[374px]:[&_span]:hidden"><Logo to="/dashboard" /></span>
           <span className="hidden rounded-full bg-oc-mint px-3 py-1 text-xs font-extrabold text-oc-green sm:inline">{typeMeta.label} dashboard</span>
           <TechnicianWeatherIndicator className="ml-auto" />
-          <button type="button" onClick={signOut} className="btn-ghost">
+          <button type="button" onClick={signOut} className="btn-ghost max-[374px]:px-3">
             <LogOut className="h-4 w-4" /> Logout
           </button>
         </div>
@@ -410,7 +411,7 @@ export default function TechnicianDashboard() {
             </div>
             <div className="w-full rounded-2xl border border-white/15 bg-white/10 p-3 sm:w-auto" data-testid="work-status">
               <p className="text-xs font-bold uppercase tracking-wide text-[#b9d8c5]">Availability</p>
-              <div className="mt-1.5 flex gap-1 rounded-xl bg-black/15 p-1" role="radiogroup" aria-label="Availability">
+              <div className="mt-1.5 flex flex-wrap gap-1 rounded-xl bg-black/15 p-1" role="radiogroup" aria-label="Availability">
                 {WORK_STATUS_OPTIONS.map((option) => (
                   <button
                     key={option.id}
@@ -419,7 +420,7 @@ export default function TechnicianDashboard() {
                     aria-checked={workStatus === option.id}
                     disabled={savingAvailability}
                     onClick={() => setWorkStatus(option.id)}
-                    className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-extrabold transition ${
+                    className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-extrabold transition max-[374px]:px-2 ${
                       workStatus === option.id ? 'bg-oc-amber text-oc-deep' : 'text-white/80 hover:bg-white/10'
                     }`}
                     data-testid={`work-status-${option.id.toLowerCase()}`}

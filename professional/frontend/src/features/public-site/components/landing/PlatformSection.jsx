@@ -3,7 +3,7 @@ import { ChevronDown } from "lucide-react";
 import { motion } from "framer-motion";
 import { SectionLabel, containerClass, sectionPaddingClass } from "./shared.jsx";
 import { riseIn, useScrollReveal } from "./scrollReveal.js";
-import { journeyCards } from "./journeyData.js";
+import { journeyCards, journeyCardSteps } from "./journeyData.js";
 import { RequirementCard } from "./journey/RequirementCard.jsx";
 import { BuilderCard } from "./journey/BuilderCard.jsx";
 import { ProjectCard } from "./journey/ProjectCard.jsx";
@@ -25,6 +25,7 @@ export function PlatformSection({ text, isArabic }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [hoveredIndex, setHoveredIndex] = useState(null);
   const copy = text.journey;
+  const stepName = (step) => text.howItWorks.steps[journeyCardSteps[step]].title;
 
   // Pointing at a card wins; with no pointer it is whichever card the visitor scrolled to.
   const highlightedIndex = hoveredIndex ?? activeIndex;
@@ -57,7 +58,7 @@ export function PlatformSection({ text, isArabic }) {
                         {String(index + 1).padStart(2, "0")}
                       </span>
                       <span className={`ms-3 text-sm leading-normal font-semibold ${active ? "text-oc-ink" : "text-oc-muted"}`}>
-                        {copy.cards[step].label}
+                        {stepName(step)}
                       </span>
                     </li>
                   );
@@ -78,10 +79,10 @@ export function PlatformSection({ text, isArabic }) {
                   onViewportEnter={() => setActiveIndex(index)}
                   onMouseEnter={() => setHoveredIndex(index)}
                   onMouseLeave={() => setHoveredIndex(null)}
-                  className="max-w-[520px]"
+                  className="max-w-[520px] max-mid:mx-auto"
                 >
                   <motion.div variants={riseIn} {...reveal}>
-                    <Card copy={copy.cards[step]} isArabic={isArabic} highlighted={index === highlightedIndex} />
+                    <Card copy={{ ...copy.cards[step], label: stepName(step) }} isArabic={isArabic} highlighted={index === highlightedIndex} />
                   </motion.div>
 
                   {!isLast && (

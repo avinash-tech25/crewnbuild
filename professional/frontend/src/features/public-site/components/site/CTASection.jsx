@@ -20,7 +20,7 @@ export default function CTASection() {
                 <p className="inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.16em] text-white backdrop-blur">
                   <PhoneCall className="h-4 w-4" /> {t('site.cta.badge')}
                 </p>
-                <h2 className="mt-5 font-display text-[clamp(1.7rem,3.4vw,2.7rem)] font-extrabold leading-[1.1] tracking-tighter text-white text-balance">
+                <h2 className="mt-5 font-display text-[clamp(1.7rem,3.4vw,2.7rem)] font-extrabold leading-[1.1] tracking-tight text-white text-balance">
                   {t('site.cta.title')}
                 </h2>
                 <p className="mt-4 max-w-xl text-base leading-relaxed text-white/85 sm:text-lg">

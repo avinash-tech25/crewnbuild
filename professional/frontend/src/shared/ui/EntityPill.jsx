@@ -1,4 +1,4 @@
-import { avatarSrc, userAvatarSrc } from './avatars.js'
+import { avatarSrc, uploadedAvatarSrc, userAvatarSrc } from './avatars.js'
 /**
  * A status or category chip (EntityPill) and a round avatar (EntityAvatar).
  *
@@ -54,4 +54,16 @@ export function EntityAvatar({ src, alt, fallback, className = '', role = null, 
       {resolved ? <img src={resolved} alt={alt || ''} className="h-full w-full object-cover" /> : (fallback || '')}
     </span>
   )
+}
+
+const INITIAL_TONES = ['bg-emerald-100 text-emerald-800', 'bg-sky-100 text-sky-800', 'bg-amber-100 text-amber-900', 'bg-violet-100 text-violet-800', 'bg-rose-100 text-rose-800']
+
+/** A person's uploaded picture; without one, their initials in a coloured circle (one colour per name). */
+export function InitialsAvatar({ user, name = '', className = 'h-full w-full' }) {
+  const src = uploadedAvatarSrc(user)
+  if (src) return <img src={src} alt={name} className={`${className} shrink-0 object-cover`} />
+  const words = String(name).trim().split(/\s+/).filter(Boolean)
+  const initials = words.slice(0, 2).map((word) => [...word][0]).join('').toUpperCase() || '?'
+  const tone = INITIAL_TONES[[...String(name)].reduce((sum, letter) => sum + letter.codePointAt(0), 0) % INITIAL_TONES.length]
+  return <span role="img" aria-label={name} className={`${className} grid shrink-0 place-items-center rounded-full text-sm font-extrabold ${tone}`}>{initials}</span>
 }

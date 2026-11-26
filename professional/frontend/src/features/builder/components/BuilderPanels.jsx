@@ -1,5 +1,13 @@
 import { Lock } from 'lucide-react'
 import { useLanguage } from '../../../i18n/LanguageContext.jsx'
+import { inr, quoteFarBelowBudget } from '../builderHelpers.js'
+
+/** Under a quotation box: the amount is far below the owner's budget. A note only; it blocks nothing. */
+export function QuoteBelowBudgetNote({ amount, budget, country, className = '' }) {
+  const { t } = useLanguage()
+  if (!quoteFarBelowBudget(amount, budget)) return null
+  return <p role="status" className={`mt-1 text-[11px] font-bold text-amber-800 ${className}`}>{t('dash.contractor.quoteFarBelow', { budget: inr(budget, country) })}</p>
+}
 
 export function AccentDot({ className = '' }) {
   return (

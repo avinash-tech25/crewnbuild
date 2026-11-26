@@ -5,7 +5,7 @@ export function SmartImage({ src, alt, className = '', fallback = 'from-forest-2
   const [failed, setFailed] = useState(false)
   // A new address gets a fresh try (a replaced photo must not keep the fallback).
   useEffect(() => { setFailed(false) }, [src])
-  if (failed) {
+  if (failed || !src) {
     return <div className={`bg-gradient-to-br ${fallback} ${className}`} aria-label={alt} role="img" />
   }
   return (
